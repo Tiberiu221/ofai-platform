@@ -31,6 +31,7 @@ const allowedOrigins = [
   "https://ofai.ro",
   "https://www.ofai.ro",
   "https://api.ofai.ro",
+  "https://ofai-eight.vercel.app",
   // Development
   "http://localhost:8081",
   "http://localhost:19006",
@@ -45,6 +46,11 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Permite requests fără origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
+    
+    // Permite orice subdomeniu Vercel (pentru preview deployments)
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
     
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
