@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ro">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Admin - Editează ofertă</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    form {
+      max-width: 600px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    textarea {
+      min-height: 80px;
+      font-family: sans-serif;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    a {
+      text-decoration: none;
+      color: #007bff;
+    }
+
+    small {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .image-preview {
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+
+    .image-preview img {
+      width: 100%;
+      max-width: 300px;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .delete-form {
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    .delete-form button {
+      background: #dc2626;
+      font-size: 14px;
+      padding: 6px 12px;
+    }
+
+    /* Stiluri specifice pentru zona de locații */
+    .locations-box {
+      margin-top: 25px;
+      padding: 15px;
+      background: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    .checkbox-label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-weight: normal;
+      margin-top: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Editează ofertă</h1>
+  <p><a href="/admin/offers">« Înapoi la listă</a></p>
+
+  <form class="delete-form" method="post" action="/admin/offers/<%= offer.id %>/delete"
+    onsubmit="return confirm('Sigur vrei să ștergi această ofertă? Această acțiune este definitivă.');">
+    <button type="submit">Șterge oferta</button>
+  </form>
+
+  <form method="post" action="/admin/offers/<%= offer.id %>/edit" enctype="multipart/form-data">
+
+    <label for="business_id">Business</label>
+    <select name="business_id" id="business_id" required>
+      <option value="">Alege un business...</option>
+      <% businesses.forEach(function(b) { // Calculăm selecția aici pentru a evita erori de sintaxă în tag-ul HTML let
+        isSel=false; if (offer.business_id && String(b.id)===String(offer.business_id)) { isSel=true; } %>
+        <option value="<%= b.id %>" <%=isSel ? 'selected' : '' %>>
+          <%= b.name %>
+        </option>
+        <% }); %>
+    </select>
+
+    <label for="title">Titlu ofertă</label>
+    <input type="text" id="title" name="title" required value="<%= offer.title || '' %>" />
+
+    <label for="description">Descriere</label>
+    <textarea id="description" name="description"><%= offer.description || '' %></textarea>
+
+    <div style="display: flex; gap: 15px;">
+      <div style="flex: 1;">
+        <label for="discount_type">Tip reducere</label>
+        <select id="discount_type" name="discount_type" required>
+          <option value="percent" <%=offer.discount_type==='percent' ? 'selected' : '' %>>Procent (%)</option>
+          <option value="fixed" <%=offer.discount_type==='fixed' ? 'selected' : '' %>>Suma fixă (lei)</option>
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label for="discount_value">Valoare</label>
+        <input type="number" id="discount_value" name="discount_value" min="1" required
+          value="<%= offer.discount_value || '' %>" />
+      </div>
+    </div>
+
+    <label for="conditions">Condiții</label>
+    <textarea id="conditions" name="conditions"><%= offer.conditions || '' %></textarea>
+
+    <div style="display: flex; gap: 15px;">
+      <div style="flex: 1;">
+        <label for="start_date">Data început</label>
+        <input type="date" id="start_date" name="start_date" value="<%= offer.start_date_value || '' %>" />
+      </div>
+      <div style="flex: 1;">
+        <label for="end_date">Data sfârșit</label>
+        <input type="date" id="end_date" name="end_date" value="<%= offer.end_date_value || '' %>" />
+      </div>
+    </div>
+
+    <label style="display: flex; align-items: center; gap: 10px; margin-top: 20px;">
+      <input type="checkbox" name="is_active" style="width: auto;" <%=offer.is_active ? 'checked' : '' %> />
+      Ofertă activă
+    </label>
+
+    <div class="locations-box">
+      <label style="margin-top:0; color:#2563eb;">Disponibilitate Locații</label>
+
+      <% if (locations.length===0) { %>
+        <p style="color: #666; font-style: italic; font-size: 14px;">
+          Acest business are doar sediul central (nicio locație secundară definită).
+        </p>
+        <% } else { %>
+          <p style="font-size: 13px; color: #555; margin-bottom: 10px; margin-top: 0;">
+            Lasă totul <strong>debifat</strong> pentru a fi valabilă în toate locațiile.<br>
+            Bifează locații specifice doar dacă oferta este limitată.
+          </p>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <% locations.forEach(loc=> {
+              // Calculăm variabila aici, în bloc JS curat, pentru siguranță
+              const isChecked = selectedLocationIds.some(sid => String(sid) === String(loc.id));
+              %>
+              <label class="checkbox-label">
+                <input type="checkbox" name="locations" value="<%= loc.id %>" style="width: auto;" <%=isChecked
+                  ? 'checked' : '' %>
+                >
+                <span>
+                  <%= loc.address %> (<%= loc.city_name || 'N/A' %>)
+                </span>
+              </label>
+              <% }) %>
+          </div>
+          <% } %>
+    </div>
+
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;" />
+
+    <h3>Imagine ofertă</h3>
+    <% if (offer.logo_url) { %>
+      <div class="image-preview">
+        <img src="<%= offer.logo_url %>" alt="Imagine ofertă" />
+      </div>
+      <% } %>
+
+        <label for="image">Încarcă imagine nouă (opțional)</label>
+        <input type="file" id="image" name="image" accept="image/*" />
+
+        <button type="submit">Salvează modificările</button>
+  </form>
+
+</body>
+
+</html>

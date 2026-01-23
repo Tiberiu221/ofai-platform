@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment variables (IMPORTANT - never commit!)
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Uploads (local dev only - production uses cloud storage)
+src/uploads/*
+!src/uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+dist/
+build/

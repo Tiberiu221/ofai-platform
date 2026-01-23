@@ -1,0 +1,25 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Expo / React Native
+.expo/
+.expo-shared/
+dist/
+web-build/
+
+# Build output
+build/
+dist/
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+
+# OS garbage
+.DS_Store
+Thumbs.db

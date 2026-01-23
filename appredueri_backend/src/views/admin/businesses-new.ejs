@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin - Business nou</title>
+    <style>
+      body { font-family: sans-serif; padding: 20px; }
+      h1 { margin-bottom: 16px; }
+      form { max-width: 600px; }
+      label { display: block; margin-top: 10px; font-weight: bold; }
+      input[type="text"],
+      input[type="number"],
+      textarea,
+      select {
+        width: 100%;
+        padding: 6px;
+        margin-top: 4px;
+        box-sizing: border-box;
+      }
+      textarea { min-height: 60px; }
+      button {
+        margin-top: 16px;
+        padding: 8px 16px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      a { text-decoration: none; color: #007bff; }
+    </style>
+  </head>
+  <body>
+    <h1>Business nou</h1>
+
+    <p><a href="/admin/businesses">« Înapoi la lista de business-uri</a></p>
+
+    <form method="post" action="/admin/businesses/new">
+      <label for="name">Nume business</label>
+      <input type="text" id="name" name="name" required />
+
+      <label for="city_id">Oraș</label>
+      <select id="city_id" name="city_id" required>
+        <option value="">Alege oraș...</option>
+        <% cities.forEach(function(c) { %>
+          <option value="<%= c.id %>"><%= c.name %></option>
+        <% }); %>
+      </select>
+
+      <label for="category_id">Categorie</label>
+      <select id="category_id" name="category_id" required>
+        <option value="">Alege categorie...</option>
+        <% categories.forEach(function(cat) { %>
+          <option value="<%= cat.id %>"><%= cat.name %></option>
+        <% }); %>
+      </select>
+
+      <label for="address">Adresă</label>
+      <textarea id="address" name="address" required></textarea>
+
+      <label for="lat">Lat</label>
+      <input type="text" id="lat" name="lat" />
+
+      <label for="lng">Lng</label>
+      <input type="text" id="lng" name="lng" />
+
+      <label for="phone">Telefon</label>
+      <input type="text" id="phone" name="phone" />
+
+      <label for="website">Website</label>
+      <input type="text" id="website" name="website" />
+
+      <button type="submit">Salvează business</button>
+    </form>
+  </body>
+</html>
