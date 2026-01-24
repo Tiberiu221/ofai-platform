@@ -23,3 +23,10 @@ dist/
 # OS garbage
 .DS_Store
 Thumbs.db
+
+# Agent architecture - temporary files
+.tmp/
+
+# Google OAuth credentials
+credentials.json
+token.json
