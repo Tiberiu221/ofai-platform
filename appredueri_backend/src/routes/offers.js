@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const auth = require("../middleware/auth");
 
 // ==============================
 // Helper: Construire URL absolut
@@ -133,6 +134,118 @@ router.get("/", async (req, res) => {
 });
 
 // =======================================
+// GET /feed - Feed personalizat (User Preferences)
+// =======================================
+router.get("/feed", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // 1. Obține preferințele userului
+    const userRes = await pool.query(
+      "SELECT preferred_city_id, preferred_category_ids FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const { preferred_city_id, preferred_category_ids } = userRes.rows[0];
+
+    // 2. Construiește query-ul
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    // A. Filtre de bază (Active & Valabile)
+    filters.push("o.is_active = TRUE");
+    filters.push("o.end_date >= CURRENT_DATE");
+
+    // B. Filtru Oraș (Dacă userul are unul setat)
+    if (preferred_city_id) {
+      filters.push(`b.city_id = $${idx++}`);
+      values.push(preferred_city_id);
+    }
+
+    // C. Filtru Categorii (Dacă userul are setate)
+    // Dacă array-ul e gol sau null, arătăm toate categoriile (sau am putea arăta nimic, dar UX-ul standard e "show all if no filter")
+    // Totuși, "Feed" implică relevanță. Dacă nu are categorii, arătăm populare.
+    // Dacă are categorii, filtrăm DOAR acelea.
+    if (preferred_category_ids && Array.isArray(preferred_category_ids) && preferred_category_ids.length > 0) {
+      // Construim clauza IN ($2, $3, ...)
+      const placeholders = preferred_category_ids.map(() => `$${idx++}`).join(", ");
+      filters.push(`b.category_id IN (${placeholders})`);
+      values.push(...preferred_category_ids);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    // Query similar cu cel principal, dar filtrat
+    const query = `
+      SELECT 
+        o.id, o.title, o.description, o.discount_type, o.discount_value, 
+        o.start_date, o.end_date,
+        o.logo_url as offer_logo,
+        b.id as business_id, b.name as business_name, 
+        b.lat, b.lng, b.logo_url as business_logo,
+        c.name as city_name, cat.name as category_name,
+        (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
+        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
+        locs.locations as locations
+      FROM offers o
+      JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN cities c ON b.city_id = c.id
+      LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(
+          json_agg(json_build_object('id', bl.id, 'address', bl.address, 'lat', bl.lat, 'lng', bl.lng, 'city_name', c2.name) ORDER BY bl.id) 
+          FILTER (WHERE bl.id IS NOT NULL), '[]'::json
+        ) AS locations
+        FROM business_locations bl
+        LEFT JOIN cities c2 ON c2.id = bl.city_id
+        WHERE bl.business_id = b.id
+          AND (NOT EXISTS (SELECT 1 FROM offer_locations ol WHERE ol.offer_id = o.id) OR bl.id IN (SELECT ol.location_id FROM offer_locations ol WHERE ol.offer_id = o.id))
+      ) locs ON true
+      ${whereClause}
+      ORDER BY o.id DESC
+      LIMIT 50
+    `;
+
+    const result = await pool.query(query, values);
+
+    // Formatare rezultate (la fel ca GET /)
+    const offers = result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      discount_type: row.discount_type,
+      discount_value: row.discount_value,
+      start_date: row.start_date,
+      end_date: row.end_date,
+      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_logo),
+      locations: Array.isArray(row.locations) ? row.locations : [],
+      business: {
+        id: row.business_id,
+        name: row.business_name,
+        logo_url: makeAbsoluteUrl(req, row.business_logo),
+        city: row.city_name,
+        category: row.category_name,
+        lat: row.lat,
+        lng: row.lng,
+        rating: parseFloat(parseFloat(row.rating_avg || 0).toFixed(1)),
+        rating_count: parseInt(row.rating_count || 0)
+      }
+    }));
+
+    res.json(offers);
+
+  } catch (err) {
+    console.error("[Feed Error]", err);
+    res.status(500).send("Server Error");
+  }
+});
+
+// =======================================
 // GET /offers/:id - Detalii ofertă cu booking
 // =======================================
 router.get("/:id", async (req, res) => {
@@ -198,7 +311,7 @@ router.get("/:id", async (req, res) => {
     };
 
     const offerBookingType = row.offer_booking_type || 'inherit';
-    
+
     if (offerBookingType === 'inherit') {
       // Folosește setările de la business
       effectiveBooking = {

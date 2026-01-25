@@ -72,11 +72,14 @@ router.get("/", async (req, res) => {
         b.logo_url,
         c.name AS city_name,
         cat.name AS category_name,
-        SUM(CASE WHEN o.is_active = TRUE THEN 1 ELSE 0 END) AS active_offers_count
+        SUM(CASE WHEN o.is_active = TRUE THEN 1 ELSE 0 END) AS active_offers_count,
+        COALESCE(AVG(r.rating), 0) as rating_avg,
+        COUNT(r.id) as rating_count
       FROM businesses b
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
       LEFT JOIN offers o ON o.business_id = b.id
+      LEFT JOIN reviews r ON r.business_id = b.id
       ${whereClause}
       GROUP BY
         b.id,
@@ -121,6 +124,8 @@ router.get("/", async (req, res) => {
         }
         : null,
       active_offers_count: Number(row.active_offers_count || 0),
+      rating: parseFloat(parseFloat(row.rating_avg || 0).toFixed(1)),
+      rating_count: parseInt(row.rating_count || 0),
     }));
 
     return res.json(businesses);
@@ -199,7 +204,7 @@ router.get("/:id", async (req, res) => {
 
     // Dacă NU există locații multiple, creăm o "locație virtuală" din datele business-ului
     let locations = [];
-    
+
     if (locationsRes.rows.length > 0) {
       // Avem locații multiple definite - le folosim pe ele
       locations = locationsRes.rows.map((row) => ({
@@ -240,7 +245,7 @@ router.get("/:id", async (req, res) => {
     }
 
     // Cover image priority
-    const coverImage = b.cover_image_url 
+    const coverImage = b.cover_image_url
       ? makeAbsoluteUrl(baseUrl, b.cover_image_url)
       : (images.length > 0 ? images[0].url : makeAbsoluteUrl(baseUrl, b.logo_url));
 
