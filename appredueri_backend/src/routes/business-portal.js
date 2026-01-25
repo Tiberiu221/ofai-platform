@@ -157,11 +157,11 @@ router.get("/:businessId", businessAuth, async (req, res) => {
 router.put("/:businessId", businessAuth, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { 
+    const {
       name, address, phone, website, city_id, category_id, lat, lng,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
     } = req.body;
-    
+
     console.log("[BusinessPortal] PUT /my-businesses/:id - ID:", businessId);
 
     await pool.query(`
@@ -204,7 +204,7 @@ router.post("/:businessId/logo", businessAuth, upload.single("logo"), async (req
   try {
     const { businessId } = req.params;
     console.log("[BusinessPortal] POST logo - Starting upload for business:", businessId);
-    
+
     if (!req.file) {
       console.log("[BusinessPortal] No file in request");
       return res.status(400).json({ message: "Niciun fișier încărcat" });
@@ -219,9 +219,9 @@ router.post("/:businessId/logo", businessAuth, upload.single("logo"), async (req
       }
     }
 
-    // Upload pe Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, "businesses/logos");
-    
+    // Upload pe Cloudinary cu rezoluție specifică pentru logo (400x400)
+    const result = await uploadToCloudinary(req.file.buffer, "logo");
+
     // Salvează URL-ul în DB
     await pool.query("UPDATE businesses SET logo_url = $1 WHERE id = $2", [result.url, businessId]);
 
@@ -229,7 +229,8 @@ router.post("/:businessId/logo", businessAuth, upload.single("logo"), async (req
     res.json({ success: true, logo_url: result.url });
   } catch (err) {
     console.error("[BusinessPortal] Error uploading logo:", err);
-    res.status(500).json({ message: "Eroare la încărcarea logo-ului" });
+    // Trimitem mesajul de eroare către client pentru debugging (ex: Missing Cloudinary config)
+    res.status(500).json({ message: `Eroare la încărcarea logo-ului: ${err.message}` });
   }
 });
 
@@ -240,7 +241,7 @@ router.post("/:businessId/cover", businessAuth, upload.single("cover"), async (r
   try {
     const { businessId } = req.params;
     console.log("[BusinessPortal] POST cover - Starting upload for business:", businessId);
-    
+
     if (!req.file) {
       console.log("[BusinessPortal] No file in request");
       return res.status(400).json({ message: "Niciun fișier încărcat" });
@@ -255,9 +256,9 @@ router.post("/:businessId/cover", businessAuth, upload.single("cover"), async (r
       }
     }
 
-    // Upload pe Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, "businesses/covers");
-    
+    // Upload pe Cloudinary cu rezoluție specifică pentru cover (1200x600)
+    const result = await uploadToCloudinary(req.file.buffer, "cover");
+
     // Salvează URL-ul în DB
     await pool.query("UPDATE businesses SET cover_image_url = $1 WHERE id = $2", [result.url, businessId]);
 
@@ -276,7 +277,7 @@ router.post("/:businessId/images", businessAuth, upload.single("image"), async (
   try {
     const { businessId } = req.params;
     console.log("[BusinessPortal] POST gallery image - Starting upload for business:", businessId);
-    
+
     if (!req.file) {
       console.log("[BusinessPortal] No file in request");
       return res.status(400).json({ message: "Niciun fișier încărcat" });
@@ -287,13 +288,13 @@ router.post("/:businessId/images", businessAuth, upload.single("image"), async (
       "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1",
       [businessId]
     );
-    
+
     if (parseInt(countRes.rows[0].cnt) >= 8) {
       return res.status(400).json({ message: "Maximum 8 imagini permise" });
     }
 
-    // Upload pe Cloudinary
-    const result = await uploadToCloudinary(req.file.buffer, "businesses/gallery");
+    // Upload pe Cloudinary cu rezoluție specifică pentru galerie (1200x800)
+    const result = await uploadToCloudinary(req.file.buffer, "gallery");
 
     // Salvează în DB
     const sortOrder = parseInt(countRes.rows[0].cnt) + 1;
@@ -376,17 +377,18 @@ router.get("/:businessId/offers", businessAuth, async (req, res) => {
 router.post("/:businessId/offers", businessAuth, upload.single("image"), async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { 
-      title, description, discount_type, discount_value, conditions, 
+    const {
+      title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
     } = req.body;
-    
+
     console.log("[BusinessPortal] Creating offer:", title);
 
     let logoUrl = null;
     if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, "offers");
+      // Upload pe Cloudinary cu rezoluție specifică pentru ofertă (800x600)
+      const result = await uploadToCloudinary(req.file.buffer, "offer");
       logoUrl = result.url;
     }
 
@@ -453,20 +455,20 @@ router.get("/:businessId/offers/:offerId", businessAuth, async (req, res) => {
 router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"), async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    
+
     console.log("[BusinessPortal] PUT offer - Business:", businessId, "Offer:", offerId);
 
     const checkRes = await pool.query(
       "SELECT id, logo_url FROM offers WHERE id = $1 AND business_id = $2",
       [offerId, businessId]
     );
-    
+
     if (checkRes.rows.length === 0) {
       return res.status(404).json({ message: "Oferta nu există" });
     }
 
-    const { 
-      title, description, discount_type, discount_value, conditions, 
+    const {
+      title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
     } = req.body;
@@ -507,7 +509,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       updates.push(`is_active = $${paramIndex++}`);
       values.push(is_active === 'true' || is_active === true);
     }
-    
+
     if (booking_type !== undefined) {
       updates.push(`booking_type = $${paramIndex++}`);
       values.push(booking_type || 'inherit');
@@ -540,9 +542,9 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
         }
       }
 
-      // Upload noua imagine
-      const uploadResult = await uploadToCloudinary(req.file.buffer, "offers");
-      updates.push(`logo_url = $${paramIndex++}`);
+      // Upload noua imagine cu rezoluție specifică pentru ofertă (800x600)
+      const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
+      updates.push(`logo_url = ${paramIndex++}`);
       values.push(uploadResult.url);
     }
 

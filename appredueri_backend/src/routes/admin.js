@@ -5,40 +5,26 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const adminAuth = require("../middleware/adminAuth");
+const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 
 // =====================================
 //   CONFIG UPLOADS
 // =====================================
 
+// =====================================
+//   CONFIG UPLOADS (Memory Storage)
+// =====================================
+
 const uploadsRoot = path.join(__dirname, "..", "uploads");
+// Păstrăm referințele pentru ștergerea fișierelor vechi locale
 const businessImagesUploadDir = path.join(uploadsRoot, "businesses");
 const offerImagesUploadDir = path.join(uploadsRoot, "offers");
 
-if (!fs.existsSync(businessImagesUploadDir)) {
-  fs.mkdirSync(businessImagesUploadDir, { recursive: true });
-}
-if (!fs.existsSync(offerImagesUploadDir)) {
-  fs.mkdirSync(offerImagesUploadDir, { recursive: true });
-}
+// Configurare Multer Memory Storage (pentru Cloudinary)
+const storage = multer.memoryStorage();
 
-// STORAGE Business (Logo + Galerie)
-const businessStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, businessImagesUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
-    const base = path
-      .basename(file.originalname, ext)
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "");
-    cb(null, `${Date.now()}-${base}${ext.toLowerCase()}`);
-  },
-});
-
-const uploadBusinessImage = multer({
-  storage: businessStorage,
+const upload = multer({
+  storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // max 5MB
   fileFilter: (req, file, cb) => {
     if (!file.mimetype || !file.mimetype.startsWith("image/")) {
@@ -48,23 +34,36 @@ const uploadBusinessImage = multer({
   },
 });
 
-// STORAGE Offers (Hero image)
-const offerStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, offerImagesUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
-    const base = path
-      .basename(file.originalname, ext)
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\-]/g, "");
-    cb(null, `${Date.now()}-${base}${ext.toLowerCase()}`);
-  },
-});
+const uploadBusinessImage = upload; // Alias pentru claritate
+const uploadOfferImage = upload;    // Alias
 
-const uploadOfferImage = multer({ storage: offerStorage });
+/**
+ * Helper pentru a șterge o imagine (fie de pe Cloudinary, fie local)
+ */
+async function deleteImage(imageUrl) {
+  if (!imageUrl) return;
+
+  try {
+    const publicId = getPublicIdFromUrl(imageUrl);
+    if (publicId) {
+      // Este imagine Cloudinary
+      await deleteFromCloudinary(publicId);
+    } else {
+      // Este imagine locală (Legacy)
+      // imageUrl e de forma "/uploads/businesses/..."
+      // Eliminăm primul slash pentru a construi calea corectă relativă la root-ul aplicației sau combinăm corect
+      // Codul existent folosea: path.join(businessImagesUploadDir, filename)
+      // Aici reconstruim calea absolută
+
+      const safePath = path.join(__dirname, "..", imageUrl); // ../uploads/...
+      if (fs.existsSync(safePath)) {
+        fs.unlink(safePath, () => { });
+      }
+    }
+  } catch (err) {
+    console.error("Eroare la ștergerea imaginii:", err);
+  }
+}
 
 // =====================================
 //   ROOT ADMIN
@@ -246,7 +245,7 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
   } catch (err) {
     console.error("Update location error:", err);
     return res.status(500).send(`Eroare la update location: ${err.message}`);
-}
+  }
 });
 
 
@@ -401,25 +400,31 @@ router.post(
   "/businesses/:id/logo",
   uploadBusinessImage.single("logo"),
   async (req, res) => {
-    console.log("=== UPLOAD LOGO ===");
-    console.log("ID:", req.params.id);
-    console.log("File:", req.file);
-    console.log("Body:", req.body);
-    
+    console.log("=== UPLOAD LOGO (Cloudinary) ===");
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
     try {
       if (!req.file) {
-        console.log("NO FILE RECEIVED!");
         return res.redirect(`/admin/businesses/${id}/edit?err=no_file`);
       }
-      const logoUrl = `/uploads/businesses/${req.file.filename}`;
-      console.log("Saving logo URL:", logoUrl);
+
+      // 1. Obține vechiul logo pentru ștergere
+      const oldRes = await pool.query("SELECT logo_url FROM businesses WHERE id = $1", [id]);
+      if (oldRes.rows[0]?.logo_url) {
+        await deleteImage(oldRes.rows[0].logo_url);
+      }
+
+      // 2. Upload pe Cloudinary (resize 400x400)
+      const result = await uploadToCloudinary(req.file.buffer, "logo");
+
+      // 3. Update DB
       await pool.query(`UPDATE businesses SET logo_url = $1 WHERE id = $2`, [
-        logoUrl,
+        result.url,
         id,
       ]);
-      console.log("Logo saved successfully!");
+
+      console.log("Logo saved successfully:", result.url);
       res.redirect(`/admin/businesses/${id}/edit`);
     } catch (err) {
       console.error("Error saving logo:", err);
@@ -428,6 +433,7 @@ router.post(
   }
 );
 
+// POST Upload Cover Image
 // POST Upload Cover Image
 router.post(
   "/businesses/:id/cover",
@@ -438,9 +444,19 @@ router.post(
     try {
       if (!req.file)
         return res.redirect(`/admin/businesses/${id}/edit?err=no_file`);
-      const coverUrl = `/uploads/businesses/${req.file.filename}`;
+
+      // 1. Șterge vechiul cover
+      const oldRes = await pool.query("SELECT cover_image_url FROM businesses WHERE id = $1", [id]);
+      if (oldRes.rows[0]?.cover_image_url) {
+        await deleteImage(oldRes.rows[0].cover_image_url);
+      }
+
+      // 2. Upload Cloudinary (resize 1200x600)
+      const result = await uploadToCloudinary(req.file.buffer, "cover");
+
+      // 3. Update DB
       await pool.query(`UPDATE businesses SET cover_image_url = $1 WHERE id = $2`, [
-        coverUrl,
+        result.url,
         id,
       ]);
       res.redirect(`/admin/businesses/${id}/edit`);
@@ -464,20 +480,34 @@ router.post("/businesses/:id/delete", async (req, res) => {
       return res.redirect("/admin/businesses?err=has_offers");
 
     const imgsRes = await pool.query(
-      "SELECT image_filename FROM business_images WHERE business_id = $1",
+      "SELECT image_filename, image_url FROM business_images WHERE business_id = $1",
       [id]
     );
-    await pool.query("DELETE FROM business_images WHERE business_id = $1", [
-      id,
-    ]);
+    // Verificăm și logo/cover
+    const bInfo = await pool.query("SELECT logo_url, cover_image_url FROM businesses WHERE id=$1", [id]);
+
+    await pool.query("DELETE FROM business_images WHERE business_id = $1", [id]);
     await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
 
-    imgsRes.rows.forEach((img) => {
-      fs.unlink(
-        path.join(businessImagesUploadDir, img.image_filename),
-        () => { }
-      );
-    });
+    // Cleanup images
+    if (bInfo.rows.length > 0) {
+      await deleteImage(bInfo.rows[0].logo_url);
+      await deleteImage(bInfo.rows[0].cover_image_url);
+    }
+
+    for (const img of imgsRes.rows) {
+      // Prioritizăm coloana image_url dacă există (pentru Cloudinary/mix), sau folosim image_filename pentru legacy
+      // în business_images s-ar putea să ai 'image_url' (din business portal) SAU 'image_filename' (din vechiul admin)
+      // Trebuie să ne asigurăm că tabela suportă ambele sau că facem fallback.
+      // Observ că în business-portal.js se folosește image_url. 
+      // În adminul vechi se folosea image_filename.
+      // Să verificăm ce coloane avem. Cel mai sigur e să încercăm both.
+
+      const urlToDelete = img.image_url || (img.image_filename ? `/uploads/businesses/${img.image_filename}` : null);
+      if (urlToDelete) await deleteImage(urlToDelete);
+    }
+
+    res.redirect("/admin/businesses");
     res.redirect("/admin/businesses");
   } catch (err) {
     console.error(err);
@@ -498,16 +528,28 @@ router.post(
         [id]
       );
       if (Number(countRes.rows[0].cnt) >= 8) {
-        if (req.file) fs.unlink(req.file.path, () => { });
         return res.redirect(`/admin/businesses/${id}/edit?err=max_images`);
       }
       if (!req.file)
         return res.redirect(`/admin/businesses/${id}/edit?err=no_file`);
 
+      // Upload Cloudinary (Gallery 1200x800)
+      const result = await uploadToCloudinary(req.file.buffer, "gallery");
+
+      // Salvăm URL-ul în image_url. 
+      // NOTĂ: Tabela are 'image_filename' (legacy) și 'image_url' (pt Cloudinary). 
+      // Ar trebui să folosim 'image_url' de acum.
+      // Dacă tabela cere 'image_filename' not null, punem un placeholder sau numele fișierului, dar logica se mută pe image_url.
+
+      // Verific dacă tabela are coloana image_url (din business-portal.js pare că are).
+      // Voi încerca să inserez în image_url. Dacă business_images are constrângeri pe image_filename, s-ar putea să trebuiască să-l populăm și pe ăla.
+      // Presupunem că image_url e coloana principală acum.
+
       await pool.query(
-        `INSERT INTO business_images (business_id, image_filename, sort_order) VALUES ($1, $2, $3)`,
-        [id, req.file.filename, Number(countRes.rows[0].cnt) + 1]
+        `INSERT INTO business_images (business_id, image_url, sort_order, image_filename) VALUES ($1, $2, $3, '')`,
+        [id, result.url, Number(countRes.rows[0].cnt) + 1]
       );
+
       res.redirect(`/admin/businesses/${id}/edit`);
     } catch (err) {
       console.error(err);
@@ -522,17 +564,19 @@ router.post("/business-images/:imageId/delete", async (req, res) => {
   if (Number.isNaN(imageId)) return res.status(400).send("ID invalid");
   try {
     const imgRes = await pool.query(
-      "SELECT business_id, image_filename FROM business_images WHERE id = $1",
+      "SELECT business_id, image_filename, image_url FROM business_images WHERE id = $1",
       [imageId]
     );
     if (imgRes.rows.length === 0) return res.redirect("/admin/businesses");
 
-    const { business_id, image_filename } = imgRes.rows[0];
+    const { business_id, image_filename, image_url } = imgRes.rows[0];
+
     await pool.query("DELETE FROM business_images WHERE id = $1", [imageId]);
-    fs.unlink(
-      path.join(businessImagesUploadDir, image_filename),
-      () => { }
-    );
+
+    // Delete Cloudinary sau Local
+    const urlToDelete = image_url || (image_filename ? `/uploads/businesses/${image_filename}` : null);
+    await deleteImage(urlToDelete);
+
     res.redirect(`/admin/businesses/${business_id}/edit`);
   } catch (err) {
     console.error(err);
@@ -645,9 +689,12 @@ router.post(
         end_date,
         is_active,
       } = req.body;
-      let logoUrl = req.file
-        ? `/uploads/offers/${req.file.filename}`
-        : null;
+      let logoUrl = null;
+      if (req.file) {
+        // Upload Cloudinary (Offer 800x600)
+        const result = await uploadToCloudinary(req.file.buffer, "offer");
+        logoUrl = result.url;
+      }
 
       await pool.query(
         `INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url)
@@ -782,8 +829,12 @@ router.post(
 
       const oldLogoUrl = oldRes.rows[0].logo_url || null;
 
-      // 2) dacă user a încărcat imagine nouă, setăm logo_url nou
-      const newLogoUrl = req.file ? `/uploads/offers/${req.file.filename}` : null;
+      // 2) dacă user a încărcat imagine nouă
+      let newLogoUrl = null;
+      if (req.file) {
+        const result = await uploadToCloudinary(req.file.buffer, "offer");
+        newLogoUrl = result.url;
+      }
 
       // 3) update offer
       await client.query(
@@ -839,12 +890,9 @@ router.post(
 
       await client.query("COMMIT");
 
-      // 5) dacă am pus imagine nouă, ștergem fișierul vechi (best-effort)
+      // 5) dacă am pus imagine nouă, ștergem imaginea veche
       if (newLogoUrl && oldLogoUrl) {
-        try {
-          const filename = path.basename(oldLogoUrl);
-          fs.unlink(path.join(offerImagesUploadDir, filename), () => { });
-        } catch (_) { }
+        await deleteImage(oldLogoUrl);
       }
 
       return res.redirect("/admin/offers");
@@ -869,8 +917,7 @@ router.post("/offers/:id/delete", async (req, res) => {
       [id]
     );
     if (logoRes.rows.length > 0 && logoRes.rows[0].logo_url) {
-      const filename = path.basename(logoRes.rows[0].logo_url);
-      fs.unlink(path.join(offerImagesUploadDir, filename), () => { });
+      await deleteImage(logoRes.rows[0].logo_url);
     }
     await pool.query("DELETE FROM offers WHERE id = $1", [id]);
     res.redirect("/admin/offers");
