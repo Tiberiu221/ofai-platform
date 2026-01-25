@@ -272,7 +272,8 @@
 <body>
   <a href="/admin/businesses" class="back-link">&larr; Înapoi la lista de business-uri</a>
 
-  <h1>Editează business: <%= business.name %></h1>
+  <h1>Editează business: <%= business.name %>
+  </h1>
 
   <!-- INFO BOX -->
   <div class="info-box">
@@ -284,205 +285,284 @@
     </p>
   </div>
 
-  <% if (error==="max_images") { %>
+  <% if (error==="max_images" ) { %>
     <div class="error-msg">
       Acest business are deja 8 poze în galerie. Șterge una dacă vrei să adaugi alta.
     </div>
-  <% } else if (error==="no_file") { %>
-    <div class="error-msg">
-      Te rog să alegi un fișier imagine înainte de a încărca.
-    </div>
-  <% } %>
-
-  <!-- ============================================ -->
-  <!-- SECȚIUNE: DATE BUSINESS -->
-  <!-- ============================================ -->
-  <h2 class="section-title">📝 Date business</h2>
-
-  <form method="post" action="/admin/businesses/<%= business.id %>/edit">
-    <label for="name">Nume</label>
-    <input type="text" id="name" name="name" required value="<%= business.name || '' %>" />
-
-    <label for="city_id">Oraș</label>
-    <select id="city_id" name="city_id" required>
-      <option value="">Selectează oraș</option>
-      <% (cities || []).forEach(function(c) { %>
-        <option value="<%= c.id %>" <%= String(c.id) === String(business.city_id) ? 'selected' : '' %>>
-          <%= c.name %>
-        </option>
-      <% }); %>
-    </select>
-
-    <label for="category_id">Categorie</label>
-    <select id="category_id" name="category_id" required>
-      <option value="">Selectează categorie</option>
-      <% (categories || []).forEach(function(cat) { %>
-        <option value="<%= cat.id %>" <%= String(cat.id) === String(business.category_id) ? 'selected' : '' %>>
-          <%= cat.name %>
-        </option>
-      <% }); %>
-    </select>
-
-    <label for="address">Adresă</label>
-    <input type="text" id="address" name="address" value="<%= business.address || '' %>" />
-
-    <label for="lat">Latitudine</label>
-    <input type="text" id="lat" name="lat" value="<%= business.lat || '' %>" />
-
-    <label for="lng">Longitudine</label>
-    <input type="text" id="lng" name="lng" value="<%= business.lng || '' %>" />
-
-    <label for="phone">Telefon</label>
-    <input type="text" id="phone" name="phone" value="<%= business.phone || '' %>" />
-
-    <label for="website">Website</label>
-    <input type="text" id="website" name="website" value="<%= business.website || '' %>" />
-
-    <!-- SECȚIUNE LOCAȚII & PROGRAMĂRI -->
-    <h2 class="section-title">📍 Locații &amp; programări</h2>
-
-    <% const locs = (typeof locations !== 'undefined' && locations) ? locations : []; %>
-
-    <% if (locs.length === 0) { %>
-      <p style="color: #6b7280;">Nu există locații definite pentru acest business încă.</p>
-    <% } else { %>
-      <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
-        Pentru fiecare locație poți seta cum se fac rezervările/programările.
-      </p>
-
-      <% locs.forEach(function(loc, index) { %>
-        <div class="location-card">
-          <h3>📍 Locația <%= index + 1 %> <span style="color:#9ca3af;font-weight:normal;">(ID: <%= loc.id %>)</span></h3>
-
-          <input type="hidden" name="locations[<%= loc.id %>][id]" value="<%= loc.id %>" />
-
-          <label>Adresă locație</label>
-          <input type="text" name="locations[<%= loc.id %>][address]" value="<%= loc.address || '' %>" />
-
-          <label>Telefon locație</label>
-          <input type="text" name="locations[<%= loc.id %>][phone]" value="<%= loc.phone || '' %>" />
-
-          <label>Tip programare</label>
-          <select name="locations[<%= loc.id %>][booking_type]">
-            <% const bt = (loc.booking_type || 'NONE'); %>
-            <option value="NONE" <%= bt === 'NONE' ? 'selected' : '' %>>Fără programări din aplicație</option>
-            <option value="PHONE" <%= bt === 'PHONE' ? 'selected' : '' %>>Telefon</option>
-            <option value="WHATSAPP" <%= bt === 'WHATSAPP' ? 'selected' : '' %>>WhatsApp</option>
-            <option value="URL" <%= bt === 'URL' ? 'selected' : '' %>>Link extern (platformă rezervări)</option>
-            <option value="FORM" <%= bt === 'FORM' ? 'selected' : '' %>>Formular simplu în aplicație</option>
-            <option value="IN_APP" <%= bt === 'IN_APP' ? 'selected' : '' %>>Programare completă în aplicație</option>
-          </select>
-
-          <label>Telefon pentru programări</label>
-          <input type="text" name="locations[<%= loc.id %>][booking_phone]" value="<%= loc.booking_phone || '' %>" />
-
-          <label>Număr WhatsApp</label>
-          <input type="text" name="locations[<%= loc.id %>][booking_whatsapp]" value="<%= loc.booking_whatsapp || '' %>" />
-
-          <label>URL rezervări</label>
-          <input type="text" name="locations[<%= loc.id %>][booking_url]" value="<%= loc.booking_url || '' %>" />
-
-          <label>Instrucțiuni pentru programări</label>
-          <textarea name="locations[<%= loc.id %>][booking_instructions]" rows="2"><%= loc.booking_instructions || '' %></textarea>
+    <% } else if (error==="no_file" ) { %>
+      <div class="error-msg">
+        Te rog să alegi un fișier imagine înainte de a încărca.
+      </div>
+      <% } else if (error==="user_not_found" ) { %>
+        <div class="error-msg">
+          Nu am găsit niciun utilizator cu acest email. Asigură-te că este înregistrat în aplicație.
         </div>
-      <% }); %>
-    <% } %>
-
-    <button type="submit">💾 Salvează modificările</button>
-  </form>
-
-  <hr />
-
-  <!-- ============================================ -->
-  <!-- SECȚIUNE: LOGO (pentru carduri) -->
-  <!-- ============================================ -->
-  <h2 class="section-title">🎨 Logo business</h2>
-
-  <div class="image-upload-section">
-    <h3>Logo <span class="dimension-hint">200 x 200 px</span></h3>
-    <p class="subtitle">Folosit în carduri (BusinessCard, OfferCard) - imagine pătrată</p>
-    
-    <div class="image-preview-wrapper">
-      <div class="image-preview image-preview-logo">
-        <% if (business.logo_url) { %>
-          <img src="<%= business.logo_url %>" alt="Logo business" />
-        <% } else { %>
-          <div class="image-placeholder image-placeholder-logo">
-            Fără logo
-          </div>
         <% } %>
-      </div>
 
-      <div class="upload-form">
-        <form method="post" action="/admin/businesses/<%= business.id %>/logo" enctype="multipart/form-data">
-          <input type="file" id="logo" name="logo" accept="image/*" required />
-          <button type="submit" class="button-upload">📤 Încarcă logo nou</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================ -->
-  <!-- SECȚIUNE: COVER IMAGE (pentru pagina business) -->
-  <!-- ============================================ -->
-  <h2 class="section-title">🖼️ Cover Image (Banner)</h2>
-
-  <div class="image-upload-section">
-    <h3>Cover / Banner <span class="dimension-hint">1200 x 600 px</span></h3>
-    <p class="subtitle">Afișat ca banner mare pe pagina business-ului - aspect ratio 2:1</p>
-    
-    <div class="image-preview-wrapper">
-      <div class="image-preview image-preview-cover">
-        <% if (business.cover_image_url) { %>
-          <img src="<%= business.cover_image_url %>" alt="Cover business" />
-        <% } else { %>
-          <div class="image-placeholder image-placeholder-cover">
-            Fără cover image
+          <!-- ============================================ -->
+          <!-- SECȚIUNE: ADMINISTRATORI / PROPRIETARI -->
+          <!-- ============================================ -->
+          <h2 class="section-title">🔑 Administratori / Proprietari</h2>
+          <div class="info-box">
+            <p>Acești utilizatori vor avea acces la panoul "Business Portal" din aplicație pentru a gestiona acest
+              business.</p>
           </div>
-        <% } %>
-      </div>
 
-      <div class="upload-form">
-        <form method="post" action="/admin/businesses/<%= business.id %>/cover" enctype="multipart/form-data">
-          <input type="file" id="cover" name="cover" accept="image/*" required />
-          <button type="submit" class="button-upload">📤 Încarcă cover nou</button>
-        </form>
-      </div>
-    </div>
-  </div>
+          <% const ownerList=(typeof owners !=='undefined' && owners) ? owners : []; %>
 
-  <hr />
+            <% if (ownerList.length> 0) { %>
+              <table style="width:100%; border-collapse: collapse; margin-bottom: 16px;">
+                <thead>
+                  <tr style="background:#f3f4f6; text-align:left;">
+                    <th style="padding:8px; border:1px solid #e5e7eb;">Email</th>
+                    <th style="padding:8px; border:1px solid #e5e7eb;">Nume</th>
+                    <th style="padding:8px; border:1px solid #e5e7eb; width: 100px;">Acțiuni</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% ownerList.forEach(function(o) { %>
+                    <tr>
+                      <td style="padding:8px; border:1px solid #e5e7eb;">
+                        <%= o.email %>
+                      </td>
+                      <td style="padding:8px; border:1px solid #e5e7eb;">
+                        <%= o.first_name %>
+                          <%= o.last_name %>
+                      </td>
+                      <td style="padding:8px; border:1px solid #e5e7eb; text-align:center;">
+                        <form method="post" action="/admin/businesses/<%= business.id %>/owners/<%= o.id %>/delete"
+                          onsubmit="return confirm('Revoci accesul pentru <%= o.email %>?');" style="margin:0;">
+                          <button type="submit" class="button-small" style="margin:0;">Revocă</button>
+                        </form>
+                      </td>
+                    </tr>
+                    <% }); %>
+                </tbody>
+              </table>
+              <% } else { %>
+                <p style="color: #ef4444; font-weight: bold;">⚠️ Acest business nu are niciun administrator atribuit!
+                </p>
+                <% } %>
 
-  <!-- ============================================ -->
-  <!-- SECȚIUNE: GALERIE IMAGINI -->
-  <!-- ============================================ -->
-  <h2 class="section-title">📷 Galerie imagini (max 8)</h2>
+                  <div
+                    style="background:#f9fafb; border:1px solid #e5e7eb; padding:12px; border-radius:8px; margin-bottom:32px;">
+                    <h3 style="margin-top:0; font-size:14px; margin-bottom:8px;">Adaugă administrator nou</h3>
+                    <form method="post" action="/admin/businesses/<%= business.id %>/owners"
+                      style="display:flex; gap:10px; align-items:flex-end;">
+                      <div style="flex:1;">
+                        <label for="owner_email" style="margin-top:0; font-size:12px;">Email utilizator</label>
+                        <input type="text" id="owner_email" name="email" placeholder="ex: utilizator@gmail.com" required
+                          style="margin-top:2px;">
+                      </div>
+                      <button type="submit" class="button-upload" style="margin:0; padding: 8px 16px;">➕ Adaugă
+                        Acces</button>
+                    </form>
+                  </div>
 
-  <% if (images && images.length > 0) { %>
-    <div class="images-grid">
-      <% images.forEach(function(img) { %>
-        <div class="image-item">
-          <img src="/uploads/businesses/<%= img.image_filename %>" alt="Poza business" />
-          <form method="post" action="/admin/business-images/<%= img.id %>/delete"
-            onsubmit="return confirm('Sigur vrei să ștergi această poză?');">
-            <button type="submit" class="button-small">🗑️ Șterge</button>
-          </form>
-        </div>
-      <% }); %>
-    </div>
-  <% } else { %>
-    <p style="color: #6b7280;">Nu există poze în galerie pentru acest business.</p>
-  <% } %>
+                  <hr />
+                  <!-- ============================================ -->
+                  <h2 class="section-title">📝 Date business</h2>
 
-  <div class="image-upload-section" style="margin-top: 16px;">
-    <h3>Adaugă poză în galerie</h3>
-    <p class="subtitle">Poze suplimentare pentru slider-ul de pe pagina business-ului</p>
-    
-    <form method="post" action="/admin/businesses/<%= business.id %>/images" enctype="multipart/form-data">
-      <input type="file" id="image" name="image" accept="image/*" required />
-      <button type="submit" class="button-upload">📤 Încarcă în galerie</button>
-    </form>
-  </div>
+                  <form method="post" action="/admin/businesses/<%= business.id %>/edit">
+                    <label for="name">Nume</label>
+                    <input type="text" id="name" name="name" required value="<%= business.name || '' %>" />
+
+                    <label for="city_id">Oraș</label>
+                    <select id="city_id" name="city_id" required>
+                      <option value="">Selectează oraș</option>
+                      <% (cities || []).forEach(function(c) { %>
+                        <option value="<%= c.id %>" <%=String(c.id)===String(business.city_id) ? 'selected' : '' %>>
+                          <%= c.name %>
+                        </option>
+                        <% }); %>
+                    </select>
+
+                    <label for="category_id">Categorie</label>
+                    <select id="category_id" name="category_id" required>
+                      <option value="">Selectează categorie</option>
+                      <% (categories || []).forEach(function(cat) { %>
+                        <option value="<%= cat.id %>" <%=String(cat.id)===String(business.category_id) ? 'selected' : ''
+                          %>>
+                          <%= cat.name %>
+                        </option>
+                        <% }); %>
+                    </select>
+
+                    <label for="address">Adresă</label>
+                    <input type="text" id="address" name="address" value="<%= business.address || '' %>" />
+
+                    <label for="lat">Latitudine</label>
+                    <input type="text" id="lat" name="lat" value="<%= business.lat || '' %>" />
+
+                    <label for="lng">Longitudine</label>
+                    <input type="text" id="lng" name="lng" value="<%= business.lng || '' %>" />
+
+                    <label for="phone">Telefon</label>
+                    <input type="text" id="phone" name="phone" value="<%= business.phone || '' %>" />
+
+                    <label for="website">Website</label>
+                    <input type="text" id="website" name="website" value="<%= business.website || '' %>" />
+
+                    <!-- SECȚIUNE LOCAȚII & PROGRAMĂRI -->
+                    <h2 class="section-title">📍 Locații &amp; programări</h2>
+
+                    <% const locs=(typeof locations !=='undefined' && locations) ? locations : []; %>
+
+                      <% if (locs.length===0) { %>
+                        <p style="color: #6b7280;">Nu există locații definite pentru acest business încă.</p>
+                        <% } else { %>
+                          <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+                            Pentru fiecare locație poți seta cum se fac rezervările/programările.
+                          </p>
+
+                          <% locs.forEach(function(loc, index) { %>
+                            <div class="location-card">
+                              <h3>📍 Locația <%= index + 1 %> <span style="color:#9ca3af;font-weight:normal;">(ID: <%=
+                                      loc.id %>)</span></h3>
+
+                              <input type="hidden" name="locations[<%= loc.id %>][id]" value="<%= loc.id %>" />
+
+                              <label>Adresă locație</label>
+                              <input type="text" name="locations[<%= loc.id %>][address]"
+                                value="<%= loc.address || '' %>" />
+
+                              <label>Telefon locație</label>
+                              <input type="text" name="locations[<%= loc.id %>][phone]"
+                                value="<%= loc.phone || '' %>" />
+
+                              <label>Tip programare</label>
+                              <select name="locations[<%= loc.id %>][booking_type]">
+                                <% const bt=(loc.booking_type || 'NONE' ); %>
+                                  <option value="NONE" <%=bt==='NONE' ? 'selected' : '' %>>Fără programări din aplicație
+                                  </option>
+                                  <option value="PHONE" <%=bt==='PHONE' ? 'selected' : '' %>>Telefon</option>
+                                  <option value="WHATSAPP" <%=bt==='WHATSAPP' ? 'selected' : '' %>>WhatsApp</option>
+                                  <option value="URL" <%=bt==='URL' ? 'selected' : '' %>>Link extern (platformă
+                                    rezervări)</option>
+                                  <option value="FORM" <%=bt==='FORM' ? 'selected' : '' %>>Formular simplu în aplicație
+                                  </option>
+                                  <option value="IN_APP" <%=bt==='IN_APP' ? 'selected' : '' %>>Programare completă în
+                                    aplicație</option>
+                              </select>
+
+                              <label>Telefon pentru programări</label>
+                              <input type="text" name="locations[<%= loc.id %>][booking_phone]"
+                                value="<%= loc.booking_phone || '' %>" />
+
+                              <label>Număr WhatsApp</label>
+                              <input type="text" name="locations[<%= loc.id %>][booking_whatsapp]"
+                                value="<%= loc.booking_whatsapp || '' %>" />
+
+                              <label>URL rezervări</label>
+                              <input type="text" name="locations[<%= loc.id %>][booking_url]"
+                                value="<%= loc.booking_url || '' %>" />
+
+                              <label>Instrucțiuni pentru programări</label>
+                              <textarea name="locations[<%= loc.id %>][booking_instructions]"
+                                rows="2"><%= loc.booking_instructions || '' %></textarea>
+                            </div>
+                            <% }); %>
+                              <% } %>
+
+                                <button type="submit">💾 Salvează modificările</button>
+                  </form>
+
+                  <hr />
+
+                  <!-- ============================================ -->
+                  <!-- SECȚIUNE: LOGO (pentru carduri) -->
+                  <!-- ============================================ -->
+                  <h2 class="section-title">🎨 Logo business</h2>
+
+                  <div class="image-upload-section">
+                    <h3>Logo <span class="dimension-hint">200 x 200 px</span></h3>
+                    <p class="subtitle">Folosit în carduri (BusinessCard, OfferCard) - imagine pătrată</p>
+
+                    <div class="image-preview-wrapper">
+                      <div class="image-preview image-preview-logo">
+                        <% if (business.logo_url) { %>
+                          <img src="<%= business.logo_url %>" alt="Logo business" />
+                          <% } else { %>
+                            <div class="image-placeholder image-placeholder-logo">
+                              Fără logo
+                            </div>
+                            <% } %>
+                      </div>
+
+                      <div class="upload-form">
+                        <form method="post" action="/admin/businesses/<%= business.id %>/logo"
+                          enctype="multipart/form-data">
+                          <input type="file" id="logo" name="logo" accept="image/*" required />
+                          <button type="submit" class="button-upload">📤 Încarcă logo nou</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- ============================================ -->
+                  <!-- SECȚIUNE: COVER IMAGE (pentru pagina business) -->
+                  <!-- ============================================ -->
+                  <h2 class="section-title">🖼️ Cover Image (Banner)</h2>
+
+                  <div class="image-upload-section">
+                    <h3>Cover / Banner <span class="dimension-hint">1200 x 600 px</span></h3>
+                    <p class="subtitle">Afișat ca banner mare pe pagina business-ului - aspect ratio 2:1</p>
+
+                    <div class="image-preview-wrapper">
+                      <div class="image-preview image-preview-cover">
+                        <% if (business.cover_image_url) { %>
+                          <img src="<%= business.cover_image_url %>" alt="Cover business" />
+                          <% } else { %>
+                            <div class="image-placeholder image-placeholder-cover">
+                              Fără cover image
+                            </div>
+                            <% } %>
+                      </div>
+
+                      <div class="upload-form">
+                        <form method="post" action="/admin/businesses/<%= business.id %>/cover"
+                          enctype="multipart/form-data">
+                          <input type="file" id="cover" name="cover" accept="image/*" required />
+                          <button type="submit" class="button-upload">📤 Încarcă cover nou</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr />
+
+                  <!-- ============================================ -->
+                  <!-- SECȚIUNE: GALERIE IMAGINI -->
+                  <!-- ============================================ -->
+                  <h2 class="section-title">📷 Galerie imagini (max 8)</h2>
+
+                  <% if (images && images.length> 0) { %>
+                    <div class="images-grid">
+                      <% images.forEach(function(img) { %>
+                        <div class="image-item">
+                          <img src="/uploads/businesses/<%= img.image_filename %>" alt="Poza business" />
+                          <form method="post" action="/admin/business-images/<%= img.id %>/delete"
+                            onsubmit="return confirm('Sigur vrei să ștergi această poză?');">
+                            <button type="submit" class="button-small">🗑️ Șterge</button>
+                          </form>
+                        </div>
+                        <% }); %>
+                    </div>
+                    <% } else { %>
+                      <p style="color: #6b7280;">Nu există poze în galerie pentru acest business.</p>
+                      <% } %>
+
+                        <div class="image-upload-section" style="margin-top: 16px;">
+                          <h3>Adaugă poză în galerie</h3>
+                          <p class="subtitle">Poze suplimentare pentru slider-ul de pe pagina business-ului</p>
+
+                          <form method="post" action="/admin/businesses/<%= business.id %>/images"
+                            enctype="multipart/form-data">
+                            <input type="file" id="image" name="image" accept="image/*" required />
+                            <button type="submit" class="button-upload">📤 Încarcă în galerie</button>
+                          </form>
+                        </div>
 
 </body>
+
 </html>

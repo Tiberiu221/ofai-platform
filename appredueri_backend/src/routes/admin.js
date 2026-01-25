@@ -160,6 +160,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       categoriesResult,
       imagesResult,
       locationsResult,
+      ownersResult, // NEW
     ] = await Promise.all([
       pool.query("SELECT * FROM businesses WHERE id = $1", [id]),
       pool.query("SELECT id, name FROM cities ORDER BY name"),
@@ -169,25 +170,20 @@ router.get("/businesses/:id/edit", async (req, res) => {
         [id]
       ),
       pool.query(
-        `
-        SELECT
-          bl.id,
-          bl.address,
-          bl.lat,
-          bl.lng,
-          bl.phone,
-          bl.city_id,
-          bl.booking_type,
-          bl.booking_phone,
-          bl.booking_whatsapp,
-          bl.booking_url,
-          bl.booking_instructions,
-          c.name AS city_name
+        `SELECT
+          bl.id, bl.address, bl.lat, bl.lng, bl.phone, bl.city_id, bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions, c.name AS city_name
         FROM business_locations bl
         LEFT JOIN cities c ON c.id = bl.city_id
         WHERE bl.business_id = $1
-        ORDER BY bl.id ASC
-        `,
+        ORDER BY bl.id ASC`,
+        [id]
+      ),
+      // Fetch owners
+      pool.query(
+        `SELECT u.id, u.email, u.first_name, u.last_name 
+         FROM user_businesses ub 
+         JOIN users u ON u.id = ub.user_id 
+         WHERE ub.business_id = $1`,
         [id]
       ),
     ]);
@@ -202,6 +198,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       categories: categoriesResult.rows,
       images: imagesResult.rows,
       locations: locationsResult.rows,
+      owners: ownersResult.rows, // SEND TO VIEW
       error: req.query.err || "",
     });
   } catch (err) {
@@ -581,6 +578,63 @@ router.post("/business-images/:imageId/delete", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Eroare stergere imagine");
+  }
+});
+
+// =====================================
+//   OWNERSHIP MANAGEMENT
+// =====================================
+
+// POST Add Owner
+router.post("/businesses/:id/owners", async (req, res) => {
+  const businessId = parseInt(req.params.id, 10);
+  const { email } = req.body;
+
+  if (Number.isNaN(businessId) || !email) {
+    return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_data`);
+  }
+
+  try {
+    // 1. Find user by email
+    const userRes = await pool.query("SELECT id FROM users WHERE email = $1", [email.trim()]);
+
+    if (userRes.rows.length === 0) {
+      return res.redirect(`/admin/businesses/${businessId}/edit?err=user_not_found`);
+    }
+
+    const userId = userRes.rows[0].id;
+
+    // 2. Insert into user_businesses
+    await pool.query(
+      `INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [userId, businessId]
+    );
+
+    res.redirect(`/admin/businesses/${businessId}/edit`);
+  } catch (err) {
+    console.error("Add owner error:", err);
+    res.redirect(`/admin/businesses/${businessId}/edit?err=server_error`);
+  }
+});
+
+// POST Remove Owner
+router.post("/businesses/:id/owners/:userId/delete", async (req, res) => {
+  const businessId = parseInt(req.params.id, 10);
+  const userId = parseInt(req.params.userId, 10);
+
+  if (Number.isNaN(businessId) || Number.isNaN(userId)) {
+    return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_id`);
+  }
+
+  try {
+    await pool.query(
+      "DELETE FROM user_businesses WHERE business_id = $1 AND user_id = $2",
+      [businessId, userId]
+    );
+    res.redirect(`/admin/businesses/${businessId}/edit`);
+  } catch (err) {
+    console.error("Remove owner error:", err);
+    res.redirect(`/admin/businesses/${businessId}/edit?err=server_error`);
   }
 });
 
