@@ -209,11 +209,11 @@ router.delete("/me", auth, async (req, res) => {
     // 2. Șterge punctele
     await pool.query("DELETE FROM user_points WHERE user_id = $1", [userId]);
     
-    // 3. Șterge favorite
-    await pool.query("DELETE FROM favorites WHERE user_id = $1", [userId]);
+    // 3. Șterge favorite (tabelul corect: favorite_offers)
+    await pool.query("DELETE FROM favorite_offers WHERE user_id = $1", [userId]);
     
-    // 4. Șterge subscriptions
-    await pool.query("DELETE FROM subscriptions WHERE user_id = $1", [userId]);
+    // 4. Șterge subscriptions (tabelul corect: followed_businesses)
+    await pool.query("DELETE FROM followed_businesses WHERE user_id = $1", [userId]);
     
     // 5. Anonimizează review-urile (păstrăm conținutul dar eliminăm legătura cu user-ul)
     // Alternativ: DELETE FROM reviews WHERE user_id = $1
