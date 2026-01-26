@@ -294,8 +294,16 @@
         Te rog să alegi un fișier imagine înainte de a încărca.
       </div>
       <% } else if (error==="user_not_found" ) { %>
+      <div class="error-msg">
+      Nu am găsit niciun utilizator cu acest email. Asigură-te că este înregistrat în aplicație.
+      </div>
+      <% } else if (error==="already_owner" ) { %>
         <div class="error-msg">
-          Nu am găsit niciun utilizator cu acest email. Asigură-te că este înregistrat în aplicație.
+          Acest utilizator are deja acces la acest business.
+        </div>
+        <% } else if (error==="server_error" ) { %>
+        <div class="error-msg">
+          A apărut o eroare. Verifică log-urile pentru detalii.
         </div>
         <% } %>
 

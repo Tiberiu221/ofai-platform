@@ -582,59 +582,135 @@ router.post("/business-images/:imageId/delete", async (req, res) => {
 });
 
 // =====================================
-//   OWNERSHIP MANAGEMENT
+//   OWNERSHIP MANAGEMENT (Business Administrators)
 // =====================================
 
-// POST Add Owner
+// POST Add Owner - Adaugă un utilizator ca administrator al business-ului
 router.post("/businesses/:id/owners", async (req, res) => {
   const businessId = parseInt(req.params.id, 10);
   const { email } = req.body;
 
-  if (Number.isNaN(businessId) || !email) {
+  console.log("[Admin] Add owner request:", { businessId, email });
+
+  if (Number.isNaN(businessId)) {
+    console.log("[Admin] Invalid business ID");
+    return res.redirect(`/admin/businesses?err=invalid_id`);
+  }
+
+  if (!email || !email.trim()) {
+    console.log("[Admin] Email not provided");
     return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_data`);
   }
 
+  const client = await pool.connect();
   try {
-    // 1. Find user by email
-    const userRes = await pool.query("SELECT id FROM users WHERE email = $1", [email.trim()]);
+    await client.query("BEGIN");
+
+    // 1. Găsește utilizatorul după email
+    const userRes = await client.query(
+      "SELECT id, role FROM users WHERE LOWER(email) = LOWER($1)",
+      [email.trim()]
+    );
 
     if (userRes.rows.length === 0) {
+      console.log("[Admin] User not found:", email);
+      await client.query("ROLLBACK");
       return res.redirect(`/admin/businesses/${businessId}/edit?err=user_not_found`);
     }
 
     const userId = userRes.rows[0].id;
+    const currentRole = userRes.rows[0].role;
+    console.log("[Admin] Found user:", { userId, currentRole });
 
-    // 2. Insert into user_businesses
-    await pool.query(
-      `INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+    // 2. Verifică dacă relația există deja
+    const existingRes = await client.query(
+      "SELECT id FROM user_businesses WHERE user_id = $1 AND business_id = $2",
       [userId, businessId]
     );
 
+    if (existingRes.rows.length > 0) {
+      console.log("[Admin] User already has access to this business");
+      await client.query("ROLLBACK");
+      return res.redirect(`/admin/businesses/${businessId}/edit?err=already_owner`);
+    }
+
+    // 3. Inserează în user_businesses
+    await client.query(
+      "INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)",
+      [userId, businessId]
+    );
+    console.log("[Admin] Added user_businesses record");
+
+    // 4. Actualizează rolul utilizatorului la 'business_owner' dacă era 'user'
+    if (currentRole === 'user') {
+      await client.query(
+        "UPDATE users SET role = 'business_owner' WHERE id = $1",
+        [userId]
+      );
+      console.log("[Admin] Updated user role to business_owner");
+    }
+
+    await client.query("COMMIT");
+    console.log("[Admin] Owner added successfully");
+
     res.redirect(`/admin/businesses/${businessId}/edit`);
   } catch (err) {
-    console.error("Add owner error:", err);
+    await client.query("ROLLBACK");
+    console.error("[Admin] Add owner error:", err.message);
+    console.error("[Admin] Full error:", err);
     res.redirect(`/admin/businesses/${businessId}/edit?err=server_error`);
+  } finally {
+    client.release();
   }
 });
 
-// POST Remove Owner
+// POST Remove Owner - Revocă accesul unui utilizator la business
 router.post("/businesses/:id/owners/:userId/delete", async (req, res) => {
   const businessId = parseInt(req.params.id, 10);
   const userId = parseInt(req.params.userId, 10);
+
+  console.log("[Admin] Remove owner request:", { businessId, userId });
 
   if (Number.isNaN(businessId) || Number.isNaN(userId)) {
     return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_id`);
   }
 
+  const client = await pool.connect();
   try {
-    await pool.query(
+    await client.query("BEGIN");
+
+    // 1. Șterge relația
+    await client.query(
       "DELETE FROM user_businesses WHERE business_id = $1 AND user_id = $2",
       [businessId, userId]
     );
+    console.log("[Admin] Deleted user_businesses record");
+
+    // 2. Verifică dacă utilizatorul mai are alte business-uri
+    const otherBusinessesRes = await client.query(
+      "SELECT COUNT(*) as cnt FROM user_businesses WHERE user_id = $1",
+      [userId]
+    );
+
+    // 3. Dacă nu mai are niciun business, revert rol la 'user'
+    if (parseInt(otherBusinessesRes.rows[0].cnt) === 0) {
+      await client.query(
+        "UPDATE users SET role = 'user' WHERE id = $1 AND role = 'business_owner'",
+        [userId]
+      );
+      console.log("[Admin] Reverted user role to 'user' (no more businesses)");
+    }
+
+    await client.query("COMMIT");
+    console.log("[Admin] Owner removed successfully");
+
     res.redirect(`/admin/businesses/${businessId}/edit`);
   } catch (err) {
-    console.error("Remove owner error:", err);
+    await client.query("ROLLBACK");
+    console.error("[Admin] Remove owner error:", err.message);
     res.redirect(`/admin/businesses/${businessId}/edit?err=server_error`);
+  } finally {
+    client.release();
   }
 });
 
