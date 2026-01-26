@@ -131,8 +131,13 @@ app.use("/my-businesses", businessPortalRouter);
 // ============================================
 app.use((err, req, res, next) => {
   console.error(`[Error] ${err.message}`);
-  if (!isProduction) {
-    console.error(err.stack);
+  console.error(`[Error] Stack: ${err.stack}`);
+  
+  // Pentru rutele admin, afișăm eroarea completă (debugging)
+  if (req.path.startsWith('/admin')) {
+    return res.status(err.status || 500).send(
+      `<h1>Eroare Admin</h1><pre>${err.message}\n\n${err.stack}</pre><br><a href="/admin/businesses">Înapoi</a>`
+    );
   }
   
   res.status(err.status || 500).json({
