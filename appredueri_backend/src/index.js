@@ -3,8 +3,14 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
+// Sentry - MUST be initialized before anything else
+const { initSentry, sentryRequestHandler, sentryErrorHandler, sentryUserMiddleware } = require("./services/sentry");
+
 // Middleware Auth
 const adminAuth = require("./middleware/adminAuth");
+
+// Rate Limiting
+const { generalLimiter, authLimiter, passwordResetLimiter } = require("./middleware/rateLimiter");
 
 // Import Rute
 const authRouter = require("./routes/auth");
@@ -22,6 +28,14 @@ const reviewsRoutes = require("./routes/reviews");
 const app = express();
 const PORT = process.env.PORT || 4000;
 const isProduction = process.env.NODE_ENV === "production";
+
+// ============================================
+// SENTRY INITIALIZATION (must be first!)
+// ============================================
+initSentry(app);
+
+// Sentry request handler (must be first middleware)
+app.use(sentryRequestHandler());
 
 // ============================================
 // CORS CONFIGURATION
@@ -76,10 +90,18 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ============================================
+// RATE LIMITING (Global)
+// ============================================
+app.use(generalLimiter);
+
+// ============================================
 // MIDDLEWARE-URI GLOBALE
 // ============================================
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Sentry user context (după ce avem acces la req.user)
+app.use(sentryUserMiddleware);
 
 // Configurare View Engine (EJS pentru Admin)
 app.set("view engine", "ejs");
@@ -115,6 +137,10 @@ app.get("/health", (req, res) => {
 // ============================================
 // MONTARE RUTE
 // ============================================
+// Auth routes cu rate limiting specific
+app.use("/auth/login", authLimiter);
+app.use("/auth/register", authLimiter);
+app.use("/auth/forgot-password", passwordResetLimiter);
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/favorites", favoritesRouter);
@@ -134,6 +160,9 @@ app.use("/my-businesses", businessPortalRouter);
 // ============================================
 // ERROR HANDLING
 // ============================================
+// Sentry error handler (must be before other error handlers)
+app.use(sentryErrorHandler());
+
 app.use((err, req, res, next) => {
   console.error(`[Error] ${err.message}`);
   console.error(`[Error] Stack: ${err.stack}`);

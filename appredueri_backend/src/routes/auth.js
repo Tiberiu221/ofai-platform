@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth");
+const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 
 // ATENȚIE: în producție pune un JWT_SECRET real în env.
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
@@ -58,6 +59,11 @@ router.post("/register", async (req, res) => {
     );
 
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "7d" });
+
+    // Trimite email de bun venit (async, nu blochează răspunsul)
+    sendWelcomeEmail(user.email, user.first_name).catch(err => {
+      console.error("[Auth] Failed to send welcome email:", err);
+    });
 
     // La register, punctele sunt sigur 0
     return res.status(201).json({
@@ -157,22 +163,20 @@ router.post("/forgot-password", async (req, res) => {
       [user.id, resetCode, expiresAt]
     );
 
-    // În DEVELOPMENT: afișăm codul în consolă
-    // În PRODUCȚIE: aici ar trebui să trimitem email
-    console.log("\n========================================");
-    console.log("🔐 PASSWORD RESET CODE");
-    console.log("========================================");
-    console.log(`Email: ${user.email}`);
-    console.log(`Code: ${resetCode}`);
-    console.log(`Expires: ${expiresAt.toLocaleString()}`);
-    console.log("========================================\n");
-
-    // TODO: În producție, integrează cu SendGrid/Mailgun:
-    // await sendEmail({
-    //   to: user.email,
-    //   subject: 'Resetare parolă AppReduceri',
-    //   text: `Codul tău de resetare este: ${resetCode}. Expiră în 15 minute.`
-    // });
+    // Trimite email cu codul de resetare
+    const emailResult = await sendPasswordResetEmail(user.email, resetCode, user.first_name);
+    
+    // În development, afișăm codul și în consolă pentru testare
+    if (process.env.NODE_ENV !== 'production') {
+      console.log("\n========================================");
+      console.log("🔐 PASSWORD RESET CODE (dev mode)");
+      console.log("========================================");
+      console.log(`Email: ${user.email}`);
+      console.log(`Code: ${resetCode}`);
+      console.log(`Expires: ${expiresAt.toLocaleString()}`);
+      console.log(`Email sent: ${emailResult.success}`);
+      console.log("========================================\n");
+    }
 
     return res.json({ 
       message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare.",
