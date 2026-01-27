@@ -79,7 +79,7 @@ function initSentry(app) {
  * Middleware pentru a seta contextul utilizatorului în Sentry
  */
 function sentryUserMiddleware(req, res, next) {
-  if (req.user) {
+  if (process.env.SENTRY_DSN && req.user) {
     Sentry.setUser({
       id: req.user.id,
       email: req.user.email,
@@ -93,6 +93,11 @@ function sentryUserMiddleware(req, res, next) {
  * Trebuie adăugat DUPĂ toate rutele
  */
 function sentryErrorHandler() {
+  // Returnează no-op middleware dacă Sentry nu e configurat
+  if (!process.env.SENTRY_DSN) {
+    return (err, req, res, next) => next(err);
+  }
+  
   return Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
       // Capturează doar erori 500+
@@ -109,6 +114,11 @@ function sentryErrorHandler() {
  * Trebuie adăugat ÎNAINTEA tuturor rutelor
  */
 function sentryRequestHandler() {
+  // Returnează no-op middleware dacă Sentry nu e configurat
+  if (!process.env.SENTRY_DSN) {
+    return (req, res, next) => next();
+  }
+  
   return Sentry.Handlers.requestHandler({
     // Include informații despre request
     request: ["headers", "method", "url", "query_string"],

@@ -19,12 +19,14 @@ const generalLimiter = rateLimit({
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   // Skip rate limiting pentru admin routes (au deja Basic Auth)
   skip: (req) => req.path.startsWith("/admin"),
+  // Disable validation warning for default keyGenerator
+  validate: { xForwardedForHeader: false },
 });
 
 /**
  * Rate limiter strict pentru autentificare
  * Previne brute force attacks
- * 5 încercări pe 15 minute per IP
+ * 10 încercări pe 15 minute per IP
  */
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minute
@@ -35,12 +37,8 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Identifică utilizatorii și prin email dacă e disponibil
-  keyGenerator: (req) => {
-    // Folosim IP + email pentru a preveni atacuri distribuite
-    const email = req.body?.email?.toLowerCase() || "";
-    return `${req.ip}-${email}`;
-  },
+  // Folosim default keyGenerator (IP-based)
+  validate: { xForwardedForHeader: false },
 });
 
 /**
@@ -56,10 +54,8 @@ const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    const email = req.body?.email?.toLowerCase() || req.ip;
-    return `reset-${email}`;
-  },
+  // Folosim default keyGenerator (IP-based)
+  validate: { xForwardedForHeader: false },
 });
 
 /**

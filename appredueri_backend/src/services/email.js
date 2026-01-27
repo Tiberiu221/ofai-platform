@@ -4,7 +4,11 @@ const { Resend } = require("resend");
 // EMAIL SERVICE (Resend)
 // ============================================
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Inițializează Resend doar dacă avem API key
+// Folosim un placeholder dacă nu există pentru a evita crash-ul la import
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 const FROM_EMAIL = process.env.FROM_EMAIL || "AppReduceri <noreply@ofai.ro>";
 const APP_NAME = "AppReduceri";
@@ -14,8 +18,8 @@ const APP_NAME = "AppReduceri";
  */
 async function sendWelcomeEmail(to, firstName) {
   // Skip dacă nu avem API key configurat
-  if (!process.env.RESEND_API_KEY) {
-    console.log(`[Email] Skipping welcome email (no API key): ${to}`);
+  if (!resend) {
+    console.log(`[Email] Skipping welcome email (no API key configured): ${to}`);
     return { success: false, reason: "no_api_key" };
   }
 
@@ -86,8 +90,8 @@ async function sendWelcomeEmail(to, firstName) {
  */
 async function sendPasswordResetEmail(to, resetCode, firstName) {
   // Skip dacă nu avem API key configurat
-  if (!process.env.RESEND_API_KEY) {
-    console.log(`[Email] Skipping reset email (no API key): ${to}`);
+  if (!resend) {
+    console.log(`[Email] Skipping reset email (no API key configured): ${to}`);
     console.log(`[Email] Reset code would be: ${resetCode}`);
     return { success: false, reason: "no_api_key" };
   }
@@ -157,8 +161,8 @@ async function sendPasswordResetEmail(to, resetCode, firstName) {
  * Trimite email generic (pentru alte use cases)
  */
 async function sendEmail({ to, subject, html, text }) {
-  if (!process.env.RESEND_API_KEY) {
-    console.log(`[Email] Skipping email (no API key): ${to}`);
+  if (!resend) {
+    console.log(`[Email] Skipping email (no API key configured): ${to}`);
     return { success: false, reason: "no_api_key" };
   }
 
