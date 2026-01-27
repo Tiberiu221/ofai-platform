@@ -52,6 +52,11 @@ const corsOptions = {
       return callback(null, true);
     }
     
+    // Permite orice subdomeniu Railway (pentru admin panel și preview)
+    if (origin.endsWith('.up.railway.app')) {
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else if (!isProduction) {
