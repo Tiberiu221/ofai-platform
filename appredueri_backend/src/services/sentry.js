@@ -5,6 +5,7 @@ const Sentry = require("@sentry/node");
 // ============================================
 
 const isProduction = process.env.NODE_ENV === "production";
+let sentryInitialized = false;
 
 /**
  * Inițializează Sentry pentru error tracking
@@ -22,56 +23,20 @@ function initSentry(app) {
     environment: isProduction ? "production" : "development",
     
     // Performance Monitoring
-    tracesSampleRate: isProduction ? 0.1 : 1.0, // 10% în producție, 100% în dev
-    
-    // Profiling (opțional, pentru performance insights)
-    profilesSampleRate: isProduction ? 0.1 : 1.0,
-    
-    // Filtrează informații sensibile
-    beforeSend(event) {
-      // Nu trimite în development dacă nu e necesar
-      if (!isProduction && !process.env.SENTRY_DEBUG) {
-        return null;
-      }
-      
-      // Elimină date sensibile din request
-      if (event.request) {
-        // Elimină headers sensibile
-        if (event.request.headers) {
-          delete event.request.headers.authorization;
-          delete event.request.headers.cookie;
-        }
-        
-        // Elimină body-uri cu parole
-        if (event.request.data) {
-          const data = typeof event.request.data === 'string' 
-            ? JSON.parse(event.request.data) 
-            : event.request.data;
-          
-          if (data.password) data.password = "[REDACTED]";
-          if (data.currentPassword) data.currentPassword = "[REDACTED]";
-          if (data.newPassword) data.newPassword = "[REDACTED]";
-          
-          event.request.data = JSON.stringify(data);
-        }
-      }
-      
-      return event;
-    },
+    tracesSampleRate: isProduction ? 0.1 : 1.0,
     
     // Ignoră anumite erori comune
     ignoreErrors: [
-      // Erori de rețea normale
       "ECONNRESET",
       "ETIMEDOUT",
       "ECONNREFUSED",
-      // Erori de autentificare (nu sunt erori reale)
       "jwt expired",
       "invalid token",
       "jwt malformed",
     ],
   });
 
+  sentryInitialized = true;
   console.log("[Sentry] Initialized successfully");
 }
 
@@ -79,7 +44,7 @@ function initSentry(app) {
  * Middleware pentru a seta contextul utilizatorului în Sentry
  */
 function sentryUserMiddleware(req, res, next) {
-  if (process.env.SENTRY_DSN && req.user) {
+  if (sentryInitialized && req.user) {
     Sentry.setUser({
       id: req.user.id,
       email: req.user.email,
@@ -90,52 +55,30 @@ function sentryUserMiddleware(req, res, next) {
 
 /**
  * Error handler pentru Sentry
- * Trebuie adăugat DUPĂ toate rutele
+ * Capturează erorile și le trimite la Sentry
  */
 function sentryErrorHandler() {
-  // Returnează no-op middleware dacă Sentry nu e configurat
-  if (!process.env.SENTRY_DSN) {
-    return (err, req, res, next) => next(err);
-  }
-  
-  return Sentry.Handlers.errorHandler({
-    shouldHandleError(error) {
-      // Capturează doar erori 500+
-      if (error.status && error.status < 500) {
-        return false;
-      }
-      return true;
-    },
-  });
+  return (err, req, res, next) => {
+    if (sentryInitialized && (!err.status || err.status >= 500)) {
+      Sentry.captureException(err);
+    }
+    next(err);
+  };
 }
 
 /**
  * Request handler pentru Sentry
- * Trebuie adăugat ÎNAINTEA tuturor rutelor
+ * No-op în versiunea nouă - Sentry captează automat
  */
 function sentryRequestHandler() {
-  // Returnează no-op middleware dacă Sentry nu e configurat
-  if (!process.env.SENTRY_DSN) {
-    return (req, res, next) => next();
-  }
-  
-  return Sentry.Handlers.requestHandler({
-    // Include informații despre request
-    request: ["headers", "method", "url", "query_string"],
-    // Nu include body-ul (poate conține date sensibile)
-    include: {
-      data: false,
-      cookies: false,
-      ip: true,
-    },
-  });
+  return (req, res, next) => next();
 }
 
 /**
  * Capturează o eroare manual
  */
 function captureException(error, context = {}) {
-  if (!process.env.SENTRY_DSN) {
+  if (!sentryInitialized) {
     console.error("[Sentry] Would capture:", error.message);
     return;
   }
@@ -162,7 +105,7 @@ function captureException(error, context = {}) {
  * Capturează un mesaj manual
  */
 function captureMessage(message, level = "info") {
-  if (!process.env.SENTRY_DSN) {
+  if (!sentryInitialized) {
     console.log(`[Sentry] Would capture message (${level}):`, message);
     return;
   }
