@@ -24,6 +24,7 @@ const usersRouter = require("./routes/users");
 const adminRouter = require("./routes/admin");
 const businessPortalRouter = require("./routes/business-portal");
 const reviewsRoutes = require("./routes/reviews");
+const pushTokensRouter = require("./routes/push-tokens");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -150,6 +151,7 @@ app.use("/categories", categoriesRouter);
 app.use("/offers", offersRouter);
 app.use("/businesses", businessesRouter);
 app.use("/reviews", reviewsRoutes);
+app.use("/push-tokens", pushTokensRouter);
 
 // Rute Admin (Securizat cu Basic Auth)
 app.use("/admin", adminAuth, adminRouter);
