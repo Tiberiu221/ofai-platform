@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(tree:*)",
-      "Bash(npx expo install expo-notifications expo-device)"
+      "Bash(npx expo install expo-notifications expo-device)",
+      "Bash(curl:*)"
     ]
   }
 }
