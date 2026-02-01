@@ -72,7 +72,7 @@ router.get("/", async (req, res) => {
         b.logo_url,
         c.name AS city_name,
         cat.name AS category_name,
-        SUM(CASE WHEN o.is_active = TRUE THEN 1 ELSE 0 END) AS active_offers_count,
+        SUM(CASE WHEN o.is_active = TRUE AND o.end_date >= CURRENT_DATE THEN 1 ELSE 0 END) AS active_offers_count,
         COALESCE(AVG(r.rating), 0) as rating_avg,
         COUNT(r.id) as rating_count
       FROM businesses b
