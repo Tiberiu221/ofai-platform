@@ -3,7 +3,8 @@
     "allow": [
       "Bash(tree:*)",
       "Bash(npx expo install expo-notifications expo-device)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(python3:*)"
     ]
   }
 }
