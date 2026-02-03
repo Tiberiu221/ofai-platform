@@ -19,11 +19,11 @@ const LLM_CONFIG = {
   model: process.env.LLM_MODEL || 'claude-3-haiku-20240307',
   
   // Generation Parameters
-  maxTokens: parseInt(process.env.LLM_MAX_TOKENS) || 300,
+  maxTokens: process.env.LLM_MAX_TOKENS ? parseInt(process.env.LLM_MAX_TOKENS) : 300,
   
   // Temperature: Controls randomness (0.0 = deterministic, 1.0 = creative)
   // For summaries, we want consistency, so keep it low (0.2-0.4)
-  temperature: parseFloat(process.env.LLM_TEMPERATURE) || 0.3,
+  temperature: process.env.LLM_TEMPERATURE ? parseFloat(process.env.LLM_TEMPERATURE) : 0.3,
   
   // Retry Configuration (for handling rate limits and transient errors)
   retry: {
