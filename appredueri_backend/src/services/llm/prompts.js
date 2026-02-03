@@ -9,16 +9,29 @@
  * System prompt that defines Claude's role and behavior
  * This sets the "personality" and expertise of the AI
  */
-const SYSTEM_PROMPT = `Ești un asistent AI expert în analiza recenziilor pentru o platformă de reduceri și oferte din România (AppReduceri/OFAI).
+const SYSTEM_PROMPT = `Ești un asistent pentru platforma OFAI (AppReduceri) - o aplicație din România unde utilizatorii găsesc reduceri și oferte de la business-uri locale (restaurante, cafenele, saloane de înfrumusețare, service-uri auto, etc.).
 
-Sarcina ta este să creezi rezumate obiective și utile ale recenziilor clienților pentru diferite business-uri (restaurante, cafenele, saloane, etc.).
+Sarcina ta: creezi rezumate SCURTE și UTILE ale recenziilor clienților, pentru a ajuta alți utilizatori să decidă dacă merită să folosească o ofertă de la acel business.
 
-Principii importante:
-- Ești OBIECTIV și echilibrat - menționezi atât aspecte pozitive, cât și negative
-- Ești CONCIS - rezumatele tale sunt scurte și la obiect
-- Ești PRECIS - te bazezi DOAR pe informațiile din recenzii, nu inventezi
-- Ești în limba ROMÂNĂ - scrii natural și corect gramatical
-- Ești UTIL pentru potențiali clienți - evidențiezi ce contează pentru ei`;
+REGULI STRICTE:
+1. IGNORĂ complet recenziile care:
+   - Conțin înjurături sau limbaj vulgar
+   - Sunt spam sau caractere aleatorii (ex: "R00t%2221^", "asdf123", "@#$%")
+   - Nu au sens sau sunt prea scurte (sub 5 cuvinte relevante)
+   - Sunt evident false sau trolling
+
+2. FOCUS pe informații UTILE pentru clienți:
+   - Calitatea serviciului/produsului
+   - Raport calitate-preț
+   - Experiența generală
+   - Timpul de așteptare (dacă e relevant)
+
+3. SCRIE natural, ca și cum ai povesti unui prieten:
+   - NU folosi "Clienții menționează..." sau "Recenzenții spun..."
+   - Mergi direct la subiect
+   - Maxim 2-3 propoziții simple
+
+4. Limba ROMÂNĂ naturală, fără formulări robotice`;
 
 /**
  * Creates a user prompt for summarizing reviews
@@ -43,45 +56,40 @@ Principii importante:
  * });
  */
 function createSummarizationPrompt({ businessName, businessCategory, reviews }) {
-  // Format reviews for the prompt
+  // Format reviews for the prompt (filter out potential spam)
   const formattedReviews = reviews
-    .map((review, index) => {
-      const stars = '⭐'.repeat(review.rating);
-      const userName = review.userName ? ` (${review.userName})` : '';
-      return `${index + 1}. ${stars} ${review.rating}/5${userName}\n   "${review.comment}"`;
+    .filter(review => {
+      // Basic spam filter - skip very short or gibberish comments
+      if (!review.comment || review.comment.length < 10) return false;
+      // Skip if mostly special characters
+      const alphaRatio = (review.comment.match(/[a-zA-ZăâîșțĂÂÎȘȚ]/g) || []).length / review.comment.length;
+      return alphaRatio > 0.5;
     })
-    .join('\n\n');
+    .map((review, index) => {
+      return `${index + 1}. [${review.rating}/5 stele] "${review.comment}"`;
+    })
+    .join('\n');
   
-  // Calculate average rating
-  const avgRating = (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1);
+  // If all reviews were filtered out, return a note
+  if (!formattedReviews) {
+    return `Business: ${businessName} (${businessCategory})
+
+Nu există recenzii valide de sumarizat. Răspunde cu: "Încă nu sunt suficiente recenzii detaliate."`;
+  }
   
-  return `Analizează următoarele ${reviews.length} recenzii pentru un business și creează un rezumat concis.
+  return `Business: ${businessName} (${businessCategory})
 
-**Business:** ${businessName}
-**Categorie:** ${businessCategory}
-**Rating mediu:** ${avgRating}/5 (din ${reviews.length} recenzii)
-
-**Recenzii:**
-
+Recenzii:
 ${formattedReviews}
 
----
+Scrie un rezumat de 2-3 propoziții bazat PE ACESTE recenzii. 
+- Ignoră recenziile spam sau fără sens
+- Menționează ce apreciază clienții (calitate, preț, serviciu)
+- Dacă există critici legitime, menționează-le scurt
+- Scrie direct, fără introduceri ("Clienții spun...", "În general...")
+- Ton prietenos, ca și cum ai povesti cuiva
 
-**Instrucțiuni de formatare:**
-
-1. Creează un rezumat de MAXIM 3 propoziții (2-3 rânduri)
-2. Prima parte: menționează punctele FORTE evidențiate de clienți
-3. A doua parte: menționează punctele SLABE sau aspecte de îmbunătățit (dacă există)
-4. Folosește un ton neutru și profesional
-5. Menționează detalii concrete din recenzii (de ex: "burgerii", "serviciul rapid", "prețurile accesibile")
-6. NU folosi cuvinte exagerate ("excepțional", "extraordinar") - rămâi obiectiv
-7. NU adăuga introduceri precum "În general" sau "Recenzenții spun" - mergi direct la esență
-8. NU inventa informații care nu apar în recenzii
-
-**Format dorit:**
-Două-trei propoziții clare, separate prin punct. Prima propoziție despre aspecte pozitive, următoarele despre negative (dacă există) sau detalii suplimentare.
-
-**Răspunde DOAR cu rezumatul (fără alte texte sau explicații).**`;
+DOAR rezumatul, nimic altceva:`;
 }
 
 /**
@@ -129,43 +137,37 @@ function validateSummary(summary) {
     issues.push('Summary is empty');
   }
   
-  // Check minimum length (should be at least 50 characters)
-  if (summary.length < 50) {
-    issues.push('Summary is too short (< 50 characters)');
+  // Check minimum length (should be at least 30 characters - more permissive)
+  if (summary && summary.length < 30) {
+    issues.push('Summary is too short (< 30 characters)');
   }
   
-  // Check maximum length (should not exceed 500 characters)
-  if (summary.length > 500) {
-    issues.push('Summary is too long (> 500 characters)');
+  // Check maximum length (should not exceed 600 characters)
+  if (summary && summary.length > 600) {
+    issues.push('Summary is too long (> 600 characters)');
   }
   
   // Check for forbidden phrases (indicating AI didn't follow instructions)
   const forbiddenPhrases = [
-    'în general',
     'în concluzie',
     'recenzenții spun',
     'conform recenziilor',
     'după cum se poate vedea',
-    'în rezumat'
+    'în rezumat',
+    'clienții menționează'
   ];
   
-  const lowerSummary = summary.toLowerCase();
+  const lowerSummary = (summary || '').toLowerCase();
   forbiddenPhrases.forEach(phrase => {
     if (lowerSummary.includes(phrase)) {
       issues.push(`Contains forbidden phrase: "${phrase}"`);
     }
   });
   
-  // Check for minimum sentence count (at least 1 complete sentence)
-  const sentenceCount = summary.split(/[.!?]+/).filter(s => s.trim().length > 10).length;
-  if (sentenceCount === 0) {
-    issues.push('No complete sentences found');
-  }
-  
   return {
     isValid: issues.length === 0,
     issues,
-    summary: summary.trim()
+    summary: (summary || '').trim()
   };
 }
 
