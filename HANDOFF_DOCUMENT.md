@@ -1,5 +1,5 @@
 # OFAI (AppReduceri) - Handoff Document
-## Data: 27 Ianuarie 2026 (Actualizat)
+## Data: 3 Februarie 2026 (Actualizat)
 
 ---
 
@@ -178,8 +178,12 @@ appredueri_backend/
 appredueri_mobile/
 ├── app/
 │   ├── _layout.tsx              # + usePushNotifications hook
+│   ├── (tabs)/
+│   │   └── index.tsx            # Fix filtru categorii pentru users logați
+│   ├── business/
+│   │   └── [id].tsx             # Toast în loc de Alert pentru reviews
 │   ├── hooks/
-│   │   └── usePushNotifications.ts  # NOU - Push notifications hook
+│   │   └── usePushNotifications.ts  # Push notifications hook
 │   ├── auth/
 │   │   ├── login.tsx            # + buton "Explorează fără cont"
 │   │   ├── register.tsx         # + buton "Explorează fără cont"
@@ -188,9 +192,13 @@ appredueri_mobile/
 │
 ├── components/
 │   ├── Dock.tsx                 # Native Dock (iOS/Android)
-│   └── Dock.web.tsx             # Web Dock (framer-motion)
+│   ├── Dock.web.tsx             # Web Dock (framer-motion)
+│   ├── BusinessMap.native.tsx   # Mapbox hartă cu markers
+│   ├── AuroraBackground.tsx     # + Vignete în background
+│   └── Toast.tsx                # Toast notifications component
 │
-├── app.json                     # + expo-notifications plugin
+├── app.config.js                # NOU - Înlocuiește app.json (suport env vars)
+├── eas.json                     # EAS Build configuration
 │
 └── web/
     └── index.html               # Custom HTML pentru dark theme
@@ -228,6 +236,23 @@ git push
 psql "postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway"
 ```
 
+### EAS Build & Update
+```bash
+cd C:\Users\tiber\Desktop\AppReduceri\appredueri_mobile
+
+# Build APK pentru testare
+eas build --platform android --profile preview
+
+# OTA Update (după ce ai build instalat)
+eas update --branch preview --message "descriere modificări"
+
+# Vezi builds
+eas build:list
+
+# Pornește emulator și app
+npx expo start --android
+```
+
 ---
 
 ## 🔧 SERVICII EXTERNE CONFIGURATE
@@ -263,11 +288,13 @@ psql "postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway"
 - [x] Email transactional (Resend)
 - [x] Indexuri DB pentru performanță
 
-### 🔄 Faza 2 - Engagement (ÎN PROGRES)
+### ✅ Faza 2 - Engagement (COMPLETĂ)
 - [x] Push notifications (Expo Push API)
-- [ ] Nearby offers (sortare după distanță)
-- [ ] Căutare îmbunătățită
-- [ ] Sistem de puncte
+- [x] EAS Build configurat (Android APK)
+- [x] OTA Updates cu `eas update`
+- [x] Mapbox hartă integrată
+- [x] Sistem de puncte (recenzii)
+- [x] Nearby offers (sortare după distanță)
 
 ### 📋 Faza 3 - Monetizare (TODO)
 - [ ] Stripe integration
@@ -285,10 +312,10 @@ psql "postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway"
 
 ## 🎯 PRIORITĂȚI URMĂTOARE (Sugestii)
 
-1. **Nearby offers** - sortare oferte după distanță utilizator
-2. **Android APK** - build cu EAS (`eas build -p android`)
-3. **Căutare** - search pe nume business/ofertă
-4. **MX Record** - adaugă prin Vercel CLI pentru SPF complet
+1. **iOS Build** - necesită Mac sau cont Apple Developer ($99/an)
+2. **Play Store** - publicare APK pe Google Play
+3. **Resend DNS** - verifică MX/SPF records în Vercel pentru email delivery
+4. **GitHub Actions** - automatizare `eas update` la git push
 
 ---
 
@@ -296,19 +323,80 @@ psql "postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway"
 
 1. **Două medii separate:** Localhost și Producție au baze de date diferite. Ce uploadezi local NU apare pe ofai.ro și invers.
 
-2. **Dock logic:** 
+2. **Dock logic:**
    - Pe web: `Dock.web.tsx` e selectat automat de bundler
    - Pe native: `Dock.tsx` e folosit
    - Root layout (`_layout.tsx`) adaugă Dock pentru paginile non-tabs pe web
    - Tabs layout (`(tabs)/_layout.tsx`) gestionează Dock pentru tab-uri
 
-3. **API URL detection:** `app/config.ts` detectează automat dacă e producție sau development bazat pe `NODE_ENV` și `Platform.OS`
+3. **API URL detection:** `app/config.ts` detectează automat dacă e producție sau development bazat pe `__DEV__` și `Platform.OS`
+   - APK/Production: `https://ofai-production.up.railway.app`
+   - Development Web: `http://localhost:4000`
+   - Development Mobile: `http://192.168.0.30:4000`
 
 4. **Cloudinary:** Imaginile din producție sunt stocate pe Cloudinary. Local folosește folderul `uploads/` din backend.
+
+5. **EAS Update vs EAS Build:**
+   - `eas build` = creează APK nou (trebuie reinstalat)
+   - `eas update` = OTA update instant (doar JS/assets, fără reinstalare)
+   - După `eas update`, închide și redeschide app-ul pentru a primi update
+
+6. **Mapbox:**
+   - Access Token (public): în `BusinessMap.native.tsx`
+   - Download Token (secret): în `app.config.js` și `eas.json`
+   - Nu funcționează în Expo Go (necesită build nativ)
+
+7. **iOS Emulator:** Necesită Mac cu Xcode. Nu se poate emula iOS pe Windows.
 
 ---
 
 ## 📅 ISTORIC ACTUALIZĂRI
+
+### 3 Februarie 2026
+**EAS Build & Mobile App:**
+
+1. **EAS Build configurat** (`eas.json`, `app.config.js`)
+   - Converted `app.json` → `app.config.js` pentru env vars
+   - Mapbox token configurat pentru builds
+   - Profiluri: development, preview, production
+   - Android APK funcțional
+
+2. **OTA Updates funcționale**
+   - Comanda: `eas update --branch preview --message "descriere"`
+   - Updates instant pe telefoane fără reinstalare
+   - Necesită închidere/redeschidere app pentru aplicare
+
+3. **Mapbox hartă** (`components/BusinessMap.native.tsx`)
+   - Hartă dark mode cu business markers
+   - Badge pentru oferte active (iconiță pricetag)
+   - Bottom sheet cu detalii business
+   - Filtrare pe categorii și căutare
+   - Navigare către Google Maps/Waze
+   - Bottom sheet poziționat corect deasupra tab bar
+
+4. **UI/UX Improvements**
+   - Eliminat gradient fade din header homepage
+   - Adăugat vignete în AuroraBackground
+   - Toast notifications în loc de Alert.alert (tema dark)
+   - Fix: filtrele categorii funcționează la fel pentru logat/nelogat
+
+5. **Bug Fixes**
+   - Fix `active_offers_count` - acum verifică și `end_date >= CURRENT_DATE`
+   - Fix filtru categorii pentru utilizatori autentificați (folosește /offers în loc de /feed când sunt filtre active)
+
+**Comenzi EAS:**
+```bash
+# Build APK pentru testare
+eas build --platform android --profile preview
+
+# Update OTA (după ce ai build instalat)
+eas update --branch preview --message "descriere"
+
+# Pornește emulator Android
+npx expo start --android
+```
+
+---
 
 ### 31 Ianuarie 2026
 **Push Notifications implementate:**
