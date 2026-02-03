@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const { getSummary, canSummarize } = require("../services/llm/summarizationService");
 
 // helper ca în offers.js
 function makeAbsoluteUrl(base, maybeUrl) {
@@ -249,6 +250,29 @@ router.get("/:id", async (req, res) => {
       ? makeAbsoluteUrl(baseUrl, b.cover_image_url)
       : (images.length > 0 ? images[0].url : makeAbsoluteUrl(baseUrl, b.logo_url));
 
+    // 4. Review Summary (AI-generated, if available)
+    let reviewSummary = null;
+    
+    try {
+      // Check if business has enough reviews for summarization
+      const summaryStatus = await canSummarize(id);
+      
+      if (summaryStatus.can_summarize) {
+        // Try to get summary (will use cache if available, or generate new)
+        const summaryResult = await getSummary(id);
+        reviewSummary = {
+          text: summaryResult.summary,
+          review_count: summaryResult.review_count,
+          generated_at: summaryResult.generated_at,
+          is_cached: summaryResult.cached
+        };
+      }
+    } catch (error) {
+      // If summary generation fails, log but don't fail the entire request
+      console.error(`[Business ${id}] Failed to get review summary:`, error.formatted?.code || error.message);
+      // reviewSummary stays null
+    }
+
     return res.json({
       id: b.id,
       name: b.name,
@@ -278,11 +302,140 @@ router.get("/:id", async (req, res) => {
         whatsapp: b.booking_whatsapp,
         url: makeAbsoluteUrl(baseUrl, b.booking_url),
         instructions: b.booking_instructions,
-      }
+      },
+      // AI-generated review summary
+      review_summary: reviewSummary
     });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
+  }
+});
+
+// =======================================
+// GET /businesses/:id/review-summary
+// Endpoint dedicat pentru obținerea review summary
+// =======================================
+router.get("/:id/review-summary", async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Check if business exists and has enough reviews
+    const businessCheck = await pool.query(
+      'SELECT name FROM businesses WHERE id = $1',
+      [id]
+    );
+    
+    if (businessCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+    
+    // Check if can summarize
+    const summaryStatus = await canSummarize(id);
+    
+    if (!summaryStatus.can_summarize) {
+      return res.status(400).json({
+        error: "Insufficient reviews",
+        message: `Business needs at least ${summaryStatus.min_required} reviews for summarization.`,
+        current_count: summaryStatus.review_count,
+        missing: summaryStatus.missing
+      });
+    }
+    
+    // Get or generate summary
+    const result = await getSummary(id);
+    
+    return res.json({
+      business_id: parseInt(id),
+      business_name: businessCheck.rows[0].name,
+      summary: result.summary,
+      review_count: result.review_count,
+      generated_at: result.generated_at,
+      is_cached: result.cached,
+      metadata: {
+        tokens_used: result.tokens_used,
+        cost_usd: result.cost_usd
+      }
+    });
+    
+  } catch (error) {
+    console.error(`[GET /businesses/${id}/review-summary] Error:`, error);
+    
+    const formatted = error.formatted || {
+      code: 'UNKNOWN_ERROR',
+      userMessage: 'Eroare la generarea rezumatului.'
+    };
+    
+    return res.status(500).json({
+      error: formatted.code,
+      message: formatted.userMessage
+    });
+  }
+});
+
+// =======================================
+// POST /businesses/:id/review-summary/regenerate
+// Regenerează forțat summary-ul (doar pentru admin)
+// =======================================
+const adminAuth = require("../middleware/adminAuth");
+
+router.post("/:id/review-summary/regenerate", adminAuth, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Check if business exists
+    const businessCheck = await pool.query(
+      'SELECT name FROM businesses WHERE id = $1',
+      [id]
+    );
+    
+    if (businessCheck.rows.length === 0) {
+      return res.status(404).json({ error: "Business not found" });
+    }
+    
+    // Check if can summarize
+    const summaryStatus = await canSummarize(id);
+    
+    if (!summaryStatus.can_summarize) {
+      return res.status(400).json({
+        error: "Insufficient reviews",
+        message: `Business needs at least ${summaryStatus.min_required} reviews for summarization.`,
+        current_count: summaryStatus.review_count,
+        missing: summaryStatus.missing
+      });
+    }
+    
+    console.log(`[Admin] Forcing regeneration of summary for business ${id}`);
+    
+    // Force regenerate (bypass cache)
+    const result = await getSummary(id, { force: true });
+    
+    return res.json({
+      success: true,
+      message: "Summary regenerated successfully",
+      business_id: parseInt(id),
+      business_name: businessCheck.rows[0].name,
+      summary: result.summary,
+      review_count: result.review_count,
+      generated_at: result.generated_at,
+      metadata: {
+        tokens_used: result.tokens_used,
+        cost_usd: result.cost_usd
+      }
+    });
+    
+  } catch (error) {
+    console.error(`[POST /businesses/${id}/review-summary/regenerate] Error:`, error);
+    
+    const formatted = error.formatted || {
+      code: 'UNKNOWN_ERROR',
+      userMessage: 'Eroare la regenerarea rezumatului.'
+    };
+    
+    return res.status(500).json({
+      error: formatted.code,
+      message: formatted.userMessage
+    });
   }
 });
 

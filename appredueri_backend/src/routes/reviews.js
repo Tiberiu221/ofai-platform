@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth"); // Asigură-te că calea e corectă
+const { invalidateSummary } = require("../services/llm/summarizationService");
 
 // ==========================================
 // GET /reviews/business/:id - Vezi recenziile unui business
@@ -117,6 +118,12 @@ router.post("/", authenticateToken, async (req, res) => {
         console.log("=== REVIEW POST END ===");
         console.log("Points earned:", pointsEarned);
         console.log("Is update:", !isNewReview);
+
+        // Invalidate review summary cache (async, don't wait)
+        // This will force regeneration of the summary next time it's requested
+        invalidateSummary(business_id).catch(err => {
+            console.error(`[Review] Failed to invalidate summary for business ${business_id}:`, err);
+        });
 
         res.json({
             success: true,
