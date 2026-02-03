@@ -4,7 +4,11 @@
       "Bash(tree:*)",
       "Bash(npx expo install expo-notifications expo-device)",
       "Bash(curl:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(eas build:view:*)",
+      "WebFetch(domain:expo.dev)",
+      "Bash(eas secret:create:*)",
+      "Bash(eas env:create:*)"
     ]
   }
 }
