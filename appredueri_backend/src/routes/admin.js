@@ -6,6 +6,13 @@ const fs = require("fs");
 const multer = require("multer");
 const adminAuth = require("../middleware/adminAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
+const { LLM_CONFIG } = require("../config/llm");
+const {
+  generateSummary,
+  invalidateSummary,
+  getExistingSummary,
+  getLatestValidReviewId
+} = require("../services/llm/summarizationService");
 
 // =====================================
 //   CONFIG UPLOADS
@@ -65,11 +72,172 @@ async function deleteImage(imageUrl) {
   }
 }
 
+async function loadReviewSummaryAdminData() {
+  const result = await pool.query(
+    `
+    SELECT
+      b.id,
+      b.name,
+      c.name AS city_name,
+      cat.name AS category_name,
+      COUNT(r.id) AS review_count,
+      rs.id AS summary_id,
+      rs.summary_text,
+      rs.review_count AS summary_review_count,
+      rs.generated_at,
+      rs.last_review_id
+    FROM businesses b
+    LEFT JOIN cities c ON c.id = b.city_id
+    LEFT JOIN categories cat ON cat.id = b.category_id
+    LEFT JOIN reviews r ON r.business_id = b.id
+    LEFT JOIN review_summaries rs ON rs.business_id = b.id
+    GROUP BY
+      b.id, b.name, c.name, cat.name,
+      rs.id, rs.summary_text, rs.review_count,
+      rs.generated_at, rs.last_review_id
+    ORDER BY COUNT(r.id) DESC, b.name ASC
+    `
+  );
+
+  const minReviews = LLM_CONFIG.summarization.minReviewCount;
+  const rows = result.rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    city_name: row.city_name || "-",
+    category_name: row.category_name || "-",
+    review_count: Number(row.review_count || 0),
+    summary_id: row.summary_id,
+    summary_review_count: row.summary_review_count ? Number(row.summary_review_count) : 0,
+    summary_text: row.summary_text || "",
+    summary_snippet: row.summary_text ? row.summary_text.slice(0, 160) : "",
+    generated_at: row.generated_at,
+    last_review_id: row.last_review_id
+  }));
+
+  await Promise.all(
+    rows.map(async (row) => {
+      if (row.review_count < minReviews) {
+        row.latest_valid_review_id = null;
+        row.status = "insufficient";
+        return;
+      }
+
+      row.latest_valid_review_id = await getLatestValidReviewId(row.id);
+
+      if (!row.summary_id) {
+        row.status = "missing";
+        return;
+      }
+
+      if (!row.latest_valid_review_id || row.last_review_id !== row.latest_valid_review_id) {
+        row.status = "stale";
+        return;
+      }
+
+      row.status = "fresh";
+    })
+  );
+
+  return { rows, minReviews };
+}
+
 // =====================================
 //   ROOT ADMIN
 // =====================================
 router.get("/", (req, res) => {
   res.redirect("/admin/offers");
+});
+
+// =====================================
+//   REVIEW SUMMARIES ADMIN
+// =====================================
+
+router.get("/review-summaries", async (req, res) => {
+  try {
+    const { rows, minReviews } = await loadReviewSummaryAdminData();
+    res.render("admin/review-summaries", {
+      businesses: rows,
+      minReviews,
+      message: req.query.msg || "",
+      error: req.query.err || ""
+    });
+  } catch (err) {
+    console.error("Eroare la GET /admin/review-summaries:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+router.post("/review-summaries/run-batch", async (req, res) => {
+  try {
+    const limit = Number(req.body.limit || 0);
+    const { rows, minReviews } = await loadReviewSummaryAdminData();
+    const candidates = limit > 0 ? rows.slice(0, limit) : rows;
+
+    let regenerated = 0;
+    let skipped = 0;
+    let errors = 0;
+
+    for (const business of candidates) {
+      try {
+        if (business.review_count < minReviews) {
+          skipped += 1;
+          continue;
+        }
+
+        const latestValidReviewId = business.latest_valid_review_id;
+        if (!latestValidReviewId) {
+          skipped += 1;
+          continue;
+        }
+
+        const existing = await getExistingSummary(business.id);
+        const needsRegeneration =
+          !existing || existing.last_review_id !== latestValidReviewId;
+
+        if (!needsRegeneration) {
+          skipped += 1;
+          continue;
+        }
+
+        await generateSummary(business.id, { force: true });
+        regenerated += 1;
+      } catch (err) {
+        errors += 1;
+      }
+    }
+
+    const msg = `Batch complet: regenerate=${regenerated}, skipped=${skipped}, errors=${errors}`;
+    res.redirect(`/admin/review-summaries?msg=${encodeURIComponent(msg)}`);
+  } catch (err) {
+    console.error("Eroare la POST /admin/review-summaries/run-batch:", err);
+    res.redirect("/admin/review-summaries?err=Batch failed");
+  }
+});
+
+router.post("/review-summaries/:id/regenerate", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.redirect("/admin/review-summaries?err=ID invalid");
+
+  try {
+    await generateSummary(id, { force: true });
+    res.redirect(`/admin/review-summaries?msg=${encodeURIComponent(`Regenerat pentru business ${id}`)}`);
+  } catch (err) {
+    console.error("Eroare la regenerare summary:", err);
+    res.redirect(`/admin/review-summaries?err=${encodeURIComponent("Regenerare eșuată")}`);
+  }
+});
+
+router.post("/review-summaries/:id/clear", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.redirect("/admin/review-summaries?err=ID invalid");
+
+  try {
+    await invalidateSummary(id);
+    res.redirect(`/admin/review-summaries?msg=${encodeURIComponent(`Cache șters pentru business ${id}`)}`);
+  } catch (err) {
+    console.error("Eroare la ștergere summary:", err);
+    res.redirect(`/admin/review-summaries?err=${encodeURIComponent("Ștergere eșuată")}`);
+  }
 });
 
 // =====================================

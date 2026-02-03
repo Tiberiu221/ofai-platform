@@ -106,6 +106,19 @@ review-uri noi valide.
 npm run review-summaries:batch
 ```
 
+## 🛠️ Admin Manual Control
+
+Admin page pentru control manual:
+
+```
+GET /admin/review-summaries
+```
+
+De aici poți:
+- rula batch manual
+- regenera summary pentru un business
+- șterge cache pentru un business
+
 **Optional env vars (Railway Cron):**
 ```env
 REVIEW_SUMMARY_SLEEP_MS=750

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const { getExistingSummary, getSummary, canSummarize } = require("../services/llm/summarizationService");
+const { getExistingSummary } = require("../services/llm/summarizationService");
 
 // helper ca în offers.js
 function makeAbsoluteUrl(base, maybeUrl) {
