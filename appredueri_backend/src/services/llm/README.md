@@ -14,35 +14,23 @@ llm/
 
 ## 🧠 How It Works
 
-### High-Level Flow
+### High-Level Flow (Scheduled)
 
 ```
-1. User views business page
+1. Railway Cron (la 2 zile, noaptea)
    ↓
-2. Backend checks if summary exists (cache lookup)
+2. Scriptul verifică toate business-urile cu 3+ recenzii
    ↓
-3a. CACHE HIT → Return existing summary (free!)
-3b. CACHE MISS → Generate new summary:
-    - Fetch latest reviews from DB
-    - Format into prompt
-    - Call Claude API
-    - Save to review_summaries table
-    - Return summary
+3. Dacă există review-uri noi VALIDe → regenerează summary
+   ↓
+4. Dacă nu există review-uri noi → păstrează cache-ul
 ```
 
-### Cache Invalidation
+### Cache Strategy
 
-When a user adds/edits a review:
-
-```
-1. Review saved to DB
-   ↓
-2. invalidateSummary(business_id) called (async)
-   ↓
-3. Summary deleted from cache
-   ↓
-4. Next request will regenerate fresh summary
-```
+- Summary-urile sunt generate DOAR de batch job (nu la request).
+- Dacă business-ul nu are summary încă, frontend-ul afișează nimic.
+- Cache-ul se actualizează doar când apar review-uri noi valide.
 
 ## 🔑 Configuration
 
@@ -55,12 +43,12 @@ All settings are in `src/config/llm.js`:
 | `temperature` | 0.3 | Creativity (0=deterministic, 1=creative) |
 | `minReviewCount` | 3 | Minimum reviews needed for summarization |
 | `maxReviewsInPrompt` | 10 | Max reviews to include (cost control) |
-| `regenerateAfterNewReviews` | 3 | Regenerate after N new reviews |
+| `regenerateAfterNewReviews` | 3 | Folosit doar în mod on-demand (în prezent nu e activ) |
 
 ## 📝 API Endpoints
 
 ### GET `/businesses/:id`
-Returns business details with `review_summary` field (if available).
+Returns business details with `review_summary` field (cached only).
 
 **Response:**
 ```json
@@ -77,7 +65,7 @@ Returns business details with `review_summary` field (if available).
 ```
 
 ### GET `/businesses/:id/review-summary`
-Dedicated endpoint for getting just the summary.
+Dedicated endpoint for getting just the cached summary.
 
 **Success Response (200):**
 ```json
@@ -87,21 +75,16 @@ Dedicated endpoint for getting just the summary.
   "summary": "Clienții apreciază burgerii și porțiile generoase...",
   "review_count": 15,
   "generated_at": "2026-02-03T10:30:00Z",
-  "is_cached": true,
-  "metadata": {
-    "tokens_used": 550,
-    "cost_usd": 0.000275
-  }
+  "is_cached": true
 }
 ```
 
-**Error Response - Insufficient Reviews (400):**
+**Error Response - Not Generated Yet (404):**
 ```json
 {
-  "error": "Insufficient reviews",
-  "message": "Business needs at least 3 reviews for summarization.",
-  "current_count": 1,
-  "missing": 2
+  "error": "Summary not available",
+  "message": "Rezumatul nu este încă generat. Se actualizează automat o dată la 2 zile.",
+  "schedule_days": 2
 }
 ```
 
@@ -111,6 +94,22 @@ Forces regeneration of summary, bypassing cache.
 **Headers Required:**
 ```
 Authorization: Basic YWRtaW46cGFzc3dvcmQ=
+```
+
+## ⏱️ Scheduled Batch Job (Railway Cron)
+
+Rulează la fiecare 2 zile (ex: 03:00 AM) și regenerează doar dacă există
+review-uri noi valide.
+
+**Command:**
+```bash
+npm run review-summaries:batch
+```
+
+**Optional env vars (Railway Cron):**
+```env
+REVIEW_SUMMARY_SLEEP_MS=750
+REVIEW_SUMMARY_BATCH_LIMIT=0   # 0 = no limit
 ```
 
 ## 💰 Cost Analysis
@@ -194,7 +193,13 @@ LLM_TEMPERATURE=0.3
 psql $DATABASE_URL -f migrations/create_review_summaries.sql
 ```
 
-### 4. Test Endpoints
+### 4. Run Batch Generation
+
+```bash
+npm run review-summaries:batch
+```
+
+### 5. Test Endpoints
 
 ```bash
 # Get business with summary

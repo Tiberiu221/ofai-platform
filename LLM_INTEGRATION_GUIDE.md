@@ -38,14 +38,13 @@ Sistem AI care:
 └─────────┘  └──────────────────┘
 ```
 
-### Flow Detaliat
+### Flow Detaliat (Scheduled la 2 zile)
 
-1. **User deschide pagina business** → Request la `/businesses/:id`
-2. **Backend verifică cache** → Există summary în `review_summaries`?
-   - ✅ DA → Returnează din cache (FREE!)
-   - ❌ NU → Generează cu Claude API (~$0.0003)
-3. **User lasă review nou** → Cache invalidat automat
-4. **Următorul request** → Generează summary fresh
+1. **Railway Cron** rulează scriptul la fiecare 2 zile (ex: 03:00 AM)
+2. **Batch script** verifică toate business-urile cu 3+ reviews
+3. **Dacă există review-uri noi valide** → regenerează summary
+4. **Dacă nu există review-uri noi** → păstrează cache-ul
+5. **User request** → returnează doar summary cached (fără generare on-demand)
 
 ---
 
@@ -65,7 +64,7 @@ src/
 │       └── README.md                   # Documentație serviciu
 ├── routes/
 │   ├── businesses.js                   # Endpoint-uri business (updated)
-│   └── reviews.js                      # Hook invalidare cache (updated)
+│   └── reviews.js                      # Review CRUD (no cache invalidation)
 └── migrations/
     ├── create_review_summaries.sql     # Tabel pentru cache
     └── README.md                        # Ghid migration
@@ -209,34 +208,20 @@ curl http://localhost:4000/businesses/1/review-summary
   "summary": "Clienții apreciază...",
   "review_count": 5,
   "generated_at": "2026-02-03T10:30:00Z",
-  "is_cached": true,
-  "metadata": {
-    "tokens_used": 550,
-    "cost_usd": 0.000275
-  }
+  "is_cached": true
 }
 ```
 
-### Test 4: Test Cache Invalidation
+### Test 4: Test Scheduled Batch (Manual Run)
 
 ```bash
-# 1. Get summary (va genera nou)
-curl http://localhost:4000/businesses/1/review-summary
-# Output: "is_cached": false, tokens_used: 550
+# 1. Rulează batch job manual (local)
+cd appredueri_backend
+npm run review-summaries:batch
 
-# 2. Get again (din cache)
+# 2. Verifică summary pentru un business
 curl http://localhost:4000/businesses/1/review-summary
-# Output: "is_cached": true
-
-# 3. Add new review (invalidează cache)
-curl -X POST http://localhost:4000/reviews \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"business_id": 1, "rating": 5, "comment": "Excellent!"}'
-
-# 4. Get summary again (va regenera)
-curl http://localhost:4000/businesses/1/review-summary
-# Output: "is_cached": false (fresh generation)
+# Output: summary cached (is_cached: true)
 ```
 
 ### Test 5: Test Frontend
@@ -248,11 +233,9 @@ npm start
 # În app:
 1. Deschide un business cu 3+ reviews
 2. Scroll down sub secțiunea "Locații"
-3. Ar trebui să vezi card-ul "Rezumat AI" cu:
-   - Badge "Generat cu AI"
-   - Textul rezumatului
-   - Timestamp "Actualizat acum X"
-   - Iconița de flash (dacă e cached)
+3. Ar trebui să vezi card-ul "Pe baza recenziilor" cu:
+   - Textul rezumatului complet
+   - Fără timestamp sau expand/collapse
 ```
 
 ---
@@ -263,7 +246,7 @@ npm start
 
 | Operație | Input Tokens | Output Tokens | Cost | Când se întâmplă |
 |----------|--------------|---------------|------|------------------|
-| Summary nou (5 reviews) | ~500 | ~120 | $0.0003 | Prima oară / după invalidare |
+| Summary nou (5 reviews) | ~500 | ~120 | $0.0003 | Batch la 2 zile / prima generare |
 | Summary din cache | 0 | 0 | $0.00 | Majoritatea cererilor |
 
 ### Estimare Lunară
@@ -468,7 +451,7 @@ Pe parcursul acestei integrări ai învățat:
 9. **Graceful Degradation** - App funcționează chiar dacă AI e down
 10. **System vs User Prompts** - Structurare conversație
 11. **Cost Tracking** - Monitorizare cheltuieli per operație
-12. **Async Cache Invalidation** - Background jobs fără blocking
+12. **Scheduled Batch Refresh** - Cache actualizat la 2 zile
 
 ---
 

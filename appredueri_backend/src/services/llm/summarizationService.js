@@ -18,6 +18,50 @@ const {
 } = require('./prompts');
 const { LLM_CONFIG } = require('../../config/llm');
 
+const OFFENSIVE_WORDS = [
+  'pula', 'pulaa', 'pulă', 'puli', 'pulii',
+  'muie', 'muist', 'muista',
+  'fut', 'futu', 'futut', 'fututa',
+  'pizda', 'pizd', 'pizdo',
+  'sugi', 'suge',
+  'dracu', 'dracului',
+  'fuck', 'shit', 'bitch', 'cunt'
+];
+
+const OFFENSIVE_REGEX = new RegExp(`\\b(${OFFENSIVE_WORDS.join('|')})\\b`, 'i');
+
+function normalizeText(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isReviewValid(comment) {
+  if (!comment) return false;
+  const trimmed = comment.trim();
+
+  if (trimmed.length < 8) return false;
+
+  const normalized = normalizeText(trimmed);
+  const words = normalized.split(' ').filter(Boolean);
+  if (words.length < 3) return false;
+
+  const alphaCount = (trimmed.match(/[a-zA-ZăâîșțĂÂÎȘȚ]/g) || []).length;
+  if (alphaCount / trimmed.length < 0.6) return false;
+
+  if (OFFENSIVE_REGEX.test(normalized)) return false;
+
+  return true;
+}
+
+function filterReviewsForSummary(reviews) {
+  return reviews.filter(review => isReviewValid(review.comment));
+}
+
 /**
  * Fetches reviews for a business from the database
  * 
@@ -45,7 +89,7 @@ async function fetchReviewsForBusiness(businessId, limit = LLM_CONFIG.summarizat
   return result.rows.map(row => ({
     id: row.id,
     rating: row.rating,
-    comment: row.comment.substring(0, LLM_CONFIG.summarization.maxReviewCommentLength),
+    comment: (row.comment || '').substring(0, LLM_CONFIG.summarization.maxReviewCommentLength),
     userName: `${row.first_name} ${row.last_name}`.trim(),
     createdAt: row.created_at
   }));
@@ -132,15 +176,17 @@ async function generateSummary(businessId, options = {}) {
   console.log(`[Summarization] Business: ${business.name} (${business.category})`);
   
   // 2. Fetch reviews
-  const reviews = await fetchReviewsForBusiness(businessId);
-  console.log(`[Summarization] Found ${reviews.length} reviews`);
+  const rawReviews = await fetchReviewsForBusiness(businessId);
+  const reviews = filterReviewsForSummary(rawReviews);
+  const skippedCount = rawReviews.length - reviews.length;
+  console.log(`[Summarization] Found ${rawReviews.length} reviews (${reviews.length} valid, ${skippedCount} skipped)`);
   
   // 3. Check minimum review count
   if (reviews.length < LLM_CONFIG.summarization.minReviewCount) {
     throw new Error(
       `Insufficient reviews for summarization. ` +
-      `Required: ${LLM_CONFIG.summarization.minReviewCount}, ` +
-      `Found: ${reviews.length}`
+      `Required valid: ${LLM_CONFIG.summarization.minReviewCount}, ` +
+      `Found valid: ${reviews.length}`
     );
   }
   
@@ -200,7 +246,7 @@ async function generateSummary(businessId, options = {}) {
   const totalTokens = response.usage.input_tokens + response.usage.output_tokens;
   
   // 9. Save to database
-  const lastReviewId = reviews[0].id; // Most recent review
+  const lastReviewId = reviews[0].id; // Most recent valid review
   const result = await pool.query(
     `INSERT INTO review_summaries 
       (business_id, summary_text, review_count, last_review_id, model_used, tokens_used)
@@ -236,6 +282,21 @@ async function generateSummary(businessId, options = {}) {
     cost_usd: response.metadata.cost_usd,
     validation: validation
   };
+}
+
+/**
+ * Returns the latest valid review id (ignoring spam/offensive content)
+ *
+ * @param {number} businessId - The business ID
+ * @returns {Promise<number|null>} Latest valid review id or null
+ */
+async function getLatestValidReviewId(businessId) {
+  const reviews = await fetchReviewsForBusiness(
+    businessId,
+    LLM_CONFIG.summarization.maxReviewsInPrompt * 3
+  );
+  const validReviews = filterReviewsForSummary(reviews);
+  return validReviews.length > 0 ? validReviews[0].id : null;
 }
 
 /**
@@ -318,5 +379,7 @@ module.exports = {
   generateSummary,
   invalidateSummary,
   canSummarize,
-  getExistingSummary
+  getExistingSummary,
+  getLatestValidReviewId,
+  filterReviewsForSummary
 };

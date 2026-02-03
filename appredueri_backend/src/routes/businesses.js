@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const { getSummary, canSummarize } = require("../services/llm/summarizationService");
+const { getExistingSummary, getSummary, canSummarize } = require("../services/llm/summarizationService");
 
 // helper ca în offers.js
 function makeAbsoluteUrl(base, maybeUrl) {
@@ -250,26 +250,22 @@ router.get("/:id", async (req, res) => {
       ? makeAbsoluteUrl(baseUrl, b.cover_image_url)
       : (images.length > 0 ? images[0].url : makeAbsoluteUrl(baseUrl, b.logo_url));
 
-    // 4. Review Summary (AI-generated, if available)
+    // 4. Review Summary (cached only - no on-demand generation)
     let reviewSummary = null;
-    
+
     try {
-      // Check if business has enough reviews for summarization
-      const summaryStatus = await canSummarize(id);
-      
-      if (summaryStatus.can_summarize) {
-        // Try to get summary (will use cache if available, or generate new)
-        const summaryResult = await getSummary(id);
+      const existingSummary = await getExistingSummary(id);
+      if (existingSummary) {
         reviewSummary = {
-          text: summaryResult.summary,
-          review_count: summaryResult.review_count,
-          generated_at: summaryResult.generated_at,
-          is_cached: summaryResult.cached
+          text: existingSummary.summary_text,
+          review_count: existingSummary.review_count,
+          generated_at: existingSummary.generated_at,
+          is_cached: true
         };
       }
     } catch (error) {
-      // If summary generation fails, log but don't fail the entire request
-      console.error(`[Business ${id}] Failed to get review summary:`, error.formatted?.code || error.message);
+      // If cache lookup fails, log but don't fail the entire request
+      console.error(`[Business ${id}] Failed to read review summary cache:`, error.message);
       // reviewSummary stays null
     }
 
@@ -318,57 +314,43 @@ router.get("/:id", async (req, res) => {
 // =======================================
 router.get("/:id/review-summary", async (req, res) => {
   const { id } = req.params;
-  
+
   try {
-    // Check if business exists and has enough reviews
+    // Check if business exists
     const businessCheck = await pool.query(
       'SELECT name FROM businesses WHERE id = $1',
       [id]
     );
-    
+
     if (businessCheck.rows.length === 0) {
       return res.status(404).json({ error: "Business not found" });
     }
-    
-    // Check if can summarize
-    const summaryStatus = await canSummarize(id);
-    
-    if (!summaryStatus.can_summarize) {
-      return res.status(400).json({
-        error: "Insufficient reviews",
-        message: `Business needs at least ${summaryStatus.min_required} reviews for summarization.`,
-        current_count: summaryStatus.review_count,
-        missing: summaryStatus.missing
+
+    // Cache-only: return existing summary if present
+    const existingSummary = await getExistingSummary(id);
+
+    if (!existingSummary) {
+      return res.status(404).json({
+        error: "Summary not available",
+        message: "Rezumatul nu este încă generat. Se actualizează automat o dată la 2 zile.",
+        schedule_days: 2
       });
     }
-    
-    // Get or generate summary
-    const result = await getSummary(id);
-    
+
     return res.json({
       business_id: parseInt(id),
       business_name: businessCheck.rows[0].name,
-      summary: result.summary,
-      review_count: result.review_count,
-      generated_at: result.generated_at,
-      is_cached: result.cached,
-      metadata: {
-        tokens_used: result.tokens_used,
-        cost_usd: result.cost_usd
-      }
+      summary: existingSummary.summary_text,
+      review_count: existingSummary.review_count,
+      generated_at: existingSummary.generated_at,
+      is_cached: true
     });
-    
+
   } catch (error) {
     console.error(`[GET /businesses/${id}/review-summary] Error:`, error);
-    
-    const formatted = error.formatted || {
-      code: 'UNKNOWN_ERROR',
-      userMessage: 'Eroare la generarea rezumatului.'
-    };
-    
     return res.status(500).json({
-      error: formatted.code,
-      message: formatted.userMessage
+      error: "SUMMARY_ERROR",
+      message: "Eroare la citirea rezumatului."
     });
   }
 });
