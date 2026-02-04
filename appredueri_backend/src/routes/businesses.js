@@ -73,30 +73,30 @@ router.get("/", async (req, res) => {
         b.logo_url,
         c.name AS city_name,
         cat.name AS category_name,
-        SUM(CASE WHEN o.is_active = TRUE AND o.end_date >= CURRENT_DATE THEN 1 ELSE 0 END) AS active_offers_count,
-        COALESCE(AVG(r.rating), 0) as rating_avg,
-        COUNT(r.id) as rating_count
+        COALESCE(o.active_offers_count, 0) AS active_offers_count,
+        COALESCE(r.rating_avg, 0) AS rating_avg,
+        COALESCE(r.rating_count, 0) AS rating_count
       FROM businesses b
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
-      LEFT JOIN offers o ON o.business_id = b.id
-      LEFT JOIN reviews r ON r.business_id = b.id
+      LEFT JOIN (
+        SELECT
+          business_id,
+          COUNT(*) FILTER (
+            WHERE is_active = TRUE AND end_date >= CURRENT_DATE
+          ) AS active_offers_count
+        FROM offers
+        GROUP BY business_id
+      ) o ON o.business_id = b.id
+      LEFT JOIN (
+        SELECT
+          business_id,
+          AVG(rating) AS rating_avg,
+          COUNT(*) AS rating_count
+        FROM reviews
+        GROUP BY business_id
+      ) r ON r.business_id = b.id
       ${whereClause}
-      GROUP BY
-        b.id,
-        b.name,
-        b.address,
-        b.phone,
-        b.website,
-        b.lat,
-        b.lng,
-        b.city_id,
-        b.category_id,
-        b.logo_url,
-        c.id,
-        c.name,
-        cat.id,
-        cat.name
       ORDER BY c.name, cat.name, b.name;
     `;
 

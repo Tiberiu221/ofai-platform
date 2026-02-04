@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
     c.name AS city_name,
     cat.id   AS category_id,
     cat.name AS category_name,
-    COUNT(o.id) AS active_offers_count
+    COUNT(DISTINCT o.id) AS active_offers_count
   FROM followed_businesses f
   JOIN businesses b ON b.id = f.business_id
   JOIN cities c     ON c.id = b.city_id
@@ -32,6 +32,7 @@ router.get("/", async (req, res) => {
   LEFT JOIN offers o
     ON o.business_id = b.id
    AND o.is_active = TRUE
+   AND o.end_date >= CURRENT_DATE
   WHERE f.user_id = $1
   GROUP BY
     b.id,

@@ -29,6 +29,11 @@ const OFFENSIVE_WORDS = [
 ];
 
 const OFFENSIVE_REGEX = new RegExp(`\\b(${OFFENSIVE_WORDS.join('|')})\\b`, 'i');
+const SPECIAL_RUN_REGEX = /[^a-zA-Z0-9\s]{3,}/;
+const REPEAT_CHAR_REGEX = /(.)\1{3,}/i;
+const VOWEL_REGEX = /[aeiouăâî]/gi;
+const LETTER_REGEX = /[a-zA-ZăâîșțĂÂÎȘȚ]/g;
+const DIGIT_REGEX = /\d/g;
 
 function normalizeText(text) {
   return (text || '')
@@ -48,10 +53,26 @@ function isReviewValid(comment) {
 
   const normalized = normalizeText(trimmed);
   const words = normalized.split(' ').filter(Boolean);
-  if (words.length < 3) return false;
+  const alphaWords = words.filter(word => /[a-z]/i.test(word));
+  if (alphaWords.length < 3) return false;
 
-  const alphaCount = (trimmed.match(/[a-zA-ZăâîșțĂÂÎȘȚ]/g) || []).length;
-  if (alphaCount / trimmed.length < 0.6) return false;
+  const avgWordLength =
+    alphaWords.reduce((sum, word) => sum + word.length, 0) / alphaWords.length;
+  if (avgWordLength < 3) return false;
+
+  const alphaCount = (trimmed.match(LETTER_REGEX) || []).length;
+  const digitCount = (trimmed.match(DIGIT_REGEX) || []).length;
+  const alphaRatio = alphaCount / Math.max(1, alphaCount + digitCount);
+  const digitRatio = digitCount / Math.max(1, trimmed.length);
+
+  if (alphaRatio < 0.6) return false;
+  if (digitRatio > 0.25) return false;
+
+  const vowelCount = (normalized.match(VOWEL_REGEX) || []).length;
+  if (vowelCount < 2) return false;
+
+  if (SPECIAL_RUN_REGEX.test(trimmed)) return false;
+  if (REPEAT_CHAR_REGEX.test(trimmed)) return false;
 
   if (OFFENSIVE_REGEX.test(normalized)) return false;
 
