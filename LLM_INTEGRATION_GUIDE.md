@@ -1,6 +1,6 @@
 # 🤖 LLM Integration Guide - Review Summarization
 
-Ghid complet pentru integrarea funcționalității de sumarizare AI a recenziilor în AppReduceri/OFAI folosind Claude by Anthropic.
+Ghid complet pentru integrarea funcționalității de sumarizare AI a recenziilor în OFAI folosind Claude by Anthropic.
 
 ---
 
@@ -502,5 +502,5 @@ Ai implementat cu succes o integrare LLM production-ready care:
 
 **Autor:** Claude (Sonnet 4.5) + Tiber  
 **Data:** Februarie 2026  
-**Proiect:** AppReduceri/OFAI  
+**Proiect:** OFAI  
 **Status:** ✅ Complete & Production Ready

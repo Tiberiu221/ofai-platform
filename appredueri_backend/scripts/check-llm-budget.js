@@ -126,7 +126,7 @@ async function sendAlert(type, data) {
       await resend.emails.send({
         from: process.env.FROM_EMAIL,
         to: 'admin@yourdomain.com', // Change to your email
-        subject: `[AppReduceri] LLM Budget ${type === 'BUDGET_EXCEEDED' ? 'Exceeded' : 'Warning'}`,
+        subject: `[OFAI] LLM Budget ${type === 'BUDGET_EXCEEDED' ? 'Exceeded' : 'Warning'}`,
         text: message
       });
       

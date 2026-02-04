@@ -125,7 +125,7 @@ if (!isProduction) {
 // ============================================
 app.get("/", (req, res) => {
   res.json({ 
-    message: "API AppReduceri este activ!",
+    message: "API OFAI este activ!",
     version: "1.0.0",
     environment: isProduction ? "production" : "development"
   });
@@ -191,7 +191,7 @@ app.use((req, res) => {
 // PORNIRE SERVER
 // ============================================
 app.listen(PORT, () => {
-  console.log(`\n🚀 Server AppReduceri pornit!`);
+  console.log(`\n🚀 Server OFAI pornit!`);
   console.log(`   Port: ${PORT}`);
   console.log(`   Environment: ${isProduction ? "PRODUCTION" : "DEVELOPMENT"}`);
   console.log(`   Uploads: ${uploadsPath}`);

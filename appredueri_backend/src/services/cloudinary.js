@@ -94,7 +94,7 @@ function uploadToCloudinary(buffer, imageType, publicId = null) {
     };
 
     const uploadOptions = {
-      folder: `appreduceri/${config.folder}`,
+      folder: `ofai/${config.folder}`,
       resource_type: "image",
       // Eager transformation - procesează imaginea imediat la dimensiunile dorite
       eager: [eagerTransformation],

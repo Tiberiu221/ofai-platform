@@ -1,6 +1,6 @@
 # Database Migrations
 
-This folder contains SQL migration files for the AppReduceri database.
+This folder contains SQL migration files for the OFAI database.
 
 ## How to Apply Migrations
 

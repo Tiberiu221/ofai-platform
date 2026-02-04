@@ -1,11 +1,11 @@
-# OFAI (AppReduceri) - Handoff Document
+# OFAI - Handoff Document
 ## Data: 3 Februarie 2026 (Actualizat)
 
 ---
 
 ## 📍 INFORMAȚII PROIECT
 
-**Nume:** AppReduceri / OFAI
+**Nume:** OFAI
 **Scop:** Platformă de oferte și reduceri pentru piața din România
 **Domeniu:** https://ofai.ro
 
@@ -71,7 +71,7 @@ CLOUDINARY_API_KEY=REDACTED
 CLOUDINARY_API_SECRET=(din Cloudinary dashboard)
 SENTRY_DSN=REDACTED
 RESEND_API_KEY=re_xxxxxxxxx
-FROM_EMAIL=AppReduceri <noreply@ofai.ro>
+FROM_EMAIL=OFAI <noreply@ofai.ro>
 ```
 
 ---
@@ -259,7 +259,7 @@ npx expo start --android
 
 ### Sentry (Error Tracking)
 - **Dashboard:** https://sentry.io
-- **Proiect:** appreduceri-backend
+- **Proiect:** ofai-backend
 - **Funcționare:** Capturează automat erorile 500+ în producție
 
 ### Resend (Email)

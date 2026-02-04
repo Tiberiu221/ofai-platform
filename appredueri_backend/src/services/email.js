@@ -10,8 +10,8 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
-const FROM_EMAIL = process.env.FROM_EMAIL || "AppReduceri <noreply@ofai.ro>";
-const APP_NAME = "AppReduceri";
+const FROM_EMAIL = process.env.FROM_EMAIL || "OFAI <noreply@ofai.ro>";
+const APP_NAME = "OFAI";
 
 /**
  * Trimite email de bun venit după înregistrare

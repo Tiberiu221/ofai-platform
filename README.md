@@ -1,4 +1,4 @@
-# AppReduceri
+# OFAI
 
 AI-assisted e-commerce platform for tracking price reductions and deals.
 

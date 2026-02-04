@@ -1,4 +1,4 @@
-# AppReduceri - Note Proiect
+# OFAI - Note Proiect
 
 > Ultima actualizare: Ianuarie 2026
 
@@ -36,7 +36,7 @@ CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 SENTRY_DSN=...
 RESEND_API_KEY=...
-FROM_EMAIL=AppReduceri <noreply@ofai.ro>
+FROM_EMAIL=OFAI <noreply@ofai.ro>
 NODE_ENV=production
 ```
 
@@ -92,7 +92,7 @@ AppReduceri/
 - **Domeniu verificat:** ofai.ro
 - **DKIM:** ✅ Verificat
 - **SPF/MX:** Pending (funcționează și fără)
-- **FROM_EMAIL:** `AppReduceri <noreply@ofai.ro>`
+- **FROM_EMAIL:** `OFAI <noreply@ofai.ro>`
 
 ---
 

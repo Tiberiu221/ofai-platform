@@ -6,7 +6,7 @@ function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization || "";
 
   if (!authHeader.startsWith("Basic ")) {
-    res.setHeader("WWW-Authenticate", 'Basic realm="Admin AppReduceri"');
+    res.setHeader("WWW-Authenticate", 'Basic realm="Admin OFAI"');
     return res.status(401).send("Autentificare necesara pentru admin");
   }
 

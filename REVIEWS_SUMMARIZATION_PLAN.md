@@ -251,5 +251,5 @@ LLM_TEMPERATURE=0.3
 
 ---
 
-*Document generat pentru proiectul OFAI/AppReduceri*
+*Document generat pentru proiectul OFAI*
 *Data: Februarie 2025*
