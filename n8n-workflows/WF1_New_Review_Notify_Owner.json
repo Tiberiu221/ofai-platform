@@ -1,0 +1,84 @@
+{
+  "name": "WF1 - New Review → Email Owner",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-review",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "new-review"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\n// Validare - daca lipsesc date, oprim executia\nif (!data.business_owner_email) {\n  return [];\n}\n\nconst rating = data.rating || 0;\nconst stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);\nconst businessName = data.business_name || 'Business';\nconst ownerName = data.owner_first_name || '';\nconst reviewerName = data.reviewer_first_name || 'Un utilizator';\nconst comment = data.comment || '';\n\nconst html = `\n<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  <div style=\"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;\">\n    <h1 style=\"color: white; margin: 0; font-size: 24px;\">Recenzie nouă! ⭐</h1>\n  </div>\n  <div style=\"background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;\">\n    <p style=\"font-size: 16px; color: #374151;\">Salut <strong>${ownerName}</strong>,</p>\n    <p style=\"font-size: 16px; color: #374151;\"><strong>${reviewerName}</strong> a lăsat o recenzie pentru <strong>${businessName}</strong>:</p>\n    <div style=\"background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;\">\n      <p style=\"font-size: 32px; margin: 0 0 8px 0;\">${stars}</p>\n      <p style=\"font-size: 18px; color: #6b7280; margin: 0;\">${rating} din 5</p>\n    </div>\n    ${comment ? `<div style=\"background: #f0f9ff; padding: 16px; border-left: 4px solid #667eea; border-radius: 4px; margin: 16px 0;\"><p style=\"font-size: 15px; color: #374151; margin: 0; font-style: italic;\">\"${comment}\"</p></div>` : ''}\n    <p style=\"font-size: 14px; color: #9ca3af; margin-top: 24px; text-align: center;\">— Echipa OFAI</p>\n  </div>\n</div>\n`;\n\nreturn [{\n  json: {\n    to: data.business_owner_email,\n    subject: `${businessName} - Recenzie nouă ${stars} (${rating}/5)`,\n    html: html\n  }\n}];"
+      },
+      "id": "code-node",
+      "name": "Format Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer RESEND_API_KEY_AICI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"OFAI <noreply@ofai.ro>\",\n  \"to\": \"{{ $json.to }}\",\n  \"subject\": \"{{ $json.subject }}\",\n  \"html\": {{ JSON.stringify($json.html) }}\n}",
+        "options": {}
+      },
+      "id": "http-node",
+      "name": "Send Email (Resend)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [710, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email": {
+      "main": [
+        [
+          {
+            "node": "Send Email (Resend)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0
+}
