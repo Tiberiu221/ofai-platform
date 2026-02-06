@@ -4,6 +4,7 @@ const pool = require("../db");
 const multer = require("multer");
 const { businessAuth, businessUserAuth } = require("../middleware/businessAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
+const { triggerWebhook } = require("../services/n8n");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage pentru Cloudinary)
@@ -419,6 +420,21 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     ]);
 
     console.log("[BusinessPortal] Offer created with ID:", result.rows[0].id);
+
+    // Trigger n8n webhook for new offer (push to subscribers + high-value broadcast)
+    const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
+    triggerWebhook("/webhook/new-offer", {
+      offer_id: result.rows[0].id,
+      business_id: parseInt(businessId),
+      business_name: bizNameRes.rows[0]?.name || "Business",
+      title: title,
+      discount_type: discount_type || null,
+      discount_value: discount_value ? Number(discount_value) : null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+      created_at: new Date().toISOString(),
+    });
+
     res.json({ success: true, offer_id: result.rows[0].id });
   } catch (err) {
     console.error("[BusinessPortal] Error creating offer:", err);

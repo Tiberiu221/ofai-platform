@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth"); // Asigură-te că calea e corectă
+const { triggerWebhook } = require("../services/n8n");
 
 // ==========================================
 // GET /reviews/business/:id - Vezi recenziile unui business
@@ -113,7 +114,37 @@ router.post("/", authenticateToken, async (req, res) => {
         }
 
         await client.query("COMMIT");
-        
+
+        // Trigger n8n webhook for new review notification to business owner
+        if (isNewReview) {
+          const bizInfo = await pool.query(
+            `SELECT b.name AS business_name, u.email AS owner_email, u.first_name AS owner_first_name
+             FROM businesses b
+             LEFT JOIN user_businesses ub ON ub.business_id = b.id
+             LEFT JOIN users u ON u.id = ub.user_id
+             WHERE b.id = $1`,
+            [business_id]
+          );
+          const reviewerInfo = await pool.query(
+            "SELECT first_name FROM users WHERE id = $1",
+            [user_id]
+          );
+          const biz = bizInfo.rows[0];
+          if (biz && biz.owner_email) {
+            triggerWebhook("/webhook/new-review", {
+              review_id: reviewId,
+              business_id: business_id,
+              business_name: biz.business_name,
+              business_owner_email: biz.owner_email,
+              owner_first_name: biz.owner_first_name,
+              rating: rating,
+              comment: comment || "",
+              reviewer_first_name: reviewerInfo.rows[0]?.first_name || "Un utilizator",
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
+
         console.log("=== REVIEW POST END ===");
         console.log("Points earned:", pointsEarned);
         console.log("Is update:", !isNewReview);

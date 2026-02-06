@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const auth = require("../middleware/auth");
+const { triggerWebhook } = require("../services/n8n");
 
 // toate rutele de aici necesită JWT
 router.use(auth);
@@ -87,14 +88,26 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "business_id este necesar" });
     }
 
-    await pool.query(
+    const result = await pool.query(
       `
         INSERT INTO followed_businesses (user_id, business_id)
         VALUES ($1, $2)
-        ON CONFLICT (user_id, business_id) DO NOTHING;
+        ON CONFLICT (user_id, business_id) DO NOTHING
+        RETURNING user_id;
       `,
       [userId, parseInt(business_id, 10)]
     );
+
+    // Trigger n8n webhook only for new subscriptions (not duplicates)
+    if (result.rowCount > 0) {
+      const userInfo = await pool.query("SELECT first_name FROM users WHERE id = $1", [userId]);
+      triggerWebhook("/webhook/new-subscriber", {
+        user_id: userId,
+        user_first_name: userInfo.rows[0]?.first_name || "Un utilizator",
+        business_id: parseInt(business_id, 10),
+        created_at: new Date().toISOString(),
+      });
+    }
 
     res.status(201).json({ message: "Business-ul a fost urmarit" });
   } catch (err) {

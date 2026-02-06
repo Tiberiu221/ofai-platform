@@ -7,6 +7,7 @@ const multer = require("multer");
 const adminAuth = require("../middleware/adminAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { LLM_CONFIG } = require("../config/llm");
+const { triggerWebhook } = require("../services/n8n");
 const {
   generateSummary,
   invalidateSummary,
@@ -990,9 +991,10 @@ router.post(
         logoUrl = result.url;
       }
 
-      await pool.query(
+      const insertResult = await pool.query(
         `INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         RETURNING id`,
         [
           business_id ? Number(business_id) : null,
           title,
@@ -1006,6 +1008,23 @@ router.post(
           logoUrl,
         ]
       );
+
+      // Trigger n8n webhook for new offer
+      if (business_id) {
+        const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [Number(business_id)]);
+        triggerWebhook("/webhook/new-offer", {
+          offer_id: insertResult.rows[0].id,
+          business_id: Number(business_id),
+          business_name: bizNameRes.rows[0]?.name || "Business",
+          title: title,
+          discount_type: discount_type || null,
+          discount_value: discount_value ? Number(discount_value) : null,
+          start_date: start_date || null,
+          end_date: end_date || null,
+          created_at: new Date().toISOString(),
+        });
+      }
+
       res.redirect("/admin/offers");
     } catch (err) {
       console.error(err);

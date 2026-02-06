@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
+const { triggerWebhook } = require("../services/n8n");
 
 // ATENȚIE: în producție pune un JWT_SECRET real în env.
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
@@ -66,18 +67,12 @@ router.post("/register", async (req, res) => {
     });
 
     // 4. Trigger n8n Webhook for Welcome Sequence
-    // URL fallback provided for immediate usage
-    const n8nUrl = process.env.N8N_WEBHOOK_URL || "https://n8n-production-d2f4.up.railway.app";
-    fetch(`${n8nUrl}/webhook/new-user`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        created_at: new Date().toISOString()
-      })
-    }).catch(err => console.error("[Auth] Failed to trigger n8n webhook:", err));
+    triggerWebhook("/webhook/new-user", {
+      user_id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      created_at: new Date().toISOString(),
+    });
 
     // La register, punctele sunt sigur 0
     return res.status(201).json({
