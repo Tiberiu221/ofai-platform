@@ -65,6 +65,20 @@ router.post("/register", async (req, res) => {
       console.error("[Auth] Failed to send welcome email:", err);
     });
 
+    // 4. Trigger n8n Webhook for Welcome Sequence
+    // URL fallback provided for immediate usage
+    const n8nUrl = process.env.N8N_WEBHOOK_URL || "https://n8n-production-d2f4.up.railway.app";
+    fetch(`${n8nUrl}/webhook/new-user`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        created_at: new Date().toISOString()
+      })
+    }).catch(err => console.error("[Auth] Failed to trigger n8n webhook:", err));
+
     // La register, punctele sunt sigur 0
     return res.status(201).json({
       user: mapUserResponse(user, 0),
@@ -98,7 +112,10 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
     }
 
-    // 2. (FIX) Luăm Punctele explicit la Login
+    // 2. Update last_active_at
+    await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [user.id]);
+
+    // 3. (FIX) Luăm Punctele explicit la Login
     const pointsRes = await pool.query(
       `SELECT total_points FROM user_points WHERE user_id = $1`,
       [user.id]
@@ -347,6 +364,9 @@ router.get("/me", authenticateToken, async (req, res) => {
       `SELECT total_points FROM user_points WHERE user_id = $1`,
       [req.user.id]
     );
+
+    // Update last_active_at
+    await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.user.id]);
 
     const user = userRes.rows[0];
     // Logăm exact ce vine din baza de date pentru puncte
