@@ -8,11 +8,13 @@
     body {
       font-family: sans-serif;
       padding: 20px;
-      color: #333;
+      color: #e5e7eb;
+      background: #0f0f13;
     }
 
     h1 {
       margin-bottom: 16px;
+      color: #f3f4f6;
     }
 
     form {
@@ -24,6 +26,7 @@
       margin-top: 15px;
       font-weight: bold;
       margin-bottom: 5px;
+      color: #d1d5db;
     }
 
     input[type="text"],
@@ -34,8 +37,10 @@
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
-      border: 1px solid #ccc;
+      border: 1px solid #3a3a42;
       border-radius: 4px;
+      background: #1a1a1f;
+      color: #e5e7eb;
     }
 
     textarea {
@@ -60,12 +65,12 @@
 
     a {
       text-decoration: none;
-      color: #007bff;
+      color: #60a5fa;
     }
 
     small {
       font-size: 12px;
-      color: #6b7280;
+      color: #9ca3af;
     }
 
     .image-preview {
@@ -78,7 +83,7 @@
       max-width: 300px;
       height: auto;
       border-radius: 8px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid #2e2e33;
     }
 
     .delete-form {
@@ -96,8 +101,8 @@
     .locations-box {
       margin-top: 25px;
       padding: 15px;
-      background: #f8f9fa;
-      border: 1px solid #ddd;
+      background: #18181b;
+      border: 1px solid #2e2e33;
       border-radius: 6px;
     }
 
@@ -106,12 +111,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: #fff;
+      background: #1a1a1f;
       padding: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid #3a3a42;
       border-radius: 4px;
       font-weight: normal;
       margin-top: 0;
+      color: #e5e7eb;
     }
   </style>
 </head>
@@ -180,14 +186,14 @@
     </label>
 
     <div class="locations-box">
-      <label style="margin-top:0; color:#2563eb;">Disponibilitate Locații</label>
+      <label style="margin-top:0; color:#60a5fa;">Disponibilitate Locații</label>
 
       <% if (locations.length===0) { %>
-        <p style="color: #666; font-style: italic; font-size: 14px;">
+        <p style="color: #9ca3af; font-style: italic; font-size: 14px;">
           Acest business are doar sediul central (nicio locație secundară definită).
         </p>
         <% } else { %>
-          <p style="font-size: 13px; color: #555; margin-bottom: 10px; margin-top: 0;">
+          <p style="font-size: 13px; color: #9ca3af; margin-bottom: 10px; margin-top: 0;">
             Lasă totul <strong>debifat</strong> pentru a fi valabilă în toate locațiile.<br>
             Bifează locații specifice doar dacă oferta este limitată.
           </p>
@@ -210,7 +216,7 @@
           <% } %>
     </div>
 
-    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;" />
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #2e2e33;" />
 
     <h3>Imagine ofertă</h3>
     <% if (offer.logo_url) { %>

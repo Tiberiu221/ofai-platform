@@ -8,11 +8,13 @@
     body {
       font-family: sans-serif;
       padding: 20px;
-      color: #333;
+      color: #e5e7eb;
+      background: #0f0f13;
     }
 
     h1 {
       margin-bottom: 16px;
+      color: #f3f4f6;
     }
 
     table {
@@ -23,37 +25,42 @@
 
     th,
     td {
-      border: 1px solid #ccc;
+      border: 1px solid #2e2e33;
       padding: 8px;
       font-size: 14px;
       text-align: left;
     }
 
     th {
-      background: #f5f5f5;
+      background: #1f1f23;
+      color: #9ca3af;
     }
 
     /* Butoane */
-    a.button {
+    a.button,
+    button.button {
       display: inline-block;
       padding: 6px 10px;
-      background: #007bff;
+      background: #2563eb;
       color: white;
       text-decoration: none;
       border-radius: 4px;
       font-size: 14px;
+      border: none;
+      cursor: pointer;
     }
 
     a.button.secondary {
-      background: #6b7280;
+      background: #4b5563;
     }
 
     a.button.info {
-      background: #17a2b8;
+      background: #0891b2;
     }
 
     /* Turcoaz pentru Locații */
-    a.button.danger {
+    a.button.danger,
+    button.button.danger {
       background: #dc2626;
       border: none;
       cursor: pointer;
@@ -69,8 +76,9 @@
       margin-top: 8px;
       padding: 8px;
       border-radius: 4px;
-      background: #fee2e2;
-      color: #b91c1c;
+      background: #3b1111;
+      color: #fca5a5;
+      border: 1px solid #5c1d1d;
       max-width: 700px;
     }
   </style>

@@ -8,19 +8,20 @@
     body {
       font-family: sans-serif;
       padding: 20px;
-      background: #f9fafb;
+      background: #0f0f13;
+      color: #e5e7eb;
     }
 
     h1 {
       margin-bottom: 16px;
-      color: #111827;
+      color: #f3f4f6;
     }
 
     h2.section-title {
       margin-top: 32px;
       margin-bottom: 12px;
-      color: #374151;
-      border-bottom: 2px solid #e5e7eb;
+      color: #d1d5db;
+      border-bottom: 2px solid #2e2e33;
       padding-bottom: 8px;
     }
 
@@ -32,7 +33,7 @@
       display: block;
       margin-top: 10px;
       font-weight: bold;
-      color: #374151;
+      color: #d1d5db;
     }
 
     input[type="text"],
@@ -43,9 +44,11 @@
       padding: 8px;
       margin-top: 4px;
       box-sizing: border-box;
-      border: 1px solid #d1d5db;
+      border: 1px solid #3a3a42;
       border-radius: 6px;
       font-size: 14px;
+      background: #1a1a1f;
+      color: #e5e7eb;
     }
 
     button {
@@ -67,7 +70,7 @@
     a.back-link {
       display: inline-block;
       margin-bottom: 12px;
-      color: #2563eb;
+      color: #60a5fa;
       text-decoration: none;
     }
 
@@ -79,15 +82,15 @@
       margin-top: 8px;
       padding: 12px;
       border-radius: 6px;
-      background: #fee2e2;
-      color: #b91c1c;
+      background: #3b1111;
+      color: #fca5a5;
       max-width: 600px;
-      border: 1px solid #fecaca;
+      border: 1px solid #5c1d1d;
     }
 
     .info-box {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+      background: #0c2d48;
+      border: 1px solid #1e3a5f;
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 16px;
@@ -96,13 +99,13 @@
 
     .info-box h3 {
       margin: 0 0 8px 0;
-      color: #1e40af;
+      color: #7dd3fc;
       font-size: 14px;
     }
 
     .info-box p {
       margin: 0;
-      color: #1e40af;
+      color: #93c5fd;
       font-size: 13px;
       line-height: 1.5;
     }
@@ -115,12 +118,12 @@
     }
 
     .image-item {
-      border: 1px solid #e5e7eb;
+      border: 1px solid #2e2e33;
       border-radius: 8px;
       padding: 8px;
       text-align: center;
       width: 150px;
-      background: white;
+      background: #18181b;
     }
 
     .image-item img {
@@ -157,8 +160,8 @@
 
     /* IMAGE UPLOAD SECTIONS */
     .image-upload-section {
-      background: white;
-      border: 1px solid #e5e7eb;
+      background: #18181b;
+      border: 1px solid #2e2e33;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 20px;
@@ -167,12 +170,12 @@
 
     .image-upload-section h3 {
       margin: 0 0 4px 0;
-      color: #111827;
+      color: #f3f4f6;
       font-size: 16px;
     }
 
     .image-upload-section .subtitle {
-      color: #6b7280;
+      color: #9ca3af;
       font-size: 13px;
       margin-bottom: 16px;
     }
@@ -189,7 +192,7 @@
     }
 
     .image-preview img {
-      border: 1px solid #e5e7eb;
+      border: 1px solid #2e2e33;
       border-radius: 8px;
       object-fit: cover;
     }
@@ -210,9 +213,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f3f4f6;
-      border: 2px dashed #d1d5db;
-      color: #9ca3af;
+      background: #1a1a1f;
+      border: 2px dashed #3a3a42;
+      color: #6b7280;
       font-size: 14px;
     }
 
@@ -238,8 +241,8 @@
 
     .dimension-hint {
       display: inline-block;
-      background: #fef3c7;
-      color: #92400e;
+      background: #451a03;
+      color: #fbbf24;
       font-size: 11px;
       padding: 2px 8px;
       border-radius: 4px;
@@ -247,23 +250,23 @@
     }
 
     .location-card {
-      border: 1px solid #e5e7eb;
+      border: 1px solid #2e2e33;
       border-radius: 8px;
       padding: 16px;
       margin-top: 12px;
       margin-bottom: 12px;
-      background: white;
+      background: #18181b;
     }
 
     .location-card h3 {
       margin: 0 0 12px 0;
       font-size: 15px;
-      color: #111827;
+      color: #f3f4f6;
     }
 
     hr {
       border: none;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid #2e2e33;
       margin: 32px 0;
     }
   </style>
@@ -321,23 +324,23 @@
             <% if (ownerList.length> 0) { %>
               <table style="width:100%; border-collapse: collapse; margin-bottom: 16px;">
                 <thead>
-                  <tr style="background:#f3f4f6; text-align:left;">
-                    <th style="padding:8px; border:1px solid #e5e7eb;">Email</th>
-                    <th style="padding:8px; border:1px solid #e5e7eb;">Nume</th>
-                    <th style="padding:8px; border:1px solid #e5e7eb; width: 100px;">Acțiuni</th>
+                  <tr style="background:#1f1f23; text-align:left;">
+                    <th style="padding:8px; border:1px solid #2e2e33;">Email</th>
+                    <th style="padding:8px; border:1px solid #2e2e33;">Nume</th>
+                    <th style="padding:8px; border:1px solid #2e2e33; width: 100px;">Acțiuni</th>
                   </tr>
                 </thead>
                 <tbody>
                   <% ownerList.forEach(function(o) { %>
                     <tr>
-                      <td style="padding:8px; border:1px solid #e5e7eb;">
+                      <td style="padding:8px; border:1px solid #2e2e33;">
                         <%= o.email %>
                       </td>
-                      <td style="padding:8px; border:1px solid #e5e7eb;">
+                      <td style="padding:8px; border:1px solid #2e2e33;">
                         <%= o.first_name %>
                           <%= o.last_name %>
                       </td>
-                      <td style="padding:8px; border:1px solid #e5e7eb; text-align:center;">
+                      <td style="padding:8px; border:1px solid #2e2e33; text-align:center;">
                         <form method="post" action="/admin/businesses/<%= business.id %>/owners/<%= o.id %>/delete"
                           onsubmit="return confirm('Revoci accesul pentru <%= o.email %>?');" style="margin:0;">
                           <button type="submit" class="button-small" style="margin:0;">Revocă</button>
@@ -348,12 +351,12 @@
                 </tbody>
               </table>
               <% } else { %>
-                <p style="color: #ef4444; font-weight: bold;">⚠️ Acest business nu are niciun administrator atribuit!
+                <p style="color: #f87171; font-weight: bold;">⚠️ Acest business nu are niciun administrator atribuit!
                 </p>
                 <% } %>
 
                   <div
-                    style="background:#f9fafb; border:1px solid #e5e7eb; padding:12px; border-radius:8px; margin-bottom:32px;">
+                    style="background:#18181b; border:1px solid #2e2e33; padding:12px; border-radius:8px; margin-bottom:32px;">
                     <h3 style="margin-top:0; font-size:14px; margin-bottom:8px;">Adaugă administrator nou</h3>
                     <form method="post" action="/admin/businesses/<%= business.id %>/owners"
                       style="display:flex; gap:10px; align-items:flex-end;">
@@ -417,9 +420,9 @@
                     <% const locs=(typeof locations !=='undefined' && locations) ? locations : []; %>
 
                       <% if (locs.length===0) { %>
-                        <p style="color: #6b7280;">Nu există locații definite pentru acest business încă.</p>
+                        <p style="color: #9ca3af;">Nu există locații definite pentru acest business încă.</p>
                         <% } else { %>
-                          <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+                          <p style="font-size:13px;color:#9ca3af;margin-bottom:12px;">
                             Pentru fiecare locație poți seta cum se fac rezervările/programările.
                           </p>
 
@@ -557,7 +560,7 @@
                         <% }); %>
                     </div>
                     <% } else { %>
-                      <p style="color: #6b7280;">Nu există poze în galerie pentru acest business.</p>
+                      <p style="color: #9ca3af;">Nu există poze în galerie pentru acest business.</p>
                       <% } %>
 
                         <div class="image-upload-section" style="margin-top: 16px;">
