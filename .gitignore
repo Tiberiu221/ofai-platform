@@ -23,6 +23,7 @@ dist/
 # OS garbage
 .DS_Store
 Thumbs.db
+nul
 
 # Agent architecture - temporary files
 .tmp/

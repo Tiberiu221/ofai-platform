@@ -5,6 +5,7 @@ const multer = require("multer");
 const { businessAuth, businessUserAuth } = require("../middleware/businessAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { triggerWebhook } = require("../services/n8n");
+const { parsePagination, paginatedResponse, sanitizeString } = require("../helpers/validate");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage pentru Cloudinary)
@@ -635,6 +636,395 @@ router.patch("/:businessId/offers/:offerId/toggle", businessAuth, async (req, re
   } catch (err) {
     console.error("[BusinessPortal] Eroare toggle ofertă:", err);
     res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// =====================================
+//   ANALYTICS - Overview
+// =====================================
+router.get("/:businessId/analytics", businessAuth, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    const [viewsRes, subscribersRes, reviewsRes, offersRes, ratingRes] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*) as total_views,
+                COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
+                COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '30 days') as views_30d
+         FROM business_views WHERE business_id = $1`,
+        [businessId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1",
+        [businessId]
+      ),
+      pool.query(
+        `SELECT COUNT(*) as total_reviews,
+                COALESCE(AVG(rating), 0) as avg_rating
+         FROM reviews WHERE business_id = $1`,
+        [businessId]
+      ),
+      pool.query(
+        `SELECT COUNT(*) as total_offers,
+                COUNT(*) FILTER (WHERE is_active = true AND end_date >= CURRENT_DATE) as active_offers
+         FROM offers WHERE business_id = $1`,
+        [businessId]
+      ),
+      pool.query(
+        `SELECT rating, COUNT(*) as count
+         FROM reviews WHERE business_id = $1
+         GROUP BY rating ORDER BY rating DESC`,
+        [businessId]
+      ),
+    ]);
+
+    // Offer views (separate query to avoid complex join)
+    const offerViewsRes = await pool.query(
+      `SELECT COALESCE(SUM(cnt), 0) as total FROM (
+         SELECT COUNT(*) as cnt FROM offer_views
+         WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '30 days'
+       ) sub`,
+      [businessId]
+    );
+
+    const views = viewsRes.rows[0];
+    const subscribers = parseInt(subscribersRes.rows[0].total) || 0;
+    const reviewStats = reviewsRes.rows[0];
+    const offerStats = offersRes.rows[0];
+
+    const ratingDistribution = [5, 4, 3, 2, 1].map(star => {
+      const found = ratingRes.rows.find(r => parseInt(r.rating) === star);
+      return { rating: star, count: parseInt(found?.count || 0) };
+    });
+
+    res.json({
+      views: {
+        total: parseInt(views.total_views) || 0,
+        last_7d: parseInt(views.views_7d) || 0,
+        last_30d: parseInt(views.views_30d) || 0,
+      },
+      subscribers,
+      reviews: {
+        total: parseInt(reviewStats.total_reviews) || 0,
+        avg_rating: parseFloat(parseFloat(reviewStats.avg_rating).toFixed(1)),
+        distribution: ratingDistribution,
+      },
+      offers: {
+        total: parseInt(offerStats.total_offers) || 0,
+        active: parseInt(offerStats.active_offers) || 0,
+        total_views_30d: parseInt(offerViewsRes.rows[0].total) || 0,
+      },
+    });
+  } catch (err) {
+    console.error("[BusinessPortal] Analytics error:", err);
+    res.status(500).json({ message: "Eroare la statistici" });
+  }
+});
+
+// =====================================
+//   ANALYTICS - Views Timeline
+// =====================================
+router.get("/:businessId/analytics/views", businessAuth, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const period = req.query.period || "30d";
+
+    const intervalMap = { "7d": 7, "30d": 30, "90d": 90 };
+    const days = intervalMap[period] || 30;
+
+    const result = await pool.query(
+      `SELECT DATE(viewed_at) as date, COUNT(*) as views
+       FROM business_views
+       WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '${days} days'
+       GROUP BY DATE(viewed_at)
+       ORDER BY date ASC`,
+      [businessId]
+    );
+
+    // Fill missing days with 0
+    const filledData = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      const found = result.rows.find(r => {
+        const rDate = r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date);
+        return rDate === dateStr;
+      });
+      filledData.push({ date: dateStr, views: parseInt(found?.views || 0) });
+    }
+
+    res.json({ period, data: filledData });
+  } catch (err) {
+    console.error("[BusinessPortal] Views timeline error:", err);
+    res.status(500).json({ message: "Eroare la vizualizari" });
+  }
+});
+
+// =====================================
+//   ANALYTICS - Subscriber Trend
+// =====================================
+router.get("/:businessId/analytics/subscribers", businessAuth, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const period = req.query.period || "30d";
+
+    const intervalMap = { "7d": 7, "30d": 30, "90d": 90 };
+    const days = intervalMap[period] || 30;
+
+    const [trendRes, totalRes] = await Promise.all([
+      pool.query(
+        `SELECT DATE(created_at) as date, COUNT(*) as new_subscribers
+         FROM followed_businesses
+         WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY DATE(created_at)
+         ORDER BY date ASC`,
+        [businessId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1",
+        [businessId]
+      ),
+    ]);
+
+    const data = trendRes.rows.map(r => ({
+      date: r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date),
+      new_subscribers: parseInt(r.new_subscribers),
+    }));
+
+    res.json({
+      period,
+      total: parseInt(totalRes.rows[0].total) || 0,
+      data,
+    });
+  } catch (err) {
+    console.error("[BusinessPortal] Subscriber trend error:", err);
+    res.status(500).json({ message: "Eroare la abonati" });
+  }
+});
+
+// =====================================
+//   REVIEWS - Lista cu status răspuns
+// =====================================
+router.get("/:businessId/reviews", businessAuth, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const { page, limit, offset } = parsePagination(req.query);
+
+    const [result, countResult] = await Promise.all([
+      pool.query(
+        `SELECT r.id, r.rating, r.comment, r.created_at,
+                u.first_name, u.last_name,
+                rr.id as response_id, rr.response_text, rr.created_at as response_date
+         FROM reviews r
+         JOIN users u ON r.user_id = u.id
+         LEFT JOIN review_responses rr ON rr.review_id = r.id
+         WHERE r.business_id = $1
+         ORDER BY r.created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [businessId, limit, offset]
+      ),
+      pool.query("SELECT COUNT(*) as total FROM reviews WHERE business_id = $1", [businessId]),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    const reviews = result.rows.map(r => ({
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      created_at: r.created_at,
+      user: { first_name: r.first_name, last_name: r.last_name },
+      response: r.response_id ? {
+        id: r.response_id,
+        text: r.response_text,
+        created_at: r.response_date,
+      } : null,
+    }));
+
+    res.json(paginatedResponse(reviews, total, page, limit));
+  } catch (err) {
+    console.error("[BusinessPortal] Reviews list error:", err);
+    res.status(500).json({ message: "Eroare la recenzii" });
+  }
+});
+
+// =====================================
+//   REVIEWS - Răspunde la o recenzie
+// =====================================
+router.post("/:businessId/reviews/:reviewId/respond", businessAuth, async (req, res) => {
+  try {
+    const { businessId, reviewId } = req.params;
+    const responseText = sanitizeString(req.body.response_text, 500);
+
+    if (!responseText || responseText.length === 0) {
+      return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
+    }
+
+    // Verify review belongs to this business
+    const reviewCheck = await pool.query(
+      "SELECT id FROM reviews WHERE id = $1 AND business_id = $2",
+      [reviewId, businessId]
+    );
+    if (reviewCheck.rows.length === 0) {
+      return res.status(404).json({ message: "Recenzia nu există" });
+    }
+
+    // Check no existing response
+    const existingRes = await pool.query(
+      "SELECT id FROM review_responses WHERE review_id = $1",
+      [reviewId]
+    );
+    if (existingRes.rows.length > 0) {
+      return res.status(409).json({ message: "Există deja un răspuns pentru această recenzie" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO review_responses (review_id, business_id, response_text, responded_by)
+       VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
+      [reviewId, businessId, responseText, req.user.id]
+    );
+
+    res.status(201).json({
+      success: true,
+      response: {
+        id: result.rows[0].id,
+        text: responseText,
+        created_at: result.rows[0].created_at,
+      },
+    });
+  } catch (err) {
+    console.error("[BusinessPortal] Respond error:", err);
+    res.status(500).json({ message: "Eroare la trimiterea răspunsului" });
+  }
+});
+
+// =====================================
+//   REVIEWS - Editează răspunsul
+// =====================================
+router.put("/:businessId/reviews/:reviewId/respond", businessAuth, async (req, res) => {
+  try {
+    const { businessId, reviewId } = req.params;
+    const responseText = sanitizeString(req.body.response_text, 500);
+
+    if (!responseText || responseText.length === 0) {
+      return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
+    }
+
+    const result = await pool.query(
+      `UPDATE review_responses SET response_text = $1, updated_at = NOW()
+       WHERE review_id = $2 AND business_id = $3 RETURNING id`,
+      [responseText, reviewId, businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Răspunsul nu există" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[BusinessPortal] Update response error:", err);
+    res.status(500).json({ message: "Eroare la editare" });
+  }
+});
+
+// =====================================
+//   REVIEWS - Șterge răspunsul
+// =====================================
+router.delete("/:businessId/reviews/:reviewId/respond", businessAuth, async (req, res) => {
+  try {
+    const { businessId, reviewId } = req.params;
+
+    const result = await pool.query(
+      "DELETE FROM review_responses WHERE review_id = $1 AND business_id = $2 RETURNING id",
+      [reviewId, businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Răspunsul nu există" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[BusinessPortal] Delete response error:", err);
+    res.status(500).json({ message: "Eroare la ștergere" });
+  }
+});
+
+// =====================================
+//   PERFORMANCE SCORE
+// =====================================
+router.get("/:businessId/score", businessAuth, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    const [bizRes, imagesRes, offersRes, reviewsRes, responsesRes, subscribersRes] = await Promise.all([
+      pool.query(
+        "SELECT logo_url, cover_image_url, phone, website, booking_type FROM businesses WHERE id = $1",
+        [businessId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1",
+        [businessId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) as cnt FROM offers WHERE business_id = $1 AND is_active = true AND end_date >= CURRENT_DATE",
+        [businessId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating FROM reviews WHERE business_id = $1",
+        [businessId]
+      ),
+      pool.query(
+        `SELECT
+          (SELECT COUNT(*) FROM reviews WHERE business_id = $1) as total_reviews,
+          (SELECT COUNT(*) FROM review_responses WHERE business_id = $1) as total_responses`,
+        [businessId]
+      ),
+      pool.query(
+        "SELECT COUNT(*) as cnt FROM followed_businesses WHERE business_id = $1",
+        [businessId]
+      ),
+    ]);
+
+    const biz = bizRes.rows[0];
+    if (!biz) return res.status(404).json({ message: "Business negăsit" });
+
+    const imageCount = parseInt(imagesRes.rows[0].cnt);
+    const activeOffers = parseInt(offersRes.rows[0].cnt);
+    const totalReviews = parseInt(reviewsRes.rows[0].total);
+    const avgRating = parseFloat(reviewsRes.rows[0].avg_rating);
+    const totalResponses = parseInt(responsesRes.rows[0].total_responses);
+    const totalReviewsForResponses = parseInt(responsesRes.rows[0].total_reviews);
+    const subscribers = parseInt(subscribersRes.rows[0].cnt);
+
+    const responseRate = totalReviewsForResponses > 0 ? totalResponses / totalReviewsForResponses : 0;
+
+    const breakdown = [
+      { criterion: "Logo", points: 10, earned: biz.logo_url ? 10 : 0, completed: !!biz.logo_url, tip: !biz.logo_url ? "Adaugă un logo pentru a crește vizibilitatea" : null },
+      { criterion: "Cover", points: 5, earned: biz.cover_image_url ? 5 : 0, completed: !!biz.cover_image_url, tip: !biz.cover_image_url ? "Adaugă o imagine de cover" : null },
+      { criterion: "Galerie 3+ imagini", points: 10, earned: imageCount >= 3 ? 10 : 0, completed: imageCount >= 3, tip: imageCount < 3 ? `Adaugă ${3 - imageCount} imagini în galerie` : null },
+      { criterion: "Telefon", points: 5, earned: biz.phone ? 5 : 0, completed: !!biz.phone, tip: !biz.phone ? "Completează numărul de telefon" : null },
+      { criterion: "Website", points: 5, earned: biz.website ? 5 : 0, completed: !!biz.website, tip: !biz.website ? "Adaugă un website" : null },
+      { criterion: "Rezervări", points: 10, earned: (biz.booking_type && biz.booking_type !== "none") ? 10 : 0, completed: !!(biz.booking_type && biz.booking_type !== "none"), tip: (!biz.booking_type || biz.booking_type === "none") ? "Configurează sistemul de rezervări" : null },
+      { criterion: "Ofertă activă", points: 15, earned: activeOffers > 0 ? 15 : 0, completed: activeOffers > 0, tip: activeOffers === 0 ? "Creează cel puțin o ofertă activă" : null },
+      { criterion: "Rating >= 4.0", points: 10, earned: avgRating >= 4.0 ? 10 : 0, completed: avgRating >= 4.0, tip: avgRating < 4.0 ? "Îmbunătățește experiența clienților pentru un rating mai bun" : null },
+      { criterion: "5+ recenzii", points: 10, earned: totalReviews >= 5 ? 10 : 0, completed: totalReviews >= 5, tip: totalReviews < 5 ? `Mai ai nevoie de ${5 - totalReviews} recenzii` : null },
+      { criterion: "80%+ răspunsuri", points: 10, earned: responseRate >= 0.8 ? 10 : 0, completed: responseRate >= 0.8, tip: responseRate < 0.8 ? "Răspunde la recenziile clienților" : null },
+      { criterion: "10+ abonați", points: 10, earned: subscribers >= 10 ? 10 : 0, completed: subscribers >= 10, tip: subscribers < 10 ? `Mai ai nevoie de ${10 - subscribers} abonați` : null },
+    ];
+
+    const totalScore = breakdown.reduce((sum, item) => sum + item.earned, 0);
+
+    res.json({
+      score: totalScore,
+      max_score: 100,
+      breakdown,
+    });
+  } catch (err) {
+    console.error("[BusinessPortal] Score error:", err);
+    res.status(500).json({ message: "Eroare la calculul scorului" });
   }
 });
 

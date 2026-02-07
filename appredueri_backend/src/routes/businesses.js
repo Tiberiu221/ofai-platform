@@ -191,6 +191,12 @@ router.get("/:id", async (req, res) => {
 
     const b = businessRes.rows[0];
 
+    // Fire-and-forget view tracking
+    pool.query(
+      "INSERT INTO business_views (business_id, viewer_ip, user_agent) VALUES ($1, $2, $3)",
+      [id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
+    ).catch(() => {});
+
     // 2. Imagini (Galerie)
     const imagesRes = await pool.query(
       `SELECT id, image_filename, sort_order

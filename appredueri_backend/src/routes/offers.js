@@ -322,6 +322,12 @@ router.get("/:id", async (req, res) => {
 
     const row = result.rows[0];
 
+    // Fire-and-forget view tracking
+    pool.query(
+      "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent) VALUES ($1, $2, $3, $4)",
+      [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
+    ).catch(() => {});
+
     // 2. Determină Booking-ul efectiv (inherit logic)
     let effectiveBooking = {
       type: 'none',

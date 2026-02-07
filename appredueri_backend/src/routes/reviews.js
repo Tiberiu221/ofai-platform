@@ -15,9 +15,11 @@ router.get("/business/:id", async (req, res) => {
         const [result, countResult] = await Promise.all([
           pool.query(
             `SELECT r.id, r.rating, r.comment, r.created_at,
-              u.first_name, u.last_name
+              u.first_name, u.last_name,
+              rr.response_text, rr.created_at as response_date
              FROM reviews r
              JOIN users u ON r.user_id = u.id
+             LEFT JOIN review_responses rr ON rr.review_id = r.id
              WHERE r.business_id = $1
              ORDER BY r.created_at DESC
              LIMIT $2 OFFSET $3`,
@@ -29,7 +31,19 @@ router.get("/business/:id", async (req, res) => {
           ),
         ]);
         const total = parseInt(countResult.rows[0].total, 10);
-        res.json(paginatedResponse(result.rows, total, page, limit));
+        const reviews = result.rows.map(r => ({
+          id: r.id,
+          rating: r.rating,
+          comment: r.comment,
+          created_at: r.created_at,
+          first_name: r.first_name,
+          last_name: r.last_name,
+          response: r.response_text ? {
+            text: r.response_text,
+            date: r.response_date,
+          } : null,
+        }));
+        res.json(paginatedResponse(reviews, total, page, limit));
     } catch (err) {
         console.error(err);
         res.status(500).send("Server Error");

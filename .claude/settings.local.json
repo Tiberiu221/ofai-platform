@@ -14,7 +14,17 @@
       "Bash(package \")",
       "Bash(node --check:*)",
       "Bash(npx tsc:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(findstr:*)",
+      "Bash(del \"\\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul\")",
+      "Bash(cmd.exe /c \"del \\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul\")",
+      "Bash(cmd.exe /c \"del /f /q \\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul\")",
+      "Bash(cmd.exe /c \"pushd \\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri && del nul && popd\")",
+      "Bash(python -c \"import os; os.remove\\(''\\\\\\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul''\\)\")",
+      "Bash(python -c \"import os; os.remove\\(r''\\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul''\\)\")",
+      "Bash(python -c:*)",
+      "Bash(cmd.exe /c \"dir C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul\")",
+      "Bash(cmd.exe /c \"dir /a C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri | findstr nul\")"
     ]
   }
 }
