@@ -24,7 +24,11 @@
       "Bash(python -c \"import os; os.remove\\(r''\\\\?\\\\C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul''\\)\")",
       "Bash(python -c:*)",
       "Bash(cmd.exe /c \"dir C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\nul\")",
-      "Bash(cmd.exe /c \"dir /a C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri | findstr nul\")"
+      "Bash(cmd.exe /c \"dir /a C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri | findstr nul\")",
+      "Bash(cmd.exe /c \"cd C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_mobile && npx tsc --noEmit 2>&1\")",
+      "Bash(cmd.exe /c \"cd /d C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_mobile && npx tsc --noEmit 2>&1\")",
+      "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_mobile''; npx tsc --noEmit 2>&1\")",
+      "Bash(cmd.exe:*)"
     ]
   }
 }
