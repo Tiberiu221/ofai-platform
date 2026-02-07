@@ -62,11 +62,13 @@ const corsOptions = {
     // Permite requests fără origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // Permite doar subdomeniile specifice OFAI (nu orice .vercel.app / .railway.app)
+    // Permite subdomeniile OFAI de pe Vercel (inclusiv preview deploys) și Railway
     if (origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
-      // În development, permite orice subdomain pentru testing
       if (!isProduction) return callback(null, true);
-      // În production, doar dacă e deja în allowedOrigins
+      // În production, permite preview-urile Vercel ale proiectului OFAI
+      if (origin.includes('tiberius-projects') || origin.includes('ofai')) {
+        return callback(null, true);
+      }
     }
     
     if (allowedOrigins.includes(origin)) {
