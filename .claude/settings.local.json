@@ -28,7 +28,8 @@
       "Bash(cmd.exe /c \"cd C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_mobile && npx tsc --noEmit 2>&1\")",
       "Bash(cmd.exe /c \"cd /d C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_mobile && npx tsc --noEmit 2>&1\")",
       "Bash(powershell.exe -Command \"cd ''C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_mobile''; npx tsc --noEmit 2>&1\")",
-      "Bash(cmd.exe:*)"
+      "Bash(cmd.exe:*)",
+      "Bash(dir:*)"
     ]
   }
 }
