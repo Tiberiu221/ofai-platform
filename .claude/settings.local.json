@@ -12,7 +12,8 @@
       "Bash(node -e:*)",
       "Bash(ls -la \"C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_backend\"\" | grep -E \"^d)",
       "Bash(package \")",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
