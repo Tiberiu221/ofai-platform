@@ -10,7 +10,7 @@ const { initSentry, sentryRequestHandler, sentryErrorHandler, sentryUserMiddlewa
 const adminAuth = require("./middleware/adminAuth");
 
 // Rate Limiting
-const { generalLimiter, authLimiter, passwordResetLimiter } = require("./middleware/rateLimiter");
+const { generalLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
 
 // Import Rute
 const authRouter = require("./routes/auth");
@@ -62,14 +62,11 @@ const corsOptions = {
     // Permite requests fără origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
     
-    // Permite orice subdomeniu Vercel (pentru preview deployments)
-    if (origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    
-    // Permite orice subdomeniu Railway (pentru admin panel și preview)
-    if (origin.endsWith('.up.railway.app')) {
-      return callback(null, true);
+    // Permite doar subdomeniile specifice OFAI (nu orice .vercel.app / .railway.app)
+    if (origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
+      // În development, permite orice subdomain pentru testing
+      if (!isProduction) return callback(null, true);
+      // În production, doar dacă e deja în allowedOrigins
     }
     
     if (allowedOrigins.includes(origin)) {
@@ -142,6 +139,8 @@ app.get("/health", (req, res) => {
 app.use("/auth/login", authLimiter);
 app.use("/auth/register", authLimiter);
 app.use("/auth/forgot-password", passwordResetLimiter);
+app.use("/auth/verify-reset-code", verifyResetCodeLimiter);
+app.use("/auth/reset-password", verifyResetCodeLimiter);
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/favorites", favoritesRouter);
@@ -153,8 +152,8 @@ app.use("/businesses", businessesRouter);
 app.use("/reviews", reviewsRoutes);
 app.use("/push-tokens", pushTokensRouter);
 
-// Rute Admin (Securizat cu Basic Auth)
-app.use("/admin", adminAuth, adminRouter);
+// Rute Admin (Securizat cu Basic Auth + Rate Limiting)
+app.use("/admin", adminLimiter, adminAuth, adminRouter);
 
 // Rute Business Portal (pentru business owners)
 app.use("/my-businesses", businessPortalRouter);
@@ -169,10 +168,18 @@ app.use((err, req, res, next) => {
   console.error(`[Error] ${err.message}`);
   console.error(`[Error] Stack: ${err.stack}`);
   
-  // Pentru rutele admin, afișăm eroarea completă (debugging)
+  // Pentru rutele admin, afișăm eroarea (cu escape HTML)
   if (req.path.startsWith('/admin')) {
+    if (isProduction) {
+      return res.status(err.status || 500).send(
+        `<h1>Eroare Admin</h1><p>A apărut o eroare internă.</p><br><a href="/admin/businesses">Înapoi</a>`
+      );
+    }
+    // În development, afișăm detalii (cu escape HTML)
+    const safeMsg = (err.message || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    const safeStack = (err.stack || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     return res.status(err.status || 500).send(
-      `<h1>Eroare Admin</h1><pre>${err.message}\n\n${err.stack}</pre><br><a href="/admin/businesses">Înapoi</a>`
+      `<h1>Eroare Admin</h1><pre>${safeMsg}\n\n${safeStack}</pre><br><a href="/admin/businesses">Înapoi</a>`
     );
   }
   

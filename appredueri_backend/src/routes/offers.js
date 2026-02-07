@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const auth = require("../middleware/auth");
+const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
 // ==============================
 // Helper: Construire URL absolut
@@ -24,6 +25,7 @@ function makeAbsoluteUrl(req, relativePath) {
 router.get("/", async (req, res) => {
   try {
     const { city_id, category_id, business_id, q, sort } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
 
     const filters = [];
     const values = [];
@@ -94,9 +96,28 @@ router.get("/", async (req, res) => {
 
       ${whereClause}
       ORDER BY ${orderBy}
+      LIMIT $${idx} OFFSET $${idx + 1}
     `;
+    values.push(limit, offset);
 
-    const result = await pool.query(query, values);
+    // Count total (fara LIMIT/OFFSET)
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM offers o
+      JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN cities c ON b.city_id = c.id
+      LEFT JOIN categories cat ON b.category_id = cat.id
+      ${whereClause}
+    `;
+    // values fara ultimele 2 (limit, offset)
+    const countValues = values.slice(0, -2);
+
+    const [result, countResult] = await Promise.all([
+      pool.query(query, values),
+      pool.query(countQuery, countValues),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total, 10);
 
     const offers = result.rows.map(row => {
       const avg = parseFloat(row.rating_avg || 0);
@@ -126,7 +147,7 @@ router.get("/", async (req, res) => {
       };
     });
 
-    res.json(offers);
+    res.json(paginatedResponse(offers, total, page, limit));
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");

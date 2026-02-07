@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require("../db");
 const auth = require("../middleware/auth");
 const { triggerWebhook } = require("../services/n8n");
+const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
 // toate rutele de aici necesită JWT
 router.use(auth);
@@ -11,6 +12,7 @@ router.use(auth);
 router.get("/", async (req, res) => {
   try {
     const userId = req.user.id;
+    const { page, limit, offset } = parsePagination(req.query);
 
    const sql = `
   SELECT
@@ -47,10 +49,16 @@ router.get("/", async (req, res) => {
     c.name,
     cat.id,
     cat.name
-  ORDER BY MAX(f.created_at) DESC;
+  ORDER BY MAX(f.created_at) DESC
+  LIMIT $2 OFFSET $3
 `;
 
-    const result = await pool.query(sql, [userId]);
+    const [result, countResult] = await Promise.all([
+      pool.query(sql, [userId, limit, offset]),
+      pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [userId]),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total, 10);
 
 const response = result.rows.map(row => ({
   id: row.business_id,
@@ -71,7 +79,7 @@ const response = result.rows.map(row => ({
   active_offers_count: Number(row.active_offers_count) || 0
 }));
 
-    res.json(response);
+    res.json(paginatedResponse(response, total, page, limit));
   } catch (err) {
     console.error("Eroare la GET /subscriptions:", err);
     res.status(500).json({ message: "Eroare server la subscriptions" });

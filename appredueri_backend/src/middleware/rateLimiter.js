@@ -15,10 +15,8 @@ const generalLimiter = rateLimit({
     message: "Prea multe cereri. Te rugăm să aștepți un minut.",
     retryAfter: 60,
   },
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  // Skip rate limiting pentru admin routes (au deja Basic Auth)
-  skip: (req) => req.path.startsWith("/admin"),
+  standardHeaders: true,
+  legacyHeaders: false,
   // Disable validation warning for default keyGenerator
   validate: { xForwardedForHeader: false },
 });
@@ -37,7 +35,6 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Folosim default keyGenerator (IP-based)
   validate: { xForwardedForHeader: false },
 });
 
@@ -54,13 +51,45 @@ const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Folosim default keyGenerator (IP-based)
+  validate: { xForwardedForHeader: false },
+});
+
+/**
+ * Rate limiter pentru verificare cod resetare parolă
+ * Previne brute force pe codul de 6 cifre
+ * 5 încercări pe 15 minute per IP
+ */
+const verifyResetCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minute
+  max: 5, // max 5 încercări
+  message: {
+    message: "Prea multe încercări de verificare cod. Te rugăm să aștepți 15 minute.",
+    retryAfter: 900,
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
+});
+
+/**
+ * Rate limiter pentru admin routes
+ * 200 requests per minut per IP
+ */
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minut
+  max: 200,
+  message: {
+    message: "Prea multe cereri admin. Te rugăm să aștepți.",
+    retryAfter: 60,
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
   validate: { xForwardedForHeader: false },
 });
 
 /**
  * Rate limiter pentru creare conținut (reviews, etc.)
- * 10 creări pe oră per utilizator
+ * 20 creări pe oră per utilizator
  */
 const createContentLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 oră
@@ -77,5 +106,7 @@ module.exports = {
   generalLimiter,
   authLimiter,
   passwordResetLimiter,
+  verifyResetCodeLimiter,
+  adminLimiter,
   createContentLimiter,
 };

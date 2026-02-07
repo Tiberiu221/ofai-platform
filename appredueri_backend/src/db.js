@@ -11,6 +11,8 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  // Prevent runaway queries from blocking connections
+  statement_timeout: 10000, // 10 secunde max per query
 });
 
 // Log connection status

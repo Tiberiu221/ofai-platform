@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const auth = require("../middleware/auth");
+const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
 // toate rutele de aici necesita autentificare
 router.use(auth);
@@ -10,6 +11,7 @@ router.use(auth);
 router.get("/", async (req, res) => {
   try {
     const userId = req.user.id;
+    const { page, limit, offset } = parsePagination(req.query);
 
     const sql = `
       SELECT
@@ -42,12 +44,18 @@ router.get("/", async (req, res) => {
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
       WHERE f.user_id = $1
-      ORDER BY f.created_at DESC;
+      ORDER BY f.created_at DESC
+      LIMIT $2 OFFSET $3
     `;
 
-    const result = await pool.query(sql, [userId]);
+    const [result, countResult] = await Promise.all([
+      pool.query(sql, [userId, limit, offset]),
+      pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [userId]),
+    ]);
 
-    const response = result.rows.map((row) => ({
+    const total = parseInt(countResult.rows[0].total, 10);
+
+    const favorites = result.rows.map((row) => ({
       id: row.offer_id,
       title: row.title,
       description: row.description,
@@ -74,7 +82,7 @@ router.get("/", async (req, res) => {
         : null
     }));
 
-    res.json(response);
+    res.json(paginatedResponse(favorites, total, page, limit));
   } catch (err) {
     console.error("Eroare la GET /favorites:", err);
     res.status(500).json({ message: "Eroare server la favorite" });

@@ -3,23 +3,33 @@ const router = express.Router();
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth"); // Asigură-te că calea e corectă
 const { triggerWebhook } = require("../services/n8n");
+const { parsePagination, paginatedResponse, sanitizeString } = require("../helpers/validate");
 
 // ==========================================
 // GET /reviews/business/:id - Vezi recenziile unui business
 // ==========================================
 router.get("/business/:id", async (req, res) => {
     const { id } = req.params;
+    const { page, limit, offset } = parsePagination(req.query);
     try {
-        const result = await pool.query(
-            `SELECT r.id, r.rating, r.comment, r.created_at, 
+        const [result, countResult] = await Promise.all([
+          pool.query(
+            `SELECT r.id, r.rating, r.comment, r.created_at,
               u.first_name, u.last_name
-       FROM reviews r
-       JOIN users u ON r.user_id = u.id
-       WHERE r.business_id = $1
-       ORDER BY r.created_at DESC`,
+             FROM reviews r
+             JOIN users u ON r.user_id = u.id
+             WHERE r.business_id = $1
+             ORDER BY r.created_at DESC
+             LIMIT $2 OFFSET $3`,
+            [id, limit, offset]
+          ),
+          pool.query(
+            "SELECT COUNT(*) as total FROM reviews WHERE business_id = $1",
             [id]
-        );
-        res.json(result.rows);
+          ),
+        ]);
+        const total = parseInt(countResult.rows[0].total, 10);
+        res.json(paginatedResponse(result.rows, total, page, limit));
     } catch (err) {
         console.error(err);
         res.status(500).send("Server Error");
@@ -32,17 +42,19 @@ router.get("/business/:id", async (req, res) => {
 // src/routes/reviews.js
 
 router.post("/", authenticateToken, async (req, res) => {
-    const { business_id, rating, comment } = req.body;
+    const { business_id, rating, comment: rawComment } = req.body;
     const user_id = req.user.id;
-
-    console.log("=== REVIEW POST START ===");
-    console.log("User ID:", user_id);
-    console.log("Business ID:", business_id);
-    console.log("Rating:", rating);
 
     if (!rating || rating < 1 || rating > 5) {
         return res.status(400).json({ error: "Rating invalid (1-5)." });
     }
+
+    if (!business_id) {
+        return res.status(400).json({ error: "business_id este necesar." });
+    }
+
+    // Sanitize comment — max 2000 caractere
+    const comment = sanitizeString(rawComment, 2000) || null;
 
     const client = await pool.connect();
 

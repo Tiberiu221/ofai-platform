@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const { getExistingSummary } = require("../services/llm/summarizationService");
+const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
 // helper ca în offers.js
 function makeAbsoluteUrl(base, maybeUrl) {
@@ -24,6 +25,7 @@ function makeAbsoluteUrl(base, maybeUrl) {
 router.get("/", async (req, res) => {
   try {
     const { city_id, category_id, q } = req.query;
+    const { page, limit, offset } = parsePagination(req.query);
 
     const filters = [];
     const values = [];
@@ -97,10 +99,27 @@ router.get("/", async (req, res) => {
         GROUP BY business_id
       ) r ON r.business_id = b.id
       ${whereClause}
-      ORDER BY c.name, cat.name, b.name;
+      ORDER BY c.name, cat.name, b.name
+      LIMIT $${idx} OFFSET $${idx + 1}
     `;
+    values.push(limit, offset);
 
-    const result = await pool.query(sql, values);
+    // Count total
+    const countSql = `
+      SELECT COUNT(*) as total
+      FROM businesses b
+      JOIN cities c ON c.id = b.city_id
+      JOIN categories cat ON cat.id = b.category_id
+      ${whereClause}
+    `;
+    const countValues = values.slice(0, -2);
+
+    const [result, countResult] = await Promise.all([
+      pool.query(sql, values),
+      pool.query(countSql, countValues),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total, 10);
     const baseUrl = `${req.protocol}://${req.get("host")}`;
 
     const businesses = result.rows.map((row) => ({
@@ -129,7 +148,7 @@ router.get("/", async (req, res) => {
       rating_count: parseInt(row.rating_count || 0),
     }));
 
-    return res.json(businesses);
+    return res.json(paginatedResponse(businesses, total, page, limit));
   } catch (err) {
     console.error("Eroare la GET /businesses:", err);
     return res

@@ -6,8 +6,12 @@ const pool = require("../db");
 const authenticateToken = require("../middleware/auth");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
+const { isValidEmail, sanitizeString } = require("../helpers/validate");
 
-// ATENȚIE: în producție pune un JWT_SECRET real în env.
+// JWT_SECRET — MUST be set in production
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("FATAL: JWT_SECRET is not set in production!");
+}
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const SALT_ROUNDS = 10;
 
