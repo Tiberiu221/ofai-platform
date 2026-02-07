@@ -23,19 +23,24 @@ router.get("/", async (req, res) => {
     b.website,
     b.lat,
     b.lng,
+    b.logo_url,
+    b.cover_image_url,
     c.id   AS city_id,
     c.name AS city_name,
     cat.id   AS category_id,
     cat.name AS category_name,
-    COUNT(DISTINCT o.id) AS active_offers_count
+    COUNT(DISTINCT o.id) AS active_offers_count,
+    COALESCE(AVG(rev.rating), 0) AS rating_avg,
+    COUNT(DISTINCT rev.id) AS rating_count
   FROM followed_businesses f
   JOIN businesses b ON b.id = f.business_id
-  JOIN cities c     ON c.id = b.city_id
-  JOIN categories cat ON cat.id = b.category_id
+  LEFT JOIN cities c     ON c.id = b.city_id
+  LEFT JOIN categories cat ON cat.id = b.category_id
   LEFT JOIN offers o
     ON o.business_id = b.id
    AND o.is_active = TRUE
    AND o.end_date >= CURRENT_DATE
+  LEFT JOIN reviews rev ON rev.business_id = b.id
   WHERE f.user_id = $1
   GROUP BY
     b.id,
@@ -45,6 +50,8 @@ router.get("/", async (req, res) => {
     b.website,
     b.lat,
     b.lng,
+    b.logo_url,
+    b.cover_image_url,
     c.id,
     c.name,
     cat.id,
@@ -68,14 +75,16 @@ const response = result.rows.map(row => ({
   website: row.website,
   lat: row.lat,
   lng: row.lng,
-  city: {
-    id: row.city_id,
-    name: row.city_name
-  },
-  category: {
-    id: row.category_id,
-    name: row.category_name
-  },
+  logo_url: row.logo_url || null,
+  cover_image_url: row.cover_image_url || null,
+  rating: parseFloat(parseFloat(row.rating_avg).toFixed(1)),
+  rating_count: parseInt(row.rating_count) || 0,
+  city: row.city_id
+    ? { id: row.city_id, name: row.city_name }
+    : null,
+  category: row.category_id
+    ? { id: row.category_id, name: row.category_name }
+    : null,
   active_offers_count: Number(row.active_offers_count) || 0
 }));
 

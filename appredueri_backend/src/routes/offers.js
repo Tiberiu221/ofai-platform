@@ -57,8 +57,9 @@ router.get("/", async (req, res) => {
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
 
-        b.id as business_id, b.name as business_name, 
+        b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
+        b.cover_image_url as business_cover,
 
         c.name as city_name, cat.name as category_name,
 
@@ -131,12 +132,13 @@ router.get("/", async (req, res) => {
         discount_value: row.discount_value,
         start_date: row.start_date,
         end_date: row.end_date,
-        image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_logo),
+        image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
         locations: Array.isArray(row.locations) ? row.locations : [],
         business: {
           id: row.business_id,
           name: row.business_name,
           logo_url: makeAbsoluteUrl(req, row.business_logo),
+          cover_image_url: makeAbsoluteUrl(req, row.business_cover),
           city: row.city_name,
           category: row.category_name,
           lat: row.lat,
@@ -207,8 +209,9 @@ router.get("/feed", auth, async (req, res) => {
         o.id, o.title, o.description, o.discount_type, o.discount_value, 
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
-        b.id as business_id, b.name as business_name, 
+        b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
+        b.cover_image_url as business_cover,
         c.name as city_name, cat.name as category_name,
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
         (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
@@ -243,12 +246,13 @@ router.get("/feed", auth, async (req, res) => {
       discount_value: row.discount_value,
       start_date: row.start_date,
       end_date: row.end_date,
-      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_logo),
+      image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
       locations: Array.isArray(row.locations) ? row.locations : [],
       business: {
         id: row.business_id,
         name: row.business_name,
         logo_url: makeAbsoluteUrl(req, row.business_logo),
+        cover_image_url: makeAbsoluteUrl(req, row.business_cover),
         city: row.city_name,
         category: row.category_name,
         lat: row.lat,
@@ -295,6 +299,7 @@ router.get("/:id", async (req, res) => {
         b.lat as business_lat,
         b.lng as business_lng,
         b.logo_url as business_logo,
+        b.cover_image_url as business_cover,
         -- Booking business
         b.booking_type as biz_booking_type,
         b.booking_phone as biz_booking_phone,
@@ -414,7 +419,7 @@ router.get("/:id", async (req, res) => {
       end_date: row.end_date,
       is_active: row.is_active,
 
-      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_logo),
+      image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
 
       // Booking efectiv (dupa logica inherit)
       booking: {

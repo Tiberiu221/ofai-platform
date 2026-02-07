@@ -24,6 +24,7 @@ router.get("/", async (req, res) => {
         o.start_date,
         o.end_date,
         o.is_active,
+        o.logo_url AS offer_logo,
 
         b.id AS business_id,
         b.name AS business_name,
@@ -32,17 +33,22 @@ router.get("/", async (req, res) => {
         b.website,
         b.lat,
         b.lng,
+        b.logo_url AS business_logo,
+        b.cover_image_url AS business_cover,
 
         c.id AS city_id,
         c.name AS city_name,
 
         cat.id AS category_id,
-        cat.name AS category_name
+        cat.name AS category_name,
+
+        (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) AS rating_avg,
+        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) AS rating_count
       FROM favorite_offers f
       JOIN offers o ON o.id = f.offer_id
       JOIN businesses b ON b.id = o.business_id
-      JOIN cities c ON c.id = b.city_id
-      JOIN categories cat ON cat.id = b.category_id
+      LEFT JOIN cities c ON c.id = b.city_id
+      LEFT JOIN categories cat ON cat.id = b.category_id
       WHERE f.user_id = $1
       ORDER BY f.created_at DESC
       LIMIT $2 OFFSET $3
@@ -65,6 +71,7 @@ router.get("/", async (req, res) => {
       start_date: row.start_date,
       end_date: row.end_date,
       is_active: row.is_active,
+      image_url: row.offer_logo || row.business_cover || row.business_logo || null,
       business: {
         id: row.business_id,
         name: row.business_name,
@@ -72,7 +79,11 @@ router.get("/", async (req, res) => {
         phone: row.phone,
         website: row.website,
         lat: row.lat,
-        lng: row.lng
+        lng: row.lng,
+        logo_url: row.business_logo || null,
+        cover_image_url: row.business_cover || null,
+        rating: parseFloat(parseFloat(row.rating_avg).toFixed(1)),
+        rating_count: parseInt(row.rating_count)
       },
       city: row.city_id
         ? { id: row.city_id, name: row.city_name }

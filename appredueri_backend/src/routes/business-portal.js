@@ -1003,8 +1003,7 @@ router.get("/:businessId/score", businessAuth, async (req, res) => {
 
     const breakdown = [
       { criterion: "Logo", points: 10, earned: biz.logo_url ? 10 : 0, completed: !!biz.logo_url, tip: !biz.logo_url ? "Adaugă un logo pentru a crește vizibilitatea" : null },
-      { criterion: "Cover", points: 5, earned: biz.cover_image_url ? 5 : 0, completed: !!biz.cover_image_url, tip: !biz.cover_image_url ? "Adaugă o imagine de cover" : null },
-      { criterion: "Galerie 3+ imagini", points: 10, earned: imageCount >= 3 ? 10 : 0, completed: imageCount >= 3, tip: imageCount < 3 ? `Adaugă ${3 - imageCount} imagini în galerie` : null },
+      { criterion: "Cover", points: 15, earned: biz.cover_image_url ? 15 : 0, completed: !!biz.cover_image_url, tip: !biz.cover_image_url ? "Adaugă o imagine de cover pentru a crește vizibilitatea" : null },
       { criterion: "Telefon", points: 5, earned: biz.phone ? 5 : 0, completed: !!biz.phone, tip: !biz.phone ? "Completează numărul de telefon" : null },
       { criterion: "Website", points: 5, earned: biz.website ? 5 : 0, completed: !!biz.website, tip: !biz.website ? "Adaugă un website" : null },
       { criterion: "Rezervări", points: 10, earned: (biz.booking_type && biz.booking_type !== "none") ? 10 : 0, completed: !!(biz.booking_type && biz.booking_type !== "none"), tip: (!biz.booking_type || biz.booking_type === "none") ? "Configurează sistemul de rezervări" : null },
