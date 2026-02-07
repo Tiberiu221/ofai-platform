@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
 const pool = require("../db");
+const { verifyToken } = require("../helpers/jwt");
 
 /**
  * Middleware pentru autorizare Business Portal
@@ -21,11 +21,10 @@ async function businessAuth(req, res, next) {
   }
 
   const token = authHeader.split(" ")[1];
-  const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
   let decoded;
   try {
-    decoded = jwt.verify(token, JWT_SECRET);
+    decoded = verifyToken(token);
   } catch (err) {
     console.error("Eroare token:", err);
     return res.status(401).json({ message: "Token invalid sau expirat" });
@@ -89,10 +88,9 @@ async function businessUserAuth(req, res, next) {
   }
 
   const token = authHeader.split(" ")[1];
-  const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = verifyToken(token);
     
     const userResult = await pool.query(
       "SELECT id, email, role FROM users WHERE id = $1",

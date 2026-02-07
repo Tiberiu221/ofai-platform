@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const { getExistingSummary } = require("../services/llm/summarizationService");
+const { getExistingSummary, getSummary, canSummarize } = require("../services/llm/summarizationService");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
 // helper ca în offers.js

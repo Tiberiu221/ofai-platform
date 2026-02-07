@@ -1,18 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
 const { isValidEmail, sanitizeString } = require("../helpers/validate");
+const { signToken } = require("../helpers/jwt");
 
-// JWT_SECRET — MUST be set in production
-if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  throw new Error("FATAL: JWT_SECRET is not set in production!");
-}
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const SALT_ROUNDS = 10;
 
 // Helper pentru a standardiza obiectul User trimis către Frontend
@@ -63,7 +58,7 @@ router.post("/register", async (req, res) => {
       [user.id]
     );
 
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = signToken({ id: user.id }, "7d");
 
     // Trimite email de bun venit (async, nu blochează răspunsul)
     sendWelcomeEmail(user.email, user.first_name).catch(err => {
@@ -121,7 +116,7 @@ router.post("/login", async (req, res) => {
     );
     const points = pointsRes.rows[0]?.total_points || 0;
 
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "30d" });
+    const token = signToken({ id: user.id }, "30d");
 
     return res.json({
       user: mapUserResponse(user, points),
@@ -351,9 +346,6 @@ router.post("/change-password", authenticateToken, async (req, res) => {
 // GET /auth/me
 router.get("/me", authenticateToken, async (req, res) => {
   try {
-    console.log("--- DEBUG /me START ---");
-    console.log("User ID din Token:", req.user.id);
-
     const userRes = await pool.query(
       `SELECT * FROM users WHERE id = $1`,
       [req.user.id]
@@ -368,15 +360,9 @@ router.get("/me", authenticateToken, async (req, res) => {
     await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.user.id]);
 
     const user = userRes.rows[0];
-    // Logăm exact ce vine din baza de date pentru puncte
-    console.log("Raw DB Points Result:", pointsRes.rows);
-
     const points = pointsRes.rows[0]?.total_points || 0;
-    console.log("Points calculate:", points);
 
     const responseData = mapUserResponse(user, points);
-    console.log("Ce trimitem la Frontend:", responseData);
-    console.log("--- DEBUG /me END ---");
 
     res.json(responseData);
   } catch (err) {

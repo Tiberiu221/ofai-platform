@@ -674,7 +674,6 @@ router.post("/businesses/:id/delete", async (req, res) => {
     }
 
     res.redirect("/admin/businesses");
-    res.redirect("/admin/businesses");
   } catch (err) {
     console.error(err);
     res.status(500).send("Eroare stergere");

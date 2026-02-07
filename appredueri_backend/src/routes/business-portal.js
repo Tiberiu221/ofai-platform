@@ -232,7 +232,7 @@ router.post("/:businessId/logo", businessAuth, upload.single("logo"), async (req
   } catch (err) {
     console.error("[BusinessPortal] Error uploading logo:", err);
     // Trimitem mesajul de eroare către client pentru debugging (ex: Missing Cloudinary config)
-    res.status(500).json({ message: `Eroare la încărcarea logo-ului: ${err.message}` });
+    res.status(500).json({ message: "Eroare internă" });
   }
 });
 
@@ -561,7 +561,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
 
       // Upload noua imagine cu rezoluție specifică pentru ofertă (800x600)
       const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
-      updates.push(`logo_url = ${paramIndex++}`);
+      updates.push(`logo_url = $${paramIndex++}`);
       values.push(uploadResult.url);
     }
 
@@ -735,10 +735,10 @@ router.get("/:businessId/analytics/views", businessAuth, async (req, res) => {
     const result = await pool.query(
       `SELECT DATE(viewed_at) as date, COUNT(*) as views
        FROM business_views
-       WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '${days} days'
+       WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '1 day' * $2
        GROUP BY DATE(viewed_at)
        ORDER BY date ASC`,
-      [businessId]
+      [businessId, days]
     );
 
     // Fill missing days with 0
@@ -777,10 +777,10 @@ router.get("/:businessId/analytics/subscribers", businessAuth, async (req, res) 
       pool.query(
         `SELECT DATE(created_at) as date, COUNT(*) as new_subscribers
          FROM followed_businesses
-         WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '${days} days'
+         WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
          GROUP BY DATE(created_at)
          ORDER BY date ASC`,
-        [businessId]
+        [businessId, days]
       ),
       pool.query(
         "SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1",
