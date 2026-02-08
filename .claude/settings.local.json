@@ -48,7 +48,9 @@
       "Bash(set \"ANTHROPIC_API_KEY=sk-test-dummy\")",
       "Bash(timeout /t 4 /nobreak)",
       "Bash(taskkill:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(nslookup:*)",
+      "WebFetch(domain:ofai.ro)"
     ]
   }
 }
