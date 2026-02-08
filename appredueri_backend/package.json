@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "review-summaries:batch": "node scripts/review-summary-batch.js"
+    "review-summaries:batch": "node scripts/review-summary-batch.js",
+    "seed:businesses": "node scripts/seed-businesses.js"
   },
   "keywords": [],
   "author": "",
