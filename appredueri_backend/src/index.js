@@ -25,6 +25,7 @@ const adminRouter = require("./routes/admin");
 const businessPortalRouter = require("./routes/business-portal");
 const reviewsRoutes = require("./routes/reviews");
 const pushTokensRouter = require("./routes/push-tokens");
+const webRouter = require("./routes/web");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -111,6 +112,9 @@ app.set("views", path.join(__dirname, "views"));
 const uploadsPath = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsPath));
 
+// Configurare Folder Static (Public — CSS, JS, Images)
+app.use(express.static(path.join(__dirname, "public"), { maxAge: "1d" }));
+
 // Request logging (în development)
 if (!isProduction) {
   app.use((req, res, next) => {
@@ -122,8 +126,8 @@ if (!isProduction) {
 // ============================================
 // HEALTHCHECK & INFO
 // ============================================
-app.get("/", (req, res) => {
-  res.json({ 
+app.get("/api", (req, res) => {
+  res.json({
     message: "API OFAI este activ!",
     version: "1.0.0",
     environment: isProduction ? "production" : "development"
@@ -133,6 +137,11 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
+
+// ============================================
+// WEB PAGES (Public — Landing, Oferte, etc.)
+// ============================================
+app.use(webRouter);
 
 // ============================================
 // MONTARE RUTE

@@ -62,10 +62,11 @@ const LLM_CONFIG = {
  */
 function validateConfig() {
   if (!LLM_CONFIG.apiKey) {
-    throw new Error(
-      'ANTHROPIC_API_KEY is not set. Please add it to your .env file.\n' +
-      'Get your API key from: https://console.anthropic.com/'
+    console.warn(
+      '⚠️ [LLM] ANTHROPIC_API_KEY is not set. Review summaries will not work.\n' +
+      '   Get your API key from: https://console.anthropic.com/'
     );
+    return; // Non-fatal — server can still start without LLM features
   }
   
   if (LLM_CONFIG.temperature < 0 || LLM_CONFIG.temperature > 1) {

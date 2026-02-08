@@ -1,0 +1,134 @@
+<%- include('partials/head', { pageTitle: 'Oferte', activePage: 'oferte' }) %>
+<%- include('partials/navbar', { activePage: 'oferte' }) %>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE HEADER
+     ═══════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="page-header-glow"></div>
+  <div class="container">
+    <h1 class="page-title text-gradient">Oferte & Reduceri</h1>
+    <p class="page-subtitle"><%= totalOffers.toLocaleString('ro-RO') %> oferte active în <%= totalCities %> orașe</p>
+
+    <div class="search-wrapper" style="margin-top: 32px;">
+      <form action="/oferte" method="GET" id="searchForm">
+        <input
+          type="text"
+          name="q"
+          class="search-bar"
+          placeholder="Caută oferte, business-uri..."
+          value="<%= typeof query !== 'undefined' ? query : '' %>"
+        >
+        <div class="search-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <% if (typeof selectedCity !== 'undefined' && selectedCity) { %>
+          <input type="hidden" name="city" value="<%= selectedCity %>">
+        <% } %>
+        <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
+          <input type="hidden" name="category" value="<%= selectedCategory %>">
+        <% } %>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FILTER BAR
+     ═══════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="filter-bar">
+    <a href="/oferte" class="filter-pill<%= !selectedCategory ? ' active' : '' %>">Toate</a>
+    <% categories.forEach(cat => { %>
+      <a href="/oferte?category=<%= cat.id %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+         class="filter-pill<%= selectedCategory == cat.id ? ' active' : '' %>">
+        <%= cat.name %>
+      </a>
+    <% }); %>
+  </div>
+
+  <% if (cities && cities.length > 0) { %>
+    <div class="filter-bar" style="padding-top: 0; margin-top: -8px;">
+      <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 0 4px;">Oraș:</span>
+      <a href="/oferte?<%= selectedCategory ? 'category=' + selectedCategory + '&' : '' %><%= query ? 'q=' + encodeURIComponent(query) : '' %>"
+         class="filter-pill<%= !selectedCity ? ' active' : '' %>">Toate</a>
+      <% cities.forEach(city => { %>
+        <a href="/oferte?city=<%= city.id %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+           class="filter-pill<%= selectedCity == city.id ? ' active' : '' %>">
+          <%= city.name %>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <!-- ═══════════════════════════════════════════════════════
+       OFFERS GRID
+       ═══════════════════════════════════════════════════════ -->
+  <% if (offers.length === 0) { %>
+    <div style="text-align: center; padding: 80px 0;">
+      <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
+      <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Nicio ofertă găsită</h3>
+      <p style="color: var(--text-secondary);">Încearcă alte filtre sau caută altceva.</p>
+      <a href="/oferte" class="btn btn-secondary" style="margin-top: 24px;">Resetează filtrele</a>
+    </div>
+  <% } else { %>
+    <div class="offers-grid">
+      <% offers.forEach((offer, i) => { %>
+        <div class="offer-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
+          <div class="offer-image-wrapper">
+            <img
+              src="<%= offer.image_url || offer.business_cover || 'https://picsum.photos/seed/offer-' + offer.id + '/800/500' %>"
+              alt="<%= offer.title %>"
+              class="offer-image"
+              loading="lazy"
+            >
+            <div class="offer-badge">
+              <% if (offer.discount_type === 'percent') { %>
+                -<%= offer.discount_value %>%
+              <% } else { %>
+                <%= offer.discount_value %> lei
+              <% } %>
+            </div>
+          </div>
+          <div class="offer-content">
+            <div class="offer-business"><%= offer.business_name %></div>
+            <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-meta">
+              <span class="offer-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <%= offer.city_name %>
+              </span>
+              <span class="offer-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <%= offer.category_name %>
+              </span>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <div style="display: flex; justify-content: center; gap: 8px; padding: 48px 0 80px;">
+        <% for (let p = 1; p <= Math.min(totalPages, 10); p++) { %>
+          <a href="/oferte?page=<%= p %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+             class="filter-pill<%= currentPage == p ? ' active' : '' %>"
+             style="min-width: 40px; justify-content: center;">
+            <%= p %>
+          </a>
+        <% } %>
+        <% if (totalPages > 10) { %>
+          <span class="filter-pill" style="cursor: default;">...</span>
+          <a href="/oferte?page=<%= totalPages %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+             class="filter-pill<%= currentPage == totalPages ? ' active' : '' %>"
+             style="min-width: 40px; justify-content: center;">
+            <%= totalPages %>
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

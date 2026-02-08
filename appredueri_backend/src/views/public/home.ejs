@@ -1,0 +1,246 @@
+<%- include('partials/head', { pageTitle: 'Reduceri & Oferte', activePage: 'home' }) %>
+<%- include('partials/navbar', { activePage: 'home' }) %>
+
+<!-- ═══════════════════════════════════════════════════════
+     HERO SECTION
+     ═══════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow-secondary"></div>
+  <div class="hero-grid-bg"></div>
+
+  <div class="hero-content">
+    <div class="hero-pill">
+      <span class="hero-pill-dot"></span>
+      <span><strong><%= stats.newOffers %>+</strong> oferte noi săptămâna aceasta</span>
+    </div>
+
+    <h1 class="hero-title text-gradient">
+      Reduceri de la business-uri <span class="accent">locale</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      Descoperă cele mai bune oferte de la peste <%= stats.totalBusinesses.toLocaleString('ro-RO') %> business-uri din <%= stats.totalCities %> orașe. Restaurante, beauty, fitness și multe altele.
+    </p>
+
+    <div class="search-wrapper" style="margin-bottom: 40px;">
+      <form action="/oferte" method="GET">
+        <input type="text" name="q" class="search-bar" placeholder="Caută oferte, business-uri, categorii...">
+        <div class="search-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+      </form>
+    </div>
+
+    <div class="hero-ctas">
+      <a href="/oferte" class="btn btn-primary btn-lg">
+        Explorează oferte
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+      <a href="#how-it-works" class="btn btn-secondary btn-lg">Cum funcționează?</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-count="<%= stats.totalBusinesses %>" data-suffix="+">0</div>
+        <div class="hero-stat-label">Business-uri</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-count="<%= stats.totalOffers %>" data-suffix="+">0</div>
+        <div class="hero-stat-label">Oferte active</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-value" data-count="<%= stats.totalCities %>">0</div>
+        <div class="hero-stat-label">Orașe</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     MARQUEE — Business-uri partenere
+     ═══════════════════════════════════════════════════════ -->
+<section class="marquee-section">
+  <div class="marquee-label">Business-uri partenere pe platformă</div>
+  <div class="marquee-track">
+    <% const marqueeItems = featuredBusinesses.concat(featuredBusinesses); %>
+    <% marqueeItems.forEach(biz => { %>
+      <div class="marquee-item">
+        <img src="<%= biz.logo_url %>" alt="<%= biz.name %>" loading="lazy" onerror="this.style.display='none'">
+        <span><%= biz.name %></span>
+      </div>
+    <% }); %>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     CATEGORIES SECTION
+     ═══════════════════════════════════════════════════════ -->
+<section class="section" id="categories">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">📂 Categorii</div>
+      <h2 class="section-title text-gradient">Ce te interesează?</h2>
+      <p class="section-subtitle">Explorează oferte din categoriile care te pasionează</p>
+    </div>
+
+    <div class="categories-grid">
+      <% const catIcons = {
+        'Clinica': '🏥', 'Frizerie': '💈', 'Beauty': '💄', 'Auto': '🚗',
+        'Restaurant': '🍽️', 'Cafenea': '☕', 'Fitness': '💪', 'Spa & Wellness': '🧖',
+        'Optica': '👓', 'Farmacie': '💊', 'Veterinar': '🐾', 'Stomatologie': '🦷',
+        'Florarie': '🌸', 'Curatatorie': '👔', 'Foto & Video': '📸'
+      }; %>
+      <% categories.forEach((cat, i) => { %>
+        <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= Math.min(i % 5 + 1, 5) %>">
+          <div class="category-icon"><%= catIcons[cat.name] || '📦' %></div>
+          <div class="category-name"><%= cat.name %></div>
+          <div class="category-count"><%= cat.offer_count || 0 %> oferte</div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     FEATURED OFFERS — Bento Grid
+     ═══════════════════════════════════════════════════════ -->
+<section class="section" style="background: var(--bg-secondary);">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">🔥 Populare</div>
+      <h2 class="section-title text-gradient">Oferte de top</h2>
+      <p class="section-subtitle">Cele mai căutate reduceri din această săptămână</p>
+    </div>
+
+    <div class="offers-bento">
+      <% featuredOffers.forEach((offer, i) => { %>
+        <a href="/oferte" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 5) %><%= i === 0 ? ' featured' : '' %>">
+          <div class="offer-image-wrapper">
+            <img
+              src="<%= offer.image_url || offer.business_cover || 'https://picsum.photos/seed/offer-' + offer.id + '/800/500' %>"
+              alt="<%= offer.title %>"
+              class="offer-image"
+              loading="lazy"
+            >
+            <div class="offer-badge">
+              <% if (offer.discount_type === 'percent') { %>
+                -<%= offer.discount_value %>%
+              <% } else { %>
+                <%= offer.discount_value %> lei
+              <% } %>
+            </div>
+          </div>
+          <div class="offer-content">
+            <div class="offer-business"><%= offer.business_name %></div>
+            <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-meta">
+              <span class="offer-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <%= offer.city_name %>
+              </span>
+              <span class="offer-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <%= offer.category_name %>
+              </span>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+
+    <div style="text-align: center; margin-top: 48px;" class="reveal">
+      <a href="/oferte" class="btn btn-secondary btn-lg">
+        Vezi toate ofertele
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     HOW IT WORKS
+     ═══════════════════════════════════════════════════════ -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">✨ Simplu</div>
+      <h2 class="section-title text-gradient">Cum funcționează?</h2>
+      <p class="section-subtitle">Trei pași simpli pentru a accesa cele mai bune oferte</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card reveal reveal-delay-1">
+        <div class="step-number">1</div>
+        <h3 class="step-title">Descoperă</h3>
+        <p class="step-desc">Caută oferte în orașul tău sau explorează pe categorii. Filtrează după ce te interesează.</p>
+      </div>
+      <div class="step-card reveal reveal-delay-2">
+        <div class="step-number">2</div>
+        <h3 class="step-title">Salvează</h3>
+        <p class="step-desc">Adaugă ofertele preferate la favorite și urmărește business-urile care te interesează.</p>
+      </div>
+      <div class="step-card reveal reveal-delay-3">
+        <div class="step-number">3</div>
+        <h3 class="step-title">Profită</h3>
+        <p class="step-desc">Mergi la business și prezintă oferta. Bucură-te de reducere!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     CITIES SECTION
+     ═══════════════════════════════════════════════════════ -->
+<section class="section" style="background: var(--bg-secondary);">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">📍 Orașe</div>
+      <h2 class="section-title text-gradient">Disponibil în orașul tău</h2>
+      <p class="section-subtitle">Oferte locale din cele mai mari orașe din România</p>
+    </div>
+
+    <div class="cities-scroll">
+      <% const cityImages = {
+        'Bucuresti': 'romania-bucharest', 'Cluj-Napoca': 'cluj-romania',
+        'Timisoara': 'timisoara-romania', 'Iasi': 'iasi-romania',
+        'Constanta': 'constanta-romania', 'Brasov': 'brasov-romania',
+        'Craiova': 'craiova-romania', 'Sibiu': 'sibiu-romania',
+        'Oradea': 'oradea-romania', 'Galati': 'galati-romania',
+        'Arad': 'arad-romania', 'Ploiesti': 'ploiesti-romania',
+        'Pitesti': 'pitesti-romania', 'Baia Mare': 'baia-mare',
+        'Targu Mures': 'targu-mures'
+      }; %>
+      <% cities.forEach((city, i) => { %>
+        <a href="/oferte?city=<%= city.id %>" class="city-card reveal reveal-delay-<%= Math.min(i % 5 + 1, 5) %>">
+          <div class="city-card-bg" style="background-image: url('https://picsum.photos/seed/<%= cityImages[city.name] || city.name.toLowerCase() %>/520/320');"></div>
+          <div class="city-card-content">
+            <div class="city-card-name"><%= city.name %></div>
+            <div class="city-card-count"><%= city.business_count || 0 %> business-uri</div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     CTA SECTION
+     ═══════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-box reveal">
+      <div class="cta-box-glow"></div>
+      <h2 class="cta-title text-gradient">Ai un business? Adaugă-l pe OFAI</h2>
+      <p class="cta-subtitle">
+        Crește-ți vizibilitatea și atrage clienți noi cu oferte și reduceri atractive. Gratuit.
+      </p>
+      <a href="#" class="btn btn-primary btn-lg">
+        Înregistrează business-ul
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -34,7 +34,21 @@
       "Bash(grep:*)",
       "Bash(node:*)",
       "WebFetch(domain:api.dicebear.com)",
-      "WebFetch(domain:www.dicebear.com)"
+      "WebFetch(domain:www.dicebear.com)",
+      "WebFetch(domain:mobbin.com)",
+      "WebFetch(domain:navbar.gallery)",
+      "WebFetch(domain:linear.app)",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:stripe.com)",
+      "WebFetch(domain:raycast.com)",
+      "WebFetch(domain:www.saasframe.io)",
+      "WebFetch(domain:www.figma.com)",
+      "WebFetch(domain:muz.li)",
+      "WebFetch(domain:www.landingpageflow.com)",
+      "Bash(set \"ANTHROPIC_API_KEY=sk-test-dummy\")",
+      "Bash(timeout /t 4 /nobreak)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }
