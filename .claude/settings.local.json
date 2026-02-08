@@ -51,7 +51,12 @@
       "Bash(tasklist:*)",
       "Bash(nslookup:*)",
       "WebFetch(domain:ofai.ro)",
-      "Bash(npx expo install:*)"
+      "Bash(npx expo install:*)",
+      "Bash(npx railway --version)",
+      "Bash(railway status:*)",
+      "WebFetch(domain:dns.google)",
+      "Bash(head:*)",
+      "Bash(npm install:*)"
     ]
   }
 }

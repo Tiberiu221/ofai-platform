@@ -145,3 +145,141 @@ function initSmoothScroll() {
     });
   });
 }
+
+/* ─── TOAST NOTIFICATION SYSTEM ─────────────────────────── */
+window.showToast = function(message, type = 'info', duration = 3500) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+
+  const icons = {
+    success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+    error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  };
+
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-msg">${message}</span>`;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('visible'));
+
+  setTimeout(() => {
+    toast.classList.remove('visible');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, duration);
+};
+
+/* ─── FAVORITE TOGGLE ───────────────────────────────────── */
+window.toggleFavorite = async function(offerId) {
+  const btn = document.querySelector(`.bookmark-btn[data-offer-id="${offerId}"]`);
+  if (!btn) return;
+
+  const isFav = btn.dataset.favorited === 'true';
+
+  try {
+    if (isFav) {
+      const resp = await fetch(`/api/web/favorites/${offerId}`, { method: 'DELETE' });
+      if (!resp.ok) {
+        const data = await resp.json();
+        if (resp.status === 401) return window.location.href = '/login';
+        throw new Error(data.message);
+      }
+      btn.dataset.favorited = 'false';
+      btn.classList.remove('is-favorited');
+      showToast('Eliminat din favorite', 'info');
+    } else {
+      const resp = await fetch('/api/web/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offer_id: offerId }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json();
+        if (resp.status === 401) return window.location.href = '/login';
+        throw new Error(data.message);
+      }
+      btn.dataset.favorited = 'true';
+      btn.classList.add('is-favorited');
+      showToast('Adăugat la favorite!', 'success');
+    }
+  } catch (err) {
+    showToast(err.message || 'Eroare la favorite', 'error');
+  }
+};
+
+/* ─── FOLLOW / UNFOLLOW TOGGLE ──────────────────────────── */
+window.toggleFollow = async function(businessId) {
+  const btn = document.querySelector(`.bd-follow-btn[data-business-id="${businessId}"]`);
+  if (!btn) return;
+
+  const isFollowing = btn.dataset.following === 'true';
+
+  try {
+    if (isFollowing) {
+      const resp = await fetch(`/api/web/subscriptions/${businessId}`, { method: 'DELETE' });
+      if (!resp.ok) {
+        const data = await resp.json();
+        if (resp.status === 401) return window.location.href = '/login';
+        throw new Error(data.message);
+      }
+      btn.dataset.following = 'false';
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Urmărește';
+      btn.classList.remove('following');
+      showToast('Nu mai urmărești acest business', 'info');
+    } else {
+      const resp = await fetch('/api/web/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ business_id: businessId }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json();
+        if (resp.status === 401) return window.location.href = '/login';
+        throw new Error(data.message);
+      }
+      btn.dataset.following = 'true';
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Urmărești';
+      btn.classList.add('following');
+      showToast('Urmărești acest business!', 'success');
+    }
+  } catch (err) {
+    showToast(err.message || 'Eroare', 'error');
+  }
+};
+
+/* ─── USER MENU — Close on outside click ────────────────── */
+document.addEventListener('click', (e) => {
+  const dropdown = document.querySelector('.user-menu-dropdown');
+  const trigger = document.querySelector('.user-menu-trigger');
+  if (dropdown && trigger && !trigger.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.classList.remove('open');
+  }
+});
+
+/* ─── FAQ ACCORDION ─────────────────────────────────────── */
+document.addEventListener('click', (e) => {
+  const question = e.target.closest('.faq-question');
+  if (!question) return;
+  const item = question.closest('.faq-item');
+  if (!item) return;
+  item.classList.toggle('open');
+});
+
+/* ─── STAR RATING SELECT ────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.star-select').forEach(container => {
+    const input = container.querySelector('input[name="rating"]');
+    const stars = container.querySelectorAll('.star-select-btn');
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        const val = parseInt(star.dataset.value);
+        if (input) input.value = val;
+        stars.forEach(s => {
+          s.classList.toggle('active', parseInt(s.dataset.value) <= val);
+        });
+      });
+    });
+  });
+});

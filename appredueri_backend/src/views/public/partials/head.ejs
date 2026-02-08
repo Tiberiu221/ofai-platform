@@ -13,9 +13,15 @@
   <link rel="stylesheet" href="/css/main.css">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="OFAI — Reduceri & Oferte din România">
-  <meta property="og:description" content="Descoperă cele mai bune reduceri de la business-urile din orașul tău.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://ofai.ro">
+  <meta property="og:title" content="<%= typeof ogTitle !== 'undefined' && ogTitle ? ogTitle : 'OFAI — Reduceri & Oferte din România' %>">
+  <meta property="og:description" content="<%= typeof ogDesc !== 'undefined' && ogDesc ? ogDesc : 'Descoperă cele mai bune reduceri de la business-urile din orașul tău.' %>">
+  <meta property="og:type" content="<%= typeof ogType !== 'undefined' && ogType ? ogType : 'website' %>">
+  <meta property="og:url" content="<%= typeof ogUrl !== 'undefined' && ogUrl ? ogUrl : 'https://ofai.ro' %>">
+  <% if (typeof ogImage !== 'undefined' && ogImage) { %>
+  <meta property="og:image" content="<%= ogImage %>">
+  <% } %>
+  <% if (typeof structuredData !== 'undefined' && structuredData) { %>
+  <script type="application/ld+json"><%- JSON.stringify(structuredData) %></script>
+  <% } %>
 </head>
 <body>

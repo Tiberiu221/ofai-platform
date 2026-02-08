@@ -1,0 +1,17 @@
+<%- include('partials/head', { pageTitle: 'Pagina nu a fost găsită', activePage: null }) %>
+<%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<section class="error-page">
+  <div class="error-page-glow"></div>
+  <div class="error-page-content">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Pagina nu a fost găsită</h1>
+    <p class="error-desc">Ne pare rău, pagina pe care o cauți nu există sau a fost mutată.</p>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+      <a href="/" class="btn btn-primary btn-lg">Acasă</a>
+      <a href="/oferte" class="btn btn-secondary btn-lg">Explorează oferte</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,110 @@
+<%- include('partials/head', { pageTitle: 'Ajutor & Suport', activePage: null, pageDesc: 'Ai nevoie de ajutor? Contactează echipa OFAI sau consultă secțiunea de întrebări frecvente.' }) %>
+<%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<section class="page-header" style="padding-bottom: 24px;">
+  <div class="page-header-glow"></div>
+  <div class="container">
+    <h1 class="page-title text-gradient">Ajutor & Suport</h1>
+    <p class="page-subtitle">Suntem aici să te ajutăm</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container" style="max-width: 720px;">
+
+    <!-- Contact Card -->
+    <div class="help-contact-card reveal">
+      <h2 style="margin-bottom: 16px;">Contactează-ne</h2>
+      <div class="help-contact-items">
+        <a href="mailto:support@ofai.ro" class="help-contact-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>support@ofai.ro</span>
+        </a>
+        <a href="mailto:contact@ofai.ro" class="help-contact-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>contact@ofai.ro</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="help-faq reveal">
+      <h2 style="margin-bottom: 24px;">Întrebări frecvente</h2>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Ce este OFAI?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>OFAI este o platformă care te conectează cu cele mai bune oferte și reduceri de la business-uri locale din România. Poți descoperi oferte din diverse categorii: restaurante, beauty, fitness, divertisment și multe altele.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum îmi creez un cont?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Mergi la pagina de <a href="/register" style="color: var(--accent);">Înregistrare</a>, completează formularul cu numele, email-ul și o parolă, apoi alege preferințele tale de oraș și categorii.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum funcționează sistemul de puncte?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Câștigi puncte pentru acțiuni precum scrierea de recenzii (10 puncte per recenzie nouă). Pe măsură ce acumulezi puncte, avansezi în niveluri: Explorer, Local Hero, Legend și God Mode.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum pot salva o ofertă?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Apasă pe iconița de inimă de pe pagina ofertei. Ofertele salvate pot fi găsite în secțiunea "Colecția mea" din contul tău.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum îmi șterg contul?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Mergi la <a href="/setari" style="color: var(--accent);">Setări</a> și apasă pe "Șterge contul" în secțiunea "Zonă periculoasă". Va trebui să confirmi cu parola ta. Ștergerea este permanentă.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Sunt proprietar de business. Cum mă înscriu?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Vizitează pagina <a href="/pentru-business" style="color: var(--accent);">Pentru Business</a> pentru a afla cum poți adăuga afacerea ta pe OFAI și a atrage clienți noi cu oferte și reduceri.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick Links -->
+    <div class="help-links reveal">
+      <h2 style="margin-bottom: 16px;">Link-uri utile</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <a href="/termeni" class="footer-link">Termeni și Condiții</a>
+        <a href="/confidentialitate" class="footer-link">Politica de Confidențialitate</a>
+        <a href="/setari" class="footer-link">Setări cont</a>
+        <a href="/pentru-business" class="footer-link">Pentru business-uri</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<%- include('partials/footer') %>

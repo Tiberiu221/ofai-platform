@@ -1,0 +1,100 @@
+<%- include('partials/head', { pageTitle: 'Preferințe', activePage: 'preferinte' }) %>
+<%- include('partials/navbar', { activePage: 'preferinte', webUser: webUser }) %>
+
+<section class="page-header" style="padding-bottom: 24px;">
+  <div class="page-header-glow"></div>
+  <div class="container">
+    <h1 class="page-title text-gradient">Preferințe</h1>
+    <p class="page-subtitle">Alege orașul și categoriile tale preferate pentru oferte personalizate</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container" style="max-width: 640px;">
+
+    <form id="preferences-form" onsubmit="return savePreferences(event)">
+
+      <!-- City Selection -->
+      <div class="settings-section reveal">
+        <h2 class="settings-section-title">Orașul tău</h2>
+        <div class="preferences-pills" id="city-pills">
+          <% cities.forEach(function(city) { %>
+            <button type="button" class="preference-pill<%= userPrefs && userPrefs.preferred_city_id == city.id ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="selectCity(this)">
+              <%= city.name %>
+            </button>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- Category Selection -->
+      <div class="settings-section reveal">
+        <h2 class="settings-section-title">Categorii preferate</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Selectează una sau mai multe categorii</p>
+        <div class="preferences-pills" id="category-pills">
+          <%
+            const selectedCats = (userPrefs && Array.isArray(userPrefs.preferred_category_ids)) ? userPrefs.preferred_category_ids.map(Number) : [];
+          %>
+          <% categories.forEach(function(cat) { %>
+            <button type="button" class="preference-pill<%= selectedCats.includes(cat.id) ? ' active' : '' %>" data-category-id="<%= cat.id %>" onclick="toggleCategory(this)">
+              <%= cat.name %>
+            </button>
+          <% }); %>
+        </div>
+      </div>
+
+      <div id="pref-success" style="display: none; color: var(--success); font-size: 0.875rem; margin-bottom: 12px; text-align: center;"></div>
+
+      <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Salvează preferințele</button>
+
+    </form>
+
+    <a href="/cont" class="btn btn-ghost" style="width: 100%; margin-top: 12px; text-align: center;">Înapoi la cont</a>
+
+  </div>
+</section>
+
+<script>
+  let selectedCityId = <%= userPrefs && userPrefs.preferred_city_id ? userPrefs.preferred_city_id : 'null' %>;
+  let selectedCategoryIds = [<%= (userPrefs && Array.isArray(userPrefs.preferred_category_ids)) ? userPrefs.preferred_category_ids.join(',') : '' %>];
+
+  function selectCity(el) {
+    document.querySelectorAll('#city-pills .preference-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    selectedCityId = parseInt(el.dataset.cityId);
+  }
+
+  function toggleCategory(el) {
+    el.classList.toggle('active');
+    const id = parseInt(el.dataset.categoryId);
+    if (el.classList.contains('active')) {
+      if (!selectedCategoryIds.includes(id)) selectedCategoryIds.push(id);
+    } else {
+      selectedCategoryIds = selectedCategoryIds.filter(c => c !== id);
+    }
+  }
+
+  async function savePreferences(e) {
+    e.preventDefault();
+    const succEl = document.getElementById('pref-success');
+    succEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/web/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferred_city_id: selectedCityId,
+          preferred_category_ids: selectedCategoryIds.filter(id => id)
+        })
+      });
+      if (res.ok) {
+        succEl.textContent = 'Preferințele au fost salvate!';
+        succEl.style.display = '';
+        if (typeof showToast === 'function') showToast('Preferințele au fost salvate!', 'success');
+      }
+    } catch(err) { console.error(err); }
+    return false;
+  }
+</script>
+
+<%- include('partials/footer') %>

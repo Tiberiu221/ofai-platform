@@ -1,0 +1,997 @@
+<%- include('partials/head', {
+  pageTitle: business.name,
+  pageDesc: 'Descoper\u0103 ofertele \u0219i reducerile de la ' + business.name + (business.city ? ' din ' + business.city.name : '') + ' pe OFAI.',
+  ogTitle: business.name + ' \u2014 OFAI',
+  ogDesc: 'Oferte \u0219i reduceri de la ' + business.name + (business.city ? ' \u00een ' + business.city.name : ''),
+  ogImage: business.cover_image || null,
+  ogType: 'business.business'
+}) %>
+<%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<!-- ═══════════════════════════════════════════════════════
+     BREADCRUMB
+     ═══════════════════════════════════════════════════════ -->
+<div class="container">
+  <nav class="bd-breadcrumb">
+    <a href="/">Acas\u0103</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="/oferte">Business-uri</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    <span><%= business.name %></span>
+  </nav>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     HERO — Cover Image
+     ═══════════════════════════════════════════════════════ -->
+<section class="business-detail-hero">
+  <% if (business.cover_image) { %>
+    <img src="<%= business.cover_image %>" alt="<%= business.name %>" class="bd-hero-img">
+  <% } %>
+  <div class="bd-hero-gradient"></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     PROFILE SECTION
+     ═══════════════════════════════════════════════════════ -->
+<section class="business-profile-section container">
+  <div class="bd-profile-top">
+    <div class="bd-avatar">
+      <% if (business.logo_url) { %>
+        <img src="<%= business.logo_url %>" alt="<%= business.name %>" class="bd-avatar-img">
+      <% } else { %>
+        <div class="bd-avatar-fallback"><%= business.name.charAt(0).toUpperCase() %></div>
+      <% } %>
+    </div>
+
+    <div class="bd-profile-info">
+      <h1 class="bd-business-name"><%= business.name %></h1>
+
+      <div class="bd-rating-row">
+        <div class="bd-stars">
+          <% for (let i = 1; i <= 5; i++) { %>
+            <% if (i <= Math.floor(business.rating || 0)) { %>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <% } else if (i - 0.5 <= (business.rating || 0)) { %>
+              <svg width="18" height="18" viewBox="0 0 24 24" stroke="#fb923c" stroke-width="1.5" fill="none"><defs><linearGradient id="half-<%= i %>"><stop offset="50%" stop-color="#fb923c"/><stop offset="50%" stop-color="transparent"/></linearGradient></defs><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#half-<%= i %>)"/></svg>
+            <% } else { %>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <% } %>
+          <% } %>
+        </div>
+        <span class="bd-rating-text">
+          <%= business.rating ? Number(business.rating).toFixed(1) : '0.0' %>
+          <span class="bd-rating-count">(<%= business.rating_count || 0 %> recenzii)</span>
+        </span>
+      </div>
+
+      <div class="bd-badges">
+        <% if (business.category) { %>
+          <a href="/oferte?category=<%= business.category.id %>" class="bd-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <%= business.category.name %>
+          </a>
+        <% } %>
+        <% if (business.city) { %>
+          <a href="/oferte?city=<%= business.city.id %>" class="bd-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <%= business.city.name %>
+          </a>
+        <% } %>
+      </div>
+    </div>
+
+    <button
+      class="follow-btn btn btn-secondary"
+      data-business-id="<%= business.id %>"
+      data-following="<%= isFollowing ? 'true' : 'false' %>"
+    >
+      <% if (isFollowing) { %>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Urm\u0103re\u0219ti
+      <% } else { %>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        Urm\u0103re\u0219te
+      <% } %>
+    </button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     ACTION BAR
+     ═══════════════════════════════════════════════════════ -->
+<div class="business-action-bar container">
+  <div class="bd-actions">
+    <% if (business.phone) { %>
+      <a href="tel:<%= business.phone %>" class="bd-action-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Sun\u0103
+      </a>
+    <% } %>
+    <% if (business.website) { %>
+      <a href="<%= business.website %>" target="_blank" rel="noopener noreferrer" class="bd-action-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Website
+      </a>
+    <% } %>
+    <% if (business.lat && business.lng) { %>
+      <a href="https://www.google.com/maps/dir/?api=1&destination=<%= business.lat %>,<%= business.lng %>" target="_blank" rel="noopener noreferrer" class="bd-action-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        Navigheaz\u0103
+      </a>
+    <% } %>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     ACTIVE OFFERS
+     ═══════════════════════════════════════════════════════ -->
+<% if (offers && offers.length > 0) { %>
+<section class="section">
+  <div class="container">
+    <div class="bd-section-header">
+      <h2 class="bd-section-title">Oferte active</h2>
+      <span class="bd-count-badge"><%= offers.length %></span>
+    </div>
+
+    <div class="offers-grid">
+      <% offers.forEach((offer, i) => { %>
+        <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
+          <div class="offer-image-wrapper">
+            <img
+              src="<%= offer.image_url || (offer.business && offer.business.logo_url) || 'https://picsum.photos/seed/offer-' + offer.id + '/800/500' %>"
+              alt="<%= offer.title %>"
+              class="offer-image"
+              loading="lazy"
+            >
+            <div class="offer-badge">
+              <% if (offer.discount_type === 'percent') { %>
+                -<%= offer.discount_value %>%
+              <% } else { %>
+                <%= offer.discount_value %> lei
+              <% } %>
+            </div>
+          </div>
+          <div class="offer-content">
+            <div class="offer-business"><%= offer.business ? offer.business.name : business.name %></div>
+            <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-meta">
+              <% if (business.city) { %>
+                <span class="offer-meta-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <%= business.city.name %>
+                </span>
+              <% } %>
+              <% if (business.category) { %>
+                <span class="offer-meta-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                  <%= business.category.name %>
+                </span>
+              <% } %>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOCATIONS
+     ═══════════════════════════════════════════════════════ -->
+<% if (business.locations && business.locations.length > 0) { %>
+<section class="section" style="background: var(--bg-secondary);">
+  <div class="container">
+    <div class="bd-section-header">
+      <h2 class="bd-section-title">Loca\u021Bii</h2>
+    </div>
+
+    <div class="bd-locations-grid">
+      <% business.locations.forEach((loc, i) => { %>
+        <div class="booking-card reveal reveal-delay-<%= Math.min(i + 1, 5) %>">
+          <div class="bc-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span><%= loc.address %></span>
+          </div>
+          <% if (loc.phone) { %>
+            <div class="bc-row">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <a href="tel:<%= loc.phone %>"><%= loc.phone %></a>
+            </div>
+          <% } %>
+          <% if (loc.city) { %>
+            <div class="bc-row">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              <span><%= loc.city.name %></span>
+            </div>
+          <% } %>
+
+          <% if (loc.booking_type === 'phone' && loc.booking_phone) { %>
+            <a href="tel:<%= loc.booking_phone %>" class="btn btn-primary bc-booking-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Rezerv\u0103 telefonic
+            </a>
+          <% } else if (loc.booking_type === 'whatsapp' && loc.booking_whatsapp) { %>
+            <a href="https://wa.me/<%= loc.booking_whatsapp %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-booking-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              Rezerv\u0103 WhatsApp
+            </a>
+          <% } else if (loc.booking_type === 'url' && loc.booking_url) { %>
+            <a href="<%= loc.booking_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-booking-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+              Rezerv\u0103 online
+            </a>
+          <% } %>
+
+          <% if (loc.booking_instructions) { %>
+            <p class="bc-instructions"><%= loc.booking_instructions %></p>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     AI REVIEW SUMMARY
+     ═══════════════════════════════════════════════════════ -->
+<% if (business.review_summary) { %>
+<section class="section">
+  <div class="container">
+    <div class="ai-summary-card reveal">
+      <div class="ai-summary-header">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
+        <span class="ai-summary-label">Sumar AI &mdash; Pe baza a <%= business.review_summary.review_count %> recenzii</span>
+      </div>
+      <p class="ai-summary-text"><%= business.review_summary.text %></p>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     REVIEWS
+     ═══════════════════════════════════════════════════════ -->
+<section class="section" style="background: var(--bg-secondary);">
+  <div class="container">
+    <div class="bd-section-header">
+      <h2 class="bd-section-title">Recenzii</h2>
+      <span class="bd-count-badge"><%= reviews.pagination.total %></span>
+    </div>
+
+    <% if (webUser) { %>
+      <button class="btn btn-primary" id="toggle-review-form" style="margin-bottom: 32px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Scrie o recenzie
+      </button>
+
+      <div class="review-form" id="review-form" style="display: none;">
+        <div class="rf-stars">
+          <span class="star-select" data-rating="1">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
+          <span class="star-select" data-rating="2">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
+          <span class="star-select" data-rating="3">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
+          <span class="star-select" data-rating="4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
+          <span class="star-select" data-rating="5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </span>
+        </div>
+        <textarea class="rf-textarea" id="review-comment" placeholder="Scrie recenzia ta..." rows="4"></textarea>
+        <button class="btn btn-primary" id="submit-review" data-business-id="<%= business.id %>">
+          Trimite recenzia
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    <% } %>
+
+    <div class="bd-reviews-list">
+      <% if (reviews.data && reviews.data.length > 0) { %>
+        <% reviews.data.forEach((review, i) => { %>
+          <div class="review-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
+            <div class="rc-header">
+              <div class="rc-avatar">
+                <%= (review.first_name || 'A').charAt(0).toUpperCase() %>
+              </div>
+              <div class="rc-meta">
+                <div class="rc-name"><%= review.first_name %> <%= review.last_name ? review.last_name.charAt(0) + '.' : '' %></div>
+                <div class="rc-date-stars">
+                  <div class="rc-stars">
+                    <% for (let s = 1; s <= 5; s++) { %>
+                      <% if (s <= review.rating) { %>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      <% } else { %>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      <% } %>
+                    <% } %>
+                  </div>
+                  <span class="rc-date"><%= new Date(review.created_at).toLocaleDateString('ro-RO', { year: 'numeric', month: 'short', day: 'numeric' }) %></span>
+                </div>
+              </div>
+            </div>
+            <% if (review.comment) { %>
+              <p class="rc-comment"><%= review.comment %></p>
+            <% } %>
+            <% if (review.response) { %>
+              <div class="rc-response">
+                <div class="rc-response-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>
+                  R\u0103spuns de la business
+                </div>
+                <p class="rc-response-text"><%= review.response %></p>
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="bd-empty-state">
+          <p>Nicio recenzie \u00eenc\u0103. Fii primul care las\u0103 o recenzie!</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCOPED STYLES
+     ═══════════════════════════════════════════════════════ -->
+<style>
+  /* ─── BREADCRUMB ──────────────────────────────────────── */
+  .bd-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 100px 0 16px;
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+  }
+  .bd-breadcrumb a {
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+  .bd-breadcrumb a:hover {
+    color: var(--accent);
+  }
+  .bd-breadcrumb span {
+    color: var(--text-muted);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bd-breadcrumb svg {
+    flex-shrink: 0;
+    color: var(--text-muted);
+  }
+
+  /* ─── HERO ────────────────────────────────────────────── */
+  .business-detail-hero {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(251,146,60,0.15) 0%, var(--bg-primary) 100%);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    margin-bottom: -60px;
+  }
+  .bd-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .bd-hero-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, var(--bg-primary) 0%, rgba(6,6,10,0.4) 50%, transparent 100%);
+  }
+
+  /* ─── PROFILE SECTION ─────────────────────────────────── */
+  .business-profile-section {
+    position: relative;
+    z-index: 2;
+    padding-bottom: 32px;
+  }
+  .bd-profile-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .bd-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--bg-primary);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    background: var(--bg-surface);
+  }
+  .bd-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .bd-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: var(--bg-primary);
+    font-weight: 800;
+    font-size: 2rem;
+  }
+
+  .bd-profile-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .bd-business-name {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+
+  .bd-rating-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .bd-stars {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .bd-rating-text {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .bd-rating-count {
+    font-weight: 400;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+  }
+
+  .bd-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .bd-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .bd-badge:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+  }
+
+  .follow-btn {
+    flex-shrink: 0;
+    margin-left: auto;
+    align-self: flex-start;
+  }
+  .follow-btn[data-following="true"] {
+    background: var(--accent-muted);
+    border-color: var(--border-accent);
+    color: var(--accent);
+  }
+
+  /* ─── ACTION BAR ──────────────────────────────────────── */
+  .business-action-bar {
+    padding-bottom: 40px;
+  }
+  .bd-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .bd-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: all 0.25s var(--ease-smooth);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .bd-action-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .bd-action-btn svg {
+    color: var(--accent);
+  }
+
+  /* ─── SECTION HEADER ──────────────────────────────────── */
+  .bd-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .bd-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+  .bd-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 10px;
+    background: var(--accent-muted);
+    color: var(--accent);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+  }
+
+  /* ─── LOCATIONS ───────────────────────────────────────── */
+  .bd-locations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+  .booking-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .booking-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  }
+  .bc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+  }
+  .bc-row a {
+    color: var(--text-secondary);
+    transition: color 0.2s;
+  }
+  .bc-row a:hover {
+    color: var(--accent);
+  }
+  .bc-row svg {
+    flex-shrink: 0;
+  }
+  .bc-booking-btn {
+    margin-top: 4px;
+    width: 100%;
+    justify-content: center;
+  }
+  .bc-instructions {
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ─── AI SUMMARY ──────────────────────────────────────── */
+  .ai-summary-card {
+    background: rgba(251, 146, 60, 0.04);
+    border: 1px solid var(--border-accent);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-summary-card::before {
+    content: '';
+    position: absolute;
+    top: -80px;
+    right: -80px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(251,146,60,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .ai-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .ai-summary-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .ai-summary-text {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+
+  /* ─── REVIEW FORM ─────────────────────────────────────── */
+  .review-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .rf-stars {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .star-select {
+    cursor: pointer;
+    transition: transform 0.2s var(--ease-spring);
+    display: inline-flex;
+  }
+  .star-select:hover {
+    transform: scale(1.2);
+  }
+  .star-select.active svg {
+    fill: #fb923c;
+    stroke: #fb923c;
+  }
+  .rf-textarea {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-height: 100px;
+  }
+  .rf-textarea::placeholder {
+    color: rgba(255,255,255,0.25);
+  }
+  .rf-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(251,146,60,0.1);
+  }
+
+  /* ─── REVIEW CARDS ────────────────────────────────────── */
+  .bd-reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .review-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: border-color 0.25s;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .review-card:hover {
+    border-color: var(--border-hover);
+  }
+
+  .rc-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .rc-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #fb923c);
+    color: var(--bg-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .rc-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .rc-name {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+  .rc-date-stars {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rc-stars {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+  }
+  .rc-date {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+  }
+  .rc-comment {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--text-secondary);
+  }
+
+  /* ─── REVIEW RESPONSE ─────────────────────────────────── */
+  .rc-response {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.02);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .rc-response-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .rc-response-text {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  /* ─── EMPTY STATE ─────────────────────────────────────── */
+  .bd-empty-state {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--text-tertiary);
+    font-size: 0.9375rem;
+  }
+
+  /* ─── RESPONSIVE ──────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .business-detail-hero {
+      height: 220px;
+      margin-bottom: -40px;
+    }
+    .bd-avatar {
+      width: 64px;
+      height: 64px;
+    }
+    .bd-avatar-fallback {
+      font-size: 1.5rem;
+    }
+    .bd-business-name {
+      font-size: 1.375rem;
+    }
+    .bd-profile-top {
+      gap: 14px;
+    }
+    .follow-btn {
+      margin-left: 0;
+      width: 100%;
+      justify-content: center;
+    }
+    .bd-actions {
+      flex-direction: column;
+    }
+    .bd-action-btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .bd-locations-grid {
+      grid-template-columns: 1fr;
+    }
+    .bd-breadcrumb {
+      padding-top: 84px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .business-detail-hero {
+      height: 180px;
+      border-radius: 0;
+    }
+    .bd-section-title {
+      font-size: 1.25rem;
+    }
+    .booking-card {
+      padding: 20px;
+    }
+    .ai-summary-card {
+      padding: 20px;
+    }
+    .review-card {
+      padding: 20px;
+    }
+    .review-form {
+      padding: 20px;
+    }
+  }
+</style>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE SCRIPTS
+     ═══════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  /* ─── Toggle review form ──────────────────────────────── */
+  var toggleBtn = document.getElementById('toggle-review-form');
+  var reviewForm = document.getElementById('review-form');
+  if (toggleBtn && reviewForm) {
+    toggleBtn.addEventListener('click', function() {
+      var isHidden = reviewForm.style.display === 'none';
+      reviewForm.style.display = isHidden ? 'flex' : 'none';
+      toggleBtn.textContent = isHidden ? 'Anuleaz\u0103' : 'Scrie o recenzie';
+    });
+  }
+
+  /* ─── Star rating selector ────────────────────────────── */
+  var stars = document.querySelectorAll('.star-select');
+  var selectedRating = 0;
+  stars.forEach(function(star) {
+    star.addEventListener('click', function() {
+      selectedRating = parseInt(this.getAttribute('data-rating'));
+      stars.forEach(function(s) {
+        var r = parseInt(s.getAttribute('data-rating'));
+        if (r <= selectedRating) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+    });
+
+    star.addEventListener('mouseenter', function() {
+      var hoverRating = parseInt(this.getAttribute('data-rating'));
+      stars.forEach(function(s) {
+        var r = parseInt(s.getAttribute('data-rating'));
+        if (r <= hoverRating) {
+          s.classList.add('active');
+        } else {
+          if (r > selectedRating) {
+            s.classList.remove('active');
+          }
+        }
+      });
+    });
+  });
+
+  var starsContainer = document.querySelector('.rf-stars');
+  if (starsContainer) {
+    starsContainer.addEventListener('mouseleave', function() {
+      stars.forEach(function(s) {
+        var r = parseInt(s.getAttribute('data-rating'));
+        if (r <= selectedRating) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+    });
+  }
+
+  /* ─── Submit review ───────────────────────────────────── */
+  var submitBtn = document.getElementById('submit-review');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', function() {
+      var businessId = this.getAttribute('data-business-id');
+      var comment = document.getElementById('review-comment').value.trim();
+
+      if (!selectedRating) {
+        alert('Te rug\u0103m s\u0103 selectezi un rating.');
+        return;
+      }
+
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_id: businessId,
+          rating: selectedRating,
+          comment: comment
+        })
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert(data.message || 'A ap\u0103rut o eroare.');
+        }
+      })
+      .catch(function() {
+        alert('A ap\u0103rut o eroare. \u00CEncearc\u0103 din nou.');
+      });
+    });
+  }
+
+  /* ─── Follow button ───────────────────────────────────── */
+  var followBtn = document.querySelector('.follow-btn');
+  if (followBtn) {
+    followBtn.addEventListener('click', function() {
+      var businessId = this.getAttribute('data-business-id');
+      var isFollowing = this.getAttribute('data-following') === 'true';
+      var btn = this;
+
+      fetch('/api/businesses/' + businessId + '/follow', {
+        method: isFollowing ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          var newState = !isFollowing;
+          btn.setAttribute('data-following', newState.toString());
+          btn.innerHTML = newState
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urm\u0103re\u0219ti'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urm\u0103re\u0219te';
+        }
+      })
+      .catch(function() {});
+    });
+  }
+});
+</script>
+
+<%- include('partials/footer') %>

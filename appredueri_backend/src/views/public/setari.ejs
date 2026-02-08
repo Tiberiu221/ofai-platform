@@ -1,0 +1,132 @@
+<%- include('partials/head', { pageTitle: 'Setări', activePage: 'setari' }) %>
+<%- include('partials/navbar', { activePage: 'setari', webUser: webUser }) %>
+
+<section class="page-header" style="padding-bottom: 24px;">
+  <div class="page-header-glow"></div>
+  <div class="container">
+    <h1 class="page-title text-gradient">Setări</h1>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container" style="max-width: 640px;">
+
+    <!-- Change Password -->
+    <div class="settings-section reveal">
+      <h2 class="settings-section-title">Schimbă parola</h2>
+      <form id="change-password-form" onsubmit="return changePassword(event)">
+        <div class="auth-form-group">
+          <label class="auth-label">Parola curentă</label>
+          <input type="password" name="currentPassword" class="auth-input" required minlength="6">
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label">Parola nouă</label>
+          <input type="password" name="newPassword" class="auth-input" required minlength="6">
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label">Confirmă parola nouă</label>
+          <input type="password" name="confirmPassword" class="auth-input" required minlength="6">
+        </div>
+        <div id="password-error" class="auth-error" style="display: none;"></div>
+        <div id="password-success" style="display: none; color: var(--success); font-size: 0.875rem; margin-bottom: 12px;"></div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Schimbă parola</button>
+      </form>
+    </div>
+
+    <!-- Preferences Link -->
+    <div class="settings-section reveal">
+      <a href="/preferinte" class="account-menu-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Preferințe oraș & categorii</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+
+    <!-- Logout -->
+    <div class="settings-section reveal">
+      <a href="/logout" class="btn btn-secondary" style="width: 100%;">Deconectare</a>
+    </div>
+
+    <!-- Delete Account -->
+    <div class="settings-section settings-danger reveal">
+      <h2 class="settings-section-title" style="color: var(--danger);">Zonă periculoasă</h2>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Ștergerea contului este permanentă. Toate datele, favoritele și recenziile tale vor fi eliminate.</p>
+      <button class="btn btn-ghost" style="color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); width: 100%;" onclick="document.getElementById('delete-modal').style.display='flex'">Șterge contul</button>
+    </div>
+
+  </div>
+</section>
+
+<!-- Delete Account Modal -->
+<div class="settings-modal" id="delete-modal" style="display: none;">
+  <div class="settings-modal-content">
+    <h3>Ești sigur?</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 16px;">Această acțiune este ireversibilă. Introdu parola pentru confirmare.</p>
+    <form onsubmit="return deleteAccount(event)">
+      <div class="auth-form-group">
+        <input type="password" name="deletePassword" class="auth-input" placeholder="Parola ta" required>
+      </div>
+      <div id="delete-error" class="auth-error" style="display: none;"></div>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('delete-modal').style.display='none'">Anulează</button>
+        <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;">Șterge contul</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  async function changePassword(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+    const newPass = data.get('newPassword');
+    const confirm = data.get('confirmPassword');
+    const errEl = document.getElementById('password-error');
+    const succEl = document.getElementById('password-success');
+    errEl.style.display = 'none';
+    succEl.style.display = 'none';
+
+    if (newPass !== confirm) {
+      errEl.textContent = 'Parolele nu coincid';
+      errEl.style.display = '';
+      return false;
+    }
+
+    try {
+      const res = await fetch('/api/web/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: data.get('currentPassword'), newPassword: newPass })
+      });
+      const json = await res.json();
+      if (!res.ok) { errEl.textContent = json.message || 'Eroare'; errEl.style.display = ''; return false; }
+      succEl.textContent = 'Parola a fost schimbată cu succes!';
+      succEl.style.display = '';
+      form.reset();
+    } catch(err) { errEl.textContent = 'Eroare de rețea'; errEl.style.display = ''; }
+    return false;
+  }
+
+  async function deleteAccount(e) {
+    e.preventDefault();
+    const form = e.target;
+    const password = form.deletePassword.value;
+    const errEl = document.getElementById('delete-error');
+    errEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/web/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const json = await res.json();
+      if (!res.ok) { errEl.textContent = json.message || 'Eroare'; errEl.style.display = ''; return false; }
+      window.location.href = '/';
+    } catch(err) { errEl.textContent = 'Eroare de rețea'; errEl.style.display = ''; }
+    return false;
+  }
+</script>
+
+<%- include('partials/footer') %>

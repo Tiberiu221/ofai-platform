@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const path = require("path");
 
 // Sentry - MUST be initialized before anything else
@@ -100,6 +101,7 @@ app.use(generalLimiter);
 // ============================================
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
 
 // Sentry user context (după ce avem acces la req.user)
 app.use(sentryUserMiddleware);
@@ -202,7 +204,15 @@ app.use((err, req, res, next) => {
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).json({ message: "Endpoint negăsit" });
+  // API endpoints return JSON
+  if (req.path.startsWith('/auth') || req.path.startsWith('/users') || req.path.startsWith('/offers') ||
+      req.path.startsWith('/businesses') || req.path.startsWith('/favorites') || req.path.startsWith('/subscriptions') ||
+      req.path.startsWith('/reviews') || req.path.startsWith('/cities') || req.path.startsWith('/categories') ||
+      req.path.startsWith('/push-tokens') || req.path.startsWith('/my-businesses') || req.path.startsWith('/api')) {
+    return res.status(404).json({ message: "Endpoint negăsit" });
+  }
+  // Web pages render 404 EJS
+  res.status(404).render("public/404", { activePage: null, webUser: null });
 });
 
 // ============================================

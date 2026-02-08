@@ -1,5 +1,5 @@
 <%- include('partials/head', { pageTitle: 'Reduceri & Oferte', activePage: 'home' }) %>
-<%- include('partials/navbar', { activePage: 'home' }) %>
+<%- include('partials/navbar', { activePage: 'home', webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <!-- ═══════════════════════════════════════════════════════
      HERO SECTION
@@ -115,7 +115,7 @@
 
     <div class="offers-bento">
       <% featuredOffers.forEach((offer, i) => { %>
-        <a href="/oferte" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 5) %><%= i === 0 ? ' featured' : '' %>">
+        <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 5) %><%= i === 0 ? ' featured' : '' %>">
           <div class="offer-image-wrapper">
             <img
               src="<%= offer.image_url || offer.business_cover || 'https://picsum.photos/seed/offer-' + offer.id + '/800/500' %>"
@@ -235,7 +235,7 @@
       <p class="cta-subtitle">
         Crește-ți vizibilitatea și atrage clienți noi cu oferte și reduceri atractive. Gratuit.
       </p>
-      <a href="#" class="btn btn-primary btn-lg">
+      <a href="/pentru-business" class="btn btn-primary btn-lg">
         Înregistrează business-ul
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
