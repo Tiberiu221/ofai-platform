@@ -318,4 +318,43 @@
   }
 </style>
 
+<script>
+document.querySelector('.auth-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('.auth-submit');
+  const email = form.querySelector('#email').value;
+  const password = form.querySelector('#password').value;
+
+  const oldErr = form.parentElement.querySelector('.auth-error');
+  if (oldErr) oldErr.remove();
+
+  btn.disabled = true;
+  btn.textContent = 'Se conectează...';
+
+  try {
+    const resp = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await resp.json();
+
+    if (resp.ok && data.success) {
+      window.location.href = data.redirect || '/cont';
+    } else {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'auth-error';
+      errDiv.textContent = data.message || 'Eroare la conectare';
+      form.parentElement.insertBefore(errDiv, form);
+      btn.disabled = false;
+      btn.textContent = 'Conectează-te';
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Conectează-te';
+  }
+});
+</script>
+
 <%- include('partials/footer') %>
