@@ -12,6 +12,7 @@ const { signToken } = require("../helpers/jwt");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
 const { sanitizeString } = require("../helpers/validate");
+const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 
 const SALT_ROUNDS = 10;
 
@@ -791,6 +792,473 @@ router.get("/preferinte", requireWebAuth, async (req, res) => {
   } catch (err) {
     console.error("[Web] Preferences error:", err);
     res.status(500).send("Eroare la încărcarea preferințelor");
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// BUSINESS PORTAL WEB PAGES
+// ═══════════════════════════════════════════════════════
+
+// Portal Dashboard — lista de business-uri
+router.get("/portal", requireWebAuth, async (req, res) => {
+  try {
+    if (req.webUser.role !== "admin" && req.webUser.role !== "business_owner") {
+      return res.redirect("/cont");
+    }
+
+    let businesses;
+    if (req.webUser.role === "admin") {
+      businesses = await pool.query(`
+        SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+               c.name as city_name, cat.name as category_name,
+               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND end_date >= CURRENT_DATE) as active_offers
+        FROM businesses b
+        LEFT JOIN cities c ON b.city_id = c.id
+        LEFT JOIN categories cat ON b.category_id = cat.id
+        ORDER BY b.name
+      `);
+    } else {
+      businesses = await pool.query(`
+        SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+               c.name as city_name, cat.name as category_name,
+               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND end_date >= CURRENT_DATE) as active_offers
+        FROM businesses b
+        JOIN user_businesses ub ON ub.business_id = b.id AND ub.user_id = $1
+        LEFT JOIN cities c ON b.city_id = c.id
+        LEFT JOIN categories cat ON b.category_id = cat.id
+        ORDER BY b.name
+      `, [req.webUser.id]);
+    }
+
+    res.render("public/portal/dashboard", {
+      businesses: businesses.rows,
+      activePage: "portal",
+      webUser: req.webUser,
+    });
+  } catch (err) {
+    console.error("[Web] Portal dashboard error:", err);
+    res.status(500).send("Eroare la încărcarea portalului");
+  }
+});
+
+// Portal — manage business page (tabs: Info / Oferte / Recenzii / Statistici)
+router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    // Business details
+    const bizRes = await pool.query(`
+      SELECT b.id, b.name, b.address, b.phone, b.website, b.lat, b.lng,
+             b.logo_url, b.cover_image_url,
+             b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
+             b.city_id, c.name as city_name, b.category_id, cat.name as category_name
+      FROM businesses b
+      LEFT JOIN cities c ON b.city_id = c.id
+      LEFT JOIN categories cat ON b.category_id = cat.id
+      WHERE b.id = $1
+    `, [businessId]);
+
+    if (bizRes.rows.length === 0) {
+      return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
+    }
+
+    const business = bizRes.rows[0];
+
+    // Offers
+    const offersRes = await pool.query(`
+      SELECT id, title, discount_type, discount_value, start_date, end_date, is_active, logo_url
+      FROM offers WHERE business_id = $1 ORDER BY id DESC
+    `, [businessId]);
+
+    // Reviews (first 20 with responses)
+    const reviewsRes = await pool.query(`
+      SELECT r.id, r.rating, r.comment, r.created_at,
+             u.first_name, u.last_name,
+             rr.id as response_id, rr.response_text, rr.created_at as response_date
+      FROM reviews r
+      JOIN users u ON r.user_id = u.id
+      LEFT JOIN review_responses rr ON rr.review_id = r.id
+      WHERE r.business_id = $1
+      ORDER BY r.created_at DESC
+      LIMIT 50
+    `, [businessId]);
+
+    const reviewCountRes = await pool.query("SELECT COUNT(*) as total FROM reviews WHERE business_id = $1", [businessId]);
+    const reviewCount = parseInt(reviewCountRes.rows[0].total);
+
+    // Analytics
+    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes] = await Promise.all([
+      pool.query(`SELECT COUNT(*) as total_views,
+                  COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
+                  COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '30 days') as views_30d
+                  FROM business_views WHERE business_id = $1`, [businessId]),
+      pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1", [businessId]),
+      pool.query("SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating FROM reviews WHERE business_id = $1", [businessId]),
+      pool.query(`SELECT COUNT(*) as total,
+                  COUNT(*) FILTER (WHERE is_active = true AND end_date >= CURRENT_DATE) as active
+                  FROM offers WHERE business_id = $1`, [businessId]),
+      pool.query("SELECT rating, COUNT(*) as count FROM reviews WHERE business_id = $1 GROUP BY rating ORDER BY rating DESC", [businessId]),
+      pool.query(`SELECT COALESCE(COUNT(*), 0) as total FROM offer_views
+                  WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '30 days'`, [businessId]),
+    ]);
+
+    const distribution = [5, 4, 3, 2, 1].map(star => {
+      const found = ratingRes.rows.find(r => parseInt(r.rating) === star);
+      return { rating: star, count: parseInt(found?.count || 0) };
+    });
+
+    const analytics = {
+      views: {
+        total: parseInt(viewsRes.rows[0].total_views) || 0,
+        last_7d: parseInt(viewsRes.rows[0].views_7d) || 0,
+        last_30d: parseInt(viewsRes.rows[0].views_30d) || 0,
+      },
+      subscribers: parseInt(subscribersRes.rows[0].total) || 0,
+      reviews: {
+        total: parseInt(reviewStatsRes.rows[0].total) || 0,
+        avg_rating: parseFloat(parseFloat(reviewStatsRes.rows[0].avg_rating).toFixed(1)),
+        distribution,
+      },
+      offers: {
+        total: parseInt(offerStatsRes.rows[0].total) || 0,
+        active: parseInt(offerStatsRes.rows[0].active) || 0,
+        total_views_30d: parseInt(offerViewsRes.rows[0].total) || 0,
+      },
+    };
+
+    // Performance Score
+    const [scoreImgRes, scoreOffRes, scoreRevRes, scoreRespRes, scoreSubRes] = await Promise.all([
+      pool.query("SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1", [businessId]),
+      pool.query("SELECT COUNT(*) as cnt FROM offers WHERE business_id = $1 AND is_active = true AND end_date >= CURRENT_DATE", [businessId]),
+      pool.query("SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating FROM reviews WHERE business_id = $1", [businessId]),
+      pool.query(`SELECT (SELECT COUNT(*) FROM reviews WHERE business_id = $1) as total_reviews,
+                         (SELECT COUNT(*) FROM review_responses WHERE business_id = $1) as total_responses`, [businessId]),
+      pool.query("SELECT COUNT(*) as cnt FROM followed_businesses WHERE business_id = $1", [businessId]),
+    ]);
+
+    const activeOffers = parseInt(scoreOffRes.rows[0].cnt);
+    const totalReviews = parseInt(scoreRevRes.rows[0].total);
+    const avgRating = parseFloat(scoreRevRes.rows[0].avg_rating);
+    const totalResponses = parseInt(scoreRespRes.rows[0].total_responses);
+    const totalReviewsForResp = parseInt(scoreRespRes.rows[0].total_reviews);
+    const subscribers = parseInt(scoreSubRes.rows[0].cnt);
+    const responseRate = totalReviewsForResp > 0 ? totalResponses / totalReviewsForResp : 0;
+
+    const breakdown = [
+      { criterion: "Logo", points: 10, earned: business.logo_url ? 10 : 0, completed: !!business.logo_url, tip: !business.logo_url ? "Adaugă un logo" : null },
+      { criterion: "Cover", points: 15, earned: business.cover_image_url ? 15 : 0, completed: !!business.cover_image_url, tip: !business.cover_image_url ? "Adaugă o imagine de cover" : null },
+      { criterion: "Telefon", points: 5, earned: business.phone ? 5 : 0, completed: !!business.phone, tip: !business.phone ? "Completează telefonul" : null },
+      { criterion: "Website", points: 5, earned: business.website ? 5 : 0, completed: !!business.website, tip: !business.website ? "Adaugă un website" : null },
+      { criterion: "Rezervări", points: 10, earned: (business.booking_type && business.booking_type !== "none") ? 10 : 0, completed: !!(business.booking_type && business.booking_type !== "none"), tip: (!business.booking_type || business.booking_type === "none") ? "Configurează rezervările" : null },
+      { criterion: "Ofertă activă", points: 15, earned: activeOffers > 0 ? 15 : 0, completed: activeOffers > 0, tip: activeOffers === 0 ? "Creează o ofertă activă" : null },
+      { criterion: "Rating ≥ 4.0", points: 10, earned: avgRating >= 4.0 ? 10 : 0, completed: avgRating >= 4.0, tip: avgRating < 4.0 ? "Îmbunătățește experiența clienților" : null },
+      { criterion: "5+ recenzii", points: 10, earned: totalReviews >= 5 ? 10 : 0, completed: totalReviews >= 5, tip: totalReviews < 5 ? "Mai ai nevoie de " + (5 - totalReviews) + " recenzii" : null },
+      { criterion: "80%+ răspunsuri", points: 10, earned: responseRate >= 0.8 ? 10 : 0, completed: responseRate >= 0.8, tip: responseRate < 0.8 ? "Răspunde la recenzii" : null },
+      { criterion: "10+ abonați", points: 10, earned: subscribers >= 10 ? 10 : 0, completed: subscribers >= 10, tip: subscribers < 10 ? "Mai ai nevoie de " + (10 - subscribers) + " abonați" : null },
+    ];
+    const totalScore = breakdown.reduce((sum, item) => sum + item.earned, 0);
+    const score = { score: totalScore, max_score: 100, breakdown };
+
+    // Cities & categories for edit form
+    const [citiesRes, categoriesRes] = await Promise.all([
+      pool.query("SELECT id, name FROM cities ORDER BY name"),
+      pool.query("SELECT id, name FROM categories ORDER BY name"),
+    ]);
+
+    res.render("public/portal/manage", {
+      business,
+      offers: offersRes.rows,
+      reviews: reviewsRes.rows,
+      reviewCount,
+      analytics,
+      score,
+      cities: citiesRes.rows,
+      categories: categoriesRes.rows,
+      activePage: "portal",
+      webUser: req.webUser,
+    });
+  } catch (err) {
+    console.error("[Web] Portal manage error:", err);
+    res.status(500).send("Eroare la încărcarea paginii de management");
+  }
+});
+
+// Portal — new offer form
+router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, res) => {
+  try {
+    const bizRes = await pool.query("SELECT id, name FROM businesses WHERE id = $1", [req.params.businessId]);
+    if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
+
+    res.render("public/portal/offer-form", {
+      business: bizRes.rows[0],
+      offer: null,
+      activePage: "portal",
+      webUser: req.webUser,
+    });
+  } catch (err) {
+    console.error("[Web] Portal new offer error:", err);
+    res.status(500).send("Eroare");
+  }
+});
+
+// Portal — edit offer form
+router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId, offerId } = req.params;
+    const bizRes = await pool.query("SELECT id, name FROM businesses WHERE id = $1", [businessId]);
+    if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
+
+    const offerRes = await pool.query(
+      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions FROM offers WHERE id = $1 AND business_id = $2",
+      [offerId, businessId]
+    );
+    if (offerRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
+
+    res.render("public/portal/offer-form", {
+      business: bizRes.rows[0],
+      offer: offerRes.rows[0],
+      activePage: "portal",
+      webUser: req.webUser,
+    });
+  } catch (err) {
+    console.error("[Web] Portal edit offer error:", err);
+    res.status(500).send("Eroare");
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// BUSINESS PORTAL AJAX ENDPOINTS
+// ═══════════════════════════════════════════════════════
+
+// Update business info
+router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const { name, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+
+    await pool.query(`
+      UPDATE businesses SET
+        name = COALESCE($1, name),
+        address = COALESCE($2, address),
+        phone = COALESCE($3, phone),
+        website = COALESCE($4, website),
+        city_id = COALESCE($5, city_id),
+        category_id = COALESCE($6, category_id),
+        booking_type = COALESCE($7, booking_type),
+        booking_phone = $8,
+        booking_whatsapp = $9,
+        booking_url = $10,
+        booking_instructions = $11
+      WHERE id = $12
+    `, [name, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
+        booking_type, booking_phone || null, booking_whatsapp || null, booking_url || null, booking_instructions || null, businessId]);
+
+    res.json({ success: true, message: "Business actualizat!" });
+  } catch (err) {
+    console.error("[Web API] Portal update business error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Create offer
+router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+
+    if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
+
+    const result = await pool.query(`
+      INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id
+    `, [businessId, sanitizeString(title, 200), sanitizeString(description, 2000) || null,
+        discount_type || 'percentage', discount_value || 0, sanitizeString(conditions, 2000) || null,
+        start_date || null, end_date || null, is_active !== false,
+        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null]);
+
+    res.json({ success: true, offer_id: result.rows[0].id });
+  } catch (err) {
+    console.error("[Web API] Portal create offer error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Update offer
+router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId, offerId } = req.params;
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+
+    await pool.query(`
+      UPDATE offers SET
+        title = COALESCE($1, title),
+        description = $2,
+        discount_type = COALESCE($3, discount_type),
+        discount_value = COALESCE($4, discount_value),
+        conditions = $5,
+        start_date = $6,
+        end_date = $7,
+        is_active = COALESCE($8, is_active),
+        booking_type = COALESCE($9, booking_type),
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13
+      WHERE id = $14 AND business_id = $15
+    `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
+        discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
+        start_date || null, end_date || null, is_active,
+        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
+        offerId, businessId]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal update offer error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Delete offer
+router.delete("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
+  try {
+    await pool.query("DELETE FROM offers WHERE id = $1 AND business_id = $2", [req.params.offerId, req.params.businessId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal delete offer error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Toggle offer active
+router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusinessOwner, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "UPDATE offers SET is_active = NOT is_active WHERE id = $1 AND business_id = $2 RETURNING is_active",
+      [req.params.offerId, req.params.businessId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Ofertă negăsită" });
+    res.json({ success: true, is_active: result.rows[0].is_active });
+  } catch (err) {
+    console.error("[Web API] Portal toggle offer error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Respond to review
+router.post("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId, reviewId } = req.params;
+    const responseText = sanitizeString(req.body.response_text, 500);
+    if (!responseText) return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
+
+    const reviewCheck = await pool.query("SELECT id FROM reviews WHERE id = $1 AND business_id = $2", [reviewId, businessId]);
+    if (reviewCheck.rows.length === 0) return res.status(404).json({ message: "Recenzia nu există" });
+
+    const existing = await pool.query("SELECT id FROM review_responses WHERE review_id = $1", [reviewId]);
+    if (existing.rows.length > 0) return res.status(409).json({ message: "Există deja un răspuns" });
+
+    const result = await pool.query(
+      "INSERT INTO review_responses (review_id, business_id, response_text, responded_by) VALUES ($1, $2, $3, $4) RETURNING id, created_at",
+      [reviewId, businessId, responseText, req.webUser.id]
+    );
+
+    res.status(201).json({ success: true, response: { id: result.rows[0].id, text: responseText, created_at: result.rows[0].created_at } });
+  } catch (err) {
+    console.error("[Web API] Portal respond review error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Edit review response
+router.put("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, async (req, res) => {
+  try {
+    const responseText = sanitizeString(req.body.response_text, 500);
+    if (!responseText) return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
+
+    const result = await pool.query(
+      "UPDATE review_responses SET response_text = $1, updated_at = NOW() WHERE review_id = $2 AND business_id = $3 RETURNING id",
+      [responseText, req.params.reviewId, req.params.businessId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Răspunsul nu există" });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal edit response error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Delete review response
+router.delete("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM review_responses WHERE review_id = $1 AND business_id = $2 RETURNING id",
+      [req.params.reviewId, req.params.businessId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Răspunsul nu există" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal delete response error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// Analytics views timeline
+router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const period = req.query.period || "30d";
+    const days = { "7d": 7, "30d": 30, "90d": 90 }[period] || 30;
+
+    const result = await pool.query(
+      `SELECT DATE(viewed_at) as date, COUNT(*) as views
+       FROM business_views WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '1 day' * $2
+       GROUP BY DATE(viewed_at) ORDER BY date ASC`,
+      [businessId, days]
+    );
+
+    const filledData = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      const found = result.rows.find(r => {
+        const rDate = r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date);
+        return rDate === dateStr;
+      });
+      filledData.push({ date: dateStr, views: parseInt(found?.views || 0) });
+    }
+
+    res.json({ period, data: filledData });
+  } catch (err) {
+    console.error("[Web API] Portal views error:", err);
+    res.status(500).json({ message: "Eroare" });
+  }
+});
+
+// Analytics subscribers timeline
+router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const period = req.query.period || "30d";
+    const days = { "7d": 7, "30d": 30, "90d": 90 }[period] || 30;
+
+    const [trendRes, totalRes] = await Promise.all([
+      pool.query(
+        `SELECT DATE(created_at) as date, COUNT(*) as new_subscribers
+         FROM followed_businesses WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
+         GROUP BY DATE(created_at) ORDER BY date ASC`,
+        [businessId, days]
+      ),
+      pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1", [businessId]),
+    ]);
+
+    const data = trendRes.rows.map(r => ({
+      date: r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date),
+      new_subscribers: parseInt(r.new_subscribers),
+    }));
+
+    res.json({ period, total: parseInt(totalRes.rows[0].total) || 0, data });
+  } catch (err) {
+    console.error("[Web API] Portal subscribers error:", err);
+    res.status(500).json({ message: "Eroare" });
   }
 });
 

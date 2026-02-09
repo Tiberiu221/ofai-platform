@@ -1,0 +1,1233 @@
+<%- include('../partials/head', { pageTitle: business.name + ' — Portal', activePage: 'portal' }) %>
+<%- include('../partials/navbar', { activePage: 'portal', webUser: webUser }) %>
+
+<style>
+  :root {
+    --bg-primary: #06060a;
+    --bg-secondary: #0c0c12;
+    --bg-card: rgba(255,255,255,0.04);
+    --accent: #fb923c;
+    --accent-hover: #f97316;
+    --accent-glow: rgba(251,146,60,0.15);
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-tertiary: #71717a;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.14);
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-full: 9999px;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #eab308;
+  }
+
+  /* ── Layout ── */
+  .portal-page { padding: 100px 0 60px; min-height: 100vh; }
+  .portal-container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+  /* ── Header ── */
+  .portal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+  .portal-header-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .portal-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+  .portal-back:hover { color: var(--accent); }
+  .portal-biz-name { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .portal-view-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; border-radius: var(--radius-full);
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-secondary); font-size: 0.8125rem; text-decoration: none;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .portal-view-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Tabs ── */
+  .portal-tabs {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 32px; overflow-x: auto;
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .portal-tabs::-webkit-scrollbar { display: none; }
+  .portal-tab {
+    padding: 12px 22px; font-size: 0.9rem; font-weight: 500;
+    color: var(--text-tertiary); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
+  }
+  .portal-tab:hover { color: var(--text-secondary); }
+  .portal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .portal-tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 20px; padding: 0 6px;
+    background: var(--accent-glow); color: var(--accent);
+    border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600;
+    margin-left: 6px;
+  }
+
+  /* ── Tab Panels ── */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Glass Card ── */
+  .glass-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: border-color 0.2s;
+  }
+  .glass-card:hover { border-color: var(--border-hover); }
+  .glass-card + .glass-card { margin-top: 16px; }
+
+  /* ── Form Fields ── */
+  .form-group { margin-bottom: 20px; }
+  .form-label {
+    display: block; margin-bottom: 6px;
+    font-size: 0.8125rem; font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%; padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary); font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+  .form-select option { background: #18181b; color: var(--text-primary); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* ── Section Title ── */
+  .section-title {
+    font-size: 1rem; font-weight: 600; color: var(--text-primary);
+    margin-bottom: 16px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Booking Type Grid ── */
+  .booking-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 500px) { .booking-grid { grid-template-columns: repeat(2, 1fr); } }
+  .booking-option {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 8px; border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+    font-size: 0.8125rem; color: var(--text-secondary);
+    text-align: center;
+  }
+  .booking-option:hover { border-color: var(--border-hover); }
+  .booking-option.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+  .booking-option svg { flex-shrink: 0; }
+
+  .booking-fields { margin-top: 12px; }
+  .booking-field { display: none; }
+  .booking-field.visible { display: block; }
+
+  /* ── Image Preview ── */
+  .img-preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  @media (max-width: 500px) { .img-preview-row { grid-template-columns: 1fr; } }
+  .img-preview-box {
+    border-radius: var(--radius-md); overflow: hidden;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+    aspect-ratio: 16 / 10; display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .img-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+  .img-preview-placeholder {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: var(--text-tertiary); font-size: 0.8125rem;
+  }
+  .img-preview-label {
+    font-size: 0.75rem; color: var(--text-tertiary); text-align: center; margin-top: 6px;
+  }
+
+  /* ── Buttons ── */
+  .btn-accent {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 10px 24px; border-radius: var(--radius-full);
+    background: var(--accent); color: #09090b;
+    font-weight: 600; font-size: 0.875rem;
+    border: none; cursor: pointer;
+    transition: all 0.2s; font-family: inherit;
+  }
+  .btn-accent:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .btn-accent:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary-portal {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 8px 18px; border-radius: var(--radius-full);
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-secondary); font-size: 0.8125rem;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+    text-decoration: none;
+  }
+  .btn-secondary-portal:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-sm {
+    padding: 6px 14px; font-size: 0.75rem; border-radius: var(--radius-full);
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+    font-family: inherit; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ── Offers Tab ── */
+  .offers-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+  .offers-count { font-size: 0.875rem; color: var(--text-secondary); }
+
+  .offer-card {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px; border-radius: var(--radius-md);
+    background: var(--bg-card); border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .offer-card:hover { border-color: var(--border-hover); }
+  .offer-card + .offer-card { margin-top: 10px; }
+
+  .offer-thumb {
+    width: 56px; height: 56px; border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.06); overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .offer-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .offer-thumb-icon { color: var(--accent); }
+
+  .offer-info { flex: 1; min-width: 0; }
+  .offer-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .offer-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .offer-discount {
+    display: inline-flex; padding: 2px 10px; border-radius: var(--radius-full);
+    background: var(--accent-glow); color: var(--accent);
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .offer-dates { font-size: 0.75rem; color: var(--text-tertiary); }
+
+  .offer-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+  .toggle-btn {
+    width: 44px; height: 24px; border-radius: 12px;
+    border: none; cursor: pointer; position: relative;
+    transition: background 0.2s;
+    padding: 0;
+  }
+  .toggle-btn.on { background: var(--success); }
+  .toggle-btn.off { background: var(--text-tertiary); }
+  .toggle-btn::after {
+    content: ''; position: absolute; top: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: white; transition: left 0.2s;
+  }
+  .toggle-btn.on::after { left: 23px; }
+  .toggle-btn.off::after { left: 3px; }
+
+  .offer-edit-link { color: var(--text-tertiary); transition: color 0.2s; }
+  .offer-edit-link:hover { color: var(--accent); }
+
+  /* ── Empty State ── */
+  .empty-state {
+    text-align: center; padding: 48px 20px; color: var(--text-tertiary);
+  }
+  .empty-state svg { margin-bottom: 16px; opacity: 0.4; }
+  .empty-state p { font-size: 0.9rem; margin-bottom: 20px; }
+
+  /* ── Reviews Tab ── */
+  .review-card {
+    padding: 20px; border-radius: var(--radius-md);
+    background: var(--bg-card); border: 1px solid var(--border);
+  }
+  .review-card + .review-card { margin-top: 12px; }
+
+  .review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .review-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent-glow); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.875rem; flex-shrink: 0;
+  }
+  .review-user-info { flex: 1; min-width: 0; }
+  .review-user-name { font-size: 0.875rem; font-weight: 600; color: var(--text-primary); }
+  .review-date { font-size: 0.75rem; color: var(--text-tertiary); }
+
+  .review-stars { display: flex; gap: 2px; margin-bottom: 8px; }
+  .review-comment { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+
+  .review-response {
+    padding: 14px; border-radius: var(--radius-md);
+    background: rgba(251,146,60,0.05); border-left: 3px solid var(--accent);
+    margin-top: 10px;
+  }
+  .review-response-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .review-response-label { font-size: 0.75rem; font-weight: 600; color: var(--accent); }
+  .review-response-actions { display: flex; gap: 6px; }
+  .review-response-text { font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5; }
+  .review-response-date { font-size: 0.7rem; color: var(--text-tertiary); margin-top: 6px; }
+
+  .response-form { margin-top: 12px; }
+  .response-form textarea {
+    width: 100%; padding: 10px; border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--text-primary); font-size: 0.8125rem; font-family: inherit;
+    resize: vertical; min-height: 70px; outline: none; box-sizing: border-box;
+  }
+  .response-form textarea:focus { border-color: var(--accent); }
+  .response-form-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+  .response-char-count { font-size: 0.7rem; color: var(--text-tertiary); text-align: right; margin-top: 4px; }
+
+  /* ── Stats Tab ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 400px) { .stats-grid { grid-template-columns: 1fr; } }
+
+  .stat-card {
+    padding: 18px; border-radius: var(--radius-md);
+    background: var(--bg-card); border: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+  .stat-label { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px; }
+
+  /* ── Score Card ── */
+  .score-card { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+  .score-circle-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; }
+  .score-circle {
+    position: relative; width: 120px; height: 120px;
+  }
+  .score-circle svg { width: 120px; height: 120px; transform: rotate(-90deg); }
+  .score-circle-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 10; }
+  .score-circle-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+  .score-circle-text {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .score-number { font-size: 1.75rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+  .score-max { font-size: 0.7rem; color: var(--text-tertiary); }
+  .score-label-text { font-size: 0.75rem; color: var(--text-tertiary); text-align: center; }
+
+  .score-breakdown { flex: 1; min-width: 240px; }
+  .score-breakdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; font-size: 0.8125rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .score-breakdown-item:last-child { border-bottom: none; }
+  .score-icon-ok { color: var(--success); flex-shrink: 0; }
+  .score-icon-miss { color: var(--text-tertiary); flex-shrink: 0; }
+  .score-criterion { flex: 1; color: var(--text-secondary); }
+  .score-points { font-weight: 600; color: var(--text-primary); white-space: nowrap; }
+
+  .score-tips { margin-top: 16px; }
+  .score-tips-title { font-size: 0.8125rem; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+  .score-tip {
+    display: flex; gap: 8px; padding: 8px 12px;
+    background: var(--accent-glow); border-radius: var(--radius-md);
+    font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .score-tip svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+
+  /* ── Rating Distribution ── */
+  .rating-dist { margin-top: 24px; }
+  .rating-dist-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+  .rating-dist-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .rating-dist-label { font-size: 0.8rem; color: var(--text-secondary); width: 50px; display: flex; align-items: center; gap: 4px; }
+  .rating-dist-bar-bg {
+    flex: 1; height: 8px; background: rgba(255,255,255,0.06);
+    border-radius: 4px; overflow: hidden;
+  }
+  .rating-dist-bar-fill {
+    height: 100%; border-radius: 4px; background: var(--accent);
+    transition: width 0.4s ease;
+  }
+  .rating-dist-count { font-size: 0.75rem; color: var(--text-tertiary); width: 30px; text-align: right; }
+
+  /* ── Period Selector ── */
+  .period-selector { display: flex; gap: 6px; margin-bottom: 20px; }
+  .period-btn {
+    padding: 6px 16px; border-radius: var(--radius-full);
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-secondary); font-size: 0.8rem;
+    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  }
+  .period-btn:hover { border-color: var(--border-hover); }
+  .period-btn.active { background: var(--accent); color: #09090b; border-color: var(--accent); font-weight: 600; }
+
+  /* ── Bar Charts ── */
+  .chart-section { margin-top: 24px; }
+  .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+  .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding: 0; }
+  .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+  .chart-bar {
+    width: 100%; max-width: 32px; background: var(--accent);
+    border-radius: 4px 4px 0 0; min-height: 2px;
+    transition: height 0.3s ease;
+    position: relative;
+  }
+  .chart-bar:hover { opacity: 0.85; }
+  .chart-bar-tooltip {
+    display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+    background: #27272a; color: var(--text-primary); font-size: 0.7rem; padding: 4px 8px;
+    border-radius: 4px; white-space: nowrap; margin-bottom: 4px;
+    pointer-events: none;
+  }
+  .chart-bar:hover .chart-bar-tooltip { display: block; }
+  .chart-bar-label {
+    font-size: 0.6rem; color: var(--text-tertiary); margin-top: 6px;
+    writing-mode: vertical-lr; transform: rotate(180deg); max-height: 50px;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
+
+  .chart-loading {
+    display: flex; align-items: center; justify-content: center;
+    height: 160px; color: var(--text-tertiary); font-size: 0.8125rem;
+  }
+
+  /* ── Toast ── */
+  .pm-toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    padding: 12px 20px; border-radius: var(--radius-md);
+    font-size: 0.875rem; font-weight: 500;
+    animation: pmToastIn 0.3s ease, pmToastOut 0.3s ease 2.7s forwards;
+    max-width: 340px;
+  }
+  .pm-toast.success { background: var(--success); color: #fff; }
+  .pm-toast.error { background: var(--danger); color: #fff; }
+  @keyframes pmToastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pmToastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(12px); } }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .portal-biz-name { font-size: 1.2rem; }
+    .glass-card { padding: 18px; }
+    .score-card { flex-direction: column; align-items: center; }
+    .offer-card { flex-direction: column; align-items: flex-start; }
+    .offer-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+  }
+</style>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE CONTENT
+     ═══════════════════════════════════════════════════════ -->
+<div class="portal-page">
+  <div class="portal-container">
+
+    <!-- Header -->
+    <div class="portal-header">
+      <div class="portal-header-left">
+        <a href="/portal" class="portal-back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Înapoi
+        </a>
+        <h1 class="portal-biz-name"><%= business.name %></h1>
+      </div>
+      <a href="/business/<%= business.id %>" class="portal-view-btn" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Vizualizează
+      </a>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="portal-tabs">
+      <button class="portal-tab active" onclick="switchTab('info')">Info</button>
+      <button class="portal-tab" onclick="switchTab('oferte')">
+        Oferte<span class="portal-tab-badge"><%= offers.length %></span>
+      </button>
+      <button class="portal-tab" onclick="switchTab('recenzii')">
+        Recenzii<span class="portal-tab-badge"><%= reviewCount %></span>
+      </button>
+      <button class="portal-tab" onclick="switchTab('statistici')">Statistici</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         TAB 1: INFO
+         ═══════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-info">
+      <form id="business-info-form" onsubmit="return saveBusinessInfo(event)">
+        <div class="glass-card">
+          <h3 class="section-title">Informații generale</h3>
+
+          <div class="form-group">
+            <label class="form-label">Nume</label>
+            <input type="text" name="name" class="form-input" value="<%= business.name %>" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Adresă</label>
+            <input type="text" name="address" class="form-input" value="<%= business.address || '' %>">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Telefon</label>
+              <input type="text" name="phone" class="form-input" value="<%= business.phone || '' %>">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Website</label>
+              <input type="text" name="website" class="form-input" value="<%= business.website || '' %>" placeholder="https://">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Oraș</label>
+              <select name="city_id" class="form-select">
+                <option value="">— Selectează —</option>
+                <% cities.forEach(function(c) { %>
+                  <option value="<%= c.id %>" <%= business.city_id == c.id ? 'selected' : '' %>><%= c.name %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Categorie</label>
+              <select name="category_id" class="form-select">
+                <option value="">— Selectează —</option>
+                <% categories.forEach(function(cat) { %>
+                  <option value="<%= cat.id %>" <%= business.category_id == cat.id ? 'selected' : '' %>><%= cat.name %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Booking Section -->
+        <div class="glass-card" style="margin-top: 16px;">
+          <h3 class="section-title">Rezervări</h3>
+
+          <label class="form-label">Tip rezervare</label>
+          <div class="booking-grid">
+            <div class="booking-option <%= business.booking_type === 'none' || !business.booking_type ? 'active' : '' %>" onclick="selectBookingType('none')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              Niciunul
+            </div>
+            <div class="booking-option <%= business.booking_type === 'phone' ? 'active' : '' %>" onclick="selectBookingType('phone')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              Telefon
+            </div>
+            <div class="booking-option <%= business.booking_type === 'whatsapp' ? 'active' : '' %>" onclick="selectBookingType('whatsapp')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              WhatsApp
+            </div>
+            <div class="booking-option <%= business.booking_type === 'url' ? 'active' : '' %>" onclick="selectBookingType('url')">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Link
+            </div>
+          </div>
+          <input type="hidden" name="booking_type" id="booking-type-input" value="<%= business.booking_type || 'none' %>">
+
+          <div class="booking-fields">
+            <div class="booking-field" id="booking-field-phone" style="<%= business.booking_type === 'phone' ? '' : 'display:none' %>">
+              <div class="form-group">
+                <label class="form-label">Telefon rezervări</label>
+                <input type="text" name="booking_phone" class="form-input" value="<%= business.booking_phone || '' %>" placeholder="+40 7XX XXX XXX">
+              </div>
+            </div>
+            <div class="booking-field" id="booking-field-whatsapp" style="<%= business.booking_type === 'whatsapp' ? '' : 'display:none' %>">
+              <div class="form-group">
+                <label class="form-label">Număr WhatsApp</label>
+                <input type="text" name="booking_whatsapp" class="form-input" value="<%= business.booking_whatsapp || '' %>" placeholder="+40 7XX XXX XXX">
+              </div>
+            </div>
+            <div class="booking-field" id="booking-field-url" style="<%= business.booking_type === 'url' ? '' : 'display:none' %>">
+              <div class="form-group">
+                <label class="form-label">Link rezervare</label>
+                <input type="text" name="booking_url" class="form-input" value="<%= business.booking_url || '' %>" placeholder="https://">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label">Instrucțiuni rezervare</label>
+            <textarea name="booking_instructions" class="form-textarea" placeholder="Ex: Rezervările se fac cu minim 2 ore înainte..."><%= business.booking_instructions || '' %></textarea>
+          </div>
+        </div>
+
+        <!-- Image Previews -->
+        <div class="glass-card" style="margin-top: 16px;">
+          <h3 class="section-title">Imagini</h3>
+          <div class="img-preview-row">
+            <div>
+              <div class="img-preview-box">
+                <% if (business.logo_url) { %>
+                  <img src="<%= business.logo_url %>" alt="Logo">
+                <% } else { %>
+                  <div class="img-preview-placeholder">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    Fără logo
+                  </div>
+                <% } %>
+              </div>
+              <p class="img-preview-label">Logo</p>
+            </div>
+            <div>
+              <div class="img-preview-box">
+                <% if (business.cover_image_url) { %>
+                  <img src="<%= business.cover_image_url %>" alt="Cover">
+                <% } else { %>
+                  <div class="img-preview-placeholder">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    Fără copertă
+                  </div>
+                <% } %>
+              </div>
+              <p class="img-preview-label">Imagine copertă</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; text-align: right;">
+          <button type="submit" class="btn-accent" id="save-info-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Salvează modificările
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         TAB 2: OFERTE
+         ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-oferte">
+      <div class="offers-header">
+        <span class="offers-count"><%= offers.length %> ofert<%= offers.length === 1 ? 'ă' : 'e' %></span>
+        <a href="/portal/<%= business.id %>/oferta-noua" class="btn-accent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Adaugă ofertă
+        </a>
+      </div>
+
+      <% if (offers.length === 0) { %>
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <p>Nu ai nicio ofertă încă.<br>Adaugă prima ta ofertă pentru a atrage clienți!</p>
+          <a href="/portal/<%= business.id %>/oferta-noua" class="btn-accent">Adaugă ofertă</a>
+        </div>
+      <% } else { %>
+        <% offers.forEach(function(offer) { %>
+          <div class="offer-card" id="offer-<%= offer.id %>">
+            <div class="offer-thumb">
+              <% if (offer.logo_url) { %>
+                <img src="<%= offer.logo_url %>" alt="<%= offer.title %>">
+              <% } else { %>
+                <svg class="offer-thumb-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              <% } %>
+            </div>
+            <div class="offer-info">
+              <div class="offer-title"><%= offer.title %></div>
+              <div class="offer-meta">
+                <span class="offer-discount">
+                  <% if (offer.discount_type === 'percentage') { %>
+                    -<%= offer.discount_value %>%
+                  <% } else { %>
+                    -<%= offer.discount_value %> RON
+                  <% } %>
+                </span>
+                <span class="offer-dates">
+                  <%= new Date(offer.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }) %>
+                  —
+                  <%= new Date(offer.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                </span>
+              </div>
+            </div>
+            <div class="offer-actions">
+              <button class="toggle-btn <%= offer.is_active ? 'on' : 'off' %>"
+                      onclick="toggleOffer(<%= offer.id %>, this)"
+                      title="<%= offer.is_active ? 'Activă' : 'Inactivă' %>"></button>
+              <a href="/portal/<%= business.id %>/oferta/<%= offer.id %>" class="offer-edit-link" title="Editează">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         TAB 3: RECENZII
+         ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-recenzii">
+      <% if (reviews.length === 0) { %>
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <p>Nu ai nicio recenzie încă.<br>Recenziile vor apărea pe măsură ce clienții vizitează pagina ta.</p>
+        </div>
+      <% } else { %>
+        <% reviews.forEach(function(review) { %>
+          <div class="review-card" id="review-<%= review.id %>">
+            <div class="review-header">
+              <div class="review-avatar">
+                <%= review.first_name ? review.first_name.charAt(0).toUpperCase() : '?' %>
+              </div>
+              <div class="review-user-info">
+                <div class="review-user-name"><%= review.first_name || '' %> <%= review.last_name || '' %></div>
+                <div class="review-date"><%= new Date(review.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+              </div>
+            </div>
+
+            <div class="review-stars">
+              <% for (var s = 1; s <= 5; s++) { %>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="<%= s <= review.rating ? '#fb923c' : 'none' %>" stroke="<%= s <= review.rating ? '#fb923c' : '#52525b' %>" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <% } %>
+            </div>
+
+            <% if (review.comment) { %>
+              <div class="review-comment"><%= review.comment %></div>
+            <% } %>
+
+            <!-- Response Section -->
+            <% if (review.response_id) { %>
+              <div class="review-response" id="response-<%= review.id %>">
+                <div class="review-response-header">
+                  <span class="review-response-label">Răspunsul tău</span>
+                  <div class="review-response-actions">
+                    <button class="btn-sm" onclick="editResponse(<%= review.id %>, this)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Editează
+                    </button>
+                    <button class="btn-sm danger" onclick="deleteResponse(<%= review.id %>)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      Șterge
+                    </button>
+                  </div>
+                </div>
+                <div class="review-response-text"><%= review.response_text %></div>
+                <div class="review-response-date"><%= new Date(review.response_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+              </div>
+            <% } %>
+
+            <!-- Response Form (hidden by default) -->
+            <div class="response-form" id="response-form-<%= review.id %>" style="display: none;">
+              <textarea id="response-text-<%= review.id %>"
+                        maxlength="500"
+                        placeholder="Scrie un răspuns..."
+                        oninput="updateCharCount(<%= review.id %>)"><%= review.response_id ? review.response_text : '' %></textarea>
+              <div class="response-char-count" id="char-count-<%= review.id %>">0 / 500</div>
+              <div class="response-form-actions">
+                <button class="btn-sm" onclick="cancelResponse(<%= review.id %>)">Anulează</button>
+                <button class="btn-accent" style="padding: 6px 16px; font-size: 0.8rem;" onclick="submitResponse(<%= review.id %>)">
+                  <span id="response-btn-text-<%= review.id %>">Trimite</span>
+                </button>
+              </div>
+            </div>
+
+            <% if (!review.response_id) { %>
+              <button class="btn-sm" style="margin-top: 10px;" id="respond-btn-<%= review.id %>" onclick="showResponseForm(<%= review.id %>, false)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Răspunde
+              </button>
+            <% } %>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         TAB 4: STATISTICI
+         ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-statistici">
+
+      <!-- Performance Score -->
+      <div class="glass-card">
+        <h3 class="section-title">Scor Performanță</h3>
+        <div class="score-card">
+          <div class="score-circle-wrap">
+            <%
+              var scoreVal = score.score || 0;
+              var scoreMax = score.max_score || 100;
+              var scorePercent = scoreMax > 0 ? (scoreVal / scoreMax) * 100 : 0;
+              var scoreColor = scorePercent >= 70 ? '#22c55e' : (scorePercent >= 40 ? '#eab308' : '#ef4444');
+              var circumference = 2 * Math.PI * 50;
+              var dashOffset = circumference - (scorePercent / 100) * circumference;
+            %>
+            <div class="score-circle">
+              <svg viewBox="0 0 120 120">
+                <circle class="score-circle-bg" cx="60" cy="60" r="50"/>
+                <circle class="score-circle-fill" cx="60" cy="60" r="50"
+                        stroke="<%= scoreColor %>"
+                        stroke-dasharray="<%= circumference %>"
+                        stroke-dashoffset="<%= dashOffset %>"/>
+              </svg>
+              <div class="score-circle-text">
+                <span class="score-number" style="color: <%= scoreColor %>"><%= scoreVal %></span>
+                <span class="score-max">/ <%= scoreMax %></span>
+              </div>
+            </div>
+            <span class="score-label-text">
+              <% if (scorePercent >= 70) { %>Excelent
+              <% } else if (scorePercent >= 40) { %>Bine
+              <% } else { %>Necesită îmbunătățiri<% } %>
+            </span>
+          </div>
+
+          <div class="score-breakdown">
+            <% if (score.breakdown && score.breakdown.length) { score.breakdown.forEach(function(item) { %>
+              <div class="score-breakdown-item">
+                <% if (item.completed) { %>
+                  <svg class="score-icon-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <% } else { %>
+                  <svg class="score-icon-miss" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <% } %>
+                <span class="score-criterion"><%= item.criterion %></span>
+                <span class="score-points"><%= item.earned %>/<%= item.points %></span>
+              </div>
+            <% }); } %>
+
+            <%
+              var tips = [];
+              if (score.breakdown && score.breakdown.length) {
+                score.breakdown.forEach(function(item) {
+                  if (!item.completed && item.tip) tips.push(item.tip);
+                });
+              }
+            %>
+            <% if (tips.length > 0) { %>
+              <div class="score-tips">
+                <div class="score-tips-title">Sfaturi pentru îmbunătățire</div>
+                <% tips.forEach(function(tip) { %>
+                  <div class="score-tip">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span><%= tip %></span>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid" style="margin-top: 20px;">
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.views ? analytics.views.last_30d : 0 %></div>
+          <div class="stat-label">Vizualizări (30 zile)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.subscribers || 0 %></div>
+          <div class="stat-label">Abonați</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.reviews ? (Number(analytics.reviews.avg_rating) || 0).toFixed(1) : '0.0' %></div>
+          <div class="stat-label">Rating mediu</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.offers ? analytics.offers.active : 0 %></div>
+          <div class="stat-label">Oferte active</div>
+        </div>
+      </div>
+
+      <!-- Rating Distribution -->
+      <div class="glass-card">
+        <div class="rating-dist-title">Distribuție recenzii</div>
+        <%
+          var distribution = (analytics.reviews && analytics.reviews.distribution) ? analytics.reviews.distribution : [];
+          var maxCount = 0;
+          distribution.forEach(function(d) { if (d.count > maxCount) maxCount = d.count; });
+        %>
+        <% for (var star = 5; star >= 1; star--) {
+          var found = distribution.find(function(d) { return d.rating == star; });
+          var count = found ? found.count : 0;
+          var pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        %>
+          <div class="rating-dist-row">
+            <div class="rating-dist-label">
+              <%= star %>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            <div class="rating-dist-bar-bg">
+              <div class="rating-dist-bar-fill" style="width: <%= pct %>%"></div>
+            </div>
+            <div class="rating-dist-count"><%= count %></div>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Charts -->
+      <div class="glass-card" style="margin-top: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <h3 class="section-title" style="border: none; margin: 0; padding: 0;">Grafice</h3>
+          <div class="period-selector">
+            <button class="period-btn" onclick="changePeriod(7, this)">7 zile</button>
+            <button class="period-btn active" onclick="changePeriod(30, this)">30 zile</button>
+            <button class="period-btn" onclick="changePeriod(90, this)">90 zile</button>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-section">
+            <div class="chart-title">Vizualizări</div>
+            <div id="views-chart" class="chart-container">
+              <div class="chart-loading">Se încarcă...</div>
+            </div>
+          </div>
+          <div class="chart-section">
+            <div class="chart-title">Abonați noi</div>
+            <div id="subscribers-chart" class="chart-container">
+              <div class="chart-loading">Se încarcă...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-statistici -->
+
+  </div><!-- /portal-container -->
+</div><!-- /portal-page -->
+
+<%- include('../partials/footer') %>
+
+<script>
+(function() {
+  var businessId = '<%= business.id %>';
+  var currentPeriod = 30;
+
+  /* ── Toast ── */
+  function showToast(message, type) {
+    var existing = document.querySelector('.pm-toast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.className = 'pm-toast ' + (type || 'success');
+    t.textContent = message;
+    document.body.appendChild(t);
+    setTimeout(function() { if (t.parentNode) t.remove(); }, 3000);
+  }
+
+  /* ── Auth-aware fetch ── */
+  function apiFetch(url, options) {
+    return fetch(url, options).then(function(res) {
+      if (res.status === 401) {
+        window.location.href = '/login';
+        throw new Error('Unauthorized');
+      }
+      return res;
+    });
+  }
+
+  /* ════════════════════════════════
+     TAB SWITCHING
+     ════════════════════════════════ */
+  window.switchTab = function(tabName) {
+    var panels = document.querySelectorAll('.tab-panel');
+    var tabs = document.querySelectorAll('.portal-tab');
+    panels.forEach(function(p) { p.classList.remove('active'); });
+    tabs.forEach(function(t) { t.classList.remove('active'); });
+
+    var panel = document.getElementById('tab-' + tabName);
+    if (panel) panel.classList.add('active');
+
+    // Find matching tab button
+    var labels = { info: 'Info', oferte: 'Oferte', recenzii: 'Recenzii', statistici: 'Statistici' };
+    tabs.forEach(function(t) {
+      if (t.textContent.trim().indexOf(labels[tabName]) === 0) {
+        t.classList.add('active');
+      }
+    });
+
+    // Load charts on first stats tab visit
+    if (tabName === 'statistici' && !window._chartsLoaded) {
+      window._chartsLoaded = true;
+      loadCharts(currentPeriod);
+    }
+
+    // Update URL hash
+    history.replaceState(null, '', '#' + tabName);
+  };
+
+  // Restore tab from hash on load
+  (function() {
+    var hash = window.location.hash.replace('#', '');
+    if (['info', 'oferte', 'recenzii', 'statistici'].indexOf(hash) !== -1) {
+      switchTab(hash);
+    }
+  })();
+
+  /* ════════════════════════════════
+     TAB 1: BUSINESS INFO FORM
+     ════════════════════════════════ */
+  window.selectBookingType = function(type) {
+    document.getElementById('booking-type-input').value = type;
+    var options = document.querySelectorAll('.booking-option');
+    options.forEach(function(o) { o.classList.remove('active'); });
+    // Activate clicked
+    options.forEach(function(o) {
+      var text = o.textContent.trim().toLowerCase();
+      var map = { 'niciunul': 'none', 'telefon': 'phone', 'whatsapp': 'whatsapp', 'link': 'url' };
+      if (map[text] === type) o.classList.add('active');
+    });
+    // Show/hide conditional fields
+    var fields = ['phone', 'whatsapp', 'url'];
+    fields.forEach(function(f) {
+      var el = document.getElementById('booking-field-' + f);
+      if (el) el.style.display = (f === type) ? '' : 'none';
+    });
+  };
+
+  window.saveBusinessInfo = function(e) {
+    e.preventDefault();
+    var form = document.getElementById('business-info-form');
+    var btn = document.getElementById('save-info-btn');
+    var fd = new FormData(form);
+    var data = {};
+    fd.forEach(function(val, key) { data[key] = val; });
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Se salvează...';
+
+    apiFetch('/api/web/portal/' + businessId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, data: j }; }); })
+    .then(function(result) {
+      if (result.ok) {
+        showToast('Informațiile au fost salvate cu succes!', 'success');
+      } else {
+        showToast(result.data.message || 'Eroare la salvare', 'error');
+      }
+    })
+    .catch(function(err) {
+      if (err.message !== 'Unauthorized') showToast('Eroare de rețea', 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Salvează modificările';
+    });
+
+    return false;
+  };
+
+  /* ════════════════════════════════
+     TAB 2: OFFERS TOGGLE
+     ════════════════════════════════ */
+  window.toggleOffer = function(offerId, btn) {
+    var isOn = btn.classList.contains('on');
+    apiFetch('/api/web/portal/' + businessId + '/offers/' + offerId + '/toggle', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, data: j }; }); })
+    .then(function(result) {
+      if (result.ok) {
+        if (isOn) {
+          btn.classList.remove('on');
+          btn.classList.add('off');
+          btn.title = 'Inactivă';
+        } else {
+          btn.classList.remove('off');
+          btn.classList.add('on');
+          btn.title = 'Activă';
+        }
+        showToast(isOn ? 'Oferta a fost dezactivată' : 'Oferta a fost activată', 'success');
+      } else {
+        showToast(result.data.message || 'Eroare', 'error');
+      }
+    })
+    .catch(function(err) {
+      if (err.message !== 'Unauthorized') showToast('Eroare de rețea', 'error');
+    });
+  };
+
+  /* ════════════════════════════════
+     TAB 3: REVIEWS
+     ════════════════════════════════ */
+  window.updateCharCount = function(reviewId) {
+    var textarea = document.getElementById('response-text-' + reviewId);
+    var counter = document.getElementById('char-count-' + reviewId);
+    if (textarea && counter) {
+      counter.textContent = textarea.value.length + ' / 500';
+    }
+  };
+
+  window.showResponseForm = function(reviewId, isEdit) {
+    var form = document.getElementById('response-form-' + reviewId);
+    var respondBtn = document.getElementById('respond-btn-' + reviewId);
+    if (form) {
+      form.style.display = '';
+      var btnText = document.getElementById('response-btn-text-' + reviewId);
+      if (btnText) btnText.textContent = isEdit ? 'Actualizează' : 'Trimite';
+      form.dataset.mode = isEdit ? 'edit' : 'create';
+      updateCharCount(reviewId);
+    }
+    if (respondBtn) respondBtn.style.display = 'none';
+  };
+
+  window.cancelResponse = function(reviewId) {
+    var form = document.getElementById('response-form-' + reviewId);
+    var respondBtn = document.getElementById('respond-btn-' + reviewId);
+    if (form) form.style.display = 'none';
+    if (respondBtn) respondBtn.style.display = '';
+  };
+
+  window.editResponse = function(reviewId) {
+    var responseEl = document.getElementById('response-' + reviewId);
+    if (responseEl) responseEl.style.display = 'none';
+    showResponseForm(reviewId, true);
+  };
+
+  window.submitResponse = function(reviewId) {
+    var textarea = document.getElementById('response-text-' + reviewId);
+    var text = textarea ? textarea.value.trim() : '';
+    if (!text) { showToast('Scrie un răspuns', 'error'); return; }
+    if (text.length > 500) { showToast('Răspunsul nu poate depăși 500 de caractere', 'error'); return; }
+
+    var form = document.getElementById('response-form-' + reviewId);
+    var isEdit = form && form.dataset.mode === 'edit';
+    var method = isEdit ? 'PUT' : 'POST';
+
+    apiFetch('/api/web/portal/' + businessId + '/reviews/' + reviewId + '/respond', {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, data: j }; }); })
+    .then(function(result) {
+      if (result.ok) {
+        showToast(isEdit ? 'Răspunsul a fost actualizat' : 'Răspunsul a fost trimis', 'success');
+        // Reload to show updated response
+        setTimeout(function() { window.location.reload(); }, 800);
+      } else {
+        showToast(result.data.message || 'Eroare', 'error');
+      }
+    })
+    .catch(function(err) {
+      if (err.message !== 'Unauthorized') showToast('Eroare de rețea', 'error');
+    });
+  };
+
+  window.deleteResponse = function(reviewId) {
+    if (!confirm('Ești sigur că vrei să ștergi acest răspuns?')) return;
+
+    apiFetch('/api/web/portal/' + businessId + '/reviews/' + reviewId + '/respond', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, data: j }; }); })
+    .then(function(result) {
+      if (result.ok) {
+        showToast('Răspunsul a fost șters', 'success');
+        setTimeout(function() { window.location.reload(); }, 800);
+      } else {
+        showToast(result.data.message || 'Eroare', 'error');
+      }
+    })
+    .catch(function(err) {
+      if (err.message !== 'Unauthorized') showToast('Eroare de rețea', 'error');
+    });
+  };
+
+  /* ════════════════════════════════
+     TAB 4: STATISTICS & CHARTS
+     ════════════════════════════════ */
+  window.changePeriod = function(days, btn) {
+    currentPeriod = days;
+    var buttons = document.querySelectorAll('.period-btn');
+    buttons.forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    loadCharts(days);
+  };
+
+  function loadCharts(days) {
+    var viewsContainer = document.getElementById('views-chart');
+    var subsContainer = document.getElementById('subscribers-chart');
+
+    viewsContainer.innerHTML = '<div class="chart-loading">Se încarcă...</div>';
+    subsContainer.innerHTML = '<div class="chart-loading">Se încarcă...</div>';
+
+    // Load views chart
+    apiFetch('/api/web/portal/' + businessId + '/analytics/views?days=' + days)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        renderBarChart(viewsContainer, data.data || data || [], 'vizualizări');
+      })
+      .catch(function() {
+        viewsContainer.innerHTML = '<div class="chart-loading">Eroare la încărcare</div>';
+      });
+
+    // Load subscribers chart
+    apiFetch('/api/web/portal/' + businessId + '/analytics/subscribers?days=' + days)
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        renderBarChart(subsContainer, data.data || data || [], 'abonați');
+      })
+      .catch(function() {
+        subsContainer.innerHTML = '<div class="chart-loading">Eroare la încărcare</div>';
+      });
+  }
+
+  function renderBarChart(container, dataArr, label) {
+    container.innerHTML = '';
+
+    if (!dataArr || dataArr.length === 0) {
+      container.innerHTML = '<div class="chart-loading">Nu sunt date disponibile</div>';
+      return;
+    }
+
+    var maxVal = 0;
+    dataArr.forEach(function(item) {
+      var val = item.count || item.value || 0;
+      if (val > maxVal) maxVal = val;
+    });
+
+    dataArr.forEach(function(item) {
+      var val = item.count || item.value || 0;
+      var heightPct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+      var dateLabel = item.date || item.label || '';
+
+      // Format short date label
+      var shortLabel = dateLabel;
+      if (dateLabel && dateLabel.indexOf('-') !== -1) {
+        var parts = dateLabel.split('-');
+        shortLabel = parts[2] + '/' + parts[1];
+      }
+
+      var wrap = document.createElement('div');
+      wrap.className = 'chart-bar-wrap';
+
+      var bar = document.createElement('div');
+      bar.className = 'chart-bar';
+      bar.style.height = Math.max(heightPct, 1) + '%';
+
+      var tooltip = document.createElement('div');
+      tooltip.className = 'chart-bar-tooltip';
+      tooltip.textContent = val + ' ' + label + (dateLabel ? ' — ' + shortLabel : '');
+      bar.appendChild(tooltip);
+
+      var lbl = document.createElement('div');
+      lbl.className = 'chart-bar-label';
+      lbl.textContent = shortLabel;
+
+      wrap.appendChild(bar);
+      wrap.appendChild(lbl);
+      container.appendChild(wrap);
+    });
+  }
+
+  /* ── Spin animation for loading button ── */
+  var styleEl = document.createElement('style');
+  styleEl.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+  document.head.appendChild(styleEl);
+
+})();
+</script>
