@@ -4,7 +4,7 @@
 <section class="page-header" style="padding-bottom: 24px;">
   <div class="page-header-glow"></div>
   <div class="container">
-    <h1 class="page-title text-gradient">Colecția mea</h1>
+    <h1 class="page-title text-gradient">Colec&#539;ia mea</h1>
   </div>
 </section>
 
@@ -16,146 +16,115 @@
       <button class="collection-tab active" data-tab="businesses" onclick="switchCollectionTab('businesses')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Business-uri
-        <span class="collection-tab-badge" id="businesses-count">0</span>
+        <span class="collection-tab-badge"><%= subscriptions.length %></span>
       </button>
       <button class="collection-tab" data-tab="offers" onclick="switchCollectionTab('offers')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
         Oferte
-        <span class="collection-tab-badge" id="offers-count">0</span>
+        <span class="collection-tab-badge"><%= favorites.length %></span>
       </button>
     </div>
 
     <!-- Businesses Tab -->
     <div class="collection-panel" id="panel-businesses">
-      <div class="collection-grid" id="businesses-grid">
-        <div style="text-align: center; padding: 48px 0; color: var(--text-tertiary);">Se încarcă...</div>
-      </div>
+      <% if (subscriptions.length === 0) { %>
+        <div class="collection-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <p>Nu urm&#259;re&#537;ti niciun business &#238;nc&#259;</p>
+          <a href="/oferte" class="btn btn-primary">Descooper&#259; oferte</a>
+        </div>
+      <% } else { %>
+        <div class="collection-grid" id="businesses-grid">
+          <% subscriptions.forEach(function(b) { %>
+            <div class="collection-item" id="biz-<%= b.id %>">
+              <a href="/business/<%= b.id %>" class="collection-item-link">
+                <div class="collection-item-avatar">
+                  <% if (b.logo_url) { %>
+                    <img src="<%= b.logo_url %>" alt="<%= b.name %>" loading="lazy">
+                  <% } else { %>
+                    <span><%= b.name.charAt(0) %></span>
+                  <% } %>
+                </div>
+                <div class="collection-item-info">
+                  <h3><%= b.name %></h3>
+                  <p><%= b.category_name || '' %><%= b.city_name ? ' &#183; ' + b.city_name : '' %></p>
+                  <span class="collection-item-meta"><%= b.active_offers_count || 0 %> oferte active</span>
+                </div>
+              </a>
+              <button class="btn btn-ghost collection-remove-btn" onclick="unfollowBusiness(<%= b.id %>)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
     </div>
 
     <!-- Offers Tab -->
     <div class="collection-panel" id="panel-offers" style="display: none;">
-      <div class="collection-grid" id="offers-grid">
-        <div style="text-align: center; padding: 48px 0; color: var(--text-tertiary);">Se încarcă...</div>
-      </div>
-    </div>
-
-    <!-- Empty States -->
-    <div class="collection-empty" id="empty-businesses" style="display: none;">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <p>Nu urmărești niciun business încă</p>
-      <a href="/oferte" class="btn btn-primary">Descoperă oferte</a>
-    </div>
-    <div class="collection-empty" id="empty-offers" style="display: none;">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      <p>Nu ai nicio ofertă salvată</p>
-      <a href="/oferte" class="btn btn-primary">Explorează oferte</a>
+      <% if (favorites.length === 0) { %>
+        <div class="collection-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          <p>Nu ai nicio ofert&#259; salvat&#259;</p>
+          <a href="/oferte" class="btn btn-primary">Exploreaz&#259; oferte</a>
+        </div>
+      <% } else { %>
+        <div class="collection-grid" id="offers-grid">
+          <% favorites.forEach(function(o) { %>
+            <div class="collection-item" id="fav-<%= o.id %>">
+              <a href="/oferta/<%= o.id %>" class="collection-item-link">
+                <div class="collection-item-avatar offer-avatar">
+                  <% if (o.image_url) { %>
+                    <img src="<%= o.image_url %>" alt="<%= o.title %>" loading="lazy">
+                  <% } else { %>
+                    <span>%</span>
+                  <% } %>
+                </div>
+                <div class="collection-item-info">
+                  <h3><%= o.title %></h3>
+                  <p><%= o.business_name || '' %></p>
+                  <span class="collection-item-meta"><%= o.discount_type === 'percentage' ? '-' + o.discount_value + '%' : '-' + o.discount_value + ' RON' %></span>
+                </div>
+              </a>
+              <button class="btn btn-ghost collection-remove-btn" onclick="removeFavorite(<%= o.id %>)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
     </div>
 
   </div>
 </section>
 
 <script>
-  let currentTab = 'businesses';
-
   function switchCollectionTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.collection-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.collection-tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
     document.getElementById('panel-businesses').style.display = tab === 'businesses' ? '' : 'none';
     document.getElementById('panel-offers').style.display = tab === 'offers' ? '' : 'none';
-    document.getElementById('empty-businesses').style.display = 'none';
-    document.getElementById('empty-offers').style.display = 'none';
-  }
-
-  async function loadCollection() {
-    // Load subscriptions (followed businesses)
-    try {
-      const bizRes = await fetch('/api/web/subscriptions');
-      const bizData = await bizRes.json();
-      const businesses = Array.isArray(bizData) ? bizData : (bizData.data || []);
-      document.getElementById('businesses-count').textContent = businesses.length;
-
-      if (businesses.length === 0) {
-        document.getElementById('businesses-grid').innerHTML = '';
-        document.getElementById('empty-businesses').style.display = '';
-      } else {
-        document.getElementById('businesses-grid').innerHTML = businesses.map(b => `
-          <div class="collection-item" id="biz-${b.id}">
-            <a href="/business/${b.id}" class="collection-item-link">
-              <div class="collection-item-avatar">
-                ${b.logo_url ? `<img src="${b.logo_url}" alt="${b.name}">` : `<span>${b.name.charAt(0)}</span>`}
-              </div>
-              <div class="collection-item-info">
-                <h3>${b.name}</h3>
-                <p>${b.category ? b.category.name : ''} ${b.city ? '· ' + b.city.name : ''}</p>
-                <span class="collection-item-meta">${b.active_offers_count || 0} oferte active</span>
-              </div>
-            </a>
-            <button class="btn btn-ghost collection-remove-btn" onclick="unfollowBusiness(${b.id})">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-        `).join('');
-      }
-    } catch(e) { console.error('Error loading subscriptions:', e); }
-
-    // Load favorites
-    try {
-      const favRes = await fetch('/api/web/favorites');
-      const favData = await favRes.json();
-      const favorites = Array.isArray(favData) ? favData : (favData.data || []);
-      document.getElementById('offers-count').textContent = favorites.length;
-
-      if (favorites.length === 0) {
-        document.getElementById('offers-grid').innerHTML = '';
-        if (currentTab === 'offers') document.getElementById('empty-offers').style.display = '';
-      } else {
-        document.getElementById('offers-grid').innerHTML = favorites.map(o => `
-          <div class="collection-item" id="fav-${o.id}">
-            <a href="/oferta/${o.id}" class="collection-item-link">
-              <div class="collection-item-avatar offer-avatar">
-                ${o.image_url ? `<img src="${o.image_url}" alt="${o.title}">` : `<span>%</span>`}
-              </div>
-              <div class="collection-item-info">
-                <h3>${o.title}</h3>
-                <p>${o.business ? o.business.name : ''}</p>
-                <span class="collection-item-meta">${o.discount_type === 'percentage' ? '-' + o.discount_value + '%' : '-' + o.discount_value + ' RON'}</span>
-              </div>
-            </a>
-            <button class="btn btn-ghost collection-remove-btn" onclick="removeFavorite(${o.id})">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-        `).join('');
-      }
-    } catch(e) { console.error('Error loading favorites:', e); }
   }
 
   async function unfollowBusiness(id) {
     try {
-      await fetch('/api/web/subscriptions/' + id, { method: 'DELETE' });
-      const el = document.getElementById('biz-' + id);
+      var res = await fetch('/api/web/subscriptions/' + id, { method: 'DELETE' });
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      var el = document.getElementById('biz-' + id);
       if (el) el.remove();
-      const count = document.getElementById('businesses-grid').children.length;
-      document.getElementById('businesses-count').textContent = count;
-      if (count === 0) document.getElementById('empty-businesses').style.display = '';
-      if (typeof showToast === 'function') showToast('Business eliminat din colecție');
+      if (typeof showToast === 'function') showToast('Business eliminat din colec\u021Bie');
     } catch(e) { console.error(e); }
   }
 
   async function removeFavorite(id) {
     try {
-      await fetch('/api/web/favorites/' + id, { method: 'DELETE' });
-      const el = document.getElementById('fav-' + id);
+      var res = await fetch('/api/web/favorites/' + id, { method: 'DELETE' });
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      var el = document.getElementById('fav-' + id);
       if (el) el.remove();
-      const count = document.getElementById('offers-grid').children.length;
-      document.getElementById('offers-count').textContent = count;
-      if (count === 0) document.getElementById('empty-offers').style.display = '';
-      if (typeof showToast === 'function') showToast('Oferta eliminată din favorite');
+      if (typeof showToast === 'function') showToast('Oferta eliminat\u0103 din favorite');
     } catch(e) { console.error(e); }
   }
-
-  document.addEventListener('DOMContentLoaded', loadCollection);
 </script>
 
 <%- include('partials/footer') %>

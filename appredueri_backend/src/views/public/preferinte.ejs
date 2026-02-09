@@ -19,7 +19,7 @@
         <h2 class="settings-section-title">Orașul tău</h2>
         <div class="preferences-pills" id="city-pills">
           <% cities.forEach(function(city) { %>
-            <button type="button" class="preference-pill<%= userPrefs && userPrefs.preferred_city_id == city.id ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="selectCity(this)">
+            <button type="button" class="preference-pill<%= preferredCityId && preferredCityId == city.id ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="selectCity(this)">
               <%= city.name %>
             </button>
           <% }); %>
@@ -32,7 +32,7 @@
         <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Selectează una sau mai multe categorii</p>
         <div class="preferences-pills" id="category-pills">
           <%
-            const selectedCats = (userPrefs && Array.isArray(userPrefs.preferred_category_ids)) ? userPrefs.preferred_category_ids.map(Number) : [];
+            const selectedCats = Array.isArray(preferredCategoryIds) ? preferredCategoryIds.map(Number) : [];
           %>
           <% categories.forEach(function(cat) { %>
             <button type="button" class="preference-pill<%= selectedCats.includes(cat.id) ? ' active' : '' %>" data-category-id="<%= cat.id %>" onclick="toggleCategory(this)">
@@ -54,8 +54,8 @@
 </section>
 
 <script>
-  let selectedCityId = <%= userPrefs && userPrefs.preferred_city_id ? userPrefs.preferred_city_id : 'null' %>;
-  let selectedCategoryIds = [<%= (userPrefs && Array.isArray(userPrefs.preferred_category_ids)) ? userPrefs.preferred_category_ids.join(',') : '' %>];
+  let selectedCityId = <%= preferredCityId ? preferredCityId : 'null' %>;
+  let selectedCategoryIds = [<%= Array.isArray(preferredCategoryIds) ? preferredCategoryIds.join(',') : '' %>];
 
   function selectCity(el) {
     document.querySelectorAll('#city-pills .preference-pill').forEach(p => p.classList.remove('active'));
