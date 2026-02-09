@@ -289,7 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
 function initGeolocation() {
   var cards = document.querySelectorAll('.offer-distance[data-lat][data-lng]');
   if (cards.length === 0) return;
-  if (!navigator.geolocation) return;
+
+  var banner = document.getElementById('geo-banner');
+  var bannerText = document.getElementById('geo-banner-text');
+  var activateBtn = document.getElementById('geo-activate-btn');
 
   // Check sessionStorage cache first for instant display
   var cached = sessionStorage.getItem('ofai_user_pos');
@@ -297,18 +300,44 @@ function initGeolocation() {
     try {
       var pos = JSON.parse(cached);
       updateDistances(pos.lat, pos.lng, cards);
+      // Show banner in active state
+      if (banner) {
+        banner.style.display = '';
+        banner.classList.add('geo-active');
+        if (bannerText) bannerText.textContent = 'Locație activă — distanțele sunt afișate';
+        if (activateBtn) activateBtn.style.display = 'none';
+      }
     } catch(e) {}
+    return;
   }
 
-  // Also request fresh position (updates cache + UI)
-  navigator.geolocation.getCurrentPosition(function(pos) {
-    var userLat = pos.coords.latitude;
-    var userLng = pos.coords.longitude;
-    sessionStorage.setItem('ofai_user_pos', JSON.stringify({ lat: userLat, lng: userLng }));
-    updateDistances(userLat, userLng, cards);
-  }, function() {
-    // Geolocation denied or unavailable — cached values already applied above if available
-  }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  // No cached position — show activation banner if geolocation is available
+  if (!navigator.geolocation) return;
+  if (banner) banner.style.display = '';
+
+  if (activateBtn) {
+    activateBtn.addEventListener('click', function() {
+      activateBtn.textContent = 'Se caută...';
+      activateBtn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        var userLat = pos.coords.latitude;
+        var userLng = pos.coords.longitude;
+        sessionStorage.setItem('ofai_user_pos', JSON.stringify({ lat: userLat, lng: userLng }));
+        updateDistances(userLat, userLng, cards);
+
+        if (banner) {
+          banner.classList.add('geo-active');
+          if (bannerText) bannerText.textContent = 'Locație activă — distanțele sunt afișate';
+          activateBtn.style.display = 'none';
+        }
+      }, function() {
+        if (bannerText) bannerText.textContent = 'Nu am putut accesa locația. Verifică setările browserului.';
+        activateBtn.textContent = 'Reîncearcă';
+        activateBtn.disabled = false;
+      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+    });
+  }
 }
 
 function haversineKm(lat1, lon1, lat2, lon2) {

@@ -831,6 +831,52 @@ ul, ol { list-style: none; }
   font-weight: 500;
 }
 
+/* ─── GEOLOCATION BANNER ──────────────────────────────── */
+.geo-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+}
+.geo-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.geo-banner-content svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+#geo-activate-btn {
+  margin-left: auto;
+  white-space: nowrap;
+  padding: 6px 16px;
+  font-size: 0.8125rem;
+}
+.geo-banner.geo-active {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.05);
+}
+.geo-banner.geo-active .geo-banner-content svg {
+  color: #22c55e;
+}
+.geo-banner.geo-active .geo-banner-content {
+  color: #22c55e;
+}
+@media (max-width: 480px) {
+  .geo-banner-content {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #geo-activate-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
 /* Inline logo in offer cards */
 .offer-logo {
   width: 32px;

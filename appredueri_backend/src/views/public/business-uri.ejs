@@ -1,0 +1,164 @@
+<%- include('partials/head', { pageTitle: 'Business-uri', activePage: 'business-uri' }) %>
+<%- include('partials/navbar', { activePage: 'business-uri', webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE HEADER
+     ═══════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="page-header-glow"></div>
+  <div class="container">
+    <h1 class="page-title text-gradient">Business-uri</h1>
+    <p class="page-subtitle"><%= totalBusinesses.toLocaleString('ro-RO') %> business-uri in <%= totalCities %> orase</p>
+
+    <div class="search-wrapper" style="margin-top: 32px;">
+      <form action="/business-uri" method="GET" id="searchForm">
+        <input
+          type="text"
+          name="q"
+          class="search-bar"
+          placeholder="Cauta business-uri..."
+          value="<%= typeof query !== 'undefined' ? query : '' %>"
+        >
+        <div class="search-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <% if (typeof selectedCity !== 'undefined' && selectedCity) { %>
+          <input type="hidden" name="city" value="<%= selectedCity %>">
+        <% } %>
+        <% if (typeof selectedCategory !== 'undefined' && selectedCategory) { %>
+          <input type="hidden" name="category" value="<%= selectedCategory %>">
+        <% } %>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     FILTER BAR
+     ═══════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="filter-bar">
+    <a href="/business-uri" class="filter-pill<%= !selectedCategory ? ' active' : '' %>">Toate</a>
+    <% categories.forEach(cat => { %>
+      <a href="/business-uri?category=<%= cat.id %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+         class="filter-pill<%= selectedCategory == cat.id ? ' active' : '' %>">
+        <%= cat.name %>
+      </a>
+    <% }); %>
+  </div>
+
+  <% if (cities && cities.length > 0) { %>
+    <div class="filter-bar" style="padding-top: 0;">
+      <span class="sort-bar-label">Oras:</span>
+      <a href="/business-uri?<%= selectedCategory ? 'category=' + selectedCategory + '&' : '' %><%= query ? 'q=' + encodeURIComponent(query) : '' %>"
+         class="filter-pill<%= !selectedCity ? ' active' : '' %>">Toate</a>
+      <% cities.forEach(city => { %>
+        <a href="/business-uri?city=<%= city.id %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+           class="filter-pill<%= selectedCity == city.id ? ' active' : '' %>">
+          <%= city.name %>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SORT BAR
+       ═══════════════════════════════════════════════════════ -->
+  <div class="sort-bar">
+    <span class="sort-bar-label">Sortare:</span>
+    <a href="/business-uri?sort=popular<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'popular' ? ' active' : '' %>">Populare</a>
+    <a href="/business-uri?sort=rating<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'rating' ? ' active' : '' %>">Rating</a>
+    <a href="/business-uri?sort=newest<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'newest' ? ' active' : '' %>">Cele mai noi</a>
+  </div>
+
+  <!-- Geo Banner -->
+  <div id="geo-banner" class="geo-banner" style="display:none;">
+    <div class="geo-banner-content">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="geo-banner-text">Activeaza locatia pentru a vedea distanta</span>
+      <button class="btn btn-primary" id="geo-activate-btn">Activeaza locatia</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BUSINESSES GRID
+       ═══════════════════════════════════════════════════════ -->
+  <% if (businesses.length === 0) { %>
+    <div style="text-align: center; padding: 80px 0;">
+      <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
+      <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Niciun business gasit</h3>
+      <p style="color: var(--text-secondary);">Incearca alte filtre sau cauta altceva.</p>
+      <a href="/business-uri" class="btn btn-secondary" style="margin-top: 24px;">Reseteaza filtrele</a>
+    </div>
+  <% } else { %>
+    <div class="businesses-grid">
+      <% businesses.forEach((biz, i) => { %>
+        <a href="/business/<%= biz.id %>" class="biz-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
+          <div class="biz-card-cover">
+            <% if (biz.cover_image_url) { %>
+              <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" loading="lazy">
+            <% } %>
+          </div>
+          <div class="biz-card-avatar">
+            <% if (biz.logo_url) { %>
+              <img src="<%= biz.logo_url %>" alt="<%= biz.name %>">
+            <% } else { %>
+              <span class="biz-card-letter"><%= biz.name.charAt(0) %></span>
+            <% } %>
+          </div>
+          <div class="biz-card-body">
+            <div class="biz-card-name"><%= biz.name %></div>
+            <% if (parseFloat(biz.rating_avg) > 0) { %>
+              <div class="biz-card-rating">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span><%= parseFloat(biz.rating_avg).toFixed(1) %></span>
+                <span class="biz-card-rating-count">(<%= biz.rating_count %>)</span>
+              </div>
+            <% } %>
+            <div class="biz-card-meta">
+              <% if (biz.category_name) { %>
+                <span class="biz-card-tag"><%= biz.category_name %></span>
+              <% } %>
+              <% if (biz.city_name) { %>
+                <span class="biz-card-tag"><%= biz.city_name %></span>
+              <% } %>
+            </div>
+            <div class="biz-card-bottom">
+              <span class="biz-card-offers"><%= biz.offer_count %> oferte active</span>
+              <span class="offer-distance biz-card-distance" data-lat="<%= biz.lat || '' %>" data-lng="<%= biz.lng || '' %>" style="display:none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <span class="offer-distance-text"></span>
+              </span>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+      <div style="display: flex; justify-content: center; gap: 8px; padding: 48px 0 80px;">
+        <% for (let p = 1; p <= Math.min(totalPages, 10); p++) { %>
+          <a href="/business-uri?page=<%= p %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %><%= selectedSort && selectedSort !== 'popular' ? '&sort=' + selectedSort : '' %>"
+             class="filter-pill<%= currentPage == p ? ' active' : '' %>"
+             style="min-width: 40px; justify-content: center;">
+            <%= p %>
+          </a>
+        <% } %>
+        <% if (totalPages > 10) { %>
+          <span class="filter-pill" style="cursor: default;">...</span>
+          <a href="/business-uri?page=<%= totalPages %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+             class="filter-pill<%= currentPage == totalPages ? ' active' : '' %>"
+             style="min-width: 40px; justify-content: center;">
+            <%= totalPages %>
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

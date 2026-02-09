@@ -241,6 +241,111 @@ router.get("/oferte", async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════
+// BUSINESSES PAGE (with filtering, search, pagination)
+// ═══════════════════════════════════════════════════════
+router.get("/business-uri", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 24;
+    const offset = (page - 1) * limit;
+    const query = req.query.q || "";
+    const selectedCategory = req.query.category || null;
+    const selectedCity = req.query.city || null;
+    const sort = req.query.sort || "popular";
+
+    const conditions = [];
+    const params = [];
+    let paramIdx = 1;
+
+    if (query) {
+      conditions.push(`b.name ILIKE $${paramIdx}`);
+      params.push(`%${query}%`);
+      paramIdx++;
+    }
+
+    if (selectedCategory) {
+      conditions.push(`b.category_id = $${paramIdx}`);
+      params.push(parseInt(selectedCategory));
+      paramIdx++;
+    }
+
+    if (selectedCity) {
+      conditions.push(`b.city_id = $${paramIdx}`);
+      params.push(parseInt(selectedCity));
+      paramIdx++;
+    }
+
+    const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total FROM businesses b ${whereClause}`,
+      params
+    );
+    const totalBusinesses = parseInt(countResult.rows[0].total);
+    const totalPages = Math.ceil(totalBusinesses / limit);
+
+    const sortOptions = {
+      popular: "offer_count DESC, rating_avg DESC",
+      rating: "rating_avg DESC, rating_count DESC",
+      newest: "b.id DESC",
+    };
+    const orderBy = sortOptions[sort] || sortOptions.popular;
+
+    const businessesResult = await pool.query(
+      `SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+              b.lat, b.lng,
+              ci.name as city_name, cat.name as category_name,
+              COALESCE(AVG(r.rating), 0) as rating_avg,
+              COUNT(DISTINCT r.id) as rating_count,
+              COUNT(DISTINCT o.id) as offer_count
+       FROM businesses b
+       LEFT JOIN cities ci ON b.city_id = ci.id
+       LEFT JOIN categories cat ON b.category_id = cat.id
+       LEFT JOIN reviews r ON r.business_id = b.id
+       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+       ${whereClause}
+       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, ci.name, cat.name
+       ORDER BY ${orderBy}
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...params, limit, offset]
+    );
+
+    const categoriesResult = await pool.query("SELECT c.id, c.name FROM categories c ORDER BY c.name");
+
+    const citiesResult = await pool.query(`
+      SELECT c.id, c.name FROM cities c
+      INNER JOIN businesses b ON b.city_id = c.id
+      GROUP BY c.id, c.name
+      ORDER BY COUNT(b.id) DESC
+      LIMIT 15
+    `);
+
+    const totalCitiesResult = await pool.query(
+      "SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"
+    );
+
+    res.render("public/business-uri", {
+      businesses: businessesResult.rows,
+      categories: categoriesResult.rows,
+      cities: citiesResult.rows,
+      totalBusinesses,
+      totalPages,
+      currentPage: page,
+      totalCities: parseInt(totalCitiesResult.rows[0].total),
+      query,
+      selectedCategory,
+      selectedCity,
+      selectedSort: sort,
+      activePage: "business-uri",
+      webUser: req.webUser,
+    });
+  } catch (err) {
+    console.error("[Web] Businesses page error:", err);
+    res.status(500).send("Eroare la încărcarea business-urilor");
+  }
+});
+
+// ═══════════════════════════════════════════════════════
 // OFFER DETAIL PAGE
 // ═══════════════════════════════════════════════════════
 router.get("/oferta/:id", async (req, res) => {

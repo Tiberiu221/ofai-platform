@@ -10,6 +10,7 @@
     <div class="nav-links">
       <a href="/" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'home' ? ' active' : '' %>">Acasă</a>
       <a href="/oferte" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'oferte' ? ' active' : '' %>">Oferte</a>
+      <a href="/business-uri" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'business-uri' ? ' active' : '' %>">Business-uri</a>
       <a href="/categorii" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'categorii' ? ' active' : '' %>">Categorii</a>
       <a href="/orase" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'orase' ? ' active' : '' %>">Orașe</a>
     </div>
@@ -70,6 +71,7 @@
 <div class="nav-mobile-overlay">
   <a href="/">Acasă</a>
   <a href="/oferte">Oferte</a>
+  <a href="/business-uri">Business-uri</a>
   <a href="/categorii">Categorii</a>
   <a href="/orase">Orașe</a>
   <% if (_webUser) { %>

@@ -15,7 +15,7 @@
   <nav class="bd-breadcrumb">
     <a href="/">Acasă</a>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-    <a href="/oferte">Business-uri</a>
+    <a href="/business-uri">Business-uri</a>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     <span><%= business.name %></span>
   </nav>
@@ -196,6 +196,15 @@
     <div class="bd-section-header">
       <h2 class="bd-section-title">Oferte active</h2>
       <span class="bd-count-badge"><%= offers.length %></span>
+    </div>
+
+    <!-- Geo Banner -->
+    <div id="geo-banner" class="geo-banner" style="display:none;">
+      <div class="geo-banner-content">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="geo-banner-text">Activeaza locatia pentru a vedea distanta</span>
+        <button class="btn btn-primary" id="geo-activate-btn">Activeaza locatia</button>
+      </div>
     </div>
 
     <div class="offers-grid">
