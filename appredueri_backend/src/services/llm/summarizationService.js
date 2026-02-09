@@ -92,26 +92,26 @@ function filterReviewsForSummary(reviews) {
  */
 async function fetchReviewsForBusiness(businessId, limit = LLM_CONFIG.summarization.maxReviewsInPrompt) {
   const result = await pool.query(
-    `SELECT 
+    `SELECT
       r.id,
       r.rating,
       r.comment,
       r.created_at,
-      u.first_name,
-      u.last_name
+      COALESCE(u.first_name, 'Utilizator') as first_name,
+      COALESCE(u.last_name, '') as last_name
     FROM reviews r
-    JOIN users u ON r.user_id = u.id
+    LEFT JOIN users u ON r.user_id = u.id
     WHERE r.business_id = $1
     ORDER BY r.created_at DESC
     LIMIT $2`,
     [businessId, limit]
   );
-  
+
   return result.rows.map(row => ({
     id: row.id,
     rating: row.rating,
     comment: (row.comment || '').substring(0, LLM_CONFIG.summarization.maxReviewCommentLength),
-    userName: `${row.first_name} ${row.last_name}`.trim(),
+    userName: `${row.first_name || 'Utilizator'} ${row.last_name || ''}`.trim(),
     createdAt: row.created_at
   }));
 }

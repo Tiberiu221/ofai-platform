@@ -564,10 +564,11 @@ router.get("/business/:id", async (req, res) => {
     // Reviews
     const reviewsRes = await pool.query(`
       SELECT r.id, r.rating, r.comment, r.created_at,
-             u.first_name, u.last_name,
+             COALESCE(u.first_name, 'Utilizator') as first_name,
+             COALESCE(u.last_name, '') as last_name,
              rr.response_text, rr.created_at as response_date
       FROM reviews r
-      JOIN users u ON r.user_id = u.id
+      LEFT JOIN users u ON r.user_id = u.id
       LEFT JOIN review_responses rr ON rr.review_id = r.id
       WHERE r.business_id = $1
       ORDER BY r.created_at DESC
@@ -594,7 +595,9 @@ router.get("/business/:id", async (req, res) => {
       if (existingSummary) {
         reviewSummary = { text: existingSummary.summary_text, review_count: existingSummary.review_count };
       }
-    } catch (e) { /* summary not available */ }
+    } catch (e) {
+      console.error("[Web] Review summary error for business", id, ":", e.message || e);
+    }
 
     const coverImage = b.cover_image_url || (images.length > 0 ? images[0].url : b.logo_url);
 
