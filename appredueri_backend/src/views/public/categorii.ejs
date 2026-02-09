@@ -12,7 +12,7 @@
 <section class="section" style="padding-top: 0;">
   <div class="container">
     <div class="categories-page-grid">
-      <% const categoryIcons = { 'Restaurante': '🍽️', 'Cafenele': '☕', 'Beauty': '💅', 'Fitness': '💪', 'Sănătate': '🏥', 'Divertisment': '🎭', 'Shopping': '🛍️', 'Auto': '🚗', 'Turism': '✈️', 'Educație': '📚', 'Tehnologie': '💻', 'Servicii': '🔧', 'Sport': '⚽', 'Animale': '🐾', 'Copii': '👶', 'Casa & Grădină': '🏡' }; %>
+      <% const categoryIcons = { 'Clinica': '🏥', 'Frizerie': '💇', 'Beauty': '💅', 'Auto': '🚗', 'Restaurant': '🍽️', 'Cafenea': '☕', 'Fitness': '💪', 'Spa & Wellness': '🧖', 'Optica': '👓', 'Farmacie': '💊', 'Veterinar': '🐾', 'Stomatologie': '🦷', 'Florarie': '🌸', 'Curatatorie': '👔', 'Foto & Video': '📸' }; %>
       <% categories.forEach(function(cat, index) { %>
         <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= (index % 5) + 1 %>">
           <div class="category-icon"><%= categoryIcons[cat.name] || '📦' %></div>
