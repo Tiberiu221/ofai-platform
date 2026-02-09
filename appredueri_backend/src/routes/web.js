@@ -92,6 +92,7 @@ router.get("/", async (req, res) => {
 
     const topBusinesses = await pool.query(`
       SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+             b.lat, b.lng,
              ci.name as city_name, cat.name as category_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
@@ -101,7 +102,7 @@ router.get("/", async (req, res) => {
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
-      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, ci.name, cat.name
+      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, ci.name, cat.name
       HAVING COUNT(DISTINCT o.id) > 0
       ORDER BY COUNT(DISTINCT o.id) DESC, COALESCE(AVG(r.rating), 0) DESC
       LIMIT 8

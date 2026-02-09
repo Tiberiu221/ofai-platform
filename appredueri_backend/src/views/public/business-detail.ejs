@@ -127,7 +127,7 @@
      BOOKING SECTION (Business-level)
      ═══════════════════════════════════════════════════════ -->
 <% if (business.booking && business.booking.type && business.booking.type !== 'none') { %>
-<div class="container" style="padding-bottom: 32px;">
+<div class="container" style="padding-bottom: 16px;">
   <div class="booking-card" style="max-width: 500px;">
     <% if (business.booking.type === 'phone' && business.booking.phone) { %>
       <a href="tel:<%= business.booking.phone %>" class="btn btn-primary bc-booking-btn">
@@ -231,6 +231,10 @@
                   <%= business.city.name %>
                 </span>
               <% } %>
+              <span class="offer-meta-item offer-distance" data-lat="<%= business.lat || '' %>" data-lng="<%= business.lng || '' %>" style="display:none;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <span class="offer-distance-text"></span>
+              </span>
               <% if (business.category) { %>
                 <span class="offer-meta-item">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
@@ -338,7 +342,7 @@
     </div>
 
     <% if (webUser) { %>
-      <button class="btn btn-primary" id="toggle-review-form" style="margin-bottom: 32px;">
+      <button class="btn btn-primary" id="toggle-review-form" style="margin-bottom: 20px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Scrie o recenzie
       </button>
@@ -420,12 +424,17 @@
      SCOPED STYLES
      ═══════════════════════════════════════════════════════ -->
 <style>
+  /* ─── TIGHTER SECTION SPACING FOR BUSINESS DETAIL ─────── */
+  .section {
+    padding: 48px 0;
+  }
+
   /* ─── BREADCRUMB ──────────────────────────────────────── */
   .bd-breadcrumb {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 100px 0 16px;
+    padding: 84px 0 12px;
     font-size: 0.8125rem;
     color: var(--text-tertiary);
   }
@@ -452,11 +461,11 @@
   .business-detail-hero {
     position: relative;
     width: 100%;
-    height: 320px;
+    height: 260px;
     overflow: hidden;
     background: linear-gradient(135deg, rgba(251,146,60,0.15) 0%, var(--bg-primary) 100%);
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-    margin-bottom: -60px;
+    margin-bottom: -50px;
   }
   .bd-hero-img {
     width: 100%;
@@ -473,7 +482,7 @@
   .business-profile-section {
     position: relative;
     z-index: 2;
-    padding-bottom: 32px;
+    padding-bottom: 16px;
   }
   .bd-profile-top {
     display: flex;
@@ -583,7 +592,7 @@
 
   /* ─── ACTION BAR ──────────────────────────────────────── */
   .business-action-bar {
-    padding-bottom: 40px;
+    padding-bottom: 20px;
   }
   .bd-actions {
     display: flex;
@@ -676,7 +685,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 32px;
+    margin-bottom: 20px;
   }
   .bd-section-title {
     font-size: 1.5rem;
@@ -945,22 +954,25 @@
 
   /* ─── RESPONSIVE ──────────────────────────────────────── */
   @media (max-width: 768px) {
+    .section {
+      padding: 36px 0;
+    }
     .business-detail-hero {
-      height: 220px;
-      margin-bottom: -40px;
+      height: 180px;
+      margin-bottom: -36px;
     }
     .bd-avatar {
-      width: 64px;
-      height: 64px;
+      width: 56px;
+      height: 56px;
     }
     .bd-avatar-fallback {
       font-size: 1.5rem;
     }
     .bd-business-name {
-      font-size: 1.375rem;
+      font-size: 1.25rem;
     }
     .bd-profile-top {
-      gap: 14px;
+      gap: 12px;
     }
     .follow-btn {
       margin-left: 0;
@@ -978,14 +990,23 @@
       grid-template-columns: 1fr;
     }
     .bd-breadcrumb {
-      padding-top: 84px;
+      padding-top: 76px;
+    }
+    .bd-gallery-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
   @media (max-width: 480px) {
+    .section {
+      padding: 28px 0;
+    }
     .business-detail-hero {
-      height: 180px;
+      height: 140px;
       border-radius: 0;
+    }
+    .bd-gallery-grid {
+      grid-template-columns: 1fr;
     }
     .bd-section-title {
       font-size: 1.25rem;

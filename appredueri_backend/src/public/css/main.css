@@ -826,6 +826,10 @@ ul, ol { list-style: none; }
   align-items: center;
   gap: 4px;
 }
+.offer-distance {
+  color: var(--accent);
+  font-weight: 500;
+}
 
 /* Inline logo in offer cards */
 .offer-logo {
@@ -986,11 +990,22 @@ ul, ol { list-style: none; }
   white-space: nowrap;
 }
 
+.biz-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
 .biz-card-offers {
   font-size: 0.75rem;
   color: var(--accent);
   font-weight: 600;
-  margin-top: auto;
+}
+.biz-card-distance {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  gap: 3px;
 }
 
 /* Rating on offer cards */

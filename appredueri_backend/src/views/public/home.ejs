@@ -227,7 +227,13 @@
                 <span class="biz-card-tag"><%= biz.city_name %></span>
               <% } %>
             </div>
-            <div class="biz-card-offers"><%= biz.offer_count %> oferte active</div>
+            <div class="biz-card-bottom">
+              <span class="biz-card-offers"><%= biz.offer_count %> oferte active</span>
+              <span class="offer-distance biz-card-distance" data-lat="<%= biz.lat || '' %>" data-lng="<%= biz.lng || '' %>" style="display:none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <span class="offer-distance-text"></span>
+              </span>
+            </div>
           </div>
         </a>
       <% }); %>

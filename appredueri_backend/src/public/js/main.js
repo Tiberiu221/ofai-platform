@@ -291,11 +291,24 @@ function initGeolocation() {
   if (cards.length === 0) return;
   if (!navigator.geolocation) return;
 
+  // Check sessionStorage cache first for instant display
+  var cached = sessionStorage.getItem('ofai_user_pos');
+  if (cached) {
+    try {
+      var pos = JSON.parse(cached);
+      updateDistances(pos.lat, pos.lng, cards);
+    } catch(e) {}
+  }
+
+  // Also request fresh position (updates cache + UI)
   navigator.geolocation.getCurrentPosition(function(pos) {
     var userLat = pos.coords.latitude;
     var userLng = pos.coords.longitude;
+    sessionStorage.setItem('ofai_user_pos', JSON.stringify({ lat: userLat, lng: userLng }));
     updateDistances(userLat, userLng, cards);
-  }, function() {}, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  }, function() {
+    // Geolocation denied or unavailable — cached values already applied above if available
+  }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
 }
 
 function haversineKm(lat1, lon1, lat2, lon2) {
@@ -318,7 +331,7 @@ function updateDistances(userLat, userLng, cards) {
   cards.forEach(function(el) {
     var lat = parseFloat(el.dataset.lat);
     var lng = parseFloat(el.dataset.lng);
-    if (isNaN(lat) || isNaN(lng)) return;
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
     var km = haversineKm(userLat, userLng, lat, lng);
     var text = el.querySelector('.offer-distance-text');
     if (text) {
