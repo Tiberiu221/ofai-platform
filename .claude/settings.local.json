@@ -62,7 +62,14 @@
       "Bash(git push:*)",
       "Bash(git log:*)",
       "Bash(git commit:*)",
-      "WebFetch(domain:ofai-production.up.railway.app)"
+      "WebFetch(domain:ofai-production.up.railway.app)",
+      "Bash(xargs:*)",
+      "Bash(PGPASSWORD=REDACTED psql:*)",
+      "Bash(del \"C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_backend\\\\test-business.js\")",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(npx expo:*)",
+      "Bash(npx expo-doctor:*)"
     ]
   }
 }

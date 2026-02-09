@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 9 Februarie 2026 (Actualizat v5 — Post-Migrare EJS)
+## Data: 9 Februarie 2026 (Actualizat v6 — Feature Parity & Visual Polish)
 
 ---
 
@@ -98,8 +98,8 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │           ├── navbar.ejs       # Glassmorphic navbar + Portal link
 │   │   │           └── footer.ejs       # Footer 4 coloane
 │   │   └── public/                # Static assets
-│   │       ├── css/main.css       # Design system complet (~1360 linii)
-│   │       └── js/main.js         # Navbar, scroll reveal, counters, favorites, follow
+│   │       ├── css/main.css       # Design system complet (~2850+ linii)
+│   │       └── js/main.js         # Navbar, scroll reveal, counters, favorites, follow, geolocation+distance
 │   ├── scripts/                   # Batch jobs, monitoring
 │   └── migrations/                # SQL migrations
 │
@@ -193,8 +193,17 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 - [x] **Business Portal Web:** Dashboard, Manage (4 tabs: Info/Oferte/Recenzii/Statistici), Offer form
 - [x] **Portal features:** Image upload/delete (logo + cover), CRUD oferte, review responses, analytics, performance score
 - [x] **Navbar:** User menu dropdown, Portal link (business_owner/admin only), mobile menu
-- [x] **main.js:** Toast system, toggleFavorite, toggleFollow, FAQ accordion, star rating
+- [x] **main.js:** Toast system, toggleFavorite, toggleFollow, FAQ accordion, star rating, geolocation + distance
 - [x] **Trust proxy:** Configurat pentru Railway/Cloudflare (cookie Secure, rate limiter IP)
+
+### Feature Parity cu Mobile App (Faza 3.5 — COMPLETA)
+- [x] **Ratings pe offer cards:** Rating average + count pe fiecare card (home bento + oferte grid)
+- [x] **Business logo pe cards:** Logo inline (40px, border-radius 10px) in content area, flex row layout
+- [x] **Sort options:** Cele mai noi / Populare / Reducere mare pe /oferte
+- [x] **Business description:** Sectiune "Despre" pe business-detail.ejs
+- [x] **Booking info per locatie:** Telefon/WhatsApp/URL + instructiuni per business_locations
+- [x] **Distance from user:** Geolocation API + Haversine formula, arata "X.X km" sau "XXX m" pe fiecare card
+- [x] **Visual polish:** Sort bar cu border separator, filter bar spacing, collection tab badges
 
 ### Infrastructura
 - [x] Backend deployed pe Railway cu PostgreSQL
@@ -498,6 +507,16 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Trust proxy + Safari webkit fixes
 - [x] Unicode fixes (Romanian diacritics in EJS)
 
+### Faza 3.5 - Feature Parity & Visual Polish (COMPLETA - v6)
+- [x] Ratings (avg + count) pe offer cards (home + oferte)
+- [x] Business logo inline pe offer cards (40px, flex row layout)
+- [x] Sort options pe /oferte (newest/popular/discount)
+- [x] Business description pe business-detail
+- [x] Booking info per locatie (phone/whatsapp/url + instructions)
+- [x] Geolocation + Haversine distance pe offer cards
+- [x] SQL fix: removed non-existent o.created_at column
+- [x] Visual polish: sort bar, filter bar, collection tabs, offer card layout
+
 ### Faza 4 - Monetizare (TODO)
 - [ ] Stripe integration
 - [ ] Planuri pentru business-uri
@@ -526,6 +545,44 @@ Workflows active: WF1 (new-review → email owner)
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 9 Februarie 2026 (v6 — Feature Parity & Visual Polish)
+
+**Sesiune de feature parity cu mobile app + visual polish:**
+
+1. **Feature Parity cu Mobile App**
+   - Ratings (average + count) pe fiecare offer card (home bento grid + /oferte grid)
+   - Business logo inline in card content (40px, flex row cu titlu/rating)
+   - Sort options pe /oferte: Cele mai noi / Populare / Reducere mare
+   - Business description sectiune pe business-detail
+   - Booking info per locatie (telefon/whatsapp/url + instructiuni booking)
+   - Geolocation + Haversine distance (portat din mobile `distance.ts`): arata "X.X km" sau "XXX m"
+
+2. **Visual Polish**
+   - Offer card layout restructurat: logo inline (nu floating overlay)
+   - Sort bar cu border-bottom separator
+   - Filter bar spacing optimizat
+   - Collection tab badges (colectia-mea)
+   - Booking actions row cu border-top separator
+   - Booking instructions dashed border box
+
+3. **Bug Fixes**
+   - SQL fix: `o.created_at` column nu exista in offers table — inlocuit cu `o.id DESC`
+   - Logo overlay rendering fix: era oversized din cauza `overflow: hidden` lipsa pe `.offer-card`
+   - Featured card gradient scoped doar pe `.offer-card.featured`
+
+**Fisiere modificate:**
+- `src/routes/web.js` — SQL queries: added b.lat/b.lng, ratings JOIN, sort options, removed o.created_at
+- `src/public/css/main.css` — offer card restructure, logo inline, sort bar, filter bar, collection tabs, booking styles
+- `src/public/js/main.js` — initGeolocation(), haversineKm(), formatDistance(), updateDistances()
+- `src/views/public/home.ejs` — offer card restructure (logo inline + distance placeholder)
+- `src/views/public/oferte.ejs` — offer card restructure (logo inline + distance placeholder + sort bar)
+- `src/views/public/offer-detail.ejs` — booking actions row styling
+- `src/views/public/business-detail.ejs` — description section, booking per location, actions row
+
+**Commits:** 89f8f74, fed51b2, cd75057, 4e2db96
+
+---
 
 ### 9 Februarie 2026 (v5 — Migrare EJS Completa + Business Portal Web)
 
@@ -619,3 +676,13 @@ Setup initial proiect
 6. **Cloudinary:** Imaginile din productie pe Cloudinary. Upload folder: `ofai/`.
 
 7. **EJS Design:** Toate paginile noi TREBUIE sa refoloseasca clasele existente din main.css si sa includa partials (head, navbar, footer).
+
+8. **Offer Card Structure (v6):** Logo-ul e INLINE in `.offer-content` (flex row), NU floating overlay. Structura:
+   ```
+   .offer-card > .offer-image-wrapper > img + .offer-badge
+                > .offer-content > .offer-content-row > .offer-logo + .offer-content-text
+                                  > .offer-meta > city + distance + category
+   ```
+   Distance se calculeaza client-side via `navigator.geolocation` + Haversine. Elementele `.offer-distance` sunt hidden by default, devin vizibile cand JS populeaza textul. Backend-ul trimite `business_lat` si `business_lng` din queries.
+
+9. **Offers table NU are `created_at`:** Sort "newest" foloseste `o.id DESC` (SERIAL auto-increment). NU folosi `o.created_at` in queries.
