@@ -1,8 +1,8 @@
 <%- include('partials/head', {
   pageTitle: business.name,
-  pageDesc: 'Descoper\u0103 ofertele \u0219i reducerile de la ' + business.name + (business.city ? ' din ' + business.city.name : '') + ' pe OFAI.',
-  ogTitle: business.name + ' \u2014 OFAI',
-  ogDesc: 'Oferte \u0219i reduceri de la ' + business.name + (business.city ? ' \u00een ' + business.city.name : ''),
+  pageDesc: 'Descoperă ofertele și reducerile de la ' + business.name + (business.city ? ' din ' + business.city.name : '') + ' pe OFAI.',
+  ogTitle: business.name + ' \— OFAI',
+  ogDesc: 'Oferte și reduceri de la ' + business.name + (business.city ? ' în ' + business.city.name : ''),
   ogImage: business.cover_image || null,
   ogType: 'business.business'
 }) %>
@@ -13,7 +13,7 @@
      ═══════════════════════════════════════════════════════ -->
 <div class="container">
   <nav class="bd-breadcrumb">
-    <a href="/">Acas\u0103</a>
+    <a href="/">Acasă</a>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     <a href="/oferte">Business-uri</a>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -88,10 +88,10 @@
     >
       <% if (isFollowing) { %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        Urm\u0103re\u0219ti
+        Urmărești
       <% } else { %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        Urm\u0103re\u0219te
+        Urmărește
       <% } %>
     </button>
   </div>
@@ -105,7 +105,7 @@
     <% if (business.phone) { %>
       <a href="tel:<%= business.phone %>" class="bd-action-btn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Sun\u0103
+        Sună
       </a>
     <% } %>
     <% if (business.website) { %>
@@ -117,7 +117,7 @@
     <% if (business.lat && business.lng) { %>
       <a href="https://www.google.com/maps/dir/?api=1&destination=<%= business.lat %>,<%= business.lng %>" target="_blank" rel="noopener noreferrer" class="bd-action-btn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-        Navigheaz\u0103
+        Navighează
       </a>
     <% } %>
   </div>
@@ -213,7 +213,7 @@
 <section class="section" style="background: var(--bg-secondary);">
   <div class="container">
     <div class="bd-section-header">
-      <h2 class="bd-section-title">Loca\u021Bii</h2>
+      <h2 class="bd-section-title">Locații</h2>
     </div>
 
     <div class="bd-locations-grid">
@@ -339,7 +339,7 @@
               <div class="rc-response">
                 <div class="rc-response-label">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>
-                  R\u0103spuns de la business
+                  Răspuns de la business
                 </div>
                 <p class="rc-response-text"><%= review.response_text %></p>
               </div>
@@ -348,7 +348,7 @@
         <% }); %>
       <% } else { %>
         <div class="bd-empty-state">
-          <p>Nicio recenzie \u00eenc\u0103. Fii primul care las\u0103 o recenzie!</p>
+          <p>Nicio recenzie încă. Fii primul care lasă o recenzie!</p>
         </div>
       <% } %>
     </div>
@@ -897,7 +897,7 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleBtn.addEventListener('click', function() {
       var isHidden = reviewForm.style.display === 'none';
       reviewForm.style.display = isHidden ? 'flex' : 'none';
-      toggleBtn.textContent = isHidden ? 'Anuleaz\u0103' : 'Scrie o recenzie';
+      toggleBtn.textContent = isHidden ? 'Anulează' : 'Scrie o recenzie';
     });
   }
 
@@ -954,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var comment = document.getElementById('review-comment').value.trim();
 
       if (!selectedRating) {
-        alert('Te rug\u0103m s\u0103 selectezi un rating.');
+        alert('Te rugăm să selectezi un rating.');
         return;
       }
 
@@ -972,11 +972,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.success) {
           window.location.reload();
         } else {
-          alert(data.message || 'A ap\u0103rut o eroare.');
+          alert(data.message || 'A apărut o eroare.');
         }
       })
       .catch(function() {
-        alert('A ap\u0103rut o eroare. \u00CEncearc\u0103 din nou.');
+        alert('A apărut o eroare. Încearcă din nou.');
       });
     });
   }
@@ -1006,8 +1006,8 @@ document.addEventListener('DOMContentLoaded', function() {
           var newState = !isFollowing;
           btn.setAttribute('data-following', newState.toString());
           btn.innerHTML = newState
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urm\u0103re\u0219ti'
-            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urm\u0103re\u0219te';
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urmărești'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urmărește';
         }
       })
       .catch(function() {});

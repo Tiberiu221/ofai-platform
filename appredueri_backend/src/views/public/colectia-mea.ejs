@@ -112,7 +112,7 @@
       if (res.status === 401) { window.location.href = '/login'; return; }
       var el = document.getElementById('biz-' + id);
       if (el) el.remove();
-      if (typeof showToast === 'function') showToast('Business eliminat din colec\u021Bie');
+      if (typeof showToast === 'function') showToast('Business eliminat din colecție');
     } catch(e) { console.error(e); }
   }
 
@@ -122,7 +122,7 @@
       if (res.status === 401) { window.location.href = '/login'; return; }
       var el = document.getElementById('fav-' + id);
       if (el) el.remove();
-      if (typeof showToast === 'function') showToast('Oferta eliminat\u0103 din favorite');
+      if (typeof showToast === 'function') showToast('Oferta eliminată din favorite');
     } catch(e) { console.error(e); }
   }
 </script>
