@@ -69,7 +69,12 @@
       "mcp__Claude_in_Chrome__navigate",
       "mcp__Claude_in_Chrome__tabs_context_mcp",
       "Bash(npx expo:*)",
-      "Bash(npx expo-doctor:*)"
+      "Bash(npx expo-doctor:*)",
+      "Bash(adb devices:*)",
+      "Bash(\"C:/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe\" devices)",
+      "Bash(echo:*)",
+      "Bash(netstat:*)",
+      "Bash(wc:*)"
     ]
   }
 }
