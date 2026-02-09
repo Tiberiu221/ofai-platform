@@ -156,7 +156,7 @@ router.get("/oferte", async (req, res) => {
     const totalPages = Math.ceil(totalOffers / limit);
 
     const sortOptions = {
-      newest: "o.created_at DESC",
+      newest: "o.id DESC",
       popular: "rating_avg DESC, rating_count DESC",
       discount: "o.discount_value DESC",
     };
@@ -178,7 +178,7 @@ router.get("/oferte", async (req, res) => {
        WHERE ${whereClause}
        GROUP BY o.id, o.title, o.discount_type, o.discount_value,
                 b.name, b.logo_url, b.cover_image_url,
-                ci.name, cat.name, o.logo_url, o.created_at
+                ci.name, cat.name, o.logo_url
        ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
