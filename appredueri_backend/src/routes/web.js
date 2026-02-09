@@ -286,6 +286,7 @@ router.get("/oferta/:id", async (req, res) => {
 
     let locations = [];
     const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+      bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
       c.name as city_name
       FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id`;
 
@@ -335,8 +336,9 @@ router.get("/oferta/:id", async (req, res) => {
       },
       locations: locations.map(l => ({
         id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, cityName: l.city_name,
-        booking_type: 'none', booking_phone: null, booking_whatsapp: null,
-        booking_url: null, booking_instructions: null,
+        booking_type: l.booking_type || 'none',
+        booking_phone: l.booking_phone, booking_whatsapp: l.booking_whatsapp,
+        booking_url: l.booking_url, booking_instructions: l.booking_instructions,
       })),
     };
 
@@ -401,6 +403,7 @@ router.get("/business/:id", async (req, res) => {
     // Locations
     const locationsRes = await pool.query(`
       SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+             bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
              c.id as city_id, c.name as city_name
       FROM business_locations bl
       LEFT JOIN cities c ON bl.city_id = c.id
@@ -412,8 +415,9 @@ router.get("/business/:id", async (req, res) => {
       locations = locationsRes.rows.map(row => ({
         id: row.id, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
         city: { id: row.city_id, name: row.city_name },
-        booking_type: 'none', booking_phone: null, booking_whatsapp: null,
-        booking_url: null, booking_instructions: null,
+        booking_type: row.booking_type || 'none',
+        booking_phone: row.booking_phone, booking_whatsapp: row.booking_whatsapp,
+        booking_url: row.booking_url, booking_instructions: row.booking_instructions,
       }));
     } else if (b.address) {
       locations = [{ id: 'main', address: b.address, lat: b.lat, lng: b.lng, phone: b.phone,
