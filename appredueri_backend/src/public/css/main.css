@@ -685,7 +685,6 @@ ul, ol { list-style: none; }
 .offer-card {
   position: relative;
   border-radius: var(--radius-lg);
-  overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border);
   transition: all 0.4s var(--ease-smooth);
@@ -701,6 +700,7 @@ ul, ol { list-style: none; }
 .offer-card.featured {
   grid-column: span 2;
   grid-row: span 2;
+  overflow: hidden;
 }
 
 /* Image */
@@ -709,10 +709,13 @@ ul, ol { list-style: none; }
   aspect-ratio: 16/10;
   overflow: hidden;
   background: var(--bg-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .offer-card.featured .offer-image-wrapper {
-  aspect-ratio: 16/9;
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: var(--radius-lg);
 }
 
 .offer-image {
@@ -726,15 +729,17 @@ ul, ol { list-style: none; }
   transform: scale(1.05);
 }
 
-.offer-image-wrapper::after {
+/* Gradient only on featured card where content overlays image */
+.offer-card.featured .offer-image-wrapper::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60%;
+  height: 70%;
   background: linear-gradient(to top, rgba(6, 6, 10, 0.95) 0%, transparent 100%);
   pointer-events: none;
+  z-index: 1;
 }
 
 /* Badge */
@@ -765,6 +770,7 @@ ul, ol { list-style: none; }
   left: 0;
   right: 0;
   padding: 28px;
+  z-index: 2;
 }
 
 .offer-business {
@@ -806,17 +812,17 @@ ul, ol { list-style: none; }
 
 /* Logo overlay on offer cards */
 .offer-logo-overlay {
-  position: absolute;
-  bottom: -16px;
-  left: 16px;
+  position: relative;
+  z-index: 4;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  margin: -18px 0 0 16px;
+  border-radius: 10px;
   overflow: hidden;
-  border: 2px solid var(--bg-primary);
+  border: 2px solid var(--bg-card);
   background: var(--bg-surface);
-  z-index: 3;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  flex-shrink: 0;
 }
 .offer-logo-overlay img {
   width: 100%;
@@ -824,20 +830,29 @@ ul, ol { list-style: none; }
   object-fit: cover;
 }
 
+/* When logo overlay is present, reduce top padding on content */
+.offer-logo-overlay + .offer-content {
+  padding-top: 10px;
+}
+
 /* Rating on offer cards */
 .offer-rating {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--accent);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+.offer-rating svg {
+  flex-shrink: 0;
 }
 .offer-rating-count {
   font-weight: 400;
   color: var(--text-tertiary);
   font-size: 0.75rem;
+  margin-left: 1px;
 }
 
 /* Sort bar on offers page */
@@ -846,6 +861,8 @@ ul, ol { list-style: none; }
   align-items: center;
   gap: 8px;
   padding: 0 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
 }
 .sort-bar-label {
   font-size: 0.75rem;
@@ -854,7 +871,7 @@ ul, ol { list-style: none; }
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  padding: 0 4px;
+  padding-right: 4px;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1138,11 +1155,15 @@ ul, ol { list-style: none; }
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 0;
-  margin-bottom: 32px;
+  gap: 10px;
+  padding: 12px 0;
+  margin-bottom: 8px;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+.filter-bar:last-of-type {
+  margin-bottom: 0;
 }
 
 .filter-bar::-webkit-scrollbar { display: none; }
@@ -1179,7 +1200,6 @@ ul, ol { list-style: none; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-  padding-bottom: 80px;
 }
 
 .offers-grid .offer-card.featured {
@@ -2399,6 +2419,10 @@ ul, ol { list-style: none; }
 
 .collection-tab {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 10px 16px;
   text-align: center;
   border-radius: 8px;
@@ -2411,8 +2435,37 @@ ul, ol { list-style: none; }
   transition: all 0.2s;
 }
 
+.collection-tab:hover:not(.active) {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+}
+
 .collection-tab.active {
   background: var(--accent);
+  color: var(--bg-primary);
+}
+
+.collection-tab svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.collection-tab.active svg {
+  opacity: 1;
+}
+
+.collection-tab-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.1);
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.collection-tab.active .collection-tab-badge {
+  background: rgba(0,0,0,0.15);
   color: var(--bg-primary);
 }
 

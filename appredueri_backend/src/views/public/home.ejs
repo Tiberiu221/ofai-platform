@@ -131,7 +131,7 @@
               <% } %>
             </div>
           </div>
-          <% if (offer.business_logo) { %>
+          <% if (offer.business_logo && i !== 0) { %>
             <div class="offer-logo-overlay">
               <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" loading="lazy">
             </div>

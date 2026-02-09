@@ -48,8 +48,8 @@
   </div>
 
   <% if (cities && cities.length > 0) { %>
-    <div class="filter-bar" style="padding-top: 0; margin-top: -8px;">
-      <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; padding: 0 4px;">Oraș:</span>
+    <div class="filter-bar" style="padding-top: 0;">
+      <span class="sort-bar-label">Oraș:</span>
       <a href="/oferte?<%= selectedCategory ? 'category=' + selectedCategory + '&' : '' %><%= query ? 'q=' + encodeURIComponent(query) : '' %>"
          class="filter-pill<%= !selectedCity ? ' active' : '' %>">Toate</a>
       <% cities.forEach(city => { %>
