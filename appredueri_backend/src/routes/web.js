@@ -335,9 +335,8 @@ router.get("/oferta/:id", async (req, res) => {
       },
       locations: locations.map(l => ({
         id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, cityName: l.city_name,
-        booking_type: l.booking_type || 'none',
-        booking_phone: l.booking_phone, booking_whatsapp: l.booking_whatsapp,
-        booking_url: l.booking_url, booking_instructions: l.booking_instructions,
+        booking_type: 'none', booking_phone: null, booking_whatsapp: null,
+        booking_url: null, booking_instructions: null,
       })),
     };
 
