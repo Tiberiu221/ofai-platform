@@ -55,6 +55,7 @@ router.get("/", async (req, res) => {
       SELECT o.id, o.title, o.discount_type, o.discount_value,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
+             b.lat as business_lat, b.lng as business_lng,
              ci.name as city_name, cat.name as category_name,
              COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
@@ -66,7 +67,7 @@ router.get("/", async (req, res) => {
       LEFT JOIN reviews r ON r.business_id = b.id
       WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
       GROUP BY o.id, o.title, o.discount_type, o.discount_value,
-               b.name, b.logo_url, b.cover_image_url,
+               b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                ci.name, cat.name, o.logo_url
       ORDER BY o.discount_value DESC
       LIMIT 5
@@ -166,6 +167,7 @@ router.get("/oferte", async (req, res) => {
       `SELECT o.id, o.title, o.discount_type, o.discount_value,
               b.name as business_name, b.logo_url as business_logo,
               b.cover_image_url as business_cover,
+              b.lat as business_lat, b.lng as business_lng,
               ci.name as city_name, cat.name as category_name,
               COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
               COALESCE(AVG(r.rating), 0) as rating_avg,
@@ -177,7 +179,7 @@ router.get("/oferte", async (req, res) => {
        LEFT JOIN reviews r ON r.business_id = b.id
        WHERE ${whereClause}
        GROUP BY o.id, o.title, o.discount_type, o.discount_value,
-                b.name, b.logo_url, b.cover_image_url,
+                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                 ci.name, cat.name, o.logo_url
        ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,

@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCounters();
   initMobileMenu();
   initSmoothScroll();
+  initGeolocation();
 });
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
@@ -283,3 +284,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+/* ─── GEOLOCATION + DISTANCE ───────────────────────────── */
+function initGeolocation() {
+  var cards = document.querySelectorAll('.offer-distance[data-lat][data-lng]');
+  if (cards.length === 0) return;
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    var userLat = pos.coords.latitude;
+    var userLng = pos.coords.longitude;
+    updateDistances(userLat, userLng, cards);
+  }, function() {}, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLon = (lon2 - lon1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+}
+
+function formatDistance(km) {
+  if (km < 1) return Math.round(km * 1000) + ' m';
+  return km.toFixed(1) + ' km';
+}
+
+function updateDistances(userLat, userLng, cards) {
+  cards.forEach(function(el) {
+    var lat = parseFloat(el.dataset.lat);
+    var lng = parseFloat(el.dataset.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+    var km = haversineKm(userLat, userLng, lat, lng);
+    var text = el.querySelector('.offer-distance-text');
+    if (text) {
+      text.textContent = formatDistance(km);
+      el.style.display = '';
+    }
+  });
+}
