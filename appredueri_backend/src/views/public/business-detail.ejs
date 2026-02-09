@@ -181,12 +181,17 @@
       <% offers.forEach((offer, i) => { %>
         <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
           <div class="offer-image-wrapper">
-            <img
-              src="<%= offer.image_url || (offer.business && offer.business.logo_url) || 'https://picsum.photos/seed/offer-' + offer.id + '/800/500' %>"
-              alt="<%= offer.title %>"
-              class="offer-image"
-              loading="lazy"
-            >
+            <% if (offer.image_url) { %>
+              <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy">
+            <% } else if (offer.business_logo || business.logo_url) { %>
+              <div class="offer-image-placeholder">
+                <img src="<%= offer.business_logo || business.logo_url %>" alt="<%= business.name %>" class="offer-placeholder-logo">
+              </div>
+            <% } else { %>
+              <div class="offer-image-placeholder">
+                <span class="offer-placeholder-letter"><%= business.name.charAt(0) %></span>
+              </div>
+            <% } %>
             <div class="offer-badge">
               <% if (offer.discount_type === 'percent') { %>
                 -<%= offer.discount_value %>%

@@ -57,7 +57,7 @@ router.get("/", async (req, res) => {
              b.cover_image_url as business_cover,
              b.lat as business_lat, b.lng as business_lng,
              ci.name as city_name, cat.name as category_name,
-             COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
+             COALESCE(b.cover_image_url, o.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(r.id) as rating_count
       FROM offers o
@@ -169,7 +169,7 @@ router.get("/oferte", async (req, res) => {
               b.cover_image_url as business_cover,
               b.lat as business_lat, b.lng as business_lng,
               ci.name as city_name, cat.name as category_name,
-              COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
+              COALESCE(b.cover_image_url, o.logo_url) as image_url,
               COALESCE(AVG(r.rating), 0) as rating_avg,
               COUNT(r.id) as rating_count
        FROM offers o
@@ -429,7 +429,7 @@ router.get("/business/:id", async (req, res) => {
     const offersRes = await pool.query(`
       SELECT o.id, o.title, o.discount_type, o.discount_value,
              o.start_date, o.end_date,
-             COALESCE(b2.cover_image_url, o.logo_url, b2.logo_url) as image_url,
+             COALESCE(b2.cover_image_url, o.logo_url) as image_url,
              b2.name as business_name, b2.logo_url as business_logo
       FROM offers o
       JOIN businesses b2 ON o.business_id = b2.id
