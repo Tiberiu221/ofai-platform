@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 9 Februarie 2026 (Actualizat v4)
+## Data: 9 Februarie 2026 (Actualizat v5 — Post-Migrare EJS)
 
 ---
 
@@ -10,13 +10,13 @@
 **Domeniu:** https://ofai.ro
 
 **Tech Stack:**
-- **Frontend:** React Native / Expo (cross-platform: web + mobile)
+- **Frontend Web:** EJS (server-rendered) pe Express — site-ul public complet
+- **Frontend Mobile:** React Native / Expo (cross-platform: web + mobile) — doar dev
 - **Backend:** Node.js / Express
 - **Database:** PostgreSQL
-- **Hosting Backend:** Railway
-- **Hosting Frontend:** Railway (EJS server-rendered) + Expo mobile app (dev only)
-- **DNS:** Cloudflare (free plan, CNAME flattening)
-- **Imagini:** Cloudinary
+- **Hosting:** Railway (backend + EJS site + static assets, totul pe acelasi server)
+- **DNS/CDN:** Cloudflare (free plan, CNAME flattening, proxy ON)
+- **Imagini:** Cloudinary (upload/resize/delete)
 - **Email:** Resend (welcome + password reset) — domeniu ofai.ro verificat
 - **Error Tracking:** Sentry
 - **AI/LLM:** Anthropic Claude Haiku (review summarization)
@@ -29,46 +29,81 @@
 
 ```
 C:\Users\tiber\Desktop\AppReduceri\
-├── appredueri_mobile/     # Frontend React Native/Expo
+├── appredueri_mobile/     # Frontend React Native/Expo (doar mobile dev)
 │   ├── app/               # Expo Router pages
-│   │   ├── (tabs)/        # Tab-urile principale (Home, Map, Colectia mea, Account)
-│   │   ├── auth/          # Login, Register, Forgot Password
-│   │   ├── business/      # Pagini detaliu business
-│   │   ├── offer/         # Pagini detaliu oferta
-│   │   ├── favorites/     # Pagina favorite standalone (fallback)
-│   │   ├── onboarding.tsx # Preferinte la inregistrare
-│   │   ├── business-portal/ # Portal pentru business owners
-│   │   └── legal/         # Terms, Privacy
-│   ├── components/        # Componente reutilizabile
-│   └── web/               # Custom web assets (index.html)
+│   └── components/        # Componente reutilizabile
 │
-├── appredueri_backend/    # Backend Node.js + Public EJS Website
+├── appredueri_backend/    # Backend Node.js + Public EJS Website (TOTUL)
 │   ├── src/
-│   │   ├── routes/        # API endpoints + web.js (EJS pages)
-│   │   ├── middleware/    # Auth, rate limiting
+│   │   ├── routes/
+│   │   │   ├── web.js              # ★ PRINCIPAL — toate rutele EJS + AJAX endpoints (~1300+ linii)
+│   │   │   ├── business-portal.js  # REST API mobile pentru business owners (Bearer token)
+│   │   │   ├── auth.js             # REST API auth (mobile)
+│   │   │   ├── offers.js           # REST API oferte (mobile)
+│   │   │   ├── businesses.js       # REST API business-uri (mobile)
+│   │   │   ├── reviews.js          # REST API recenzii (mobile)
+│   │   │   ├── favorites.js        # REST API favorite (mobile)
+│   │   │   ├── subscriptions.js    # REST API urmariri (mobile)
+│   │   │   ├── users.js            # REST API utilizatori (mobile)
+│   │   │   ├── admin.js            # Admin panel routes
+│   │   │   └── push-tokens.js      # Push notification tokens
+│   │   ├── middleware/
+│   │   │   ├── webAuth.js          # Cookie JWT auth (optionalWebAuth / requireWebAuth)
+│   │   │   ├── businessWebAuth.js  # ★ NOU — Cookie auth + business ownership check
+│   │   │   ├── auth.js             # Bearer token auth (mobile API)
+│   │   │   ├── businessAuth.js     # Bearer token + business ownership (mobile API)
+│   │   │   ├── adminAuth.js        # Admin HTTP basic auth
+│   │   │   └── rateLimiter.js      # Rate limiting (general, auth, admin, etc.)
 │   │   ├── helpers/
-│   │   │   └── validate.js    # Validare input + paginare helpers
-│   │   ├── config/        # LLM config
+│   │   │   └── validate.js         # Validare input + paginare helpers
+│   │   ├── config/
+│   │   │   └── llm.js              # Claude Haiku config
 │   │   ├── services/
-│   │   │   ├── llm/       # Claude AI review summarization
-│   │   │   ├── n8n.js     # n8n webhook helper (fire-and-forget)
-│   │   │   ├── cloudinary.js
-│   │   │   ├── email.js
+│   │   │   ├── llm/                # AI review summarization
+│   │   │   ├── cloudinary.js       # Upload/delete/transform imagini
+│   │   │   ├── n8n.js              # Webhook fire-and-forget helper
+│   │   │   ├── email.js            # Resend email (welcome + reset)
 │   │   │   ├── pushNotifications.js
 │   │   │   └── sentry.js
 │   │   ├── views/
-│   │   │   ├── admin/     # Admin panel (EJS)
-│   │   │   └── public/    # Public website EJS pages
+│   │   │   ├── admin/              # Admin panel (EJS)
+│   │   │   └── public/             # ★ PUBLIC WEBSITE — toate paginile EJS
 │   │   │       ├── home.ejs
 │   │   │       ├── oferte.ejs
-│   │   │       └── partials/ (head, navbar, footer)
-│   │   └── public/        # Static assets for website
-│   │       ├── css/main.css   # Complete design system (1355 lines)
-│   │       └── js/main.js     # Navbar, scroll reveal, counters
-│   ├── scripts/           # Batch jobs, monitoring, A/B testing
-│   └── migrations/        # SQL migrations
+│   │   │       ├── offer-detail.ejs
+│   │   │       ├── business-detail.ejs
+│   │   │       ├── categorii.ejs
+│   │   │       ├── categorie.ejs
+│   │   │       ├── orase.ejs
+│   │   │       ├── oras.ejs
+│   │   │       ├── login.ejs
+│   │   │       ├── register.ejs
+│   │   │       ├── forgot-password.ejs
+│   │   │       ├── reset-password.ejs
+│   │   │       ├── account.ejs
+│   │   │       ├── colectia-mea.ejs
+│   │   │       ├── setari.ejs
+│   │   │       ├── preferinte.ejs
+│   │   │       ├── termeni.ejs
+│   │   │       ├── confidentialitate.ejs
+│   │   │       ├── ajutor.ejs
+│   │   │       ├── business-cta.ejs
+│   │   │       ├── 404.ejs
+│   │   │       ├── portal/
+│   │   │       │   ├── dashboard.ejs    # ★ NOU — lista business-uri owner
+│   │   │       │   ├── manage.ejs       # ★ NOU — manage business (4 tabs)
+│   │   │       │   └── offer-form.ejs   # ★ NOU — creare/editare oferta
+│   │   │       └── partials/
+│   │   │           ├── head.ejs         # HTML head, meta, favicon, CSS
+│   │   │           ├── navbar.ejs       # Glassmorphic navbar + Portal link
+│   │   │           └── footer.ejs       # Footer 4 coloane
+│   │   └── public/                # Static assets
+│   │       ├── css/main.css       # Design system complet (~1360 linii)
+│   │       └── js/main.js         # Navbar, scroll reveal, counters, favorites, follow
+│   ├── scripts/                   # Batch jobs, monitoring
+│   └── migrations/                # SQL migrations
 │
-└── n8n-workflows/         # NOU - Exportabile .json pentru n8n
+└── n8n-workflows/                 # Exportabile .json pentru n8n
     └── WF1_New_Review_Notify_Owner.json
 ```
 
@@ -81,14 +116,15 @@ C:\Users\tiber\Desktop\AppReduceri\
 - **API:** https://ofai-production.up.railway.app (acelasi server ca website-ul)
 - **n8n:** https://n8n-production-d2f4.up.railway.app
 - **Railway Dashboard:** Deployment automat pe push la GitHub
-- **Cloudflare DNS:** CNAME ofai.ro → vurfk849.up.railway.app (proxy ON)
+- **Cloudflare DNS:**
+  - CNAME `@` → `vurfk849.up.railway.app` (proxy ON)
+  - CNAME `www` → `vurfk849.up.railway.app` (proxy ON)
 - **IMPORTANT:** Vercel a fost eliminat complet — totul e pe Railway
 
 ### Development
-- **Website (EJS):** http://localhost:3000 sau http://localhost:4000 (`npm run dev` in backend)
+- **Website (EJS):** http://localhost:4000 (`npm run dev` in backend)
 - **Mobile (Expo):** http://localhost:8081 (`npx expo start --web`)
 - **Backend API:** http://localhost:4000 (`npm run dev`)
-- **API Config:** `app/config.ts` - detecteaza automat environment
 
 ### Railway Environment Variables (Backend)
 ```
@@ -115,341 +151,254 @@ Schedule: 0 3 */2 * *   (la 2 zile, 03:00 AM)
 
 ---
 
+## SISTEME DE AUTENTIFICARE (IMPORTANT)
+
+Exista **3 sisteme de auth** separate. Trebuie intelese bine:
+
+### 1. Web Auth (cookie-based) — pentru site-ul public EJS
+- **Middleware:** `src/middleware/webAuth.js`
+- **Functii:** `optionalWebAuth` (seteaza `req.webUser` sau null), `requireWebAuth` (redirect la /login)
+- **Mecanism:** Cookie `ofai_token` (httpOnly, Secure in prod, SameSite: lax, 30 zile)
+- **Folosit de:** Toate rutele din `web.js` (pagini EJS + AJAX endpoints `/api/web/*`)
+
+### 2. Business Portal Web Auth — cookie + ownership check
+- **Middleware:** `src/middleware/businessWebAuth.js`
+- **Functie:** `requireBusinessOwner`
+- **Mecanism:** Cookie auth (ca webAuth) + verifica `user_businesses` table ca user-ul detine business-ul
+- **Admin bypass:** Admins au acces la orice business
+- **Folosit de:** Rutele `/portal/*` si `/api/web/portal/*` din `web.js`
+
+### 3. Mobile API Auth (Bearer token) — pentru app-ul mobil
+- **Middleware:** `src/middleware/auth.js` si `src/middleware/businessAuth.js`
+- **Mecanism:** Header `Authorization: Bearer <jwt_token>`
+- **Folosit de:** Toate rutele din `offers.js`, `businesses.js`, `reviews.js`, etc.
+
+### Pattern AJAX Web
+Paginile EJS care au interactiuni (favorite, follow, delete, etc.) folosesc:
+```
+Client JS → fetch('/api/web/...', { method, body }) → web.js route (cookie auth) → DB → JSON response
+```
+Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
+
+---
+
 ## CE ESTE COMPLET
+
+### Migrare Completa Site EJS (Faza 3 — COMPLETA)
+- [x] **Auth web:** Login, Register, Forgot Password, Reset Password (cookie JWT)
+- [x] **Pagini detaliu:** Offer detail, Business detail (cu reviews, follow, favorite, navigate)
+- [x] **Navigatie:** Categorii, Categorie individuala, Orașe, Oraș individual, 404
+- [x] **Cont:** Account page, Colecția mea (favorites + subscriptions), Setări, Preferințe
+- [x] **Static:** Termeni, Confidențialitate, Ajutor & Suport, Business CTA
+- [x] **Business Portal Web:** Dashboard, Manage (4 tabs: Info/Oferte/Recenzii/Statistici), Offer form
+- [x] **Portal features:** Image upload/delete (logo + cover), CRUD oferte, review responses, analytics, performance score
+- [x] **Navbar:** User menu dropdown, Portal link (business_owner/admin only), mobile menu
+- [x] **main.js:** Toast system, toggleFavorite, toggleFollow, FAQ accordion, star rating
+- [x] **Trust proxy:** Configurat pentru Railway/Cloudflare (cookie Secure, rate limiter IP)
 
 ### Infrastructura
 - [x] Backend deployed pe Railway cu PostgreSQL
-- [x] Frontend deployed pe Vercel
-- [x] Domeniu custom ofai.ro configurat
-- [x] CORS configurat (restrictionat in productie — doar domenii OFAI specifice)
-- [x] SSL automat
-- [x] **Rate Limiting** - protectie DDoS/spam (100 req/min general, 10/15min auth, 5/15min verify-reset-code, 200/min admin)
-- [x] **Sentry** - error tracking in productie
-- [x] **Database Indexes** - queries optimizate pentru performanta
-- [x] **statement_timeout** - 10s max per query (previne blocarea pool-ului)
+- [x] Domeniu custom ofai.ro configurat (Cloudflare DNS)
+- [x] CORS configurat (restrictionat in productie)
+- [x] SSL automat (Cloudflare Full mode)
+- [x] **Trust proxy** — `app.set("trust proxy", 1)` in production
+- [x] **Rate Limiting** — 100 req/min general, 10/15min auth, 5/15min verify-reset-code, 200/min admin
+- [x] **Sentry** — error tracking in productie
+- [x] **Database Indexes** — queries optimizate
+- [x] **statement_timeout** — 10s max per query
 
-### Securitate (Production Hardening - v3)
-- [x] **JWT_SECRET** throw fatal daca lipseste in production (auth.js + middleware/auth.js)
-- [x] **Rate limiting verify-reset-code** - 5 incercari / 15 min (anti-brute-force pe codul de 6 cifre)
-- [x] **Rate limiting admin** - 200 req/min (nu mai sare peste limiter)
-- [x] **Input validation** - helper centralizat (`src/helpers/validate.js`): email, string sanitize, int, coordinates, pagination
-- [x] **Review comment** - sanitizat la max 2000 caractere
-- [x] **CORS restrictionat** - nu mai accepta orice `.vercel.app` / `.railway.app` wildcard in productie
-- [x] **Admin error handler** - mesaj generic in productie, HTML escaped in dev (anti-XSS)
-
-### Paginare (Production Hardening - v3)
-- [x] **Toate endpoint-urile de lista** au acum LIMIT/OFFSET cu `?page=1&limit=20` (max 100)
-- [x] **Format response:** `{ data: [...], pagination: { page, limit, total, totalPages } }`
-- [x] Endpoint-uri paginate: `/offers`, `/businesses`, `/reviews/business/:id`, `/favorites`, `/subscriptions`
-- [x] **Frontend compatibil** - pattern `Array.isArray(json) ? json : (json.data ?? json)` pe toate fetch-urile
+### Business Portal (Web + Mobile API)
+- [x] **Web Portal** (`/portal`, `/portal/:businessId`)
+  - Dashboard cu lista business-uri owner
+  - Manage page cu 4 tabs: Info | Oferte | Recenzii | Statistici
+  - Image upload/delete (logo + cover) via Cloudinary
+  - Edit business info (name, address, phone, website, city, category, booking)
+  - Offer CRUD (create, edit, toggle active/inactive)
+  - Review response management (create, edit, delete)
+  - Analytics: views, subscribers, reviews, rating distribution, offer views
+  - Performance score (10 criteria, 100 points total)
+- [x] **Mobile API** (`business-portal.js`) — REST API cu Bearer token auth
 
 ### n8n Workflow Automation
-- [x] n8n deployed pe Railway
-- [x] **Backend helper** (`src/services/n8n.js`) - fire-and-forget webhook trigger
-- [x] **WF1: New Review → Email Owner** - cand un user lasa recenzie, owner-ul primeste email via Resend API
+- [x] WF1: New Review → Email Owner (via Resend)
 - [x] Webhook triggers integrati in: auth.js, reviews.js, business-portal.js, admin.js, subscriptions.js
-- [x] **Workflow exportabil** in `n8n-workflows/WF1_New_Review_Notify_Owner.json`
-- [x] Pattern: Backend POST fire-and-forget → n8n webhook → Code node → HTTP Request (Resend)
-- [x] **Important:** n8n wraps webhook data sub `.body` (access via `$input.first().json.body`)
-
-### Autentificare
-- [x] Login / Register / Logout
-- [x] Password reset flow (cu cod pe email de pe noreply@ofai.ro)
-- [x] JWT token-based auth
-- [x] Role-based access (user, business_owner, admin)
-- [x] GDPR-compliant account deletion
-- [x] **Welcome email** - trimis automat la inregistrare (Resend, de pe ofai.ro)
-- [x] **Password reset email** - cu cod de 6 cifre, design profesional
-- [x] **Onboarding** - preferinte oras + categorii la prima inregistrare (cu optiune skip)
 
 ### AI Review Summarization (Claude Haiku)
-- [x] Sumarizare automata recenzii business-uri (min 3 reviews)
 - [x] Batch job scheduled la 2 zile (Railway Cron, 03:00 AM)
-- [x] Filtrare review-uri spam/injuraturi/caractere random
-- [x] Caching in DB (tabel `review_summaries`)
-- [x] NU genereaza on-demand (anti-abuse, cost fix)
-- [x] Admin page: `/admin/review-summaries` (batch manual, regenerare, stergere cache)
-- [x] Frontend: card "Pe baza recenziilor" pe pagina business
-- [x] Cost estimat: ~$0.07/luna pentru 100 business-uri
-
-### Business Portal
-- [x] Lista business-uri pentru owner
-- [x] Editare informatii business
-- [x] Upload imagini (logo, cover, galerie) - via Cloudinary
-- [x] Sistem de rezervari (telefon, WhatsApp, link)
-- [x] Gestionare oferte (creare, editare, activare/dezactivare)
-- [x] Preview business
-
-### Tab "Colectia mea" (v3 — merge Urmarite + Favorite)
-- [x] **ModeToggle** mare cu 2 butoane: "Business-uri" si "Oferte"
-- [x] Badge cu count pe fiecare buton
-- [x] **Business-uri view** — search, sort (cu oferte/recent/A-Z), city chips, unfollow
-- [x] **Oferte view** — lista oferte favorite cu buton remove
-- [x] Pull-to-refresh pe ambele moduri
-- [x] Guest state unificat
-- [x] Header redenumit: "Colectia mea"
-- [x] Pagina `/favorites` ramane functionala separat (acces din offer screen bookmark)
-
-### Dock (Navigation Bar)
-- [x] Dock animat pe web (framer-motion)
-- [x] Dock nativ pe mobile (cu magnifying lens effect)
-- [x] Apare pe toate paginile EXCEPTIE auth (login, register, forgot-password)
-- [x] Fisiere: `components/Dock.tsx` (native), `components/Dock.web.tsx` (web)
-
-### Auth Screens
-- [x] Buton "Exploreaza reduceri fara cont" pe toate paginile auth
-- [x] Permite accesul la app fara autentificare
-
-### Branding
-- [x] Rebrand complet AppReduceri → OFAI (toate ecranele, email-uri, legal, docs)
-- [x] Email-uri trimise de pe `noreply@ofai.ro` (Resend, domeniu verificat DKIM)
-- [x] Cloudinary upload folder: `ofai/`
-- [x] Foldere interne raman `appredueri_*` (nu se schimba pentru compatibilitate)
-
-### Design System Overhaul (v4 — Option A)
-- [x] **Theme expandat:** `theme.ts` — fonts (DM Serif Display + Inter), spacing, radii, shadows exports
-- [x] **Background:** Schimbat de la `#09090b` la `#06060a` peste tot (match web design)
-- [x] **OfferCard redesign:** Cover image hero pattern (140px cover), logo overlap (-28px), discount badge solid accent, accent glow animation pentru highlights (≥40% discount)
-- [x] **BusinessCard redesign:** Cover image hero pattern (120px cover), offers count badge pe cover, bottom row cu separator
-- [x] **Dock.web.tsx responsive:** Desktop (≥768px) = floating glassmorphic navbar cu OFAI brand + nav links; Mobile (<768px) = magnification dock
-- [x] **AuroraBackground subtilizat:** Opacitati reduse (12-8%), blob violet adaugat, miscare mai lenta (30px), grid dot pattern pe web
-- [x] **HomeScreen:** DM Serif Display pe titluri, glassmorphic search bar, sort tabs updatate
-- [x] **SkeletonCard + HomeSkeleton:** Match noul card pattern (cover + logo overlap)
-- [x] **Google Fonts:** @expo-google-fonts/dm-serif-display + @expo-google-fonts/inter instalate si incarcate in _layout.tsx
-- [x] **Config files:** app.config.js, +html.tsx, web/index.html — toate pe #06060a cu Google Fonts + custom scrollbar + ambient gradients
-
-### Public Website EJS (v4)
-- [x] **Home page:** Hero section cu stats animate, search, marquee businesses, categories grid, featured offers bento, how-it-works, cities scroll, CTA
-- [x] **Offers page:** Grid cu filter (categorii + orase), search, paginare, discount badges
-- [x] **Design system CSS:** 1355 linii — dark theme, glassmorphism, scroll reveal, responsive
-- [x] **Navbar:** Floating glassmorphic cu logo OFAI, nav links, mobile hamburger
-- [x] **Footer:** 4 coloane cu link-uri (inca pe # — trebuie actualizate)
-- [x] **main.js:** Navbar scroll hide/show, IntersectionObserver reveal, animated counters, mobile menu
-
-### Domain Migration (v4)
-- [x] **Vercel eliminat** — proiect sters complet
-- [x] **Cloudflare DNS** — nameservers actualizate la rotld.ro, CNAME flattening activ
-- [x] **Railway custom domain** — ofai.ro adaugat cu SSL certificat activ
-- [x] **SSL:** Cloudflare Full mode, certificat valid
+- [x] Admin panel: `/admin/review-summaries`
+- [x] Frontend: card "Pe baza recenziilor" pe business detail page
 
 ---
 
 ## CE TREBUIE FACUT / CUNOSCUT
 
-### ⚡ PRIORITATE #1: Migrare Completa Site EJS
-**Planul complet este in:** `C:\Users\tiber\.claude\plans\replicated-scribbling-widget.md`
+### ⚠️ PROBLEMA ACTIVA: Safari/iOS nu acceseaza ofai.ro
 
-Site-ul public (ofai.ro) are momentan DOAR 2 pagini EJS (home + oferte). Trebuie migrate TOATE functionalitățile din app-ul mobil pe site-ul EJS. Planul are 5 batch-uri:
+**Simptom:** `ERR_NAME_NOT_RESOLVED` pe `www.ofai.ro` din Safari iOS
+**Cauza:** Safari pe iOS adauga automat `www.` prefix. Railway trebuie sa recunoasca domeniul `www.ofai.ro`.
+**Status DNS:** Cloudflare rezolva corect AMBELE (`@` si `www` → Railway IPs) ✅
+**Problema:** Railway returneaza **404** pe `www.ofai.ro` (nu recunoaste domeniul)
 
-**Batch 1 (fundament):** Auth system (cookie-based JWT), offer detail page, business detail page, navbar user menu
-**Batch 2 (navigatie):** Categorii page, orașe page, 404 page
-**Batch 3 (cont):** Contul meu, colecția mea (favorites + subscriptions), setări, preferințe
-**Batch 4 (static):** Termeni, confidențialitate, ajutor & suport, pagina business CTA
-**Batch 5 (polish):** Toast system, geolocation, search autocomplete, SEO structured data
-
-**Fișiere noi:** ~17 EJS templates + 1 middleware (webAuth.js)
-**Fișiere modificate:** web.js, index.js, navbar.ejs, footer.ejs, head.ejs, main.css, main.js, home.ejs, oferte.ejs, package.json
-**Dependință nouă:** cookie-parser
+**SOLUTIE:** In **Railway Dashboard** → proiect → Settings → Networking → Custom Domains:
+- Adauga `www.ofai.ro` ca al doilea custom domain (pe langa `ofai.ro` existent)
+- Optional: Adauga Cloudflare Page Rule: `www.ofai.ro/*` → 301 redirect → `https://ofai.ro/$1`
 
 ### 2. n8n Workflows de implementat
-WF1 (New Review → Email Owner) este complet. Restul sunt pregatite pe backend (webhook triggers exista):
+WF1 (New Review → Email Owner) este complet. Restul:
 - **WF2:** New Offer → Push notification la followers
 - **WF3:** Daily digest (oferte noi din ziua precedenta)
 - **WF4:** Review reminder (dupa vizita/achizitie)
 - **WF5:** Welcome series (drip emails dupa inregistrare)
 - **WF6:** Admin alerts (business nou, review negativ)
 
-### 3. Baza de Date Locala - Migratie Necesara
-Daca primesti eroare `column "image_url" does not exist`:
-```sql
-ALTER TABLE business_images ADD COLUMN IF NOT EXISTS image_url TEXT;
-```
+### 3. Footer link-uri
+Link-urile din footer sunt pe `#` — trebuie actualizate la paginile EJS existente.
 
-### 4. Fisier de Sters
-**IMPORTANT:** Sterge `components/Dock.native.tsx` - continutul a fost mutat in `Dock.tsx`:
-```bash
-del C:\Users\tiber\Desktop\AppReduceri\appredueri_mobile\components\Dock.native.tsx
-```
+### 4. Galerie imagini business
+Business-urile au si `business_images` (galerie) pe langa logo/cover. Galeria NU este inca in portal manage page. Doar logo si cover au upload/delete.
 
 ### 5. Oferte Nu Apar
-Problema: Ofertele trebuie sa aiba `is_active = TRUE` si `end_date >= CURRENT_DATE`
+Ofertele trebuie sa aiba `is_active = TRUE` si `end_date >= CURRENT_DATE`:
 ```sql
-SELECT id, title, is_active, end_date FROM offers;
 UPDATE offers SET end_date = '2026-12-31' WHERE end_date < CURRENT_DATE;
 UPDATE offers SET is_active = TRUE WHERE is_active = FALSE;
 ```
 
-### 6. Cloudinary - Railway
-Variabilele de environment pentru Cloudinary trebuie adaugate manual in Railway:
-- `CLOUDINARY_CLOUD_NAME` = `dtlawgplb`
-- `CLOUDINARY_API_KEY` = `924953315261555`
-- `CLOUDINARY_API_SECRET` = (din Cloudinary dashboard)
-
-### 7. Seed Production Database
-Scriptul de seed pentru 1000 business-uri NU a fost rulat inca pe productie:
+### 6. Seed Production Database
+Scriptul de seed pentru business-uri:
 ```bash
 cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
 DATABASE_URL="postgres://postgres:REDACTED@REDACTED_DB_HOST/railway" node scripts/seed-businesses.js
 ```
 
-### 8. n8n Tips
-- **Production URL:** `/webhook/new-review` (activ cand workflow e ON)
-- **Test URL:** `/webhook-test/new-review` (doar in timpul "Listen for test event")
-- **Data access in Code node:** `$input.first().json.body` (nu `.json` direct!)
-- **Resend API:** POST la `https://api.resend.com/emails` cu header `Authorization: Bearer re_xxx`
+---
 
-### 9. Git Push Pending
-Modificarile Option A (design overhaul mobil) NU au fost inca pushed pe GitHub. Trebuie commitat si pushed inainte de deploy.
+## ARHITECTURA web.js (FISIERUL PRINCIPAL — ~1300+ linii)
+
+`src/routes/web.js` contine TOTUL pentru site-ul public:
+
+### Imports & Config
+```
+express, pool, bcrypt, jwt, webAuth, businessWebAuth, multer, cloudinary, email, n8n, validate
+```
+
+### Rute Pagini EJS (GET)
+```
+/                    → home.ejs
+/oferte              → oferte.ejs
+/oferta/:id          → offer-detail.ejs
+/business/:id        → business-detail.ejs
+/categorii           → categorii.ejs
+/categorie/:slug     → categorie.ejs
+/orase               → orase.ejs
+/oras/:slug          → oras.ejs
+/login               → login.ejs
+/register            → register.ejs
+/forgot-password     → forgot-password.ejs
+/reset-password      → reset-password.ejs
+/account             → account.ejs (requireWebAuth)
+/colectia-mea        → colectia-mea.ejs (requireWebAuth)
+/setari              → setari.ejs (requireWebAuth)
+/preferinte          → preferinte.ejs (requireWebAuth)
+/termeni             → termeni.ejs
+/confidentialitate   → confidentialitate.ejs
+/ajutor              → ajutor.ejs
+/pentru-business     → business-cta.ejs
+/portal              → portal/dashboard.ejs (requireBusinessOwner)
+/portal/:businessId  → portal/manage.ejs (requireBusinessOwner)
+/portal/:bId/oferta-noua       → portal/offer-form.ejs
+/portal/:bId/oferta/:offerId   → portal/offer-form.ejs (edit)
+```
+
+### Rute Auth (POST)
+```
+POST /login          → autentificare + set cookie
+POST /register       → inregistrare + set cookie
+POST /forgot-password → trimite cod reset pe email
+POST /reset-password → reseteaza parola
+POST /logout         → clear cookie
+```
+
+### Rute AJAX Web (cookie auth, JSON responses)
+```
+POST   /api/web/favorites          → adauga favorit
+DELETE /api/web/favorites/:offerId → sterge favorit
+POST   /api/web/subscriptions      → urmareste business
+DELETE /api/web/subscriptions/:bId → nu mai urmareste
+POST   /api/web/reviews            → adauga recenzie
+PUT    /api/web/account            → update profil
+PUT    /api/web/account/password   → schimba parola
+DELETE /api/web/account            → sterge cont
+PUT    /api/web/preferences        → update preferinte
+```
+
+### Rute Portal AJAX (cookie auth + business ownership)
+```
+PUT    /api/web/portal/:bId              → update business info
+POST   /api/web/portal/:bId/logo        → upload logo (multer + cloudinary)
+POST   /api/web/portal/:bId/cover       → upload cover
+DELETE /api/web/portal/:bId/logo        → delete logo
+DELETE /api/web/portal/:bId/cover       → delete cover
+POST   /api/web/portal/:bId/offers      → creare oferta
+PUT    /api/web/portal/:bId/offers/:oId → editare oferta
+PATCH  /api/web/portal/:bId/offers/:oId/toggle → toggle activ/inactiv
+POST   /api/web/portal/:bId/reviews/:rId/response   → raspuns recenzie
+PUT    /api/web/portal/:bId/reviews/:rId/response    → edit raspuns
+DELETE /api/web/portal/:bId/reviews/:rId/response    → sterge raspuns
+GET    /api/web/portal/:bId/analytics    → date analytics (views, subs)
+```
 
 ---
 
-## FISIERE CHEIE MODIFICATE RECENT
+## DESIGN SYSTEM
 
-### v4 — 9 Februarie 2026
-
-```
-appredueri_backend/
-├── src/
-│   ├── routes/
-│   │   └── web.js              # 2 EJS page routes (home, oferte) — trebuie extins cu ~15 rute
-│   ├── views/public/
-│   │   ├── home.ejs            # Landing page completa (hero, marquee, categories, featured, cities, CTA)
-│   │   ├── oferte.ejs          # Offers listing cu search, filter, pagination
-│   │   └── partials/
-│   │       ├── head.ejs        # HTML head cu meta, favicon, CSS
-│   │       ├── navbar.ejs      # Glassmorphic navbar (fara user menu inca)
-│   │       └── footer.ejs      # Footer 4 coloane (link-uri pe # inca)
-│   └── public/
-│       ├── css/main.css        # Design system complet (1355 linii, dark theme, glassmorphism)
-│       └── js/main.js          # Navbar, scroll reveal, counters, mobile menu
-
-appredueri_mobile/
-├── app/
-│   ├── _layout.tsx             # + useFonts (DM Serif Display + Inter), web CSS injection actualizat
-│   ├── +html.tsx               # Rescris — #06060a, Google Fonts preconnect, custom scrollbar, ambient gradients
-│   ├── app.config.js           # Toate #09090b → #06060a (8 locuri)
-│   ├── lib/theme.ts            # EXPANDAT — fonts, spacing, radii, shadows exports; background #06060a
-│   ├── (tabs)/
-│   │   └── index.tsx           # + DM Serif Display titluri, glassmorphic search, sort tabs updatate
-│   └── web/
-│       └── index.html          # + Google Fonts, custom scrollbar, ambient glow desktop
-├── components/
-│   ├── OfferCard.tsx           # RESCRIS — cover image hero (140px), logo overlap, discount badge, glow animation
-│   ├── BusinessCard.tsx        # RESCRIS — cover image hero (120px), offers badge, bottom separator
-│   ├── Dock.web.tsx            # RESCRIS — responsive desktop navbar + mobile dock
-│   ├── AuroraBackground.tsx    # Subtilizat — opacitati reduse, blob violet, grid pattern web
-│   ├── SkeletonCard.tsx        # Match noul card pattern (cover + logo overlap)
-│   └── HomeSkeleton.tsx        # + sort bar skeleton, radii from theme
-├── package.json                # + @expo-google-fonts/dm-serif-display, @expo-google-fonts/inter
+### CSS Custom Properties (main.css)
+```css
+--bg-primary: #06060a
+--bg-secondary: #0c0c12
+--bg-card: rgba(255,255,255,0.04)
+--accent: #fb923c (orange)
+--accent-hover: #f97316
+--text-primary: #f4f4f5
+--text-secondary: #a1a1aa
+--text-tertiary: #71717a
+--border: rgba(255,255,255,0.08)
 ```
 
-### v3 — 7 Februarie 2026
+### Pattern vizual
+- **Dark theme** cu accent portocaliu
+- **Glassmorphism** (backdrop-filter + -webkit-backdrop-filter + rgba bg)
+- **Cards** cu border subtil + hover glow
+- **Scroll reveal** via IntersectionObserver
+- **Responsive** cu breakpoints la 768px si 500px
+- **Fonturi:** Inter (body) + DM Serif Display (titluri) via Google Fonts CDN
 
-```
-appredueri_backend/
-├── src/
-│   ├── index.js                 # + verifyResetCodeLimiter, adminLimiter, CORS restrict, admin error handler fix
-│   ├── db.js                    # + statement_timeout: 10000 (10s)
-│   ├── helpers/
-│   │   └── validate.js          # NOU - isValidEmail, sanitizeString, validateInt, parsePagination, paginatedResponse
-│   ├── services/
-│   │   └── n8n.js               # NOU - triggerWebhook(path, payload) fire-and-forget
-│   ├── middleware/
-│   │   ├── auth.js              # + JWT_SECRET production guard (throw fatal)
-│   │   └── rateLimiter.js       # + verifyResetCodeLimiter (5/15min), adminLimiter (200/min), removed admin skip
-│   └── routes/
-│       ├── auth.js              # + triggerWebhook import, JWT_SECRET guard, validate import
-│       ├── offers.js            # + paginare (LIMIT/OFFSET + COUNT)
-│       ├── businesses.js        # + paginare
-│       ├── reviews.js           # + paginare + comment sanitize (max 2000 chars) + triggerWebhook new-review
-│       ├── favorites.js         # + paginare
-│       ├── subscriptions.js     # + paginare + triggerWebhook new-subscriber
-│       ├── business-portal.js   # + triggerWebhook new-offer
-│       └── admin.js             # + triggerWebhook new-offer, INSERT RETURNING id
+### IMPORTANT Safari: Foloseste MEREU `-webkit-backdrop-filter` inainte de `backdrop-filter`
 
-n8n-workflows/
-└── WF1_New_Review_Notify_Owner.json  # NOU - Importabil in n8n
+---
 
-appredueri_mobile/
-├── app/
-│   ├── onboarding.tsx           # Fix: router.replace("/") → "/(tabs)" (skip button)
-│   ├── (tabs)/
-│   │   ├── index.tsx            # + paginare support (json.data pattern)
-│   │   └── subscriptions.tsx    # RESCRIS — ModeToggle businesses/offers, favorites integration, header "Colectia mea"
-│   ├── business/
-│   │   └── [id].tsx             # + paginare support pe offers, reviews, subscriptions
-│   ├── offer/
-│   │   └── [id].tsx             # + paginare support pe favorites check
-│   └── favorites/
-│       └── index.tsx            # + paginare support (json.data pattern)
-```
+## FIXURI CUNOSCUTE & GOTCHAS
 
-### v2 — 3 Februarie 2026
+### 1. Unicode in EJS
+EJS nu interpreteaza `\u0103` ca `ă`. Trebuie folosite caractere UTF-8 reale in fisierele .ejs.
+Daca vezi caractere garbled (Urm\ăre\ști), inseamna ca sunt escape sequences in fisier.
 
-```
-appredueri_backend/
-├── src/
-│   ├── index.js                 # + Rate limiting, Sentry, Push tokens, health check "OFAI"
-│   ├── config/
-│   │   └── llm.js               # NOU - Configurare Claude Haiku
-│   ├── middleware/
-│   │   ├── auth.js              # + requireAdmin, requireBusinessOwner
-│   │   ├── adminAuth.js         # Realm schimbat la "Admin OFAI"
-│   │   └── rateLimiter.js       # NOU - Rate limiting middleware
-│   ├── services/
-│   │   ├── llm/                 # NOU - AI Review Summarization
-│   │   │   ├── anthropicClient.js
-│   │   │   ├── prompts.js
-│   │   │   ├── summarizationService.js
-│   │   │   └── README.md
-│   │   ├── email.js             # Resend email (FROM_EMAIL: noreply@ofai.ro)
-│   │   ├── cloudinary.js        # Upload folder: ofai/
-│   │   ├── sentry.js
-│   │   └── pushNotifications.js
-│   ├── routes/
-│   │   ├── admin.js             # + Review summaries admin panel
-│   │   ├── businesses.js        # + Review summary cache-only retrieval
-│   │   ├── reviews.js
-│   │   ├── subscriptions.js     # Fix active_offers_count
-│   │   ├── auth.js              # + Welcome email, password reset email
-│   │   └── push-tokens.js
-│   └── views/admin/
-│       └── review-summaries.ejs
-├── scripts/
-│   ├── review-summary-batch.js
-│   ├── check-llm-budget.js
-│   ├── monitor-llm-costs.sql
-│   └── ab-test-prompts.js
+### 2. Cookie auth pe web vs Bearer auth pe mobile
+- Web: Cookie `ofai_token` trimis automat cu fetch (same-origin)
+- Mobile: Header `Authorization: Bearer <token>`
+- NU amesteca! web.js foloseste DOAR cookie, business-portal.js DOAR Bearer.
 
-appredueri_mobile/
-├── app/
-│   ├── _layout.tsx              # + usePushNotifications hook
-│   ├── types.ts                 # + ReviewSummary interface
-│   ├── (tabs)/
-│   │   ├── index.tsx            # Rebrand "Contul tau OFAI"
-│   │   └── account.tsx          # Versiune: "OFAI v1.0.4"
-│   ├── business/
-│   │   └── [id].tsx             # + ReviewSummary component
-│   ├── settings.tsx             # Rebrand
-│   ├── help.tsx                 # Rebrand
-│   ├── legal/
-│   │   ├── terms.tsx
-│   │   └── privacy.tsx
-│   ├── hooks/
-│   │   └── usePushNotifications.ts
-│   ├── auth/
-│   │   ├── login.tsx            # + buton "Exploreaza fara cont"
-│   │   ├── register.tsx
-│   │   └── forgot-password.tsx
-│   └── config.ts
-├── components/
-│   ├── ReviewSummary.tsx
-│   ├── Dock.tsx
-│   ├── Dock.web.tsx
-│   ├── BusinessMap.native.tsx
-│   ├── AuroraBackground.tsx
-│   └── Toast.tsx
-```
+### 3. colectia-mea.ejs — server-side rendering
+Pagina Colecția mea renderizeaza datele SERVER-SIDE (favorites si subscriptions arrays).
+NU face fetch client-side. Variabilele vin din ruta GET /colectia-mea din web.js.
+
+### 4. Trust proxy
+`app.set("trust proxy", 1)` este NECESAR in production (Railway + Cloudflare).
+Fara el: cookie Secure nu functioneaza, rate limiter vede un singur IP.
+
+### 5. Cloudflare www redirect
+Railway trebuie sa aiba `www.ofai.ro` adaugat ca custom domain.
+Safari iOS adauga automat `www.` — fara record, site-ul nu se incarca pe iPhone.
 
 ---
 
@@ -457,22 +406,22 @@ appredueri_mobile/
 
 ### Development
 ```bash
-# Frontend
-cd C:\Users\tiber\Desktop\AppReduceri\appredueri_mobile
-npx expo start --web          # sau doar: npx expo start
-
-# Backend
+# Backend + Website EJS
 cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
 npm run dev
+
+# Mobile (Expo)
+cd C:\Users\tiber\Desktop\AppReduceri\appredueri_mobile
+npx expo start --web
 ```
 
 ### Git & Deploy
 ```bash
 cd C:\Users\tiber\Desktop\AppReduceri
-git add .
+git add appredueri_backend/src/...
 git commit -m "descriere"
 git push
-# Vercel si Railway se actualizeaza automat
+# Railway se actualizeaza automat
 ```
 
 ### Database (Railway Production)
@@ -480,143 +429,74 @@ git push
 psql "postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway"
 ```
 
-### EAS Build & Update
-```bash
-cd C:\Users\tiber\Desktop\AppReduceri\appredueri_mobile
-
-# Build APK pentru testare
-eas build --platform android --profile preview
-
-# OTA Update (dupa ce ai build instalat)
-eas update --branch preview --message "descriere modificari"
-
-# Vezi builds
-eas build:list
-
-# Porneste emulator si app
-npx expo start --android
-```
-
-### LLM Review Summaries
-```bash
-cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
-
-# Rulare batch manuala
-npm run review-summaries:batch
-
-# Monitorizare costuri LLM
-node scripts/check-llm-budget.js
-```
-
 ### n8n
 ```
 Dashboard: https://n8n-production-d2f4.up.railway.app
 Webhook base: https://N8N_WEBHOOK_REDACTED
 Workflows active: WF1 (new-review → email owner)
-Import: n8n-workflows/WF1_New_Review_Notify_Owner.json
 ```
 
 ---
 
 ## SERVICII EXTERNE CONFIGURATE
 
+### Cloudflare (DNS + CDN)
+- **Dashboard:** https://dash.cloudflare.com
+- **Domeniu:** ofai.ro
+- **DNS:** CNAME `@` + `www` → vurfk849.up.railway.app (proxy ON)
+- **SSL:** Full mode
+- **Nameservers:** Configurate la registrar (rotld.ro)
+
 ### Sentry (Error Tracking)
-- **Dashboard:** https://sentry.io
-- **Proiect:** ofai-backend
-- **Functionare:** Captureaza automat erorile 500+ in productie
+- **Dashboard:** https://sentry.io → ofai-backend
 
 ### Resend (Email)
 - **Dashboard:** https://resend.com
 - **Domeniu:** ofai.ro (DKIM verificat)
 - **Email sender:** `OFAI <noreply@ofai.ro>`
-- **Email-uri active:**
-  - Welcome email (la inregistrare)
-  - Password reset (cu cod 6 cifre)
-  - New review notification (via n8n WF1)
 
 ### Anthropic / Claude (AI)
-- **Dashboard:** https://console.anthropic.com
-- **Model:** Claude 3 Haiku (`claude-3-haiku-20240307`)
-- **Utilizare:** Sumarizare automata recenzii business-uri
-- **Cost:** ~$0.07/luna pentru 100 business-uri
-- **Env var:** `ANTHROPIC_API_KEY` (in Railway)
+- **Model:** Claude 3 Haiku
+- **Utilizare:** Review summarization batch job
+- **Cost:** ~$0.07/luna
 
 ### n8n (Workflow Automation)
 - **Dashboard:** https://n8n-production-d2f4.up.railway.app
-- **Hosting:** Railway (serviciu separat)
-- **Baza de date proprie:** PostgreSQL pe Railway (separata de OFAI DB)
-- **Workflows active:** WF1 — New Review → Email Owner
-- **Pattern:** Backend fire-and-forget POST → n8n webhook → Code node → HTTP Request
-- **Env var backend:** `N8N_WEBHOOK_URL` (in Railway)
+- **Pattern:** Backend fire-and-forget POST → n8n webhook → Code node → HTTP Request (Resend)
+- **Data access in Code node:** `$input.first().json.body` (nu `.json` direct!)
 
-### Cloudflare (DNS + CDN)
-- **Dashboard:** https://dash.cloudflare.com
-- **Domeniu:** ofai.ro
-- **DNS:** CNAME flattening (ofai.ro → vurfk849.up.railway.app)
-- **SSL:** Full mode (Cloudflare ↔ Railway ambele cu SSL)
-- **Proxy:** ON (orange cloud) — protectie DDoS + cache
-- **Nameservers:** Configurate la registrar (rotld.ro)
-
-### pgAdmin 4 (Database Management)
-- **Conexiune Railway:**
-  - Host: `REDACTED_DB_HOST`
-  - Port: `11803`
-  - Database: `railway`
-  - Username: `postgres`
-  - SSL Mode: `Require`
+### pgAdmin 4
+- Host: `REDACTED_DB_HOST`, Port: `11803`, DB: `railway`, User: `postgres`, SSL: Require
 
 ---
 
 ## FAZE IMPLEMENTARE
 
 ### Faza 1 - Fundatie (COMPLETA)
-- [x] Rate limiting pe API
-- [x] Sentry error tracking
-- [x] Email transactional (Resend)
-- [x] Indexuri DB pentru performanta
+- [x] Rate limiting, Sentry, Resend email, DB indexes
 
 ### Faza 2 - Engagement (COMPLETA)
-- [x] Push notifications (Expo Push API)
-- [x] EAS Build configurat (Android APK)
-- [x] OTA Updates cu `eas update`
-- [x] Mapbox harta integrata
-- [x] Sistem de puncte (recenzii)
-- [x] Nearby offers (sortare dupa distanta)
+- [x] Push notifications, EAS Build, Mapbox, nearby offers
 
 ### Faza 2.5 - AI & Branding (COMPLETA)
-- [x] AI Review Summarization cu Claude Haiku
-- [x] Scheduled batch job (la 2 zile, Railway Cron)
-- [x] Admin panel review summaries
-- [x] Filtrare review-uri spam/profanity/gibberish
-- [x] Rebrand complet AppReduceri → OFAI
-- [x] Email sender: noreply@ofai.ro
+- [x] Claude Haiku review summarization, rebrand OFAI
 
 ### Faza 2.7 - Production Hardening & n8n (COMPLETA - v3)
-- [x] JWT_SECRET production guard
-- [x] Rate limiting pe verify-reset-code, admin routes
-- [x] Input validation centralizata (validate.js)
-- [x] CORS restrictionat in productie
-- [x] Admin error handler XSS fix
-- [x] Paginare pe toate endpoint-urile de lista
-- [x] statement_timeout pe DB pool (10s)
-- [x] n8n WF1: New Review → Email Owner
-- [x] n8n webhook triggers pe toate rutele relevante
-- [x] Bug fix onboarding skip
-- [x] Tab "Colectia mea" (merge urmarite + favorite cu ModeToggle)
+- [x] Security hardening, paginare, n8n WF1, Colectia mea tab
 
 ### Faza 2.9 - Design Overhaul + Domain Migration (COMPLETA - v4)
-- [x] Option A: Aliniere design mobil cu web (cover cards, glassmorphism, DM Serif Display)
-- [x] Eliminare Vercel → migrare completa pe Railway
-- [x] Cloudflare DNS setup (CNAME flattening, SSL Full)
-- [x] Site public EJS: home page + oferte page (cu design modern)
+- [x] Mobile design overhaul, Vercel → Railway, Cloudflare DNS, EJS home + oferte
 
-### Faza 3 - Migrare Completa Site EJS (IN CURS)
-- [ ] Auth system web (cookie JWT, login/register/forgot/reset)
-- [ ] Offer detail page + business detail page
-- [ ] Categorii + Orașe + 404
-- [ ] Cont utilizator + Colecția mea + Setări + Preferințe
-- [ ] Pagini legale + Ajutor + Business CTA
-- [ ] Toast, geolocation, search autocomplete, SEO
+### Faza 3 - Migrare Completa Site EJS (COMPLETA - v5)
+- [x] Auth web (cookie JWT, login/register/forgot/reset)
+- [x] Offer detail + Business detail pages
+- [x] Categorii + Orașe + 404
+- [x] Cont utilizator + Colecția mea + Setări + Preferințe
+- [x] Pagini legale + Ajutor + Business CTA
+- [x] Business Portal Web (dashboard, manage, offer form)
+- [x] Portal image upload/delete (logo + cover)
+- [x] Trust proxy + Safari webkit fixes
+- [x] Unicode fixes (Romanian diacritics in EJS)
 
 ### Faza 4 - Monetizare (TODO)
 - [ ] Stripe integration
@@ -629,235 +509,113 @@ Import: n8n-workflows/WF1_New_Review_Notify_Owner.json
 - [ ] Referral system
 - [ ] Deep links
 - [ ] Expansion in orase noi
-- [ ] n8n WF2-WF6 (push notifications, daily digest, welcome series, admin alerts)
+- [ ] n8n WF2-WF6
 
 ---
 
 ## PRIORITATI URMATOARE
 
-1. **⚡ Migrare Site EJS** — Planul complet este in `C:\Users\tiber\.claude\plans\replicated-scribbling-widget.md`. Incepe cu Batch 1 (auth + offer detail + business detail).
-2. **Git push** — Commit si push modificarile Option A (design overhaul) pe GitHub pentru deploy Railway
-3. **Seed production** — Ruleaza seed-businesses.js pe production DB
+1. **⚠️ Railway custom domain `www.ofai.ro`** — adauga in Railway Settings pentru a fixa Safari/iOS
+2. **Galerie imagini** — adauga upload/delete gallery images in portal manage page
+3. **Footer link-uri** — actualizeaza link-urile din footer.ejs (momentan pe #)
 4. **n8n WF2-WF6** — workflow-uri suplimentare
-5. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
-6. **Play Store** — publicare APK pe Google Play
-7. **SecureStore** — migrare token din AsyncStorage la expo-secure-store
-
----
-
-## NOTE IMPORTANTE
-
-1. **Doua medii separate:** Localhost si Productie au baze de date diferite. Ce uploadezi local NU apare pe ofai.ro si invers.
-
-2. **Website = Backend = Acelasi server:** Site-ul public EJS (ofai.ro) si API-ul mobil (ofai-production.up.railway.app) ruleaza pe ACELASI server Express. Rutele web sunt in `web.js`, API-urile in fisiere separate (`offers.js`, `businesses.js`, etc.).
-
-3. **Dock logic (mobile):**
-   - Pe web: `Dock.web.tsx` e selectat automat de bundler (acum responsive: desktop navbar + mobile dock)
-   - Pe native: `Dock.tsx` e folosit
-   - Root layout (`_layout.tsx`) adauga Dock pentru paginile non-tabs pe web
-   - Tabs layout (`(tabs)/_layout.tsx`) gestioneaza Dock pentru tab-uri
-
-4. **API URL detection:** `app/config.ts` detecteaza automat daca e productie sau development bazat pe `__DEV__` si `Platform.OS`
-   - APK/Production: `https://ofai-production.up.railway.app`
-   - Development Web: `http://localhost:4000`
-   - Development Mobile: `http://192.168.0.30:4000`
-
-5. **Cloudinary:** Imaginile din productie sunt stocate pe Cloudinary. Local foloseste folderul `uploads/` din backend.
-
-6. **EAS Update vs EAS Build:**
-   - `eas build` = creeaza APK nou (trebuie reinstalat)
-   - `eas update` = OTA update instant (doar JS/assets, fara reinstalare)
-   - Dupa `eas update`, inchide si redeschide app-ul pentru a primi update
-
-7. **Mapbox:**
-   - Access Token (public): in `BusinessMap.native.tsx`
-   - Download Token (secret): in `app.config.js` si `eas.json`
-   - Nu functioneaza in Expo Go (necesita build nativ)
-
-8. **iOS Emulator:** Necesita Mac cu Xcode. Nu se poate emula iOS pe Windows.
-
-9. **AI Review Summaries:**
-   - Se genereaza DOAR prin batch job (la 2 zile) sau manual din admin
-   - Frontend-ul NU poate declansa generare (prevenire abuse/costuri)
-   - Business-urile au nevoie de minim 3 recenzii valide
-   - Daca ANTHROPIC_API_KEY lipseste, feature-ul este dezactivat silentios
-
-10. **Branding:** Peste tot in UI/email-uri scrie "OFAI". Folderele locale si package names raman `appredueri_*` pentru a nu sparge import paths.
-
-11. **Paginare (v3):** Toate endpoint-urile de lista returneaza acum `{ data: [...], pagination: { page, limit, total, totalPages } }`. Frontend-ul foloseste pattern-ul `Array.isArray(json) ? json : (json.data ?? json)` pentru backward compatibility.
-
-12. **n8n webhook data:** Cand primesti date de la webhook in n8n Code node, acceseaza via `$input.first().json.body` (nu `.json` direct). n8n wraps POST body sub `.body`.
-
-13. **EJS Design System CSS:** `main.css` contine design system complet cu CSS custom properties (--bg-primary, --accent, --border, etc.), Google Fonts (Inter + DM Serif Display), glassmorphism, scroll reveal animations, responsive breakpoints. Toate paginile noi trebuie sa refoloseasca aceste clase existente.
-
-14. **Cloudflare DNS:** ofai.ro este pe Cloudflare (nameservers schimbate la rotld.ro). CNAME record: ofai.ro → vurfk849.up.railway.app cu proxy ON. SSL: Full mode. Daca site-ul nu merge, verifica SSL/TLS settings in Cloudflare dashboard.
-
-15. **EJS Migrare Plan:** Planul complet pentru migrarea site-ului EJS este salvat in `C:\Users\tiber\.claude\plans\replicated-scribbling-widget.md`. Contine 5 batch-uri cu toate detaliile (rute, EJS templates, CSS, JS, API calls).
+5. **Seed production** — ruleaza seed-businesses.js pe production DB
+6. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
+7. **Play Store** — publicare APK pe Google Play
 
 ---
 
 ## ISTORIC ACTUALIZARI
 
-### 9 Februarie 2026 (v4)
-**Design Overhaul (Option A) + Domain Migration + EJS Website Launch:**
+### 9 Februarie 2026 (v5 — Migrare EJS Completa + Business Portal Web)
 
-1. **Mobile Design Overhaul (Option A)**
-   - Aliniere completa design mobil cu web design system
-   - Theme expandat: fonts (DM Serif Display + Inter), spacing, radii, shadows
-   - Background schimbat: #09090b → #06060a (match web --bg-primary)
-   - OfferCard rescris: cover image hero (140px), logo overlap, discount badge accent solid, glow animation
-   - BusinessCard rescris: cover image hero (120px), offers badge, bottom separator
-   - Dock.web.tsx: responsive desktop navbar (glassmorphic) + mobile dock
-   - AuroraBackground: opacitati reduse, blob violet, grid pattern web
-   - SkeletonCard + HomeSkeleton: match noul card pattern
-   - Google Fonts instalate: @expo-google-fonts/dm-serif-display + inter
-   - _layout.tsx: useFonts, web CSS injection actualizat
-   - Config: app.config.js, +html.tsx, web/index.html pe #06060a
+**Sesiuni multiple (3 sesiuni) — migrare completa a tuturor functionalitatilor din app-ul mobil pe site-ul EJS:**
 
-2. **Domain Migration: Vercel → Railway + Cloudflare**
-   - Proiect Vercel sters complet
-   - Cloudflare nameservers configurate la rotld.ro (registrar)
-   - CNAME flattening: ofai.ro → vurfk849.up.railway.app
-   - Railway custom domain: ofai.ro cu SSL certificat activ
-   - Cloudflare SSL: Full mode
-   - Site confirmat functional pe https://ofai.ro
+1. **Migrare EJS Completa (Batch 1-5)**
+   - Toate paginile create: auth, detaliu, navigatie, cont, static, portal
+   - web.js extins de la ~100 linii la ~1300+ linii
+   - 20+ template-uri EJS noi
+   - Cookie-based JWT auth system (webAuth.js)
+   - AJAX proxy pattern (/api/web/*) pentru interactiuni client-side
 
-3. **Public Website EJS (2 pagini)**
-   - Home page: hero cu stats animate, search, marquee businesses, categories grid, featured offers bento, how-it-works, cities scroll, CTA
-   - Offers page: grid cu filter categorii + orase, search, paginare
-   - Design system CSS complet: 1355 linii (dark theme, glassmorphism, scroll reveal, responsive)
-   - Navbar: floating glassmorphic cu logo, nav links, mobile hamburger
-   - Footer: 4 coloane
-   - main.js: navbar scroll, IntersectionObserver reveal, animated counters
+2. **Business Portal Web (NOU)**
+   - businessWebAuth.js middleware (cookie auth + ownership)
+   - Dashboard: lista business-uri owner
+   - Manage: 4 tab-uri (Info/Oferte/Recenzii/Statistici)
+   - Image upload/delete (logo + cover) via multer + Cloudinary
+   - Offer CRUD, review responses, analytics, performance score
+   - Offer form (create/edit) cu toate campurile
 
-4. **Masterplan Migrare EJS**
-   - Plan complet in 5 batch-uri pentru migrarea tuturor functionalitaților
-   - Fisier: `C:\Users\tiber\.claude\plans\replicated-scribbling-widget.md`
+3. **Fixuri**
+   - Unicode escape sequences in EJS (Romanian diacritics: ă, ș, ț, î, â)
+   - colectia-mea.ejs rescris pentru server-side rendering
+   - offer-detail.ejs location booking inlocuit cu Navigate button
+   - business-detail.ejs: review data paths, API URLs, follow endpoint
+   - preferinte.ejs: variable name mismatches
+   - Trust proxy adaugat in index.js
+   - Webkit backdrop-filter prefixes in main.css
 
-**Fisiere create (backend):**
-- `src/routes/web.js` — 2 rute EJS (home, oferte)
-- `src/views/public/home.ejs`, `oferte.ejs`
-- `src/views/public/partials/head.ejs`, `navbar.ejs`, `footer.ejs`
-- `src/public/css/main.css` (1355 linii)
-- `src/public/js/main.js` (147 linii)
-
-**Fisiere modificate (mobile):**
-- `app/lib/theme.ts` — expandat complet
-- `app/_layout.tsx` — fonts, CSS injection
-- `app/+html.tsx` — rescris
-- `app.config.js` — #06060a
-- `app/(tabs)/index.tsx` — DM Serif Display, glassmorphic search
-- `components/OfferCard.tsx` — rescris
-- `components/BusinessCard.tsx` — rescris
-- `components/Dock.web.tsx` — rescris
-- `components/AuroraBackground.tsx` — subtilizat
-- `components/SkeletonCard.tsx` — match noul pattern
-- `components/HomeSkeleton.tsx` — sort bar skeleton
-- `web/index.html` — Google Fonts, scrollbar, glow
-- `package.json` — +2 font dependencies
-
----
-
-### 7 Februarie 2026 (v3)
-**n8n Integration + Production Hardening + UI Improvements:**
-
-1. **n8n Workflow Automation**
-   - Creat `src/services/n8n.js` — helper centralizat fire-and-forget webhook
-   - Integrat webhook triggers in: auth.js, reviews.js, business-portal.js, admin.js, subscriptions.js
-   - WF1: New Review → Email Owner (via Resend API din n8n)
-   - Export JSON in `n8n-workflows/WF1_New_Review_Notify_Owner.json`
-
-2. **Security Hardening**
-   - JWT_SECRET throw fatal in production (auth.js + middleware/auth.js)
-   - Rate limiting: verifyResetCodeLimiter (5/15min), adminLimiter (200/min)
-   - Removed admin skip din generalLimiter
-   - CORS restrict — nu mai accepta orice .vercel.app/.railway.app wildcard in productie
-   - Admin error handler — mesaj generic in productie, HTML escaped in dev
-
-3. **Paginare pe toate endpoint-urile**
-   - Helper centralizat: `src/helpers/validate.js` (parsePagination, paginatedResponse)
-   - Endpoint-uri: /offers, /businesses, /reviews/business/:id, /favorites, /subscriptions
-   - Format: `{ data, pagination: { page, limit, total, totalPages } }`
-   - Frontend actualizat cu pattern `Array.isArray(json) ? json : (json.data ?? json)`
-
-4. **Input Validation**
-   - isValidEmail, sanitizeString (max length), validateInt, isValidCoordinates
-   - Review comment sanitizat la max 2000 caractere
-   - business_id required validation pe POST /reviews
-
-5. **Database**
-   - statement_timeout: 10000 (10s max per query)
-
-6. **Bug Fix: Onboarding Skip**
-   - `app/onboarding.tsx`: `router.replace("/")` → `router.replace("/(tabs)")`
-   - Butonul "Sari peste deocamdata" nu functiona pentru ca ruta "/" nu exista
-
-7. **Tab "Colectia mea" (merge Urmarite + Favorite)**
-   - `app/(tabs)/subscriptions.tsx` rescris complet
-   - ModeToggle cu 2 butoane: "Business-uri" (storefront icon) si "Oferte" (bookmark icon)
-   - Badge count pe fiecare buton, accent orange pe cel activ
-   - Business-uri view: search, sort, city chips, unfollow (logica existenta)
-   - Oferte view: OfferCard + buton "Sterge din favorite"
-   - Header: "Colectia mea" (redenumit din "Urmarite")
-   - Guest state unificat
-   - Pull-to-refresh pe ambele moduri
+4. **Problema activa: Safari/iOS**
+   - DNS rezolva corect (Cloudflare)
+   - Railway returneaza 404 pe www.ofai.ro
+   - SOLUTIE: Adauga www.ofai.ro ca custom domain in Railway
 
 **Fisiere create:**
-- `src/services/n8n.js`
-- `src/helpers/validate.js`
-- `n8n-workflows/WF1_New_Review_Notify_Owner.json`
+- `src/middleware/businessWebAuth.js`
+- `src/views/public/portal/dashboard.ejs`
+- `src/views/public/portal/manage.ejs` (~1350 linii)
+- `src/views/public/portal/offer-form.ejs` (~744 linii)
+- `src/views/public/offer-detail.ejs`
+- `src/views/public/business-detail.ejs`
+- `src/views/public/login.ejs`, `register.ejs`, `forgot-password.ejs`, `reset-password.ejs`
+- `src/views/public/account.ejs`, `colectia-mea.ejs`, `setari.ejs`, `preferinte.ejs`
+- `src/views/public/categorii.ejs`, `categorie.ejs`, `orase.ejs`, `oras.ejs`
+- `src/views/public/termeni.ejs`, `confidentialitate.ejs`, `ajutor.ejs`, `business-cta.ejs`, `404.ejs`
 
-**Fisiere modificate (backend):**
-- `src/index.js` — CORS, rate limiters, admin error handler
-- `src/db.js` — statement_timeout
-- `src/middleware/auth.js` — JWT_SECRET guard
-- `src/middleware/rateLimiter.js` — new limiters
-- `src/routes/auth.js`, `offers.js`, `businesses.js`, `reviews.js`, `favorites.js`, `subscriptions.js`, `business-portal.js`, `admin.js`
-
-**Fisiere modificate (frontend):**
-- `app/onboarding.tsx` — skip fix
-- `app/(tabs)/subscriptions.tsx` — rescris complet (ModeToggle)
-- `app/(tabs)/index.tsx` — pagination support
-- `app/business/[id].tsx` — pagination support
-- `app/offer/[id].tsx` — pagination support
-- `app/favorites/index.tsx` — pagination support
+**Fisiere modificate:**
+- `src/routes/web.js` — extins masiv (~1300+ linii)
+- `src/index.js` — trust proxy
+- `src/public/css/main.css` — webkit prefixes
+- `src/public/js/main.js` — toggleFavorite, toggleFollow, toast, FAQ, star rating
+- `src/views/public/partials/navbar.ejs` — user menu, portal link, mobile menu
 
 ---
+
+### 9 Februarie 2026 (v4)
+Design Overhaul (Option A) + Domain Migration + EJS Website Launch (home + oferte)
+
+### 7 Februarie 2026 (v3)
+n8n Integration + Production Hardening + Paginare + Colectia Mea tab
 
 ### 3 Februarie 2026 (v2)
-**AI Review Summarization & Rebranding:**
-
-1. **Claude Haiku - Review Summarization**
-   - Integrare Anthropic SDK (`@anthropic-ai/sdk`)
-   - Sumarizare automata pentru business-uri cu 3+ recenzii
-   - Batch job scheduled la 2 zile (Railway Cron, 03:00 AM)
-   - Filtrare avansata: spam, injuraturi, caractere random
-   - Admin panel: `/admin/review-summaries`
-   - Frontend: card "Pe baza recenziilor"
-
-2. **Rebranding AppReduceri → OFAI**
-   - Toate ecranele mobile, legal pages, backend
-   - Email sender: `OFAI <noreply@ofai.ro>`
-   - Cloudinary upload folder: `ofai/`
-
-3. **Fix active_offers_count**
-
----
+AI Review Summarization + Rebranding OFAI
 
 ### 3 Februarie 2026
-**EAS Build & Mobile App:**
-- EAS Build configurat (Android APK functional)
-- OTA Updates cu `eas update`
-- Mapbox harta cu business markers
-- UI/UX improvements (toast, aurora, vignete)
+EAS Build + Mapbox + UI improvements
+
+### 31 Ianuarie 2026
+Push Notifications
+
+### 27 Ianuarie 2026
+Faza 1 - Rate limiting, Sentry, Resend email, DB indexes
+
+### 24 Ianuarie 2026
+Setup initial proiect
 
 ---
 
-### 31 Ianuarie 2026
-**Push Notifications implementate**
+## NOTE IMPORTANTE
 
-### 27 Ianuarie 2026
-**Faza 1 - Fundatie:** Rate limiting, Sentry, Resend email, DB indexes
+1. **Website = Backend = Acelasi server:** Site-ul public EJS si API-ul mobil ruleaza pe ACELASI server Express. Rutele web sunt in `web.js`, API-urile mobile in fisiere separate.
 
-### 24 Ianuarie 2026
-- Setup initial proiect, Dock, Business Portal, Auth flow
+2. **Doua medii separate:** Localhost si Productie au baze de date diferite.
+
+3. **Branding:** Peste tot in UI scrie "OFAI". Folderele locale raman `appredueri_*` pentru compatibilitate.
+
+4. **Paginare (v3):** Endpoint-urile mobile returneaza `{ data: [...], pagination: { page, limit, total, totalPages } }`. Site-ul EJS face query-urile direct in web.js (nu prin API-urile mobile).
+
+5. **n8n webhook data:** In Code node: `$input.first().json.body` (nu `.json` direct).
+
+6. **Cloudinary:** Imaginile din productie pe Cloudinary. Upload folder: `ofai/`.
+
+7. **EJS Design:** Toate paginile noi TREBUIE sa refoloseasca clasele existente din main.css si sa includa partials (head, navbar, footer).

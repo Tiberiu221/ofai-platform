@@ -82,7 +82,7 @@
                 </div>
                 <div class="collection-item-info">
                   <h3><%= o.title %></h3>
-                  <p><%= o.business_name || '' %></p>
+                  <p><%= o.business_name || '' %><%= o.city_name ? ' &#183; ' + o.city_name : '' %></p>
                   <span class="collection-item-meta"><%= o.discount_type === 'percentage' ? '-' + o.discount_value + '%' : '-' + o.discount_value + ' RON' %></span>
                 </div>
               </a>

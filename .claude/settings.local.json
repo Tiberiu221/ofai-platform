@@ -56,7 +56,13 @@
       "Bash(railway status:*)",
       "WebFetch(domain:dns.google)",
       "Bash(head:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: Unicode escape chars in business-detail + colectia-mea server-side rendering\n\n- Replace \\\\u0103, \\\\u0219 etc. with real UTF-8 Romanian characters in business-detail.ejs\n- Rewrite colectia-mea.ejs to render server-side data instead of calling non-existent GET API endpoints\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git log:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:ofai-production.up.railway.app)"
     ]
   }
 }
