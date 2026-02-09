@@ -184,6 +184,59 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════
+     TOP BUSINESSES
+     ═══════════════════════════════════════════════════════ -->
+<% if (topBusinesses && topBusinesses.length > 0) { %>
+<section class="section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">🏢 Business-uri</div>
+      <h2 class="section-title text-gradient">Business-uri populare</h2>
+      <p class="section-subtitle">Descoperă cele mai active business-uri de pe platformă</p>
+    </div>
+
+    <div class="businesses-grid">
+      <% topBusinesses.forEach((biz, i) => { %>
+        <a href="/business/<%= biz.id %>" class="biz-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
+          <div class="biz-card-cover">
+            <% if (biz.cover_image_url) { %>
+              <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" loading="lazy">
+            <% } %>
+          </div>
+          <div class="biz-card-avatar">
+            <% if (biz.logo_url) { %>
+              <img src="<%= biz.logo_url %>" alt="<%= biz.name %>">
+            <% } else { %>
+              <span class="biz-card-letter"><%= biz.name.charAt(0) %></span>
+            <% } %>
+          </div>
+          <div class="biz-card-body">
+            <div class="biz-card-name"><%= biz.name %></div>
+            <% if (parseFloat(biz.rating_avg) > 0) { %>
+              <div class="biz-card-rating">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span><%= parseFloat(biz.rating_avg).toFixed(1) %></span>
+                <span class="biz-card-rating-count">(<%= biz.rating_count %>)</span>
+              </div>
+            <% } %>
+            <div class="biz-card-meta">
+              <% if (biz.category_name) { %>
+                <span class="biz-card-tag"><%= biz.category_name %></span>
+              <% } %>
+              <% if (biz.city_name) { %>
+                <span class="biz-card-tag"><%= biz.city_name %></span>
+              <% } %>
+            </div>
+            <div class="biz-card-offers"><%= biz.offer_count %> oferte active</div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
      HOW IT WORKS
      ═══════════════════════════════════════════════════════ -->
 <section class="section" id="how-it-works">

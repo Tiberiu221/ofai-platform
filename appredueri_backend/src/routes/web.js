@@ -90,6 +90,23 @@ router.get("/", async (req, res) => {
       LIMIT 20
     `);
 
+    const topBusinesses = await pool.query(`
+      SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+             ci.name as city_name, cat.name as category_name,
+             COALESCE(AVG(r.rating), 0) as rating_avg,
+             COUNT(DISTINCT r.id) as rating_count,
+             COUNT(DISTINCT o.id) as offer_count
+      FROM businesses b
+      LEFT JOIN cities ci ON b.city_id = ci.id
+      LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN reviews r ON r.business_id = b.id
+      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, ci.name, cat.name
+      HAVING COUNT(DISTINCT o.id) > 0
+      ORDER BY COUNT(DISTINCT o.id) DESC, COALESCE(AVG(r.rating), 0) DESC
+      LIMIT 8
+    `);
+
     const stats = {
       totalBusinesses: parseInt(bizCount.rows[0].total),
       totalOffers: parseInt(offerCount.rows[0].total),
@@ -103,6 +120,7 @@ router.get("/", async (req, res) => {
       featuredOffers: featuredOffers.rows,
       cities: cities.rows,
       featuredBusinesses: featuredBusinesses.rows,
+      topBusinesses: topBusinesses.rows,
       activePage: "home",
       webUser: req.webUser,
     });
