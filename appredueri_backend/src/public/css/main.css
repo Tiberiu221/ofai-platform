@@ -749,6 +749,7 @@ ul, ol { list-style: none; }
   font-weight: 700;
   font-size: 0.8125rem;
   z-index: 2;
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
 }
@@ -1503,6 +1504,7 @@ ul, ol { list-style: none; }
   background: var(--bg-glass-solid);
   border: 1px solid var(--border);
   border-radius: 12px;
+  -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   color: var(--text-primary);
   font-size: 0.9rem;
@@ -1610,6 +1612,7 @@ ul, ol { list-style: none; }
   height: 44px;
   border-radius: 12px;
   background: rgba(255,255,255,0.1);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.15);
   color: white;

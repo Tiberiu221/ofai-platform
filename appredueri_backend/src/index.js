@@ -32,6 +32,11 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const isProduction = process.env.NODE_ENV === "production";
 
+// Trust proxy — necesar pentru Railway/Cloudflare (corect req.secure, req.ip, cookies Secure)
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
 // ============================================
 // SENTRY INITIALIZATION (must be first!)
 // ============================================
