@@ -13,6 +13,17 @@ const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email"
 const { triggerWebhook } = require("../services/n8n");
 const { sanitizeString } = require("../helpers/validate");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
+const multer = require("multer");
+const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
+
+const portalUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) return cb(new Error("Doar imagini sunt permise"));
+    cb(null, true);
+  }
+});
 
 const SALT_ROUNDS = 10;
 
@@ -1029,6 +1040,82 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
 // ═══════════════════════════════════════════════════════
 // BUSINESS PORTAL AJAX ENDPOINTS
 // ═══════════════════════════════════════════════════════
+
+// Upload logo
+router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, portalUpload.single("logo"), async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
+
+    const oldRes = await pool.query("SELECT logo_url FROM businesses WHERE id = $1", [businessId]);
+    if (oldRes.rows[0]?.logo_url) {
+      const oldId = getPublicIdFromUrl(oldRes.rows[0].logo_url);
+      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, "logo");
+    await pool.query("UPDATE businesses SET logo_url = $1 WHERE id = $2", [result.url, businessId]);
+    res.json({ success: true, url: result.url });
+  } catch (err) {
+    console.error("[Web API] Portal upload logo error:", err);
+    res.status(500).json({ message: "Eroare la upload" });
+  }
+});
+
+// Upload cover
+router.post("/api/web/portal/:businessId/cover", requireBusinessOwner, portalUpload.single("cover"), async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
+
+    const oldRes = await pool.query("SELECT cover_image_url FROM businesses WHERE id = $1", [businessId]);
+    if (oldRes.rows[0]?.cover_image_url) {
+      const oldId = getPublicIdFromUrl(oldRes.rows[0].cover_image_url);
+      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, "cover");
+    await pool.query("UPDATE businesses SET cover_image_url = $1 WHERE id = $2", [result.url, businessId]);
+    res.json({ success: true, url: result.url });
+  } catch (err) {
+    console.error("[Web API] Portal upload cover error:", err);
+    res.status(500).json({ message: "Eroare la upload" });
+  }
+});
+
+// Delete logo
+router.delete("/api/web/portal/:businessId/logo", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const oldRes = await pool.query("SELECT logo_url FROM businesses WHERE id = $1", [businessId]);
+    if (oldRes.rows[0]?.logo_url) {
+      const oldId = getPublicIdFromUrl(oldRes.rows[0].logo_url);
+      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+    }
+    await pool.query("UPDATE businesses SET logo_url = NULL WHERE id = $1", [businessId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal delete logo error:", err);
+    res.status(500).json({ message: "Eroare" });
+  }
+});
+
+// Delete cover
+router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const oldRes = await pool.query("SELECT cover_image_url FROM businesses WHERE id = $1", [businessId]);
+    if (oldRes.rows[0]?.cover_image_url) {
+      const oldId = getPublicIdFromUrl(oldRes.rows[0].cover_image_url);
+      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+    }
+    await pool.query("UPDATE businesses SET cover_image_url = NULL WHERE id = $1", [businessId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal delete cover error:", err);
+    res.status(500).json({ message: "Eroare" });
+  }
+});
 
 // Update business info
 router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
