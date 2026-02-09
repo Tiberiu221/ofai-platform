@@ -286,7 +286,6 @@ router.get("/oferta/:id", async (req, res) => {
 
     let locations = [];
     const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
-      bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
       c.name as city_name
       FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id`;
 
@@ -391,19 +390,18 @@ router.get("/business/:id", async (req, res) => {
 
     // Images
     const imagesRes = await pool.query(
-      "SELECT id, image_filename, sort_order FROM business_images WHERE business_id = $1 ORDER BY sort_order NULLS LAST, id ASC",
+      "SELECT id, image_url, image_filename, sort_order FROM business_images WHERE business_id = $1 ORDER BY sort_order NULLS LAST, id ASC",
       [id]
     );
     const images = imagesRes.rows.map(img => ({
       id: img.id,
-      url: `/uploads/businesses/${img.image_filename}`,
+      url: img.image_url || (img.image_filename ? `/uploads/businesses/${img.image_filename}` : null),
       sort_order: img.sort_order,
-    }));
+    })).filter(img => img.url);
 
     // Locations
     const locationsRes = await pool.query(`
       SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
-             bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
              c.id as city_id, c.name as city_name
       FROM business_locations bl
       LEFT JOIN cities c ON bl.city_id = c.id
@@ -415,9 +413,8 @@ router.get("/business/:id", async (req, res) => {
       locations = locationsRes.rows.map(row => ({
         id: row.id, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
         city: { id: row.city_id, name: row.city_name },
-        booking_type: row.booking_type || 'none',
-        booking_phone: row.booking_phone, booking_whatsapp: row.booking_whatsapp,
-        booking_url: row.booking_url, booking_instructions: row.booking_instructions,
+        booking_type: 'none', booking_phone: null, booking_whatsapp: null,
+        booking_url: null, booking_instructions: null,
       }));
     } else if (b.address) {
       locations = [{ id: 'main', address: b.address, lat: b.lat, lng: b.lng, phone: b.phone,
