@@ -62,6 +62,19 @@
   <% } %>
 
   <!-- ═══════════════════════════════════════════════════════
+       SORT BAR
+       ═══════════════════════════════════════════════════════ -->
+  <div class="sort-bar">
+    <span class="sort-bar-label">Sortare:</span>
+    <a href="/oferte?sort=newest<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'newest' ? ' active' : '' %>">Cele mai noi</a>
+    <a href="/oferte?sort=popular<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'popular' ? ' active' : '' %>">Populare</a>
+    <a href="/oferte?sort=discount<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'discount' ? ' active' : '' %>">Reducere mare</a>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
        OFFERS GRID
        ═══════════════════════════════════════════════════════ -->
   <% if (offers.length === 0) { %>
@@ -90,9 +103,21 @@
               <% } %>
             </div>
           </div>
+          <% if (offer.business_logo) { %>
+            <div class="offer-logo-overlay">
+              <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" loading="lazy">
+            </div>
+          <% } %>
           <div class="offer-content">
             <div class="offer-business"><%= offer.business_name %></div>
             <div class="offer-title"><%= offer.title %></div>
+            <% if (parseFloat(offer.rating_avg) > 0) { %>
+              <div class="offer-rating">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span><%= parseFloat(offer.rating_avg).toFixed(1) %></span>
+                <span class="offer-rating-count">(<%= offer.rating_count %>)</span>
+              </div>
+            <% } %>
             <div class="offer-meta">
               <span class="offer-meta-item">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -112,7 +137,7 @@
     <% if (totalPages > 1) { %>
       <div style="display: flex; justify-content: center; gap: 8px; padding: 48px 0 80px;">
         <% for (let p = 1; p <= Math.min(totalPages, 10); p++) { %>
-          <a href="/oferte?page=<%= p %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+          <a href="/oferte?page=<%= p %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %><%= selectedSort && selectedSort !== 'newest' ? '&sort=' + selectedSort : '' %>"
              class="filter-pill<%= currentPage == p ? ' active' : '' %>"
              style="min-width: 40px; justify-content: center;">
             <%= p %>

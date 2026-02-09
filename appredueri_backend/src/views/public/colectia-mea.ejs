@@ -25,6 +25,12 @@
       </button>
     </div>
 
+    <!-- Search bar -->
+    <div class="collection-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="collection-search-input" placeholder="Caut&#259; &#238;n colec&#539;ie..." autocomplete="off">
+    </div>
+
     <!-- Businesses Tab -->
     <div class="collection-panel" id="panel-businesses">
       <% if (subscriptions.length === 0) { %>
@@ -36,22 +42,38 @@
       <% } else { %>
         <div class="collection-grid" id="businesses-grid">
           <% subscriptions.forEach(function(b) { %>
-            <div class="collection-item" id="biz-<%= b.id %>">
-              <a href="/business/<%= b.id %>" class="collection-item-link">
-                <div class="collection-item-avatar">
-                  <% if (b.logo_url) { %>
-                    <img src="<%= b.logo_url %>" alt="<%= b.name %>" loading="lazy">
-                  <% } else { %>
-                    <span><%= b.name.charAt(0) %></span>
+            <div class="collection-item collection-biz-card" id="biz-<%= b.id %>" data-name="<%= (b.name || '').toLowerCase() %>" data-city="<%= (b.city_name || '').toLowerCase() %>" data-category="<%= (b.category_name || '').toLowerCase() %>">
+              <a href="/business/<%= b.id %>" class="collection-card-link">
+                <div class="collection-card-cover">
+                  <% if (b.cover_image_url) { %>
+                    <img src="<%= b.cover_image_url %>" alt="<%= b.name %>" loading="lazy">
+                  <% } %>
+                  <div class="collection-card-cover-gradient"></div>
+                  <% if (b.active_offers_count > 0) { %>
+                    <span class="collection-offers-badge"><%= b.active_offers_count %> ofert<%= b.active_offers_count == 1 ? '&#259;' : 'e' %></span>
                   <% } %>
                 </div>
-                <div class="collection-item-info">
-                  <h3><%= b.name %></h3>
-                  <p><%= b.category_name || '' %><%= b.city_name ? ' &#183; ' + b.city_name : '' %></p>
-                  <span class="collection-item-meta"><%= b.active_offers_count || 0 %> oferte active</span>
+                <div class="collection-card-body">
+                  <div class="collection-card-avatar">
+                    <% if (b.logo_url) { %>
+                      <img src="<%= b.logo_url %>" alt="<%= b.name %>" loading="lazy">
+                    <% } else { %>
+                      <span><%= b.name.charAt(0) %></span>
+                    <% } %>
+                  </div>
+                  <div class="collection-card-info">
+                    <h3><%= b.name %></h3>
+                    <% if (parseFloat(b.rating_avg) > 0) { %>
+                      <div class="collection-card-rating">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <span><%= parseFloat(b.rating_avg).toFixed(1) %></span>
+                      </div>
+                    <% } %>
+                    <p class="collection-card-meta"><%= b.category_name || '' %><%= b.city_name ? ' &#183; ' + b.city_name : '' %></p>
+                  </div>
                 </div>
               </a>
-              <button class="btn btn-ghost collection-remove-btn" onclick="unfollowBusiness(<%= b.id %>)">
+              <button class="btn btn-ghost collection-remove-btn" onclick="unfollowBusiness(<%= b.id %>)" title="Nu mai urm&#259;ri">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -69,24 +91,31 @@
           <a href="/oferte" class="btn btn-primary">Exploreaz&#259; oferte</a>
         </div>
       <% } else { %>
-        <div class="collection-grid" id="offers-grid">
+        <div class="collection-grid collection-offers-grid" id="offers-grid">
           <% favorites.forEach(function(o) { %>
-            <div class="collection-item" id="fav-<%= o.id %>">
-              <a href="/oferta/<%= o.id %>" class="collection-item-link">
-                <div class="collection-item-avatar offer-avatar">
+            <div class="collection-item collection-offer-card" id="fav-<%= o.id %>" data-name="<%= (o.title || '').toLowerCase() %>" data-business="<%= (o.business_name || '').toLowerCase() %>" data-city="<%= (o.city_name || '').toLowerCase() %>">
+              <a href="/oferta/<%= o.id %>" class="collection-card-link">
+                <div class="collection-card-cover">
                   <% if (o.image_url) { %>
                     <img src="<%= o.image_url %>" alt="<%= o.title %>" loading="lazy">
-                  <% } else { %>
-                    <span>%</span>
                   <% } %>
+                  <div class="collection-card-cover-gradient"></div>
+                  <span class="collection-discount-badge">
+                    <% if (o.discount_type === 'percent') { %>
+                      -<%= o.discount_value %>%
+                    <% } else { %>
+                      -<%= o.discount_value %> RON
+                    <% } %>
+                  </span>
                 </div>
-                <div class="collection-item-info">
-                  <h3><%= o.title %></h3>
-                  <p><%= o.business_name || '' %><%= o.city_name ? ' &#183; ' + o.city_name : '' %></p>
-                  <span class="collection-item-meta"><%= o.discount_type === 'percentage' ? '-' + o.discount_value + '%' : '-' + o.discount_value + ' RON' %></span>
+                <div class="collection-card-body" style="padding-top: 14px;">
+                  <div class="collection-card-info" style="padding-left: 0;">
+                    <h3><%= o.title %></h3>
+                    <p class="collection-card-meta"><%= o.business_name || '' %><%= o.city_name ? ' &#183; ' + o.city_name : '' %></p>
+                  </div>
                 </div>
               </a>
-              <button class="btn btn-ghost collection-remove-btn" onclick="removeFavorite(<%= o.id %>)">
+              <button class="btn btn-ghost collection-remove-btn" onclick="removeFavorite(<%= o.id %>)" title="Elimin&#259; din favorite">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -98,13 +127,243 @@
   </div>
 </section>
 
+<style>
+  .collection-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+    transition: border-color 0.2s;
+  }
+  .collection-search:focus-within {
+    border-color: var(--accent);
+  }
+  .collection-search input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-family: inherit;
+  }
+  .collection-search input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .collection-item {
+    position: relative;
+  }
+
+  .collection-card-link {
+    display: block;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    transition: all 0.3s var(--ease-smooth);
+  }
+  .collection-card-link:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  }
+
+  .collection-card-cover {
+    position: relative;
+    height: 120px;
+    background: linear-gradient(135deg, rgba(251,146,60,0.1) 0%, var(--bg-surface) 100%);
+    overflow: hidden;
+  }
+  .collection-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s var(--ease-smooth);
+  }
+  .collection-card-link:hover .collection-card-cover img {
+    transform: scale(1.05);
+  }
+  .collection-card-cover-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(6,6,10,0.7) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .collection-offers-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 3px 10px;
+    background: var(--accent-muted);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+    z-index: 2;
+  }
+
+  .collection-discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 12px;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(251,146,60,0.3);
+  }
+
+  .collection-card-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .collection-card-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -32px;
+    border: 2px solid var(--bg-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 2;
+  }
+  .collection-card-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .collection-card-avatar span {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 1rem;
+  }
+
+  .collection-card-info {
+    min-width: 0;
+    flex: 1;
+  }
+  .collection-card-info h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .collection-card-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+  .collection-card-meta {
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .collection-remove-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(9,9,11,0.7);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+    z-index: 3;
+    opacity: 0;
+    transition: all 0.2s;
+  }
+  .collection-item:hover .collection-remove-btn {
+    opacity: 1;
+  }
+  .collection-remove-btn:hover {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+  }
+
+  .collection-no-results {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--text-tertiary);
+    font-size: 0.9375rem;
+    display: none;
+  }
+
+  @media (max-width: 600px) {
+    .collection-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
 <script>
   function switchCollectionTab(tab) {
     document.querySelectorAll('.collection-tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
     document.getElementById('panel-businesses').style.display = tab === 'businesses' ? '' : 'none';
     document.getElementById('panel-offers').style.display = tab === 'offers' ? '' : 'none';
+    document.getElementById('collection-search-input').value = '';
+    filterCollection('');
   }
+
+  function filterCollection(query) {
+    var q = query.toLowerCase().trim();
+    var activePanel = document.querySelector('.collection-panel:not([style*="display: none"])') || document.getElementById('panel-businesses');
+    var items = activePanel.querySelectorAll('.collection-item');
+    var visibleCount = 0;
+    items.forEach(function(item) {
+      var name = item.getAttribute('data-name') || '';
+      var city = item.getAttribute('data-city') || '';
+      var category = item.getAttribute('data-category') || '';
+      var business = item.getAttribute('data-business') || '';
+      var match = !q || name.indexOf(q) !== -1 || city.indexOf(q) !== -1 || category.indexOf(q) !== -1 || business.indexOf(q) !== -1;
+      item.style.display = match ? '' : 'none';
+      if (match) visibleCount++;
+    });
+  }
+
+  document.getElementById('collection-search-input').addEventListener('input', function() {
+    filterCollection(this.value);
+  });
 
   async function unfollowBusiness(id) {
     try {
@@ -112,7 +371,7 @@
       if (res.status === 401) { window.location.href = '/login'; return; }
       var el = document.getElementById('biz-' + id);
       if (el) el.remove();
-      if (typeof showToast === 'function') showToast('Business eliminat din colecție');
+      if (typeof showToast === 'function') showToast('Business eliminat din colec\u021Bie');
     } catch(e) { console.error(e); }
   }
 
@@ -122,7 +381,7 @@
       if (res.status === 401) { window.location.href = '/login'; return; }
       var el = document.getElementById('fav-' + id);
       if (el) el.remove();
-      if (typeof showToast === 'function') showToast('Oferta eliminată din favorite');
+      if (typeof showToast === 'function') showToast('Oferta eliminat\u0103 din favorite');
     } catch(e) { console.error(e); }
   }
 </script>

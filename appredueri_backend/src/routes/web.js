@@ -56,12 +56,18 @@ router.get("/", async (req, res) => {
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
              ci.name as city_name, cat.name as category_name,
-             COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url
+             COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
+             COALESCE(AVG(r.rating), 0) as rating_avg,
+             COUNT(r.id) as rating_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN reviews r ON r.business_id = b.id
       WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
+      GROUP BY o.id, o.title, o.discount_type, o.discount_value,
+               b.name, b.logo_url, b.cover_image_url,
+               ci.name, cat.name, o.logo_url
       ORDER BY o.discount_value DESC
       LIMIT 5
     `);
@@ -116,6 +122,7 @@ router.get("/oferte", async (req, res) => {
     const query = req.query.q || "";
     const selectedCategory = req.query.category || null;
     const selectedCity = req.query.city || null;
+    const sort = req.query.sort || "newest";
 
     const conditions = ["o.is_active = true", "o.end_date >= CURRENT_DATE"];
     const params = [];
@@ -148,18 +155,31 @@ router.get("/oferte", async (req, res) => {
     const totalOffers = parseInt(countResult.rows[0].total);
     const totalPages = Math.ceil(totalOffers / limit);
 
+    const sortOptions = {
+      newest: "o.created_at DESC",
+      popular: "rating_avg DESC, rating_count DESC",
+      discount: "o.discount_value DESC",
+    };
+    const orderBy = sortOptions[sort] || sortOptions.newest;
+
     const offersResult = await pool.query(
       `SELECT o.id, o.title, o.discount_type, o.discount_value,
               b.name as business_name, b.logo_url as business_logo,
               b.cover_image_url as business_cover,
               ci.name as city_name, cat.name as category_name,
-              COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url
+              COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
+              COALESCE(AVG(r.rating), 0) as rating_avg,
+              COUNT(r.id) as rating_count
        FROM offers o
        JOIN businesses b ON o.business_id = b.id
        LEFT JOIN cities ci ON b.city_id = ci.id
        LEFT JOIN categories cat ON b.category_id = cat.id
+       LEFT JOIN reviews r ON r.business_id = b.id
        WHERE ${whereClause}
-       ORDER BY o.discount_value DESC
+       GROUP BY o.id, o.title, o.discount_type, o.discount_value,
+                b.name, b.logo_url, b.cover_image_url,
+                ci.name, cat.name, o.logo_url, o.created_at
+       ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
     );
@@ -189,6 +209,7 @@ router.get("/oferte", async (req, res) => {
       query,
       selectedCategory,
       selectedCity,
+      selectedSort: sort,
       activePage: "oferte",
       webUser: req.webUser,
     });
@@ -262,7 +283,9 @@ router.get("/oferta/:id", async (req, res) => {
     const specificLocationIds = linkRes.rows.map(r => r.location_id);
 
     let locations = [];
-    const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone, c.name as city_name
+    const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+      bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
+      c.name as city_name
       FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id`;
 
     if (specificLocationIds.length > 0) {
@@ -311,6 +334,9 @@ router.get("/oferta/:id", async (req, res) => {
       },
       locations: locations.map(l => ({
         id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, cityName: l.city_name,
+        booking_type: l.booking_type || 'none',
+        booking_phone: l.booking_phone, booking_whatsapp: l.booking_whatsapp,
+        booking_url: l.booking_url, booking_instructions: l.booking_instructions,
       })),
     };
 
@@ -334,7 +360,7 @@ router.get("/business/:id", async (req, res) => {
     const { id } = req.params;
 
     const businessRes = await pool.query(`
-      SELECT b.id, b.name, b.address, b.phone, b.website, b.lat, b.lng,
+      SELECT b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,
              b.logo_url, b.cover_image_url,
              b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
              c.id as city_id, c.name as city_name,
@@ -375,6 +401,7 @@ router.get("/business/:id", async (req, res) => {
     // Locations
     const locationsRes = await pool.query(`
       SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+             bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
              c.id as city_id, c.name as city_name
       FROM business_locations bl
       LEFT JOIN cities c ON bl.city_id = c.id
@@ -386,10 +413,14 @@ router.get("/business/:id", async (req, res) => {
       locations = locationsRes.rows.map(row => ({
         id: row.id, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
         city: { id: row.city_id, name: row.city_name },
+        booking_type: row.booking_type || 'none',
+        booking_phone: row.booking_phone, booking_whatsapp: row.booking_whatsapp,
+        booking_url: row.booking_url, booking_instructions: row.booking_instructions,
       }));
     } else if (b.address) {
       locations = [{ id: 'main', address: b.address, lat: b.lat, lng: b.lng, phone: b.phone,
-        city: { id: b.city_id, name: b.city_name } }];
+        city: { id: b.city_id, name: b.city_name },
+        booking_type: 'none', booking_phone: null, booking_whatsapp: null, booking_url: null, booking_instructions: null }];
     }
 
     // Active offers
@@ -444,6 +475,7 @@ router.get("/business/:id", async (req, res) => {
     const business = {
       id: b.id,
       name: b.name,
+      description: b.description,
       address: b.address,
       phone: b.phone,
       website: b.website,
