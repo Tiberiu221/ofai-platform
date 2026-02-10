@@ -33,3 +33,6 @@ Thumbs.db
 # Build
 dist/
 build/
+
+# Scraping data (large JSON files)
+scripts/scraping/data/

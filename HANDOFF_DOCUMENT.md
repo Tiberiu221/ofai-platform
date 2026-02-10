@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 9 Februarie 2026 (Actualizat v6 — Feature Parity & Visual Polish)
+## Data: 10 Februarie 2026 (Actualizat v9 — Mobile Performance Audit + UI Library Research)
 
 ---
 
@@ -101,7 +101,19 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │       ├── css/main.css       # Design system complet (~2850+ linii)
 │   │       └── js/main.js         # Navbar, scroll reveal, counters, favorites, follow, geolocation+distance
 │   ├── scripts/                   # Batch jobs, monitoring
-│   └── migrations/                # SQL migrations
+│   │   ├── seed-businesses.js     # Seed 450 business-uri fictive (DiceBear + Picsum)
+│   │   ├── cleanup-seed.js        # Ștergere seed-uri vechi
+│   │   ├── verify-seed.js         # Verificare distribuție seed
+│   │   └── scraping/              # ★ NOU — Pipeline Playwright + OpenRouter
+│   │       ├── config.js          # Configurare centralizată
+│   │       ├── utils.js           # Utilități (retry, phone normalizer)
+│   │       ├── state.js           # Resume state manager (crash recovery)
+│   │       ├── 01-scrape.js       # Faza 1: Playwright → Google Maps → JSON local
+│   │       ├── 02-enrich-and-insert.js  # Faza 2: OpenRouter LLM → PostgreSQL
+│   │       ├── 03-verify.js       # Verificare calitate date scrapate
+│   │       ├── 04-cleanup.js      # Ștergere date scrapate (source='scraped')
+│   │       └── data/              # (gitignored) raw JSON + state + costs
+│   └── migrations/                # SQL migrations (latest: 012_add_source_column)
 │
 └── n8n-workflows/                 # Exportabile .json pentru n8n
     └── WF1_New_Review_Notify_Owner.json
@@ -141,6 +153,7 @@ RESEND_API_KEY=re_xxxxxxxxx
 FROM_EMAIL=OFAI <noreply@ofai.ro>
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxx
 N8N_WEBHOOK_URL=https://n8n-production-d2f4.up.railway.app
+OPENROUTER_KEY=sk-or-v1-xxxxxxxx   # Pentru scraping pipeline LLM enrichment
 ```
 
 ### Railway Cron Job
@@ -241,44 +254,67 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 
 ## CE TREBUIE FACUT / CUNOSCUT
 
-### ⚠️ PROBLEMA ACTIVA: Safari/iOS nu acceseaza ofai.ro
+### ⚠️ PROBLEMA ACTIVA: Railway/ofai.ro down
+**Status:** Railway returnează "Not Found" pe ofai.ro (observat 10 Feb 2026).
+Posibil: service crash, deploy failure, sau custom domain issue.
+**Acțiune:** Verifică Railway Dashboard pentru status serviciu.
 
-**Simptom:** `ERR_NAME_NOT_RESOLVED` pe `www.ofai.ro` din Safari iOS
-**Cauza:** Safari pe iOS adauga automat `www.` prefix. Railway trebuie sa recunoasca domeniul `www.ofai.ro`.
-**Status DNS:** Cloudflare rezolva corect AMBELE (`@` si `www` → Railway IPs) ✅
-**Problema:** Railway returneaza **404** pe `www.ofai.ro` (nu recunoaste domeniul)
-
-**SOLUTIE:** In **Railway Dashboard** → proiect → Settings → Networking → Custom Domains:
-- Adauga `www.ofai.ro` ca al doilea custom domain (pe langa `ofai.ro` existent)
-- Optional: Adauga Cloudflare Page Rule: `www.ofai.ro/*` → 301 redirect → `https://ofai.ro/$1`
+### 1. Scraping Pipeline (NOU — gata de rulat)
+Pipeline complet Playwright + OpenRouter pentru business-uri reale din Google Maps:
+```bash
+cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
+# Adaugă OPENROUTER_KEY în .env (de pe openrouter.ai/keys)
+npm run scrape           # Faza 1: ~3-4 ore, resumable
+npm run scrape:enrich    # Faza 2: ~10-20 min, cost ~$0.10
+npm run scrape:verify    # Verificare calitate
+npm run scrape:cleanup   # Ștergere dacă e nevoie
+```
+Business-urile scrapate au `source='scraped'` în DB. Seed-urile au `source='seed'`.
 
 ### 2. n8n Workflows de implementat
 WF1 (New Review → Email Owner) este complet. Restul:
 - **WF2:** New Offer → Push notification la followers
 - **WF3:** Daily digest (oferte noi din ziua precedenta)
-- **WF4:** Review reminder (dupa vizita/achizitie)
-- **WF5:** Welcome series (drip emails dupa inregistrare)
-- **WF6:** Admin alerts (business nou, review negativ)
+- **WF4-WF6:** Review reminder, Welcome series, Admin alerts
 
 ### 3. Footer link-uri
 Link-urile din footer sunt pe `#` — trebuie actualizate la paginile EJS existente.
 
 ### 4. Galerie imagini business
-Business-urile au si `business_images` (galerie) pe langa logo/cover. Galeria NU este inca in portal manage page. Doar logo si cover au upload/delete.
+`business_images` (galerie) NU este inca in portal manage page. Doar logo si cover au upload/delete.
 
 ### 5. Oferte Nu Apar
 Ofertele trebuie sa aiba `is_active = TRUE` si `end_date >= CURRENT_DATE`:
 ```sql
 UPDATE offers SET end_date = '2026-12-31' WHERE end_date < CURRENT_DATE;
-UPDATE offers SET is_active = TRUE WHERE is_active = FALSE;
 ```
 
-### 6. Seed Production Database
-Scriptul de seed pentru business-uri:
+### 6. Seed + Scraping Production Database
 ```bash
 cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
-DATABASE_URL="postgres://postgres:REDACTED@REDACTED_DB_HOST/railway" node scripts/seed-businesses.js
+# Seed fictiv (450 business-uri DiceBear/Picsum):
+DATABASE_URL="postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway" NODE_ENV=production node scripts/seed-businesses.js
+# Cleanup seed:
+DATABASE_URL="..." NODE_ENV=production node scripts/cleanup-seed.js
+# Scraping real (vezi pas 1 mai sus)
 ```
+
+### 8. Mobile Performance Fix (auditat, neimplementat — Faza 5)
+Audit complet făcut. Probleme principale pe Android:
+- **FlatList** → înlocuiește cu `@shopify/flash-list` v2 (54% FPS boost)
+- **Image din RN** → înlocuiește cu `expo-image` (cache nativ Glide pe Android)
+- **Animated API** → înlocuiește cu `react-native-reanimated` v4 (deja instalat!)
+- **React.memo** lipsește pe OfferCard, BusinessCard, CategoryChip
+- Contrast slab: textMuted (#52525b) pe card bg (#0d0d12) — trebuie mai deschis
+- Opțional: Unistyles 3.0 pentru C++ style computation (off JS thread)
+
+### 9. Pricing Model (researched, neimplementat)
+Recomandare: Freemium + 3 tiers subscripție:
+- **Gratuit:** 0 RON — profil + 1 ofertă/lună
+- **Start:** 49 RON/lună — 5 oferte, analytics, priority
+- **Professional:** 99 RON/lună — nelimitat, featured, push
+- **Premium:** 199 RON/lună — multi-locație, banner, account manager
+- **Pay-per-offer:** 29 RON/ofertă individuală
 
 ---
 
@@ -433,6 +469,27 @@ git push
 # Railway se actualizeaza automat
 ```
 
+### Scraping Pipeline
+```bash
+cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
+npm run scrape              # Faza 1: Playwright → Google Maps (~3-4 ore, resumable)
+npm run scrape:enrich       # Faza 2: OpenRouter LLM → DB (~10-20 min, ~$0.10)
+npm run scrape:verify       # Verificare calitate
+npm run scrape:cleanup      # Ștergere dacă e nevoie
+# Debug (vezi browser): SCRAPE_HEADLESS=false npm run scrape
+```
+
+### Seed Management
+```bash
+cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
+# Seed 450 fictive:
+DATABASE_URL="..." NODE_ENV=production node scripts/seed-businesses.js
+# Cleanup seed:
+DATABASE_URL="..." NODE_ENV=production node scripts/cleanup-seed.js
+# Verify:
+DATABASE_URL="..." NODE_ENV=production node scripts/verify-seed.js
+```
+
 ### Database (Railway Production)
 ```bash
 psql "postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway"
@@ -517,34 +574,185 @@ Workflows active: WF1 (new-review → email owner)
 - [x] SQL fix: removed non-existent o.created_at column
 - [x] Visual polish: sort bar, filter bar, collection tabs, offer card layout
 
-### Faza 4 - Monetizare (TODO)
-- [ ] Stripe integration
-- [ ] Planuri pentru business-uri
-- [ ] Dashboard analytics
-- [ ] Featured offers
+### Faza 4 - Mobile UX Redesign (COMPLETA - v7)
+- [x] Home screen: scroll redus de la 1047px la ~286px pana la prima oferta
+- [x] CategoryChip (pill-shaped 34px) in loc de CategoryCard (140px)
+- [x] Inline dismissible banners (48px) in loc de full-height cards (200px)
+- [x] NeonSearchBar: animated border glow (pulse idle + focus glow)
+- [x] OfferCard compactat: 280→200px featured, 16/9 aspect ratio
+- [x] Removed: stats row, redundant SectionHeaders, floating CTA
+- [x] Fix: useNativeDriver conflict (dual Animated.View wrapper)
 
-### Faza 5 - Scalare (TODO)
+### Faza 4.5 - Seed Rewrite + Scraping Pipeline (COMPLETA - v8)
+- [x] Seed rewrite: 450 business-uri complete (15 orașe × 15 categorii × 2)
+- [x] Toate câmpurile completate: description, booking_instructions, offer descriptions
+- [x] Cleanup + verify scripts
+- [x] DB migration: `source` column pe businesses (manual/seed/scraped)
+- [x] Scraping pipeline Playwright + OpenRouter (7 fișiere)
+  - Phase 1: Playwright headless → Google Maps → JSON local (resumable)
+  - Phase 2: DeepSeek LLM enrichment → PostgreSQL insert
+  - Phase 3: Verify + Cleanup scripts
+- [x] Cost estimat scraping: ~$0.10 (doar OpenRouter tokens)
+
+### Faza 5 - Mobile Performance & Visual Polish (TODO — v9, recomandat ca următoare)
+**Audit complet făcut. Recomandare aprobată. Abordare în 2 faze:**
+
+**Faza 5A — Quick Performance Wins (1-2 zile):**
+- [ ] `FlatList` → `@shopify/flash-list` v2 (54% FPS improvement pe Android)
+- [ ] `Image` din RN → `expo-image` peste tot (cache nativ, progressive loading)
+- [ ] `Animated` API → `react-native-reanimated` v4 (animații pe UI thread, nu bridge)
+- [ ] `React.memo` pe OfferCard, BusinessCard, CategoryChip (prevent re-renders)
+- [ ] Fix contrast: textMuted mai deschis, opacity disabled 0.35→0.5
+- [ ] Skeleton loaders pe ecranele de detaliu (business, offer)
+- [ ] Consistență spacing/typography (totul din theme.ts, nu hardcoded)
+- [ ] Consistență search bar styling între ecrane
+- [ ] Image placeholders (expo-image placeholder prop)
+- [ ] Fix: card/cardHover identice `rgba(255,255,255,0.03)` — diferențiere hover
+
+**Faza 5B — Unistyles 3.0 (opțional, 2-3 zile):**
+- [ ] Install `react-native-unistyles`
+- [ ] Creare Unistyles theme din `theme.ts` tokens (mapare aproape 1:1)
+- [ ] Migrare graduală `StyleSheet.create()` → `createStyleSheet()` per component
+- [ ] Câștig: computare stiluri în C++ (off JS thread), zero re-renders la theme switch
+
+**Librării evaluate și RESPINSE:**
+- NativeWind v4/v5 — bug-uri cu Expo SDK 54 + React 19 + Reanimated v4
+- Tamagui — rewrite complet UI, cost prea mare vs beneficiu
+- Gluestack v3 — depinde de NativeWind (aceleași probleme)
+- RN Paper (MD3) — impune Material Design, conflictă cu designul glassmorphic
+- react-native-reusables (shadcn) — depinde de NativeWind
+
+### Faza 6 - Monetizare (TODO)
+- [ ] Pricing: Freemium + 3 tiers (49/99/199 RON/lună) + pay-per-offer (29 RON)
+- [ ] Stripe integration
+- [ ] Dashboard analytics avansate
+- [ ] Featured/sponsored offers
+
+### Faza 7 - Scalare (TODO)
 - [ ] Self-service onboarding
 - [ ] Referral system
 - [ ] Deep links
-- [ ] Expansion in orase noi
 - [ ] n8n WF2-WF6
+- [ ] iOS Build (necesita Mac/Apple Developer $99/an)
+- [ ] Play Store publicare
 
 ---
 
 ## PRIORITATI URMATOARE
 
-1. **⚠️ Railway custom domain `www.ofai.ro`** — adauga in Railway Settings pentru a fixa Safari/iOS
-2. **Galerie imagini** — adauga upload/delete gallery images in portal manage page
-3. **Footer link-uri** — actualizeaza link-urile din footer.ejs (momentan pe #)
-4. **n8n WF2-WF6** — workflow-uri suplimentare
-5. **Seed production** — ruleaza seed-businesses.js pe production DB
-6. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
-7. **Play Store** — publicare APK pe Google Play
+1. **⚠️ Railway fix** — verifică de ce ofai.ro e down (Railway Dashboard)
+2. **📱 Mobile Performance (Faza 5A)** — FlashList + expo-image + Reanimated + React.memo (cel mai mare impact vizual)
+3. **Rulează scraping pipeline** — `npm run scrape` + `npm run scrape:enrich` pt date reale
+4. **📱 Unistyles 3.0 (Faza 5B, opțional)** — C++ style engine, zero-rerender themes
+5. **Monetizare** — implementează Stripe + pricing tiers (49/99/199 RON)
+6. **Galerie imagini** — upload/delete gallery images in portal
+7. **Footer link-uri** — actualizeaza link-urile din footer.ejs
+8. **n8n WF2-WF6** — workflow-uri suplimentare
+9. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
+10. **Play Store** — publicare APK pe Google Play
 
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 10 Februarie 2026 (v9 — Mobile Performance Audit + UI Library Research)
+
+**Audit complet al aplicației mobile + evaluare librării UI:**
+
+1. **Visual/UX Audit complet** (toate ecranele + componente)
+   - Probleme identificate: contrast slab (textMuted pe card bg), hardcoded spacing/colors
+   - Animated API vechi (bridge) în loc de Reanimated v4 (UI thread) — impact Android
+   - Image din react-native în loc de expo-image — lipsă cache nativ
+   - FlatList standard în loc de FlashList — 54% FPS loss pe Android
+   - Card/cardHover identice, shadow-uri iOS-only, search bars inconsistente între ecrane
+   - Lipsă skeleton loaders, image placeholders, loading states pe butoane
+
+2. **Evaluare 7 librării UI** pentru React Native / Expo SDK 54
+   - **Unistyles 3.0** — RECOMANDAT (C++ engine, lowest migration, best Android perf)
+   - **Custom Polish** — RECOMANDAT ca Faza 1 (FlashList + expo-image + Reanimated)
+   - NativeWind v4/v5 — RESPINS (bug-uri SDK 54 + React 19)
+   - Tamagui — RESPINS (rewrite complet, cost prea mare)
+   - Gluestack v3 — RESPINS (NativeWind dependency)
+   - RN Paper (MD3) — RESPINS (conflictă cu designul custom)
+   - react-native-reusables — RESPINS (NativeWind dependency)
+
+3. **Recomandare aprobată:** Abordare în 2 faze
+   - Faza 5A: Quick wins (FlashList, expo-image, Reanimated, React.memo, contrast fixes)
+   - Faza 5B: Unistyles 3.0 (opțional, C++ style computation)
+
+**Niciun fișier creat/modificat** — doar research și documentare
+
+---
+
+### 10 Februarie 2026 (v8 — Scraping Pipeline + Cleanup)
+
+**Sesiune scraping pipeline + documentație cleanup:**
+
+1. **Seed Rewrite** (complet, rulat pe producție)
+   - Șterse 1000 business-uri vechi, inserare 450 noi (15×15×2)
+   - Toate câmpurile completate: descriptions, booking, offers cu condiții
+   - cleanup-seed.js + verify-seed.js + verify-gaps.js create
+
+2. **Scraping Pipeline Playwright + OpenRouter** (complet, gata de rulat)
+   - 7 fișiere noi în `scripts/scraping/`
+   - Phase 1: Playwright headless Google Maps scraper cu stealth plugin
+   - Phase 2: DeepSeek LLM enrichment (descrieri RO, oferte, booking) → PostgreSQL
+   - Resume capability (crash recovery via state.json)
+   - Verify + cleanup scripts
+
+3. **DB Migration 012: source column**
+   - `businesses.source` = 'manual' / 'seed' / 'scraped'
+   - Rulat pe producție, 450 seed-uri taggate
+
+4. **Pricing Research** (neimplementat)
+   - Freemium + 3 tiers: 49/99/199 RON/lună
+   - Pay-per-offer: 29 RON/ofertă
+   - Boost add-ons: 19-79 RON
+
+5. **Documentație Cleanup**
+   - Șterse 10 fișiere .md outdated (PROJECT_NOTES, CHANGELOG_LLM, SETUP_COMPLETE, etc.)
+   - HANDOFF_DOCUMENT actualizat cu tot ce s-a implementat
+
+**Fișiere create:**
+- `scripts/scraping/{config,utils,state,01-scrape,02-enrich-and-insert,03-verify,04-cleanup}.js`
+- `scripts/{cleanup-seed,verify-seed,verify-gaps}.js`
+- `src/migrations/012_add_source_column.sql`
+
+**Fișiere modificate:**
+- `package.json` — adăugate playwright deps + npm scripts (scrape, scrape:enrich, etc.)
+- `.gitignore` — adăugat `scripts/scraping/data/`
+- `.env` — adăugat OPENROUTER_KEY
+
+**Fișiere șterse (.md cleanup):**
+- PROJECT_NOTES.md, CHANGELOG_LLM.md, LLM_INTEGRATION_GUIDE.md, REVIEWS_SUMMARIZATION_PLAN.md
+- SETUP_COMPLETE.md, directives/*, execution/*, .tmp/README.md, .cursor/plans/*
+
+---
+
+### 10 Februarie 2026 (v7 — Mobile UX Redesign)
+
+**Sesiune de redesign complet al home screen-ului mobil:**
+
+1. **Home Screen UX** — scroll redus de la 1047px la ~286px
+   - CategoryChip.tsx (NOU) — pill-shaped 34px în loc de CategoryCard 140px
+   - Inline dismissible banners (48px) cu AsyncStorage persist
+   - Compact header (greeting + search) în loc de hero section
+   - Sort pills în ScrollView horizontal
+   - Removed: stats row, floating CTA, redundant SectionHeaders
+
+2. **NeonSearchBar Revamp** — animații noi
+   - Idle: border pulses between border → borderAccent (2s sine cycle)
+   - Focus: border accent + scale 1.02x
+   - Dual Animated.View (native driver scale + JS driver borderColor)
+
+3. **OfferCard compactat**
+   - Featured height: 280→200px, Standard aspect: 16/9
+   - Content padding: 16→14, margin bottom: 14→12
+
+**Fișiere create:** `components/CategoryChip.tsx`
+**Fișiere modificate:** `app/(tabs)/index.tsx` (1390→1237 linii), `components/OfferCard.tsx`, `components/SectionHeader.tsx`, `components/HomeSkeleton.tsx`
+
+---
 
 ### 9 Februarie 2026 (v6 — Feature Parity & Visual Polish)
 
@@ -686,3 +894,15 @@ Setup initial proiect
    Distance se calculeaza client-side via `navigator.geolocation` + Haversine. Elementele `.offer-distance` sunt hidden by default, devin vizibile cand JS populeaza textul. Backend-ul trimite `business_lat` si `business_lng` din queries.
 
 9. **Offers table NU are `created_at`:** Sort "newest" foloseste `o.id DESC` (SERIAL auto-increment). NU folosi `o.created_at` in queries.
+
+10. **Businesses table are coloana `source`** (adaugat migration 012):
+    - `'manual'` — create manual sau de admin
+    - `'seed'` — generate de seed-businesses.js (DiceBear + Picsum)
+    - `'scraped'` — importate din Google Maps via scraping pipeline
+    - Folosit pentru cleanup selectiv (`DELETE FROM businesses WHERE source = 'scraped'`)
+
+11. **Mobile App Theme:** Dark mode only. Background `#06060a`, accent `#fb923c`. Font headings: DM Serif Display (fără fontWeight!). Toate culorile din `app/lib/theme.ts` tokens.
+
+12. **Scraping Pipeline:** Playwright cu stealth plugin + OpenRouter DeepSeek. Fișierele sunt în `scripts/scraping/`. Data directory este gitignored. Pipeline-ul este resumable (state.json checkpoint).
+
+13. **Mobile Performance (Audit v9):** Principalele bottlenecks Android: (1) `FlatList` → folosește `@shopify/flash-list` v2, (2) `Image` din react-native → folosește `expo-image`, (3) `Animated` API vechi → folosește `react-native-reanimated` v4 (deja instalat), (4) lipsa `React.memo` pe card components. Librării evaluate: Unistyles 3.0 = recomandat (C++ engine, low migration), NativeWind/Tamagui/Gluestack = respinse (compatibilitate SDK 54 sau cost migrare prea mare).

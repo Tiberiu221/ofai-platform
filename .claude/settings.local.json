@@ -74,7 +74,12 @@
       "Bash(\"C:/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe\" devices)",
       "Bash(echo:*)",
       "Bash(netstat:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway\" NODE_ENV=production node:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway\" NODE_ENV=production node scripts/verify-gaps.js:*)",
+      "Bash(npx playwright install:*)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:www.unistyl.es)"
     ]
   }
 }
