@@ -2639,6 +2639,62 @@ ul, ol { list-style: none; }
   border-radius: 6px;
 }
 
+/* Business Request Card (Account page) */
+.account-biz-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 16px;
+}
+
+.account-biz-card:hover {
+  background: var(--bg-card-hover);
+}
+
+.account-biz-card.biz-card-pending:hover { border-color: #fbbf24; }
+.account-biz-card.biz-card-approved:hover { border-color: #22c55e; }
+.account-biz-card.biz-card-rejected:hover { border-color: #ef4444; }
+.account-biz-card.biz-card-cta:hover { border-color: var(--accent); }
+
+.account-biz-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.account-biz-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-biz-title {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-biz-desc {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
 /* ═══════════════════════════════════════════════════════════
    COLLECTION PAGE (Colecția mea)
    ═══════════════════════════════════════════════════════════ */

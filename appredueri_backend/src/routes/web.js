@@ -880,6 +880,13 @@ router.get("/cont", requireWebAuth, async (req, res) => {
     const followCount = await pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]);
     const reviewCount = await pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]);
 
+    // Business request status (most recent)
+    const bizReqRes = await pool.query(
+      "SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
+      [req.webUser.id]
+    );
+    const bizRequest = bizReqRes.rows[0] || null;
+
     res.render("public/account", {
       activePage: "cont",
       webUser: req.webUser,
@@ -887,6 +894,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       favCount: parseInt(favCount.rows[0].total),
       followCount: parseInt(followCount.rows[0].total),
       reviewCount: parseInt(reviewCount.rows[0].total),
+      bizRequest,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);
