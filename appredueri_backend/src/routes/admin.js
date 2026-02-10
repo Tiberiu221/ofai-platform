@@ -14,6 +14,7 @@ const {
   getExistingSummary,
   getLatestValidReviewId
 } = require("../services/llm/summarizationService");
+const { sendBusinessApprovedEmail, sendBusinessRejectedEmail } = require("../services/email");
 
 // =====================================
 //   CONFIG UPLOADS
@@ -1435,6 +1436,17 @@ router.post("/business-requests/:id/approve", adminAuth, async (req, res) => {
 
     await client.query("COMMIT");
     console.log(`[Admin] Business request #${requestId} approved → business #${businessId}`);
+
+    // Send email notification (non-blocking, don't fail the request)
+    const { rows: userRows } = await pool.query(
+      "SELECT email, first_name FROM users WHERE id = $1",
+      [request.user_id]
+    );
+    if (userRows.length > 0) {
+      sendBusinessApprovedEmail(userRows[0].email, userRows[0].first_name, request.name)
+        .catch(err => console.error("[Admin] Failed to send approved email:", err));
+    }
+
     res.redirect("/admin/business-requests?success=approved");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1463,6 +1475,20 @@ router.post("/business-requests/:id/reject", adminAuth, async (req, res) => {
     }
 
     console.log(`[Admin] Business request #${requestId} rejected`);
+
+    // Send email notification (non-blocking)
+    const { rows: reqRows } = await pool.query(
+      `SELECT br.name, br.user_id, u.email, u.first_name
+       FROM business_requests br
+       JOIN users u ON u.id = br.user_id
+       WHERE br.id = $1`,
+      [requestId]
+    );
+    if (reqRows.length > 0) {
+      sendBusinessRejectedEmail(reqRows[0].email, reqRows[0].first_name, reqRows[0].name, reason)
+        .catch(err => console.error("[Admin] Failed to send rejected email:", err));
+    }
+
     res.redirect("/admin/business-requests?success=rejected");
   } catch (err) {
     console.error("[Admin] Reject business request error:", err);
