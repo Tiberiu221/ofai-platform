@@ -71,6 +71,16 @@ router.post("/", requireWebAuth, async (req, res) => {
       category_id: categoryId, city_id: cityId
     });
 
+    // If this is a retry of a rejected request, delete the old one
+    const replacesId = req.body.replaces_rejected_id ? parseInt(req.body.replaces_rejected_id, 10) : null;
+    if (replacesId) {
+      await pool.query(
+        "DELETE FROM business_requests WHERE id = $1 AND user_id = $2 AND status = 'rejected'",
+        [replacesId, userId]
+      );
+      console.log(`[BusinessRequests] Deleted old rejected request #${replacesId} (replaced by retry)`);
+    }
+
     // Insert business request
     const { rows: inserted } = await pool.query(
       `INSERT INTO business_requests

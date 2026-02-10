@@ -573,8 +573,11 @@ function prefillFromRejected() {
   document.getElementById('biz_website').value = r.website || '';
   document.getElementById('biz_description').value = r.description || '';
 
-  // Smooth scroll to form
-  document.getElementById('biz-request-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Store the rejected request ID so the backend can clean it up
+  window._retryingRejectedId = r.id;
+
+  // Smooth scroll to section header (above the form)
+  document.getElementById('adauga-business').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // Form submission
@@ -607,7 +610,8 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
       address: document.getElementById('biz_address').value.trim() || null,
       phone: document.getElementById('biz_phone').value.trim() || null,
       website: document.getElementById('biz_website').value.trim() || null,
-      description: document.getElementById('biz_description').value.trim() || null
+      description: document.getElementById('biz_description').value.trim() || null,
+      replaces_rejected_id: window._retryingRejectedId || null
     };
 
     var res = await fetch('/api/business-requests', {
