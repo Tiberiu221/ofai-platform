@@ -227,8 +227,8 @@ async function sendBusinessApprovedEmail(to, firstName, businessName) {
           </ul>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://ofai.ro/business-portal" style="background: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-              Deschide Business Portal
+            <a href="https://ofai.ro/cont" style="background: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              Gestioneaza business-ul
             </a>
           </div>
 

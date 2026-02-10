@@ -110,6 +110,7 @@ router.get("/mine", requireWebAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT br.id, br.name, br.status, br.admin_notes, br.created_at, br.reviewed_at,
+              br.category_id, br.city_id, br.address, br.phone, br.website, br.description,
               c.name as city_name, cat.name as category_name
        FROM business_requests br
        LEFT JOIN cities c ON c.id = br.city_id
