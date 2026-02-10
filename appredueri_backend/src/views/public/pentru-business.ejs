@@ -507,8 +507,10 @@
       html += '  <p class="biz-request-msg">Poti corecta datele si trimite o noua cerere.</p>';
       // Only show retry if no pending request exists
       if (!pending) {
+        // Store rejected data globally so the button can access it
+        window._rejectedRequestData = rejected;
         html += '  <div class="biz-request-actions">';
-        html += '    <button type="button" class="biz-btn-retry" onclick="prefillFromRejected(' + JSON.stringify(JSON.stringify(rejected)) + ')">';
+        html += '    <button type="button" class="biz-btn-retry" onclick="prefillFromRejected()">';
         html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
         html += '      Reia procesul';
         html += '    </button>';
@@ -555,8 +557,9 @@ function enableForm() {
   document.getElementById('biz-form-success').style.display = 'none';
 }
 
-function prefillFromRejected(jsonStr) {
-  var r = JSON.parse(jsonStr);
+function prefillFromRejected() {
+  var r = window._rejectedRequestData;
+  if (!r) return;
 
   // Enable the form first
   enableForm();
