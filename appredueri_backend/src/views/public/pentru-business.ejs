@@ -16,8 +16,8 @@
       Ajunge la mii de clienți noi din orașul tău. Publică oferte, primește recenzii și construiește-ți comunitatea de clienți fideli.
     </p>
     <div class="hero-ctas">
-      <a href="/register" class="btn btn-primary btn-lg">
-        Începe gratuit
+      <a href="#adauga-business" class="btn btn-primary btn-lg">
+        Adaugă business-ul tău
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
       <a href="mailto:business@ofai.ro" class="btn btn-secondary btn-lg">Contactează-ne</a>
@@ -85,14 +85,382 @@
   </div>
 </section>
 
+<!-- Add Business Form -->
+<section class="section" id="adauga-business">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">Adaugă-ți business-ul</div>
+      <h2 class="section-title">Trimite o cerere</h2>
+    </div>
+
+    <% if (!webUser) { %>
+    <!-- Guest state -->
+    <div class="biz-form-card reveal" style="text-align: center; padding: 60px 40px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" style="margin-bottom: 16px;">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <h3 style="color: var(--text-primary); font-size: 20px; margin-bottom: 8px;">Trebuie să fii autentificat</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Creează un cont gratuit sau conectează-te pentru a adăuga business-ul tău pe platformă.
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="/register" class="btn btn-primary btn-lg">Creează cont gratuit</a>
+        <a href="/login" class="btn btn-secondary btn-lg">Conectează-te</a>
+      </div>
+    </div>
+    <% } else { %>
+    <!-- Logged in: show form -->
+    <div class="biz-form-card reveal">
+      <!-- My existing requests -->
+      <div id="my-requests" style="display: none; margin-bottom: 24px;"></div>
+
+      <form id="biz-request-form" class="biz-form">
+        <div class="biz-form-row">
+          <div class="biz-form-group">
+            <label for="biz_name" class="biz-label">Numele business-ului *</label>
+            <input type="text" id="biz_name" class="biz-input" placeholder="ex: Salon Bella" required maxlength="200">
+          </div>
+          <div class="biz-form-group">
+            <label for="biz_category" class="biz-label">Categorie</label>
+            <select id="biz_category" class="biz-input biz-select">
+              <option value="">Alege o categorie...</option>
+              <% if (typeof categories !== 'undefined' && categories) { %>
+                <% categories.forEach(function(cat) { %>
+                  <option value="<%= cat.id %>"><%= cat.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+        </div>
+
+        <div class="biz-form-row">
+          <div class="biz-form-group">
+            <label for="biz_city" class="biz-label">Oraș *</label>
+            <select id="biz_city" class="biz-input biz-select" required>
+              <option value="">Alege orașul...</option>
+              <% if (typeof cities !== 'undefined' && cities) { %>
+                <% cities.forEach(function(city) { %>
+                  <option value="<%= city.id %>"><%= city.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+          <div class="biz-form-group">
+            <label for="biz_phone" class="biz-label">Telefon</label>
+            <input type="tel" id="biz_phone" class="biz-input" placeholder="ex: 0712 345 678" maxlength="50">
+          </div>
+        </div>
+
+        <div class="biz-form-group">
+          <label for="biz_address" class="biz-label">Adresă</label>
+          <input type="text" id="biz_address" class="biz-input" placeholder="ex: Str. Victoriei nr. 10, Cluj-Napoca" maxlength="500">
+        </div>
+
+        <div class="biz-form-group">
+          <label for="biz_website" class="biz-label">Website</label>
+          <input type="url" id="biz_website" class="biz-input" placeholder="ex: https://www.salonbella.ro" maxlength="500">
+        </div>
+
+        <div class="biz-form-group">
+          <label for="biz_description" class="biz-label">Descriere business</label>
+          <textarea id="biz_description" class="biz-input biz-textarea" placeholder="Descrie pe scurt business-ul tău, serviciile oferite..." maxlength="2000" rows="4"></textarea>
+          <span class="biz-hint">Câmpurile marcate cu * sunt obligatorii</span>
+        </div>
+
+        <div id="biz-form-error" class="biz-error" style="display: none;"></div>
+        <div id="biz-form-success" class="biz-success" style="display: none;"></div>
+
+        <button type="submit" id="biz-submit-btn" class="btn btn-primary btn-lg biz-submit">
+          Trimite cererea
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </form>
+    </div>
+    <% } %>
+  </div>
+</section>
+
+<!-- Styles for business form -->
+<style>
+  .biz-form-card {
+    max-width: 680px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .biz-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .biz-form-group {
+    margin-bottom: 20px;
+  }
+
+  .biz-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+
+  .biz-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+
+  .biz-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15);
+  }
+
+  .biz-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .biz-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+    cursor: pointer;
+  }
+
+  .biz-select option {
+    background: #18181b;
+    color: var(--text-primary);
+  }
+
+  .biz-textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .biz-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  .biz-submit {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .biz-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #fca5a5;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .biz-success {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #86efac;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .biz-request-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+
+  .biz-request-name {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .biz-request-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .biz-status-pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+  }
+
+  .biz-status-approved {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+  }
+
+  .biz-status-rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  @media (max-width: 600px) {
+    .biz-form-card {
+      padding: 24px 20px;
+    }
+    .biz-form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<% if (webUser) { %>
+<script>
+// Load existing requests
+(async function loadMyRequests() {
+  try {
+    const res = await fetch('/api/business-requests/mine', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.requests || data.requests.length === 0) return;
+
+    const container = document.getElementById('my-requests');
+    const statusMap = { pending: 'În așteptare', approved: 'Aprobat', rejected: 'Respins' };
+    const classMap = { pending: 'biz-status-pending', approved: 'biz-status-approved', rejected: 'biz-status-rejected' };
+
+    let html = '<h3 style="color: var(--text-primary); font-size: 16px; margin-bottom: 12px;">Cererile tale</h3>';
+    data.requests.forEach(function(r) {
+      html += '<div class="biz-request-item">';
+      html += '  <div>';
+      html += '    <span class="biz-request-name">' + r.name + '</span>';
+      if (r.admin_notes) {
+        html += '    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Motiv: ' + r.admin_notes + '</div>';
+      }
+      html += '  </div>';
+      html += '  <span class="biz-request-status ' + classMap[r.status] + '">' + statusMap[r.status] + '</span>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+    container.style.display = 'block';
+
+    // If there's a pending request, disable the form
+    const hasPending = data.requests.some(function(r) { return r.status === 'pending'; });
+    if (hasPending) {
+      const form = document.getElementById('biz-request-form');
+      const inputs = form.querySelectorAll('input, select, textarea, button');
+      inputs.forEach(function(el) { el.disabled = true; });
+      var msgDiv = document.getElementById('biz-form-success');
+      msgDiv.textContent = 'Ai deja o cerere în așteptare. Vei fi notificat când este procesată.';
+      msgDiv.style.display = 'block';
+    }
+  } catch (err) {
+    console.error('Error loading requests:', err);
+  }
+})();
+
+// Form submission
+document.getElementById('biz-request-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var errorDiv = document.getElementById('biz-form-error');
+  var successDiv = document.getElementById('biz-form-success');
+  var submitBtn = document.getElementById('biz-submit-btn');
+
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+
+  var name = document.getElementById('biz_name').value.trim();
+  var cityId = document.getElementById('biz_city').value;
+
+  if (!name || !cityId) {
+    errorDiv.textContent = 'Completează cel puțin numele și orașul.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;"></span> Se trimite...';
+
+  try {
+    var body = {
+      name: name,
+      city_id: cityId,
+      category_id: document.getElementById('biz_category').value || null,
+      address: document.getElementById('biz_address').value.trim() || null,
+      phone: document.getElementById('biz_phone').value.trim() || null,
+      website: document.getElementById('biz_website').value.trim() || null,
+      description: document.getElementById('biz_description').value.trim() || null
+    };
+
+    var res = await fetch('/api/business-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body)
+    });
+
+    var data = await res.json();
+
+    if (!res.ok || !data.success) {
+      var msg = (data.errors && data.errors.length > 0) ? data.errors.join(' ') : 'Eroare la trimiterea cererii.';
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Trimite cererea <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+      return;
+    }
+
+    // Success
+    successDiv.textContent = data.message || 'Cererea a fost trimisă cu succes!';
+    successDiv.style.display = 'block';
+
+    // Disable form
+    var inputs = e.target.querySelectorAll('input, select, textarea, button');
+    inputs.forEach(function(el) { el.disabled = true; });
+
+  } catch (err) {
+    errorDiv.textContent = 'Eroare de rețea. Verifică conexiunea și încearcă din nou.';
+    errorDiv.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Trimite cererea <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+  }
+});
+</script>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<% } %>
+
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-box-glow"></div>
-      <h2 class="cta-title">Gata să începi?</h2>
-      <p class="cta-subtitle">Înscrie-ți afacerea pe OFAI și începe să atragi clienți noi chiar azi.</p>
-      <a href="/register" class="btn btn-primary btn-lg" style="position: relative; z-index: 1;">Creează cont gratuit</a>
+      <h2 class="cta-title">Ai întrebări?</h2>
+      <p class="cta-subtitle">Contactează-ne și te ajutăm cu orice nelămurire despre platformă.</p>
+      <a href="mailto:business@ofai.ro" class="btn btn-primary btn-lg" style="position: relative; z-index: 1;">Contactează-ne</a>
     </div>
   </div>
 </section>

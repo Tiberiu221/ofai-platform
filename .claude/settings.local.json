@@ -79,7 +79,12 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway\" NODE_ENV=production node scripts/verify-gaps.js:*)",
       "Bash(npx playwright install:*)",
       "Bash(npm view:*)",
-      "WebFetch(domain:www.unistyl.es)"
+      "WebFetch(domain:www.unistyl.es)",
+      "Bash(powershell -Command:*)",
+      "Bash(set:*)",
+      "Bash(export ANDROID_HOME:*)",
+      "Bash(export ANDROID_HOME=\"/c/Users/tiber/AppData/Local/Android/Sdk\":*)",
+      "Bash(npx eas:*)"
     ]
   }
 }

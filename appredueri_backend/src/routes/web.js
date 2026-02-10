@@ -1525,9 +1525,34 @@ router.get("/ajutor", (req, res) => {
   res.render("public/ajutor", { activePage: null, webUser: req.webUser });
 });
 
-router.get("/pentru-business", (req, res) => {
-  res.render("public/pentru-business", { activePage: null, webUser: req.webUser });
+router.get("/pentru-business", async (req, res) => {
+  try {
+    const [citiesResult, categoriesResult] = await Promise.all([
+      pool.query("SELECT id, name FROM cities ORDER BY name"),
+      pool.query("SELECT id, name FROM categories ORDER BY name"),
+    ]);
+    res.render("public/pentru-business", {
+      activePage: null,
+      webUser: req.webUser,
+      cities: citiesResult.rows,
+      categories: categoriesResult.rows,
+    });
+  } catch (err) {
+    console.error("[Web] Pentru-business error:", err.message);
+    res.render("public/pentru-business", {
+      activePage: null,
+      webUser: req.webUser,
+      cities: [],
+      categories: [],
+    });
+  }
 });
+
+// ═══════════════════════════════════════════════════════
+// BUSINESS REQUESTS API (cookie auth)
+// ═══════════════════════════════════════════════════════
+const businessRequestsRouter = require("./businessRequests");
+router.use("/api/business-requests", businessRequestsRouter);
 
 // ═══════════════════════════════════════════════════════
 // AJAX API PROXIES (cookie auth — for client-side JS)

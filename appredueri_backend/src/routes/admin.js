@@ -1353,4 +1353,121 @@ router.post(
   }
 );
 
+// =====================================
+//   BUSINESS REQUESTS (user-submitted)
+// =====================================
+
+// GET /admin/business-requests — list all requests
+router.get("/business-requests", adminAuth, async (req, res) => {
+  try {
+    const { rows: requests } = await pool.query(`
+      SELECT br.*,
+             u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name,
+             c.name as city_name,
+             cat.name as category_name,
+             ru.email as reviewer_email
+      FROM business_requests br
+      LEFT JOIN users u ON u.id = br.user_id
+      LEFT JOIN cities c ON c.id = br.city_id
+      LEFT JOIN categories cat ON cat.id = br.category_id
+      LEFT JOIN users ru ON ru.id = br.reviewed_by
+      ORDER BY
+        CASE br.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 END,
+        br.created_at DESC
+    `);
+
+    res.render("admin/business-requests", { requests });
+  } catch (err) {
+    console.error("[Admin] Business requests list error:", err);
+    res.status(500).send("Eroare la încărcarea cererilor.");
+  }
+});
+
+// POST /admin/business-requests/:id/approve
+router.post("/business-requests/:id/approve", adminAuth, async (req, res) => {
+  const requestId = parseInt(req.params.id, 10);
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Get the request
+    const { rows } = await client.query(
+      "SELECT * FROM business_requests WHERE id = $1 AND status = 'pending'",
+      [requestId]
+    );
+
+    if (rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.redirect("/admin/business-requests?error=not_found");
+    }
+
+    const request = rows[0];
+
+    // Create the business
+    const { rows: bizRows } = await client.query(
+      `INSERT INTO businesses (name, city_id, category_id, address, phone, website, description, source)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'user_submitted')
+       RETURNING id`,
+      [request.name, request.city_id, request.category_id, request.address, request.phone, request.website, request.description]
+    );
+    const businessId = bizRows[0].id;
+
+    // Assign the user as business owner
+    await client.query(
+      "INSERT INTO user_businesses (user_id, business_id, role) VALUES ($1, $2, 'owner')",
+      [request.user_id, businessId]
+    );
+
+    // Update user role to business_owner if currently just 'user'
+    await client.query(
+      "UPDATE users SET role = 'business_owner' WHERE id = $1 AND role = 'user'",
+      [request.user_id]
+    );
+
+    // Update the request
+    await client.query(
+      `UPDATE business_requests
+       SET status = 'approved', business_id = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
+       WHERE id = $3`,
+      [businessId, null, requestId]
+    );
+
+    await client.query("COMMIT");
+    console.log(`[Admin] Business request #${requestId} approved → business #${businessId}`);
+    res.redirect("/admin/business-requests?success=approved");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("[Admin] Approve business request error:", err);
+    res.status(500).send("Eroare la aprobarea cererii.");
+  } finally {
+    client.release();
+  }
+});
+
+// POST /admin/business-requests/:id/reject
+router.post("/business-requests/:id/reject", adminAuth, async (req, res) => {
+  const requestId = parseInt(req.params.id, 10);
+  const reason = req.body.reason ? req.body.reason.trim().slice(0, 500) : null;
+
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE business_requests
+       SET status = 'rejected', admin_notes = $1, reviewed_by = $2, reviewed_at = NOW(), updated_at = NOW()
+       WHERE id = $3 AND status = 'pending'`,
+      [reason, null, requestId]
+    );
+
+    if (rowCount === 0) {
+      return res.redirect("/admin/business-requests?error=not_found");
+    }
+
+    console.log(`[Admin] Business request #${requestId} rejected`);
+    res.redirect("/admin/business-requests?success=rejected");
+  } catch (err) {
+    console.error("[Admin] Reject business request error:", err);
+    res.status(500).send("Eroare la respingerea cererii.");
+  }
+});
+
 module.exports = router;

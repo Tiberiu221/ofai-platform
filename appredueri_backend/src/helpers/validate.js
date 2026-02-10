@@ -90,6 +90,79 @@ function paginatedResponse(data, total, page, limit) {
   };
 }
 
+/**
+ * Validate a business request submission
+ * @param {object} data - The business request data
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+function validateBusinessRequest(data) {
+  const errors = [];
+
+  // Name is required
+  const name = sanitizeString(data.name, 200);
+  if (!name || name.length < 2) {
+    errors.push("Numele business-ului este obligatoriu (minim 2 caractere).");
+  }
+
+  // City is required
+  const cityId = validateInt(data.city_id, { min: 1 });
+  if (!cityId) {
+    errors.push("Orașul este obligatoriu.");
+  }
+
+  // Category is optional but must be valid if provided
+  if (data.category_id) {
+    const catId = validateInt(data.category_id, { min: 1 });
+    if (!catId) {
+      errors.push("Categoria selectată nu este validă.");
+    }
+  }
+
+  // Phone format (optional)
+  if (data.phone) {
+    const phone = sanitizeString(data.phone, 50);
+    if (phone && !/^(\+?40|0)[2-9]\d{7,8}$/.test(phone.replace(/[\s\-().]/g, ""))) {
+      errors.push("Numărul de telefon nu pare valid (format RO).");
+    }
+  }
+
+  // Website URL (optional)
+  if (data.website) {
+    const website = sanitizeString(data.website, 500);
+    if (website) {
+      try {
+        const url = new URL(website.startsWith("http") ? website : `https://${website}`);
+        if (!["http:", "https:"].includes(url.protocol)) {
+          errors.push("Website-ul trebuie să fie o adresă HTTP/HTTPS validă.");
+        }
+      } catch {
+        errors.push("Website-ul nu este o adresă URL validă.");
+      }
+    }
+  }
+
+  // Description length check (optional)
+  if (data.description) {
+    const desc = sanitizeString(data.description, 2000);
+    if (desc && desc.length < 10) {
+      errors.push("Descrierea trebuie să aibă minim 10 caractere.");
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate Romanian phone number format
+ * @param {string} phone
+ * @returns {boolean}
+ */
+function isValidRomanianPhone(phone) {
+  if (!phone || typeof phone !== "string") return false;
+  const cleaned = phone.replace(/[\s\-().]/g, "");
+  return /^(\+?40|0)[2-9]\d{7,8}$/.test(cleaned);
+}
+
 module.exports = {
   isValidEmail,
   sanitizeString,
@@ -97,4 +170,6 @@ module.exports = {
   isValidCoordinates,
   parsePagination,
   paginatedResponse,
+  validateBusinessRequest,
+  isValidRomanianPhone,
 };
