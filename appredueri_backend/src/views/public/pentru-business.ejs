@@ -436,8 +436,11 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
     successDiv.textContent = data.message || 'Cererea a fost trimisă cu succes!';
     successDiv.style.display = 'block';
 
-    // Disable form
-    var inputs = e.target.querySelectorAll('input, select, textarea, button');
+    // Reset button text and disable entire form
+    submitBtn.innerHTML = 'Cerere trimisă ✓';
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.6';
+    var inputs = e.target.querySelectorAll('input, select, textarea');
     inputs.forEach(function(el) { el.disabled = true; });
 
   } catch (err) {

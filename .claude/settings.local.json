@@ -84,7 +84,8 @@
       "Bash(set:*)",
       "Bash(export ANDROID_HOME:*)",
       "Bash(export ANDROID_HOME=\"/c/Users/tiber/AppData/Local/Android/Sdk\":*)",
-      "Bash(npx eas:*)"
+      "Bash(npx eas:*)",
+      "Bash(git status:*)"
     ]
   }
 }

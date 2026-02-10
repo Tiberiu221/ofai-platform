@@ -1404,18 +1404,18 @@ router.post("/business-requests/:id/approve", adminAuth, async (req, res) => {
 
     const request = rows[0];
 
-    // Create the business
+    // Create the business (address NOT NULL in schema, default to empty string)
     const { rows: bizRows } = await client.query(
       `INSERT INTO businesses (name, city_id, category_id, address, phone, website, description, source)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'user_submitted')
        RETURNING id`,
-      [request.name, request.city_id, request.category_id, request.address, request.phone, request.website, request.description]
+      [request.name, request.city_id, request.category_id, request.address || '', request.phone, request.website, request.description]
     );
     const businessId = bizRows[0].id;
 
-    // Assign the user as business owner
+    // Assign the user as business owner (user_businesses has no role column)
     await client.query(
-      "INSERT INTO user_businesses (user_id, business_id, role) VALUES ($1, $2, 'owner')",
+      "INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)",
       [request.user_id, businessId]
     );
 
