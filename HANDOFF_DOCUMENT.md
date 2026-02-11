@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 11 Februarie 2026 (Actualizat v10 — Add Business Feature + Email Notifications + Retry UX)
+## Data: 11 Februarie 2026 (Actualizat v11 — Security + Visual Polish + Bugfixes + returnTo)
 
 ---
 
@@ -103,8 +103,8 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │           ├── navbar.ejs       # Glassmorphic navbar + Portal link
 │   │   │           └── footer.ejs       # Footer 4 coloane
 │   │   └── public/                # Static assets
-│   │       ├── css/main.css       # Design system complet (~2850+ linii)
-│   │       └── js/main.js         # Navbar, scroll reveal, counters, favorites, follow, geolocation+distance
+│   │       ├── css/main.css       # Design system complet (~3370+ linii)
+│   │       └── js/main.js         # Toast, favorites, follow, geolocation, search autosuggest, particles, scroll arrows, TiltFx, share, returnTo (~660 linii)
 │   ├── scripts/                   # Batch jobs, monitoring
 │   │   ├── seed-businesses.js     # Seed 450 business-uri fictive (DiceBear + Picsum)
 │   │   ├── cleanup-seed.js        # Ștergere seed-uri vechi
@@ -175,9 +175,10 @@ Exista **3 sisteme de auth** separate. Trebuie intelese bine:
 
 ### 1. Web Auth (cookie-based) — pentru site-ul public EJS
 - **Middleware:** `src/middleware/webAuth.js`
-- **Functii:** `optionalWebAuth` (seteaza `req.webUser` sau null), `requireWebAuth` (redirect la /login)
+- **Functii:** `optionalWebAuth` (seteaza `req.webUser` sau null), `requireWebAuth` (redirect la /login SAU 401 JSON)
 - **Mecanism:** Cookie `ofai_token` (httpOnly, Secure in prod, SameSite: lax, 30 zile)
 - **Folosit de:** Toate rutele din `web.js` (pagini EJS + AJAX endpoints `/api/web/*`)
+- **IMPORTANT:** `requireWebAuth` detecteaza daca ruta e `/api/*` si returneaza 401 JSON (nu redirect HTML). Fara asta, `fetch()` urmareste 302 transparent → primeste HTML → `resp.json()` fail.
 
 ### 2. Business Portal Web Auth — cookie + ownership check
 - **Middleware:** `src/middleware/businessWebAuth.js`
@@ -213,6 +214,31 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 - [x] **Navbar:** User menu dropdown, Portal link (business_owner/admin only), mobile menu
 - [x] **main.js:** Toast system, toggleFavorite, toggleFollow, FAQ accordion, star rating, geolocation + distance
 - [x] **Trust proxy:** Configurat pentru Railway/Cloudflare (cookie Secure, rate limiter IP)
+
+### Security + Quick Wins + Mobile Features (Faza 3.7 — COMPLETA)
+- [x] **Helmet.js** security headers (CSP disabled for EJS inline scripts, COEP disabled for external images)
+- [x] **Urgency badges** pe offer cards (expiring soon indicator)
+- [x] **Social proof** (favorite count) pe offer cards
+- [x] **Share button** pe offer-detail (Web Share API + clipboard fallback)
+- [x] **Search autosuggest** (debounced 300ms, skeleton loading, z-index layering)
+- [x] **Followed offers section** pe home page
+- [x] **Mobile:** deep linking, offline cache (cachedFetch + AsyncStorage TTL), haptics, share, offline banner
+
+### Visual Polish + Bugfixes (Faza 3.8 — COMPLETA)
+- [x] **Particle hero background** (canvas 2D, generic multi-instance, cursor attraction)
+- [x] **Particles pe auth pages** (login, register, forgot-password)
+- [x] **TiltFx 3D card hover** (offer cards perspective transform)
+- [x] **Toast progress bar** animation
+- [x] **Fade edge scrollers** pe filter bars
+- [x] **Scroll arrows** pe filter bars (horizontal scroll guidance, non-overlapping)
+- [x] **Removed:** TypeFx (incompatible cu text-gradient), testimonials section
+- [x] **Fix:** hero title invisible (TypeFx + background-clip:text conflict)
+- [x] **Fix:** requireWebAuth returns 401 JSON for `/api/` routes (nu HTML redirect)
+- [x] **Fix:** business-detail cover image flash (class mismatch `.bd-hero`)
+- [x] **Fix:** business follow button uses shared `toggleFollow()` with toast
+- [x] **Fix:** search dropdown z-index overlap with CTA buttons
+- [x] **Fix:** returnTo flow (login + register) — redirect back after auth
+- [x] **Fix:** scroll arrows don't overlap filter pill text
 
 ### Feature Parity cu Mobile App (Faza 3.5 — COMPLETA)
 - [x] **Ratings pe offer cards:** Rating average + count pe fiecare card (home bento + oferte grid)
@@ -396,6 +422,7 @@ PUT    /api/web/account            → update profil
 PUT    /api/web/account/password   → schimba parola
 DELETE /api/web/account            → sterge cont
 PUT    /api/web/preferences        → update preferinte
+GET    /api/web/search/suggest    → search autosuggest (offers + businesses, debounced)
 ```
 
 ### Rute Business Requests API (cookie auth, separate router)
@@ -471,6 +498,24 @@ Fara el: cookie Secure nu functioneaza, rate limiter vede un singur IP.
 ### 5. Cloudflare www redirect
 Railway trebuie sa aiba `www.ofai.ro` adaugat ca custom domain.
 Safari iOS adauga automat `www.` — fara record, site-ul nu se incarca pe iPhone.
+
+### 6. requireWebAuth — dual behavior (API vs page)
+`requireWebAuth` detecteaza `req.path.startsWith("/api/")`:
+- **API routes** → `res.status(401).json({ message: "..." })` (pentru `fetch()` calls)
+- **Page routes** → `res.redirect("/login")` (pentru navigare directa in browser)
+Fara asta, `fetch()` urmareste 302 transparent → primeste 200 cu HTML → `resp.json()` da "Unexpected token '<'".
+
+### 7. returnTo flow (login + register)
+`main.js` adauga `?returnTo=<currentURL>` la redirect `/login` pe 401.
+- `login.ejs` / `register.ejs` citesc `returnTo` din URLSearchParams, trimit in POST body
+- Backend valideaza (only `/` prefix, no `//` → open-redirect protection)
+- Link-urile "Inregistreaza-te" / "Ai deja cont?" propaga returnTo intre pagini
+- Pattern: `const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";`
+
+### 8. business-detail hero class = `.bd-hero`
+CSS targeteaza `.bd-hero` cu `height: 280px; overflow: hidden`.
+HTML-ul TREBUIE sa aiba `class="bd-hero"` (NU `.business-detail-hero`).
+Mismatch = imaginea cover apare fullscreen pentru o fractiune de secunda.
 
 ---
 
@@ -603,6 +648,18 @@ Workflows active: WF1 (new-review → email owner)
 - [x] "Reia procesul" retry: prefill form + auto-delete old rejected (replaces_rejected_id)
 - [x] /cont status indicator (account menu item, colored by status)
 
+### Faza 3.7 — Security + Quick Wins + Mobile Features (COMPLETA - v11)
+- [x] Helmet.js security headers (CSP disabled, COEP disabled)
+- [x] Urgency badges, social proof, share button, search autosuggest
+- [x] Followed offers section pe home page
+- [x] Mobile: deep linking, offline cache, haptics, share, offline banner
+
+### Faza 3.8 — Visual Polish + Bugfixes (COMPLETA - v11)
+- [x] Particle canvas (hero + auth pages), TiltFx 3D cards, toast progress bar
+- [x] Fade edge scrollers, scroll arrows pe filter bars
+- [x] Removed TypeFx + testimonials
+- [x] 8 bugfixes: hero title, webAuth 401, cover flash, follow toast, z-index, returnTo, scroll arrows position
+
 ### Faza 3.5 - Feature Parity & Visual Polish (COMPLETA - v6)
 - [x] Ratings (avg + count) pe offer cards (home + oferte)
 - [x] Business logo inline pe offer cards (40px, flex row layout)
@@ -689,10 +746,59 @@ Workflows active: WF1 (new-review → email owner)
 8. **n8n WF2-WF6** — workflow-uri suplimentare
 9. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
 10. **Play Store** — publicare APK pe Google Play
+11. **Web polish** — verificare vizuala pe toate paginile, responsive testing, edge cases
 
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 11 Februarie 2026 (v11 — Security + Visual Polish + Bugfixes + returnTo)
+
+**Sesiune cu 3 runde: security + quick wins, visual polish Once UI, bugfix rounds.**
+
+**Batch 1 — Security + Quick Wins:**
+- Helmet.js security headers (`src/index.js`)
+- Urgency badges, social proof (favorite count), share button pe offer cards
+- Search autosuggest (debounced 300ms, skeleton loading, z-index layering)
+- Followed offers section pe home page
+- Mobile: offline cache (`cachedFetch` + AsyncStorage TTL), haptics, share, offline banner
+
+**Batch 2 — Visual Polish (Once UI inspired):**
+- Particle canvas (hero + auth pages) — canvas 2D, cursor attraction, IntersectionObserver pause
+- TiltFx 3D card hover (offer cards perspective transform)
+- Toast progress bar animation
+- Fade edge scrollers pe filter bars
+- Scroll arrows pe filter bars (horizontal scroll guidance)
+
+**Batch 3 — Bugfixes:**
+- Hero title invisible — TypeFx removed (incompatible cu `background-clip: text` gradient)
+- Testimonials section removed (hardcoded fake data, visually poor)
+- `requireWebAuth` returns 401 JSON for `/api/` routes (nu HTML redirect)
+- Business-detail cover flash fix (HTML class mismatch `business-detail-hero` → `bd-hero`)
+- Business follow button fix (uses shared `toggleFollow()` from main.js with toast)
+- Search dropdown z-index fix (`.search-wrapper` z-index: 10 stacking context)
+- returnTo flow (login + register) — redirect back to original page after auth
+- Scroll arrows positioning fix (padding on container, arrows outside content area)
+
+**Fișiere create:**
+- `app/lib/cache.ts` — mobile offline cache (cachedFetch with AsyncStorage + TTL)
+
+**Fișiere modificate:**
+- `src/index.js` — Helmet.js middleware
+- `src/middleware/webAuth.js` — 401 JSON for API routes (isApi check)
+- `src/routes/web.js` — search autosuggest API, returnTo on login+register, followed offers query, 3 offer queries modified (end_date + favorite_count)
+- `src/public/css/main.css` — particles, TiltFx, toast progress, scroll arrows, urgency, social proof, search autosuggest, z-index fixes (~3370 linii). Removed: TypeFx CSS, testimonials CSS
+- `src/public/js/main.js` — particles (generic multi-instance), scroll arrows, search autosuggest, TiltFx, share, returnTo (~660 linii). Removed: TypeFx, testimonials
+- `src/views/public/home.ejs` — particle canvas, followed offers, urgency badges, scroll arrows. Removed: testimonials section
+- `src/views/public/oferte.ejs` — urgency badges, social proof, scroll arrows wrappers
+- `src/views/public/offer-detail.ejs` — share button
+- `src/views/public/business-detail.ejs` — class fix `bd-hero`, follow button uses `toggleFollow()`
+- `src/views/public/login.ejs` — particle canvas, returnTo flow, register link preserves returnTo
+- `src/views/public/register.ejs` — particle canvas, returnTo flow, login link preserves returnTo
+- `src/views/public/forgot-password.ejs` — particle canvas
+- Mobile: `app/_layout.tsx` (offline banner), `app/business/[id].tsx` (share+haptics), `app/offer/[id].tsx` (share+haptics), `components/StarRating.tsx` (haptics)
+
+---
 
 ### 11 Februarie 2026 (v10 — Add Business Feature + Email Notifications + Retry UX)
 
@@ -992,3 +1098,11 @@ Setup initial proiect
 17. **Email links**: Email-ul de aprobare trimite CTA catre `/cont` (NU `/business-portal` care e API-only pentru mobile). Rutele `/business-portal` sunt REST API cu Bearer token auth, nu exista pagina web acolo.
 
 18. **Resend email types** (v10): welcome, password_reset, business_approved, business_rejected. Functii in `src/services/email.js`: `sendWelcomeEmail`, `sendPasswordResetEmail`, `sendBusinessApprovedEmail`, `sendBusinessRejectedEmail`. Toate non-blocking (`.catch()` wrapper).
+
+19. **Particle canvas pattern** (v11): Uses generic `setupParticleCanvas(canvas, container)` via `document.querySelectorAll('canvas.particle-canvas')`. Add class `particle-canvas` to any `<canvas>` + wrap in positioned container. Variants: `.hero-particles` (opacity 0.6), `.auth-particles` (opacity 0.5). Uses `ctx.setTransform()` instead of `ctx.scale()` to avoid accumulation on resize.
+
+20. **Scroll arrows pattern** (v11): Wrap scroll element in `.scroll-container` (position relative, padding 0 40px). Add `.scroll-arrow.scroll-arrow-left` and `.scroll-arrow.scroll-arrow-right` buttons inside. `initScrollArrows()` in main.js handles visibility toggle via scroll position. Padding creates space for arrows outside content area.
+
+21. **Search autosuggest z-index** (v11): `.search-wrapper` needs `z-index: 10` for stacking context. `.search-suggest-dropdown` at `z-index: 200` + `backdrop-filter: blur(12px)`. API endpoint: `GET /api/web/search/suggest?q=...` (debounced 300ms).
+
+22. **TypeFx INCOMPATIBIL cu text-gradient** (v11): `background-clip: text` + `-webkit-text-fill-color: transparent` pe parent NU se mostenesc de child `<span>`. TypeFx wrappea textul in spans → gradientul disparea → text invizibil. NU reintroduce TypeFx pe text cu gradient.

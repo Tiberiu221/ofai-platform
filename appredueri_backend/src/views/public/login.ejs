@@ -65,7 +65,7 @@
 
     <!-- Register link -->
     <div class="auth-footer-link">
-      Nu ai cont? <a href="/register" class="auth-link">&#206;nregistreaz&#259;-te</a>
+      Nu ai cont? <a href="/register" class="auth-link" id="register-link">&#206;nregistreaz&#259;-te</a>
     </div>
   </div>
 </div>
@@ -309,14 +309,22 @@
 </style>
 
 <script>
+// Read returnTo from URL once on page load
+const _qs = new URLSearchParams(window.location.search);
+const returnTo = _qs.get('returnTo') || '/cont';
+
+// Propagate returnTo to register link immediately
+if (returnTo !== '/cont') {
+  const regLink = document.getElementById('register-link');
+  if (regLink) regLink.href = '/register?returnTo=' + encodeURIComponent(returnTo);
+}
+
 document.querySelector('.auth-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
   const btn = form.querySelector('.auth-submit');
   const email = form.querySelector('#email').value;
   const password = form.querySelector('#password').value;
-  const _qs = new URLSearchParams(window.location.search);
-  const returnTo = _qs.get('returnTo') || '/cont';
 
   const oldErr = form.parentElement.querySelector('.auth-error');
   if (oldErr) oldErr.remove();

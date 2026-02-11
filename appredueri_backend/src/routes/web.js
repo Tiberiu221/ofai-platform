@@ -760,7 +760,9 @@ router.post("/register", async (req, res) => {
       first_name: user.first_name, created_at: new Date().toISOString(),
     });
 
-    return res.status(201).json({ success: true, redirect: "/cont" });
+    const returnTo = req.body.returnTo || "/cont";
+    const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";
+    return res.status(201).json({ success: true, redirect: safeRedirect });
   } catch (err) {
     console.error("[Web] Register error:", err);
     return res.status(500).json({ message: "Eroare server" });

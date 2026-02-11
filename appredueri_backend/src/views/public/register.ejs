@@ -91,7 +91,7 @@
 
     <!-- Login link -->
     <div class="auth-footer-link">
-      Ai deja cont? <a href="/login" class="auth-link">Conecteaz&#259;-te</a>
+      Ai deja cont? <a href="/login" class="auth-link" id="login-link">Conecteaz&#259;-te</a>
     </div>
   </div>
 </div>
@@ -278,6 +278,16 @@
 </style>
 
 <script>
+// Read returnTo from URL once on page load
+const _qs = new URLSearchParams(window.location.search);
+const returnTo = _qs.get('returnTo') || '/cont';
+
+// Propagate returnTo to login link immediately
+if (returnTo !== '/cont') {
+  const loginLink = document.getElementById('login-link');
+  if (loginLink) loginLink.href = '/login?returnTo=' + encodeURIComponent(returnTo);
+}
+
 document.querySelector('.auth-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
@@ -298,12 +308,12 @@ document.querySelector('.auth-form').addEventListener('submit', async (e) => {
     const resp = await fetch('/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, first_name, last_name }),
+      body: JSON.stringify({ email, password, first_name, last_name, returnTo }),
     });
     const data = await resp.json();
 
     if (resp.ok && data.success) {
-      window.location.href = data.redirect || '/cont';
+      window.location.href = data.redirect || returnTo;
     } else {
       const errDiv = document.createElement('div');
       errDiv.className = 'auth-error';
