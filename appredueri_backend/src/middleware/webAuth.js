@@ -38,9 +38,12 @@ async function optionalWebAuth(req, res, next) {
  * Folosit pe paginile protejate (cont, setări, colecție)
  */
 async function requireWebAuth(req, res, next) {
+  const isApi = req.path.startsWith("/api/");
+
   try {
     const token = req.cookies?.ofai_token;
     if (!token) {
+      if (isApi) return res.status(401).json({ message: "Trebuie să fii conectat" });
       return res.redirect("/login");
     }
 
@@ -52,6 +55,7 @@ async function requireWebAuth(req, res, next) {
 
     if (rows.length === 0) {
       res.clearCookie("ofai_token");
+      if (isApi) return res.status(401).json({ message: "Trebuie să fii conectat" });
       return res.redirect("/login");
     }
 
@@ -59,6 +63,7 @@ async function requireWebAuth(req, res, next) {
     next();
   } catch (err) {
     res.clearCookie("ofai_token");
+    if (isApi) return res.status(401).json({ message: "Trebuie să fii conectat" });
     return res.redirect("/login");
   }
 }

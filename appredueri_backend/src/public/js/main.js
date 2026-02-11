@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearchAutosuggest();
   initTiltFx();
   initParticles();
+  initScrollArrows();
 });
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
@@ -652,5 +653,34 @@ function buildSkeletonHTML() {
   }
   html += '</div>';
   return html;
+}
+
+/* ─── SCROLL ARROWS FOR HORIZONTAL CONTAINERS ────────── */
+function initScrollArrows() {
+  document.querySelectorAll('.scroll-container').forEach(container => {
+    const scrollEl = container.querySelector('.filter-bar, .cities-scroll');
+    const leftBtn = container.querySelector('.scroll-arrow-left');
+    const rightBtn = container.querySelector('.scroll-arrow-right');
+    if (!scrollEl || !leftBtn || !rightBtn) return;
+
+    function updateArrows() {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollEl;
+      leftBtn.classList.toggle('visible', scrollLeft > 8);
+      rightBtn.classList.toggle('visible', scrollLeft < scrollWidth - clientWidth - 8);
+    }
+
+    leftBtn.addEventListener('click', () => {
+      scrollEl.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    rightBtn.addEventListener('click', () => {
+      scrollEl.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+
+    scrollEl.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
+
+    // Initial check after small delay (content may still be rendering)
+    setTimeout(updateArrows, 100);
+  });
 }
 

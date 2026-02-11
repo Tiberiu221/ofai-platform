@@ -24,7 +24,7 @@
 <!-- ═══════════════════════════════════════════════════════
      HERO — Cover Image
      ═══════════════════════════════════════════════════════ -->
-<section class="business-detail-hero">
+<section class="bd-hero">
   <% if (business.cover_image) { %>
     <img src="<%= business.cover_image %>" alt="<%= business.name %>" class="bd-hero-img">
   <% } %>
@@ -86,9 +86,10 @@
     </div>
 
     <button
-      class="follow-btn btn btn-secondary"
+      class="bd-follow-btn follow-btn btn btn-secondary"
       data-business-id="<%= business.id %>"
       data-following="<%= isFollowing ? 'true' : 'false' %>"
+      onclick="toggleFollow(<%= business.id %>)"
     >
       <% if (isFollowing) { %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -1137,38 +1138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  /* ─── Follow button ───────────────────────────────────── */
-  var followBtn = document.querySelector('.follow-btn');
-  if (followBtn) {
-    followBtn.addEventListener('click', function() {
-      var businessId = this.getAttribute('data-business-id');
-      var isFollowing = this.getAttribute('data-following') === 'true';
-      var btn = this;
-
-      var url = isFollowing
-        ? '/api/web/subscriptions/' + businessId
-        : '/api/web/subscriptions';
-      var opts = { method: isFollowing ? 'DELETE' : 'POST', headers: { 'Content-Type': 'application/json' } };
-      if (!isFollowing) opts.body = JSON.stringify({ business_id: businessId });
-
-      fetch(url, opts)
-      .then(function(res) {
-        if (res.status === 401) { window.location.href = '/login'; return; }
-        return res.json();
-      })
-      .then(function(data) {
-        if (!data) return;
-        if (data.success || data.message) {
-          var newState = !isFollowing;
-          btn.setAttribute('data-following', newState.toString());
-          btn.innerHTML = newState
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urmărești'
-            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urmărește';
-        }
-      })
-      .catch(function() {});
-    });
-  }
+  /* Follow button — handled by window.toggleFollow() in main.js */
 });
 </script>
 
