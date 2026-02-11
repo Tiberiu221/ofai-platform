@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initSmoothScroll();
   initGeolocation();
+  initSearchAutosuggest();
 });
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
@@ -367,4 +368,136 @@ function updateDistances(userLat, userLng, cards) {
       el.style.display = '';
     }
   });
+}
+
+/* ─── SHARE OFFER ──────────────────────────────────────── */
+window.shareOffer = async function(title, businessName) {
+  const url = window.location.href;
+  const text = `${title} - ${businessName} pe OFAI`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: text, url });
+    } catch (e) {
+      // User cancelled share
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copiat!', 'success');
+    } catch (e) {
+      // Fallback: select text from a temp input
+      const input = document.createElement('input');
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      showToast('Link copiat!', 'success');
+    }
+  }
+};
+
+/* ─── SEARCH AUTOSUGGEST ───────────────────────────────── */
+function initSearchAutosuggest() {
+  const searchInputs = document.querySelectorAll('input[name="q"]');
+  searchInputs.forEach((input) => {
+    const form = input.closest('form');
+    if (!form) return;
+
+    // Wrap in relative container
+    const wrapper = document.createElement('div');
+    wrapper.className = 'search-suggest-wrapper';
+    form.style.position = 'relative';
+
+    // Create dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 'search-suggest-dropdown';
+    form.appendChild(dropdown);
+
+    let debounceTimer = null;
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const q = input.value.trim();
+      if (q.length < 2) {
+        dropdown.classList.remove('open');
+        return;
+      }
+      debounceTimer = setTimeout(() => fetchSuggestions(q, dropdown), 300);
+    });
+
+    input.addEventListener('focus', () => {
+      if (input.value.trim().length >= 2 && dropdown.innerHTML) {
+        dropdown.classList.add('open');
+      }
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+      if (!form.contains(e.target)) {
+        dropdown.classList.remove('open');
+      }
+    });
+  });
+}
+
+async function fetchSuggestions(q, dropdown) {
+  try {
+    const resp = await fetch(`/api/web/search/suggest?q=${encodeURIComponent(q)}`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+
+    if (data.offers.length === 0 && data.businesses.length === 0) {
+      dropdown.classList.remove('open');
+      return;
+    }
+
+    let html = '';
+
+    if (data.offers.length > 0) {
+      html += '<div class="search-suggest-section"><div class="search-suggest-label">Oferte</div>';
+      data.offers.forEach((o) => {
+        const badge = o.discount_type === 'percent' || o.discount_type === 'percentage'
+          ? `-${o.discount_value}%`
+          : `${o.discount_value} lei`;
+        html += `<a href="/oferta/${o.id}" class="search-suggest-item">
+          <div class="search-suggest-item-text">
+            <div class="search-suggest-item-title">${escapeHtml(o.title)}</div>
+            <div class="search-suggest-item-sub">${escapeHtml(o.business_name)}</div>
+          </div>
+          <span class="search-suggest-item-badge">${badge}</span>
+        </a>`;
+      });
+      html += '</div>';
+    }
+
+    if (data.businesses.length > 0) {
+      html += '<div class="search-suggest-section"><div class="search-suggest-label">Business-uri</div>';
+      data.businesses.forEach((b) => {
+        const logo = b.logo_url
+          ? `<img src="${b.logo_url}" class="search-suggest-item-logo" alt="">`
+          : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${b.name.charAt(0)}</div>`;
+        html += `<a href="/business/${b.id}" class="search-suggest-item">
+          ${logo}
+          <div class="search-suggest-item-text">
+            <div class="search-suggest-item-title">${escapeHtml(b.name)}</div>
+            <div class="search-suggest-item-sub">${escapeHtml(b.category_name || '')}</div>
+          </div>
+        </a>`;
+      });
+      html += '</div>';
+    }
+
+    dropdown.innerHTML = html;
+    dropdown.classList.add('open');
+  } catch (e) {
+    // Silently fail
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }

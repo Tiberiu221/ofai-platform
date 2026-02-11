@@ -52,21 +52,22 @@ router.get("/", async (req, res) => {
     `);
 
     const featuredOffers = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
              b.lat as business_lat, b.lng as business_lng,
              ci.name as city_name, cat.name as category_name,
              COALESCE(b.cover_image_url, o.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
-             COUNT(r.id) as rating_count
+             COUNT(DISTINCT r.id) as rating_count,
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
       WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
-      GROUP BY o.id, o.title, o.discount_type, o.discount_value,
+      GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                ci.name, cat.name, o.logo_url
       ORDER BY o.discount_value DESC
@@ -115,6 +116,24 @@ router.get("/", async (req, res) => {
       newOffers: parseInt(recentOffers.rows[0].total) || Math.floor(parseInt(offerCount.rows[0].total) * 0.1),
     };
 
+    // New offers from followed businesses (for logged-in users)
+    let followedOffers = [];
+    if (req.webUser) {
+      const followedRes = await pool.query(`
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+               b.name as business_name, b.logo_url as business_logo,
+               COALESCE(b.cover_image_url, o.logo_url) as image_url
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        JOIN followed_businesses fb ON fb.business_id = b.id AND fb.user_id = $1
+        WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
+          AND o.start_date >= CURRENT_DATE - INTERVAL '7 days'
+        ORDER BY o.id DESC
+        LIMIT 6
+      `, [req.webUser.id]);
+      followedOffers = followedRes.rows;
+    }
+
     res.render("public/home", {
       stats,
       categories: categories.rows,
@@ -122,6 +141,7 @@ router.get("/", async (req, res) => {
       cities: cities.rows,
       featuredBusinesses: featuredBusinesses.rows,
       topBusinesses: topBusinesses.rows,
+      followedOffers,
       activePage: "home",
       webUser: req.webUser,
     });
@@ -183,21 +203,22 @@ router.get("/oferte", async (req, res) => {
     const orderBy = sortOptions[sort] || sortOptions.newest;
 
     const offersResult = await pool.query(
-      `SELECT o.id, o.title, o.discount_type, o.discount_value,
+      `SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
               b.name as business_name, b.logo_url as business_logo,
               b.cover_image_url as business_cover,
               b.lat as business_lat, b.lng as business_lng,
               ci.name as city_name, cat.name as category_name,
               COALESCE(b.cover_image_url, o.logo_url) as image_url,
               COALESCE(AVG(r.rating), 0) as rating_avg,
-              COUNT(r.id) as rating_count
+              COUNT(DISTINCT r.id) as rating_count,
+              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
        FROM offers o
        JOIN businesses b ON o.business_id = b.id
        LEFT JOIN cities ci ON b.city_id = ci.id
        LEFT JOIN categories cat ON b.category_id = cat.id
        LEFT JOIN reviews r ON r.business_id = b.id
        WHERE ${whereClause}
-       GROUP BY o.id, o.title, o.discount_type, o.discount_value,
+       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                 b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                 ci.name, cat.name, o.logo_url
        ORDER BY ${orderBy}
@@ -554,7 +575,8 @@ router.get("/business/:id", async (req, res) => {
       SELECT o.id, o.title, o.discount_type, o.discount_value,
              o.start_date, o.end_date,
              COALESCE(b2.cover_image_url, o.logo_url) as image_url,
-             b2.name as business_name, b2.logo_url as business_logo
+             b2.name as business_name, b2.logo_url as business_logo,
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
       FROM offers o
       JOIN businesses b2 ON o.business_id = b2.id
       WHERE o.business_id = $1 AND o.is_active = true AND o.end_date >= CURRENT_DATE
@@ -1515,6 +1537,44 @@ router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessO
   } catch (err) {
     console.error("[Web API] Portal subscribers error:", err);
     res.status(500).json({ message: "Eroare" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// SEARCH AUTOSUGGEST
+// ═══════════════════════════════════════════════════════
+router.get("/api/web/search/suggest", async (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+    if (q.length < 2) return res.json({ offers: [], businesses: [] });
+
+    const searchTerm = `%${q}%`;
+
+    const [offersRes, businessesRes] = await Promise.all([
+      pool.query(`
+        SELECT o.id, o.title, o.discount_type, o.discount_value,
+               b.name as business_name
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
+          AND (o.title ILIKE $1 OR b.name ILIKE $1)
+        ORDER BY o.discount_value DESC
+        LIMIT 5
+      `, [searchTerm]),
+      pool.query(`
+        SELECT b.id, b.name, b.logo_url, cat.name as category_name
+        FROM businesses b
+        LEFT JOIN categories cat ON b.category_id = cat.id
+        WHERE b.name ILIKE $1
+        ORDER BY b.name
+        LIMIT 3
+      `, [searchTerm]),
+    ]);
+
+    res.json({ offers: offersRes.rows, businesses: businessesRes.rows });
+  } catch (err) {
+    console.error("[Web API] Search suggest error:", err);
+    res.json({ offers: [], businesses: [] });
   }
 });
 

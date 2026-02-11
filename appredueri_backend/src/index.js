@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 
@@ -98,6 +99,14 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// ============================================
+// SECURITY HEADERS (Helmet)
+// ============================================
+app.use(helmet({
+  contentSecurityPolicy: false, // EJS templates use inline scripts/styles
+  crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
+}));
 
 // ============================================
 // RATE LIMITING (Global)

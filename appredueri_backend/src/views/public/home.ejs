@@ -103,6 +103,58 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════
+     NEW OFFERS FROM FOLLOWED BUSINESSES
+     ═══════════════════════════════════════════════════════ -->
+<% if (followedOffers && followedOffers.length > 0) { %>
+<section class="section" style="padding-top: 48px; padding-bottom: 48px;">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">🔔 Pentru tine</div>
+      <h2 class="section-title" style="font-size: 1.5rem;">Noutati de la business-urile tale</h2>
+    </div>
+    <div class="offers-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+      <% followedOffers.forEach((fo, i) => { %>
+        <a href="/oferta/<%= fo.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 4) %>">
+          <div class="offer-image-wrapper">
+            <% if (fo.image_url) { %>
+              <img src="<%= fo.image_url %>" alt="<%= fo.title %>" class="offer-image" loading="lazy">
+            <% } else { %>
+              <div class="offer-image-placeholder">
+                <span class="offer-placeholder-letter"><%= fo.business_name.charAt(0) %></span>
+              </div>
+            <% } %>
+            <div class="offer-badge">
+              <% if (fo.discount_type === 'percent' || fo.discount_type === 'percentage') { %>
+                -<%= fo.discount_value %>%
+              <% } else { %>
+                <%= fo.discount_value %> lei
+              <% } %>
+            </div>
+            <% if (fo.end_date) { const _dl = Math.ceil((new Date(fo.end_date) - new Date()) / 86400000); if (_dl > 0 && _dl <= 7) { %>
+              <div class="urgency-badge"><%= _dl === 1 ? 'Ultima zi!' : 'Expir\u0103 \xeen ' + _dl + ' zile' %></div>
+            <% } } %>
+          </div>
+          <div class="offer-content">
+            <div class="offer-content-row">
+              <% if (fo.business_logo) { %>
+                <div class="offer-logo">
+                  <img src="<%= fo.business_logo %>" alt="<%= fo.business_name %>" loading="lazy">
+                </div>
+              <% } %>
+              <div class="offer-content-text">
+                <div class="offer-business"><%= fo.business_name %></div>
+                <div class="offer-title"><%= fo.title %></div>
+              </div>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
      FEATURED OFFERS — Bento Grid
      ═══════════════════════════════════════════════════════ -->
 <section class="section" style="background: var(--bg-secondary);">
@@ -144,6 +196,9 @@
                 <%= offer.discount_value %> lei
               <% } %>
             </div>
+            <% if (offer.end_date) { const _dl = Math.ceil((new Date(offer.end_date) - new Date()) / 86400000); if (_dl > 0 && _dl <= 7) { %>
+              <div class="urgency-badge"><%= _dl === 1 ? 'Ultima zi!' : 'Expir\u0103 \xeen ' + _dl + ' zile' %></div>
+            <% } } %>
           </div>
           <div class="offer-content">
             <div class="offer-content-row">
@@ -173,6 +228,12 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                 <span class="offer-distance-text"></span>
               </span>
+              <% if (parseInt(offer.favorite_count) >= 5) { %>
+                <span class="offer-meta-item offer-social-proof">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  <%= offer.favorite_count %> salvari
+                </span>
+              <% } %>
               <span class="offer-meta-item">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                 <%= offer.category_name %>
