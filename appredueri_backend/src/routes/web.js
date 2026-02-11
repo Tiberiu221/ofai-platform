@@ -710,7 +710,9 @@ router.post("/login", async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ success: true, redirect: "/cont" });
+    const returnTo = req.body.returnTo || "/cont";
+    const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";
+    return res.json({ success: true, redirect: safeRedirect });
   } catch (err) {
     console.error("[Web] Login error:", err);
     return res.status(500).json({ message: "Eroare server" });

@@ -188,7 +188,7 @@ window.toggleFavorite = async function(offerId) {
       const resp = await fetch(`/api/web/favorites/${offerId}`, { method: 'DELETE' });
       if (!resp.ok) {
         const data = await resp.json();
-        if (resp.status === 401) return window.location.href = '/login';
+        if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
       btn.dataset.favorited = 'false';
@@ -202,7 +202,7 @@ window.toggleFavorite = async function(offerId) {
       });
       if (!resp.ok) {
         const data = await resp.json();
-        if (resp.status === 401) return window.location.href = '/login';
+        if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
       btn.dataset.favorited = 'true';
@@ -226,7 +226,7 @@ window.toggleFollow = async function(businessId) {
       const resp = await fetch(`/api/web/subscriptions/${businessId}`, { method: 'DELETE' });
       if (!resp.ok) {
         const data = await resp.json();
-        if (resp.status === 401) return window.location.href = '/login';
+        if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
       btn.dataset.following = 'false';
@@ -241,7 +241,7 @@ window.toggleFollow = async function(businessId) {
       });
       if (!resp.ok) {
         const data = await resp.json();
-        if (resp.status === 401) return window.location.href = '/login';
+        if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
       btn.dataset.following = 'true';

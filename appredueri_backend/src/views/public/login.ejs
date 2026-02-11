@@ -315,6 +315,8 @@ document.querySelector('.auth-form').addEventListener('submit', async (e) => {
   const btn = form.querySelector('.auth-submit');
   const email = form.querySelector('#email').value;
   const password = form.querySelector('#password').value;
+  const _qs = new URLSearchParams(window.location.search);
+  const returnTo = _qs.get('returnTo') || '/cont';
 
   const oldErr = form.parentElement.querySelector('.auth-error');
   if (oldErr) oldErr.remove();
@@ -326,7 +328,7 @@ document.querySelector('.auth-form').addEventListener('submit', async (e) => {
     const resp = await fetch('/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, returnTo }),
     });
     const data = await resp.json();
 
