@@ -203,12 +203,13 @@ router.get("/oferte", async (req, res) => {
     const orderBy = sortOptions[sort] || sortOptions.newest;
 
     const offersResult = await pool.query(
-      `SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      `SELECT o.id, o.title, o.description, o.discount_type, o.discount_value, o.end_date,
+              o.business_id,
               b.name as business_name, b.logo_url as business_logo,
               b.cover_image_url as business_cover,
               b.lat as business_lat, b.lng as business_lng,
               ci.name as city_name, cat.name as category_name,
-              COALESCE(b.cover_image_url, o.logo_url) as image_url,
+              COALESCE(o.logo_url, b.cover_image_url) as image_url,
               COALESCE(AVG(r.rating), 0) as rating_avg,
               COUNT(DISTINCT r.id) as rating_count,
               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
@@ -218,13 +219,29 @@ router.get("/oferte", async (req, res) => {
        LEFT JOIN categories cat ON b.category_id = cat.id
        LEFT JOIN reviews r ON r.business_id = b.id
        WHERE ${whereClause}
-       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
+       GROUP BY o.id, o.title, o.description, o.discount_type, o.discount_value, o.end_date,
+                o.business_id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                 ci.name, cat.name, o.logo_url
        ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
     );
+
+    // Interleave offers so same business doesn't appear consecutively
+    const rawOffers = offersResult.rows;
+    const interleaved = [];
+    const buckets = new Map();
+    for (const offer of rawOffers) {
+      const bid = offer.business_id;
+      if (!buckets.has(bid)) buckets.set(bid, []);
+      buckets.get(bid).push(offer);
+    }
+    const queues = [...buckets.values()].sort((a, b) => b.length - a.length);
+    while (queues.some(q => q.length > 0)) {
+      for (const q of queues) {
+        if (q.length > 0) interleaved.push(q.shift());
+      }
+    }
 
     const categoriesResult = await pool.query("SELECT c.id, c.name FROM categories c ORDER BY c.name");
 
@@ -241,7 +258,7 @@ router.get("/oferte", async (req, res) => {
     );
 
     res.render("public/oferte", {
-      offers: offersResult.rows,
+      offers: interleaved,
       categories: categoriesResult.rows,
       cities: citiesResult.rows,
       totalOffers,

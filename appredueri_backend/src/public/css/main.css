@@ -821,7 +821,22 @@ ul, ol { list-style: none; }
   font-size: 1.0625rem;
   color: var(--text-primary);
   line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.offer-title:last-child {
   margin-bottom: 10px;
+}
+
+.offer-description {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .offer-card.featured .offer-title {
