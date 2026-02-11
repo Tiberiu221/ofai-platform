@@ -12,9 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGeolocation();
   initSearchAutosuggest();
   initTiltFx();
-  initTypeReveal();
   initParticles();
-  initTestimonials();
 });
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
@@ -539,46 +537,22 @@ function initTiltFx() {
   });
 }
 
-/* ─── TYPEFX HERO TEXT REVEAL ──────────────────────────── */
-function initTypeReveal() {
-  const title = document.querySelector('.hero-title');
-  if (!title) return;
-
-  title.style.animation = 'none';
-  title.style.opacity = '1';
-  title.classList.add('typefx-active');
-
-  const html = title.innerHTML;
-  const tokens = [];
-  let idx = 0;
-
-  // Parse HTML preserving tags
-  const regex = /(<[^>]+>[^<]*<\/[^>]+>)|(\S+)/g;
-  let match;
-  while ((match = regex.exec(html)) !== null) {
-    const token = match[0].trim();
-    if (!token) continue;
-    tokens.push(`<span class="type-word" style="--i:${idx}">${token}</span>`);
-    idx++;
-  }
-
-  title.innerHTML = tokens.join(' ');
-}
-
-/* ─── PARTICLE HERO BACKGROUND ─────────────────────────── */
+/* ─── PARTICLE BACKGROUND (generic — hero + auth pages) ── */
 function initParticles() {
   if (window.innerWidth < 768) return;
-  const canvas = document.getElementById('hero-particles');
-  if (!canvas) return;
+  document.querySelectorAll('canvas.particle-canvas').forEach(canvas => {
+    const container = canvas.parentElement;
+    if (!container) return;
+    setupParticleCanvas(canvas, container);
+  });
+}
 
+function setupParticleCanvas(canvas, container) {
   const ctx = canvas.getContext('2d');
-  const hero = canvas.closest('.hero');
-  if (!hero) return;
-
   let w, h, particles = [], mouse = { x: -1000, y: -1000 }, animating = true;
 
   function resize() {
-    const rect = hero.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = rect.width;
     h = rect.height;
@@ -586,7 +560,7 @@ function initParticles() {
     canvas.height = h * dpr;
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
   function createParticles() {
@@ -609,7 +583,6 @@ function initParticles() {
     ctx.clearRect(0, 0, w, h);
 
     particles.forEach((p) => {
-      // Attraction to mouse
       const dx = mouse.x - p.x;
       const dy = mouse.y - p.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -619,14 +592,11 @@ function initParticles() {
         p.vy += dy * force * 0.01;
       }
 
-      // Damping
       p.vx *= 0.99;
       p.vy *= 0.99;
-
       p.x += p.vx;
       p.y += p.vy;
 
-      // Wrap edges
       if (p.x < -10) p.x = w + 10;
       if (p.x > w + 10) p.x = -10;
       if (p.y < -10) p.y = h + 10;
@@ -641,23 +611,22 @@ function initParticles() {
     requestAnimationFrame(draw);
   }
 
-  hero.addEventListener('mousemove', (e) => {
-    const rect = hero.getBoundingClientRect();
+  container.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
     mouse.x = e.clientX - rect.left;
     mouse.y = e.clientY - rect.top;
   });
 
-  hero.addEventListener('mouseleave', () => {
+  container.addEventListener('mouseleave', () => {
     mouse.x = -1000;
     mouse.y = -1000;
   });
 
-  // Stop when off-screen
   const obs = new IntersectionObserver((entries) => {
     animating = entries[0].isIntersecting;
     if (animating) draw();
   }, { threshold: 0.1 });
-  obs.observe(hero);
+  obs.observe(container);
 
   window.addEventListener('resize', () => {
     resize();
@@ -685,49 +654,3 @@ function buildSkeletonHTML() {
   return html;
 }
 
-/* ─── TESTIMONIALS CAROUSEL ────────────────────────────── */
-function initTestimonials() {
-  const track = document.querySelector('.testimonials-track');
-  const dotsContainer = document.querySelector('.testimonials-dots');
-  if (!track || !dotsContainer) return;
-
-  const cards = track.querySelectorAll('.testimonial-card');
-  if (cards.length === 0) return;
-
-  let current = 0;
-  let interval = null;
-
-  // Create dots
-  cards.forEach((_, i) => {
-    const dot = document.createElement('button');
-    dot.className = 'testimonial-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', `Testimonial ${i + 1}`);
-    dot.addEventListener('click', () => goTo(i));
-    dotsContainer.appendChild(dot);
-  });
-
-  const dots = dotsContainer.querySelectorAll('.testimonial-dot');
-
-  function goTo(idx) {
-    current = idx;
-    track.style.transform = `translateX(-${current * 100}%)`;
-    dots.forEach((d, i) => d.classList.toggle('active', i === current));
-  }
-
-  function next() {
-    goTo((current + 1) % cards.length);
-  }
-
-  function startAuto() {
-    interval = setInterval(next, 5000);
-  }
-
-  function stopAuto() {
-    clearInterval(interval);
-  }
-
-  track.addEventListener('mouseenter', stopAuto);
-  track.addEventListener('mouseleave', startAuto);
-
-  startAuto();
-}

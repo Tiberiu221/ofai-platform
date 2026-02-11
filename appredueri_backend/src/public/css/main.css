@@ -3331,144 +3331,20 @@ ul, ol { list-style: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TYPEFX — Hero Word Reveal
+   PARTICLE CANVAS (hero + auth pages)
    ═══════════════════════════════════════════════════════════ */
-.hero-title.typefx-active {
-  animation: none !important;
-  opacity: 1 !important;
-}
-
-.type-word {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: typeReveal 0.6s var(--ease-out) calc(0.15s + var(--i, 0) * 0.08s) forwards;
-}
-
-@keyframes typeReveal {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   PARTICLE HERO CANVAS
-   ═══════════════════════════════════════════════════════════ */
-.hero-particles {
+.particle-canvas {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 0;
+}
+
+.hero-particles {
   opacity: 0.6;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TESTIMONIALS CAROUSEL
-   ═══════════════════════════════════════════════════════════ */
-.testimonials-section {
-  overflow: hidden;
+.auth-particles {
+  opacity: 0.5;
 }
 
-.testimonials-viewport {
-  overflow: hidden;
-  border-radius: var(--radius-lg);
-}
-
-.testimonials-track {
-  display: flex;
-  transition: transform 0.5s var(--ease-out);
-}
-
-.testimonial-card {
-  flex: 0 0 100%;
-  padding: 40px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.testimonial-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--accent-muted);
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-}
-
-.testimonial-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.testimonial-name {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.testimonial-role {
-  font-size: 0.8125rem;
-  color: var(--text-tertiary);
-}
-
-.testimonial-quote {
-  font-size: 1.125rem;
-  line-height: 1.6;
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
-.testimonial-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--accent-muted);
-  border-radius: 20px;
-  color: var(--accent);
-  font-weight: 600;
-  font-size: 0.875rem;
-  width: fit-content;
-}
-
-.testimonials-dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 24px;
-}
-
-.testimonial-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: none;
-  background: var(--border);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0;
-}
-
-.testimonial-dot.active {
-  background: var(--accent);
-  transform: scale(1.3);
-}
-
-@media (max-width: 768px) {
-  .testimonial-card {
-    padding: 24px;
-  }
-  .testimonial-quote {
-    font-size: 1rem;
-  }
-}
