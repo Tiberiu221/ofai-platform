@@ -32,6 +32,9 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const isProduction = process.env.NODE_ENV === "production";
 
+// Cache buster — changes on each server restart
+app.locals.cacheBust = Date.now();
+
 // Trust proxy — necesar pentru Railway/Cloudflare (corect req.secure, req.ip, cookies Secure)
 if (isProduction) {
   app.set("trust proxy", 1);
@@ -216,8 +219,11 @@ app.use((req, res) => {
       req.path.startsWith('/push-tokens') || req.path.startsWith('/my-businesses') || req.path.startsWith('/api')) {
     return res.status(404).json({ message: "Endpoint negăsit" });
   }
-  // Web pages render 404 EJS
-  res.status(404).render("public/404", { activePage: null, webUser: null });
+  // Web pages render 404 EJS — try to pass webUser if cookie exists
+  const { optionalWebAuth } = require("./middleware/webAuth");
+  optionalWebAuth(req, res, () => {
+    res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null });
+  });
 });
 
 // ============================================

@@ -576,7 +576,7 @@
 
     <div class="offer-detail-hero-actions">
       <div class="offer-badge">
-        <% if (offer.discount_type === 'percent') { %>
+        <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
           -<%= offer.discount_value %>%
         <% } else { %>
           -<%= offer.discount_value %> RON

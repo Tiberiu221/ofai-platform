@@ -287,20 +287,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ─── GEOLOCATION + DISTANCE ───────────────────────────── */
 function initGeolocation() {
-  var cards = document.querySelectorAll('.offer-distance[data-lat][data-lng]');
+  const cards = document.querySelectorAll('.offer-distance[data-lat][data-lng]');
   if (cards.length === 0) return;
 
-  var banner = document.getElementById('geo-banner');
-  var bannerText = document.getElementById('geo-banner-text');
-  var activateBtn = document.getElementById('geo-activate-btn');
+  const banner = document.getElementById('geo-banner');
+  const bannerText = document.getElementById('geo-banner-text');
+  const activateBtn = document.getElementById('geo-activate-btn');
 
   // Check sessionStorage cache first for instant display
-  var cached = sessionStorage.getItem('ofai_user_pos');
+  const cached = sessionStorage.getItem('ofai_user_pos');
   if (cached) {
     try {
-      var pos = JSON.parse(cached);
+      const pos = JSON.parse(cached);
       updateDistances(pos.lat, pos.lng, cards);
-      // Show banner in active state
       if (banner) {
         banner.style.display = '';
         banner.classList.add('geo-active');
@@ -316,13 +315,13 @@ function initGeolocation() {
   if (banner) banner.style.display = '';
 
   if (activateBtn) {
-    activateBtn.addEventListener('click', function() {
+    activateBtn.addEventListener('click', () => {
       activateBtn.textContent = 'Se caută...';
       activateBtn.disabled = true;
 
-      navigator.geolocation.getCurrentPosition(function(pos) {
-        var userLat = pos.coords.latitude;
-        var userLng = pos.coords.longitude;
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const userLat = pos.coords.latitude;
+        const userLng = pos.coords.longitude;
         sessionStorage.setItem('ofai_user_pos', JSON.stringify({ lat: userLat, lng: userLng }));
         updateDistances(userLat, userLng, cards);
 
@@ -331,7 +330,7 @@ function initGeolocation() {
           if (bannerText) bannerText.textContent = 'Locație activă — distanțele sunt afișate';
           activateBtn.style.display = 'none';
         }
-      }, function() {
+      }, () => {
         if (bannerText) bannerText.textContent = 'Nu am putut accesa locația. Verifică setările browserului.';
         activateBtn.textContent = 'Reîncearcă';
         activateBtn.disabled = false;
@@ -341,13 +340,13 @@ function initGeolocation() {
 }
 
 function haversineKm(lat1, lon1, lat2, lon2) {
-  var R = 6371;
-  var dLat = (lat2 - lat1) * Math.PI / 180;
-  var dLon = (lon2 - lon1) * Math.PI / 180;
-  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return Math.round(R * c * 10) / 10;
 }
 
@@ -357,12 +356,12 @@ function formatDistance(km) {
 }
 
 function updateDistances(userLat, userLng, cards) {
-  cards.forEach(function(el) {
-    var lat = parseFloat(el.dataset.lat);
-    var lng = parseFloat(el.dataset.lng);
+  cards.forEach((el) => {
+    const lat = parseFloat(el.dataset.lat);
+    const lng = parseFloat(el.dataset.lng);
     if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
-    var km = haversineKm(userLat, userLng, lat, lng);
-    var text = el.querySelector('.offer-distance-text');
+    const km = haversineKm(userLat, userLng, lat, lng);
+    const text = el.querySelector('.offer-distance-text');
     if (text) {
       text.textContent = formatDistance(km);
       el.style.display = '';

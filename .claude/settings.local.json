@@ -85,7 +85,11 @@
       "Bash(export ANDROID_HOME:*)",
       "Bash(export ANDROID_HOME=\"/c/Users/tiber/AppData/Local/Android/Sdk\":*)",
       "Bash(npx eas:*)",
-      "Bash(git status:*)"
+      "Bash(git status:*)",
+      "Bash(.js \")",
+      "WebFetch(domain:www.pexels.com)",
+      "WebFetch(domain:pixabay.com)",
+      "WebFetch(domain:picsum.photos)"
     ]
   }
 }

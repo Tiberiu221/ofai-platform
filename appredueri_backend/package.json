@@ -8,10 +8,12 @@
     "dev": "nodemon src/index.js",
     "review-summaries:batch": "node scripts/review-summary-batch.js",
     "seed:businesses": "node scripts/seed-businesses.js",
+    "seed:reviews": "node scripts/seed-reviews.js",
     "scrape": "node scripts/scraping/01-scrape.js",
     "scrape:enrich": "node scripts/scraping/02-enrich-and-insert.js",
     "scrape:verify": "node scripts/scraping/03-verify.js",
-    "scrape:cleanup": "node scripts/scraping/04-cleanup.js"
+    "scrape:cleanup": "node scripts/scraping/04-cleanup.js",
+    "scrape:images": "node scripts/scraping/05-assign-images.js"
   },
   "keywords": [],
   "author": "",

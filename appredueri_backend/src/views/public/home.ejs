@@ -42,15 +42,15 @@
 
     <div class="hero-stats">
       <div class="hero-stat">
-        <div class="hero-stat-value" data-count="<%= stats.totalBusinesses %>" data-suffix="+">0</div>
+        <div class="hero-stat-value" data-count="<%= stats.totalBusinesses %>" data-suffix="+"><%= stats.totalBusinesses %>+</div>
         <div class="hero-stat-label">Business-uri</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-value" data-count="<%= stats.totalOffers %>" data-suffix="+">0</div>
+        <div class="hero-stat-value" data-count="<%= stats.totalOffers %>" data-suffix="+"><%= stats.totalOffers %>+</div>
         <div class="hero-stat-label">Oferte active</div>
       </div>
       <div class="hero-stat">
-        <div class="hero-stat-value" data-count="<%= stats.totalCities %>">0</div>
+        <div class="hero-stat-value" data-count="<%= stats.totalCities %>"><%= stats.totalCities %></div>
         <div class="hero-stat-label">Orașe</div>
       </div>
     </div>
@@ -138,7 +138,7 @@
               </div>
             <% } %>
             <div class="offer-badge">
-              <% if (offer.discount_type === 'percent') { %>
+              <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
                 -<%= offer.discount_value %>%
               <% } else { %>
                 <%= offer.discount_value %> lei

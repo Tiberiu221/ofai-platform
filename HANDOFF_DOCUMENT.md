@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 10 Februarie 2026 (Actualizat v9 — Mobile Performance Audit + UI Library Research)
+## Data: 11 Februarie 2026 (Actualizat v10 — Add Business Feature + Email Notifications + Retry UX)
 
 ---
 
@@ -17,7 +17,7 @@
 - **Hosting:** Railway (backend + EJS site + static assets, totul pe acelasi server)
 - **DNS/CDN:** Cloudflare (free plan, CNAME flattening, proxy ON)
 - **Imagini:** Cloudinary (upload/resize/delete)
-- **Email:** Resend (welcome + password reset) — domeniu ofai.ro verificat
+- **Email:** Resend (welcome + password reset + business approved/rejected) — domeniu ofai.ro verificat
 - **Error Tracking:** Sentry
 - **AI/LLM:** Anthropic Claude Haiku (review summarization)
 - **Workflow Automation:** n8n (pe Railway)
@@ -45,7 +45,8 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │   ├── favorites.js        # REST API favorite (mobile)
 │   │   │   ├── subscriptions.js    # REST API urmariri (mobile)
 │   │   │   ├── users.js            # REST API utilizatori (mobile)
-│   │   │   ├── admin.js            # Admin panel routes
+│   │   │   ├── admin.js            # Admin panel routes (+ business request approve/reject)
+│   │   │   ├── businessRequests.js # ★ NOU — Business request submit + track API (cookie auth)
 │   │   │   └── push-tokens.js      # Push notification tokens
 │   │   ├── middleware/
 │   │   │   ├── webAuth.js          # Cookie JWT auth (optionalWebAuth / requireWebAuth)
@@ -59,14 +60,18 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   ├── config/
 │   │   │   └── llm.js              # Claude Haiku config
 │   │   ├── services/
-│   │   │   ├── llm/                # AI review summarization
+│   │   │   ├── llm/
+│   │   │   │   ├── (review summarization)
+│   │   │   │   └── businessValidation.js  # ★ NOU — AI validation pipeline (Haiku scoring)
 │   │   │   ├── cloudinary.js       # Upload/delete/transform imagini
 │   │   │   ├── n8n.js              # Webhook fire-and-forget helper
-│   │   │   ├── email.js            # Resend email (welcome + reset)
+│   │   │   ├── email.js            # Resend email (welcome + reset + biz approved/rejected)
 │   │   │   ├── pushNotifications.js
 │   │   │   └── sentry.js
 │   │   ├── views/
 │   │   │   ├── admin/              # Admin panel (EJS)
+│   │   │   │   ├── business-requests.ejs  # ★ NOU — Admin review business requests
+│   │   │   │   └── businesses-list.ejs
 │   │   │   └── public/             # ★ PUBLIC WEBSITE — toate paginile EJS
 │   │   │       ├── home.ejs
 │   │   │       ├── oferte.ejs
@@ -87,7 +92,7 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │       ├── termeni.ejs
 │   │   │       ├── confidentialitate.ejs
 │   │   │       ├── ajutor.ejs
-│   │   │       ├── business-cta.ejs
+│   │   │       ├── pentru-business.ejs  # ★ RESCRIS — form + AI validation + request tracker + retry
 │   │   │       ├── 404.ejs
 │   │   │       ├── portal/
 │   │   │       │   ├── dashboard.ejs    # ★ NOU — lista business-uri owner
@@ -113,7 +118,7 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │       ├── 03-verify.js       # Verificare calitate date scrapate
 │   │       ├── 04-cleanup.js      # Ștergere date scrapate (source='scraped')
 │   │       └── data/              # (gitignored) raw JSON + state + costs
-│   └── migrations/                # SQL migrations (latest: 012_add_source_column)
+│   └── migrations/                # SQL migrations (latest: 013_business_requests)
 │
 └── n8n-workflows/                 # Exportabile .json pentru n8n
     └── WF1_New_Review_Notify_Owner.json
@@ -218,6 +223,16 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 - [x] **Distance from user:** Geolocation API + Haversine formula, arata "X.X km" sau "XXX m" pe fiecare card
 - [x] **Visual polish:** Sort bar cu border separator, filter bar spacing, collection tab badges
 
+### Add Business Feature (Faza 3.6 — COMPLETA)
+- [x] **Form /pentru-business** cu AI validation (Claude Haiku scoring 0-100 + flags + reasoning)
+- [x] **Admin panel** `/admin/business-requests` (list, approve→creates business+owner, reject with reason)
+- [x] **Email notifications** business approved + rejected (Resend, non-blocking)
+- [x] **Request tracker** "Cererile tale" pe /pentru-business — status cards (pending/approved/rejected)
+- [x] **"Reia procesul"** button — prefills form cu datele din cererea respinsa
+- [x] **Auto-cleanup** — cererea veche rejected se sterge automat la retry (via `replaces_rejected_id`)
+- [x] **Status indicator pe /cont** — account menu item colorat dupa status
+- [x] **DB migration 013** — `business_requests` table (AI fields, status flow, business_id FK)
+
 ### Infrastructura
 - [x] Backend deployed pe Railway cu PostgreSQL
 - [x] Domeniu custom ofai.ro configurat (Cloudflare DNS)
@@ -254,10 +269,16 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 
 ## CE TREBUIE FACUT / CUNOSCUT
 
-### ⚠️ PROBLEMA ACTIVA: Railway/ofai.ro down
-**Status:** Railway returnează "Not Found" pe ofai.ro (observat 10 Feb 2026).
-Posibil: service crash, deploy failure, sau custom domain issue.
-**Acțiune:** Verifică Railway Dashboard pentru status serviciu.
+### ⚠️ VERIFICARI PENDINTE (Add Business Feature — v10)
+Feature-ul "Add Business" a fost implementat recent si necesita verificari end-to-end:
+- [ ] Verify "Reia procesul" button works (prefill + scroll + submit + old request deleted)
+- [ ] Verify email notifications arrive correctly (approve + reject scenarios)
+- [ ] Verify `/cont` status indicator shows correct state for each status
+- [ ] Verify form disables when pending or approved request exists
+- [ ] Verify scroll position after clicking "Reia procesul" (should target section header)
+- [ ] Test edge cases: multiple requests history, retry after approve/reject
+- [ ] Verify admin approve flow creates business + assigns ownership + upgrades role
+- [ ] Verify admin panel `/admin/business-requests` sorts and filters correctly
 
 ### 1. Scraping Pipeline (NOU — gata de rulat)
 Pipeline complet Playwright + OpenRouter pentru business-uri reale din Google Maps:
@@ -348,7 +369,7 @@ express, pool, bcrypt, jwt, webAuth, businessWebAuth, multer, cloudinary, email,
 /termeni             → termeni.ejs
 /confidentialitate   → confidentialitate.ejs
 /ajutor              → ajutor.ejs
-/pentru-business     → business-cta.ejs
+/pentru-business     → pentru-business.ejs (form + AI validation + request tracker + retry)
 /portal              → portal/dashboard.ejs (requireBusinessOwner)
 /portal/:businessId  → portal/manage.ejs (requireBusinessOwner)
 /portal/:bId/oferta-noua       → portal/offer-form.ejs
@@ -375,6 +396,12 @@ PUT    /api/web/account            → update profil
 PUT    /api/web/account/password   → schimba parola
 DELETE /api/web/account            → sterge cont
 PUT    /api/web/preferences        → update preferinte
+```
+
+### Rute Business Requests API (cookie auth, separate router)
+```
+POST   /api/business-requests       → submit new business request (AI validated, replaces_rejected_id)
+GET    /api/business-requests/mine  → get user's requests (all fields for prefill on retry)
 ```
 
 ### Rute Portal AJAX (cookie auth + business ownership)
@@ -520,6 +547,7 @@ Workflows active: WF1 (new-review → email owner)
 - **Dashboard:** https://resend.com
 - **Domeniu:** ofai.ro (DKIM verificat)
 - **Email sender:** `OFAI <noreply@ofai.ro>`
+- **Email types:** welcome, password_reset, business_approved, business_rejected
 
 ### Anthropic / Claude (AI)
 - **Model:** Claude 3 Haiku
@@ -563,6 +591,17 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Portal image upload/delete (logo + cover)
 - [x] Trust proxy + Safari webkit fixes
 - [x] Unicode fixes (Romanian diacritics in EJS)
+
+### Faza 3.6 — Add Business + Business Requests (COMPLETA - v10)
+- [x] /pentru-business form (name, category, city, address, phone, website, description)
+- [x] AI validation pipeline (Claude Haiku): score 0-100, flags[], reasoning
+- [x] business_requests DB table (migration 013) with status flow
+- [x] Admin panel: /admin/business-requests (list + approve/reject)
+- [x] Admin approve: creates business + user_businesses + upgrades role to business_owner
+- [x] Email notifications: approved + rejected (Resend, non-blocking)
+- [x] Request tracker UX: status cards on /pentru-business (pending/approved/rejected)
+- [x] "Reia procesul" retry: prefill form + auto-delete old rejected (replaces_rejected_id)
+- [x] /cont status indicator (account menu item, colored by status)
 
 ### Faza 3.5 - Feature Parity & Visual Polish (COMPLETA - v6)
 - [x] Ratings (avg + count) pe offer cards (home + oferte)
@@ -640,7 +679,7 @@ Workflows active: WF1 (new-review → email owner)
 
 ## PRIORITATI URMATOARE
 
-1. **⚠️ Railway fix** — verifică de ce ofai.ro e down (Railway Dashboard)
+1. **🔍 Verificari Add Business (v10)** — test end-to-end: retry button, emails, /cont indicator, admin flow (vezi lista completa mai sus)
 2. **📱 Mobile Performance (Faza 5A)** — FlashList + expo-image + Reanimated + React.memo (cel mai mare impact vizual)
 3. **Rulează scraping pipeline** — `npm run scrape` + `npm run scrape:enrich` pt date reale
 4. **📱 Unistyles 3.0 (Faza 5B, opțional)** — C++ style engine, zero-rerender themes
@@ -654,6 +693,43 @@ Workflows active: WF1 (new-review → email owner)
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 11 Februarie 2026 (v10 — Add Business Feature + Email Notifications + Retry UX)
+
+**Feature complet "Add Business" — de la form la admin approve, cu email si retry UX:**
+
+**Batch 1 (sesiune anterioara — feature core):**
+- `bb2820c`: Add Business form pe /pentru-business + AI validation (Claude Haiku scoring 0-100) + admin panel /admin/business-requests + migration 013_business_requests
+- `86f6ae8`: Quick fix approve flow (admin.js)
+
+**Batch 2 (sesiune curenta — email + UX + bug fixes):**
+- `bfd5b38`: Email notifications for business request approve/reject (Resend SDK, non-blocking)
+- `f599aa8`: UX — request tracker "Cererile tale" cu status cards, retry cu prefill, fix email link (/business-portal→/cont)
+- `bc3d76e`: Add business request status card to /cont page (account menu item)
+- `e9051ba`: Fix /cont card styling — use standard account-menu-item class (era ugly custom card)
+- `749e7bf`: Fix "Reia procesul" button — store data in global var instead of broken onclick JSON escaping
+- `37f6c46`: Fix scroll position (#adauga-business section header) + auto-delete old rejected request on retry
+
+**Fisiere create:**
+- `src/routes/businessRequests.js` — POST submit + GET mine
+- `src/services/llm/businessValidation.js` — AI validation pipeline
+- `src/views/admin/business-requests.ejs` — Admin panel UI
+- `src/migrations/013_business_requests.sql` — DB table
+
+**Fisiere modificate:**
+- `src/routes/admin.js` — approve/reject routes + email send
+- `src/services/email.js` — +sendBusinessApprovedEmail, +sendBusinessRejectedEmail
+- `src/routes/web.js` — /cont query for bizRequest status, /pentru-business page
+- `src/views/public/account.ejs` — status menu item
+- `src/views/public/pentru-business.ejs` — complet rescris (form + tracker + retry)
+- `src/helpers/validate.js` — +validateBusinessRequest
+- `src/public/css/main.css` — temporary custom styles (added then removed)
+
+**Verificari pendinte pentru urmatoarea sesiune:**
+- Test end-to-end: retry button, email notifications, /cont indicator, admin approve/reject flow
+- Edge cases: multiple cereri, retry dupa approve, scroll position
+
+---
 
 ### 10 Februarie 2026 (v9 — Mobile Performance Audit + UI Library Research)
 
@@ -906,3 +982,13 @@ Setup initial proiect
 12. **Scraping Pipeline:** Playwright cu stealth plugin + OpenRouter DeepSeek. Fișierele sunt în `scripts/scraping/`. Data directory este gitignored. Pipeline-ul este resumable (state.json checkpoint).
 
 13. **Mobile Performance (Audit v9):** Principalele bottlenecks Android: (1) `FlatList` → folosește `@shopify/flash-list` v2, (2) `Image` din react-native → folosește `expo-image`, (3) `Animated` API vechi → folosește `react-native-reanimated` v4 (deja instalat), (4) lipsa `React.memo` pe card components. Librării evaluate: Unistyles 3.0 = recomandat (C++ engine, low migration), NativeWind/Tamagui/Gluestack = respinse (compatibilitate SDK 54 sau cost migrare prea mare).
+
+14. **business_requests table** (migration 013): Coloane: `user_id, name, category_id, city_id, address, phone, website, description, ai_score (SMALLINT), ai_flags (JSONB), ai_reasoning (TEXT), status (pending/approved/rejected), admin_notes, business_id (FK populated after approve), reviewed_by, reviewed_at, created_at, updated_at`. Indexes pe `status` si `user_id`.
+
+15. **AI business validation**: `src/services/llm/businessValidation.js` — trimite datele la Claude Haiku, returneaza `{score, flags[], reasoning}`. Score 0-100, flags gen "suspicious_name", "missing_address". Ruleaza inainte de INSERT, rezultatele se stocheaza in cerere. Se ruleaza si la retry (noua cerere = nou AI check).
+
+16. **Retry mechanism "Reia procesul"**: Frontend stocheaza `window._retryingRejectedId` cand user apasa butonul. La submit, trimite `replaces_rejected_id` in POST body. Backend-ul face `DELETE FROM business_requests WHERE id=$1 AND user_id=$2 AND status='rejected'` inainte de INSERT nou. Securizat: verifica si user_id si status.
+
+17. **Email links**: Email-ul de aprobare trimite CTA catre `/cont` (NU `/business-portal` care e API-only pentru mobile). Rutele `/business-portal` sunt REST API cu Bearer token auth, nu exista pagina web acolo.
+
+18. **Resend email types** (v10): welcome, password_reset, business_approved, business_rejected. Functii in `src/services/email.js`: `sendWelcomeEmail`, `sendPasswordResetEmail`, `sendBusinessApprovedEmail`, `sendBusinessRejectedEmail`. Toate non-blocking (`.catch()` wrapper).

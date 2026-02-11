@@ -351,6 +351,12 @@ document.querySelector('.auth-form').addEventListener('submit', async (e) => {
       btn.textContent = 'Conectează-te';
     }
   } catch (err) {
+    const errDiv = document.createElement('div');
+    errDiv.className = 'auth-error';
+    errDiv.textContent = 'Eroare de rețea. Verifică conexiunea la internet.';
+    const existing = form.parentElement.querySelector('.auth-error');
+    if (existing) existing.remove();
+    form.parentElement.insertBefore(errDiv, form);
     btn.disabled = false;
     btn.textContent = 'Conectează-te';
   }
