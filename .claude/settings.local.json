@@ -89,7 +89,9 @@
       "Bash(.js \")",
       "WebFetch(domain:www.pexels.com)",
       "WebFetch(domain:pixabay.com)",
-      "WebFetch(domain:picsum.photos)"
+      "WebFetch(domain:picsum.photos)",
+      "WebFetch(domain:once-ui.com)",
+      "WebFetch(domain:docs.once-ui.com)"
     ]
   }
 }

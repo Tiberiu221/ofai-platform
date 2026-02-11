@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initSmoothScroll();
   initGeolocation();
   initSearchAutosuggest();
+  initTiltFx();
+  initTypeReveal();
+  initParticles();
+  initTestimonials();
 });
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
@@ -162,7 +166,7 @@ window.showToast = function(message, type = 'info', duration = 3500) {
     info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
   };
 
-  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-msg">${message}</span>`;
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-msg">${message}</span><div class="toast-progress" style="--toast-dur:${duration}ms"></div>`;
   container.appendChild(toast);
 
   requestAnimationFrame(() => toast.classList.add('visible'));
@@ -424,6 +428,8 @@ function initSearchAutosuggest() {
         dropdown.classList.remove('open');
         return;
       }
+      dropdown.innerHTML = buildSkeletonHTML();
+      dropdown.classList.add('open');
       debounceTimer = setTimeout(() => fetchSuggestions(q, dropdown), 300);
     });
 
@@ -500,4 +506,228 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+/* ─── TILTFX 3D CARD EFFECT ───────────────────────────── */
+function initTiltFx() {
+  if (window.innerWidth < 768) return;
+  const card = document.querySelector('.offers-bento .offer-card.featured');
+  if (!card) return;
+
+  const glare = document.createElement('div');
+  glare.className = 'tilt-glare';
+  card.appendChild(glare);
+
+  let rafId = null;
+  card.addEventListener('mousemove', (e) => {
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      const rotateY = (x - 0.5) * 8;
+      const rotateX = (0.5 - y) * 8;
+      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-4px)`;
+      glare.style.setProperty('--mx', (x * 100) + '%');
+      glare.style.setProperty('--my', (y * 100) + '%');
+    });
+  });
+
+  card.addEventListener('mouseleave', () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    card.style.transform = '';
+  });
+}
+
+/* ─── TYPEFX HERO TEXT REVEAL ──────────────────────────── */
+function initTypeReveal() {
+  const title = document.querySelector('.hero-title');
+  if (!title) return;
+
+  title.style.animation = 'none';
+  title.style.opacity = '1';
+  title.classList.add('typefx-active');
+
+  const html = title.innerHTML;
+  const tokens = [];
+  let idx = 0;
+
+  // Parse HTML preserving tags
+  const regex = /(<[^>]+>[^<]*<\/[^>]+>)|(\S+)/g;
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    const token = match[0].trim();
+    if (!token) continue;
+    tokens.push(`<span class="type-word" style="--i:${idx}">${token}</span>`);
+    idx++;
+  }
+
+  title.innerHTML = tokens.join(' ');
+}
+
+/* ─── PARTICLE HERO BACKGROUND ─────────────────────────── */
+function initParticles() {
+  if (window.innerWidth < 768) return;
+  const canvas = document.getElementById('hero-particles');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const hero = canvas.closest('.hero');
+  if (!hero) return;
+
+  let w, h, particles = [], mouse = { x: -1000, y: -1000 }, animating = true;
+
+  function resize() {
+    const rect = hero.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = rect.width;
+    h = rect.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+  }
+
+  function createParticles() {
+    particles = [];
+    const count = Math.min(Math.floor(w / 30), 50);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        r: 1 + Math.random() * 1.5,
+        o: 0.15 + Math.random() * 0.2
+      });
+    }
+  }
+
+  function draw() {
+    if (!animating) return;
+    ctx.clearRect(0, 0, w, h);
+
+    particles.forEach((p) => {
+      // Attraction to mouse
+      const dx = mouse.x - p.x;
+      const dy = mouse.y - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 200 && dist > 1) {
+        const force = 0.3 / dist;
+        p.vx += dx * force * 0.01;
+        p.vy += dy * force * 0.01;
+      }
+
+      // Damping
+      p.vx *= 0.99;
+      p.vy *= 0.99;
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // Wrap edges
+      if (p.x < -10) p.x = w + 10;
+      if (p.x > w + 10) p.x = -10;
+      if (p.y < -10) p.y = h + 10;
+      if (p.y > h + 10) p.y = -10;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(251, 146, 60, ${p.o})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  hero.addEventListener('mousemove', (e) => {
+    const rect = hero.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+  });
+
+  hero.addEventListener('mouseleave', () => {
+    mouse.x = -1000;
+    mouse.y = -1000;
+  });
+
+  // Stop when off-screen
+  const obs = new IntersectionObserver((entries) => {
+    animating = entries[0].isIntersecting;
+    if (animating) draw();
+  }, { threshold: 0.1 });
+  obs.observe(hero);
+
+  window.addEventListener('resize', () => {
+    resize();
+    createParticles();
+  });
+
+  resize();
+  createParticles();
+  draw();
+}
+
+/* ─── SKELETON SEARCH LOADING ──────────────────────────── */
+function buildSkeletonHTML() {
+  let html = '<div class="search-suggest-section">';
+  for (let i = 0; i < 3; i++) {
+    html += `<div class="search-suggest-item search-suggest-skeleton">
+      <div class="skeleton" style="width:32px;height:32px;border-radius:8px;flex-shrink:0;"></div>
+      <div class="search-suggest-item-text">
+        <div class="skeleton" style="width:${60 + i * 15}%;height:14px;margin-bottom:6px;border-radius:4px;"></div>
+        <div class="skeleton" style="width:40%;height:10px;border-radius:4px;"></div>
+      </div>
+    </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ─── TESTIMONIALS CAROUSEL ────────────────────────────── */
+function initTestimonials() {
+  const track = document.querySelector('.testimonials-track');
+  const dotsContainer = document.querySelector('.testimonials-dots');
+  if (!track || !dotsContainer) return;
+
+  const cards = track.querySelectorAll('.testimonial-card');
+  if (cards.length === 0) return;
+
+  let current = 0;
+  let interval = null;
+
+  // Create dots
+  cards.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'testimonial-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', `Testimonial ${i + 1}`);
+    dot.addEventListener('click', () => goTo(i));
+    dotsContainer.appendChild(dot);
+  });
+
+  const dots = dotsContainer.querySelectorAll('.testimonial-dot');
+
+  function goTo(idx) {
+    current = idx;
+    track.style.transform = `translateX(-${current * 100}%)`;
+    dots.forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  function next() {
+    goTo((current + 1) % cards.length);
+  }
+
+  function startAuto() {
+    interval = setInterval(next, 5000);
+  }
+
+  function stopAuto() {
+    clearInterval(interval);
+  }
+
+  track.addEventListener('mouseenter', stopAuto);
+  track.addEventListener('mouseleave', startAuto);
+
+  startAuto();
 }
