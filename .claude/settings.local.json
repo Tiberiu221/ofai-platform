@@ -91,7 +91,8 @@
       "WebFetch(domain:pixabay.com)",
       "WebFetch(domain:picsum.photos)",
       "WebFetch(domain:once-ui.com)",
-      "WebFetch(domain:docs.once-ui.com)"
+      "WebFetch(domain:docs.once-ui.com)",
+      "Bash(npm ls:*)"
     ]
   }
 }
