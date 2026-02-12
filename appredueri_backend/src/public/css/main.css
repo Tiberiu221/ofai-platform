@@ -2948,7 +2948,7 @@ ul, ol { list-style: none; }
   border-color: var(--accent);
 }
 
-.preference-pill.selected {
+.preference-pill.active {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--bg-primary);
