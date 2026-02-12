@@ -157,6 +157,41 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// TEMP DEBUG: Test owners functionality without auth (REMOVE AFTER DEBUG)
+app.post("/debug-add-owner", async (req, res) => {
+  const pool = require("./db");
+  try {
+    const email = ((req.body && req.body.email) || "").trim().toLowerCase();
+    const businessId = parseInt(req.body.businessId || "0", 10);
+    console.log("[DEBUG-OWNER] email:", email, "businessId:", businessId, "body:", req.body);
+
+    if (!email || !businessId) {
+      return res.json({ error: "Missing email or businessId", body: req.body });
+    }
+
+    const userQuery = await pool.query("SELECT id, role FROM users WHERE LOWER(email) = $1", [email]);
+    if (userQuery.rows.length === 0) {
+      return res.json({ error: "User not found", email });
+    }
+
+    const user = userQuery.rows[0];
+    const checkQuery = await pool.query("SELECT 1 FROM user_businesses WHERE user_id = $1 AND business_id = $2", [user.id, businessId]);
+    if (checkQuery.rows.length > 0) {
+      return res.json({ ok: true, message: "Already exists", user });
+    }
+
+    await pool.query("INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)", [user.id, businessId]);
+    if (user.role === "user") {
+      await pool.query("UPDATE users SET role = 'business_owner' WHERE id = $1", [user.id]);
+    }
+
+    return res.json({ ok: true, message: "Owner added", user });
+  } catch (err) {
+    console.error("[DEBUG-OWNER] ERROR:", err);
+    return res.json({ error: err.message, stack: err.stack });
+  }
+});
+
 // ============================================
 // WEB PAGES (Public — Landing, Oferte, etc.)
 // ============================================
