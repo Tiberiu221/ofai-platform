@@ -18,6 +18,9 @@
       <div class="settings-section reveal">
         <h2 class="settings-section-title">Orașul tău</h2>
         <div class="preferences-pills" id="city-pills">
+          <button type="button" class="preference-pill<%= !preferredCityId ? ' active' : '' %>" data-city-id="0" onclick="selectCity(this)">
+            Toate
+          </button>
           <% cities.forEach(function(city) { %>
             <button type="button" class="preference-pill<%= preferredCityId && preferredCityId == city.id ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="selectCity(this)">
               <%= city.name %>
@@ -34,6 +37,9 @@
           <%
             const selectedCats = Array.isArray(preferredCategoryIds) ? preferredCategoryIds.map(Number) : [];
           %>
+          <button type="button" class="preference-pill<%= selectedCats.length === 0 ? ' active' : '' %>" data-category-id="0" onclick="selectAllCategories(this)">
+            Toate
+          </button>
           <% categories.forEach(function(cat) { %>
             <button type="button" class="preference-pill<%= selectedCats.includes(cat.id) ? ' active' : '' %>" data-category-id="<%= cat.id %>" onclick="toggleCategory(this)">
               <%= cat.name %>
@@ -60,10 +66,15 @@
   function selectCity(el) {
     document.querySelectorAll('#city-pills .preference-pill').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
-    selectedCityId = parseInt(el.dataset.cityId);
+    const cityId = parseInt(el.dataset.cityId);
+    selectedCityId = cityId === 0 ? null : cityId;
   }
 
   function toggleCategory(el) {
+    // Deselect "Toate" when selecting individual category
+    const toateBtn = document.querySelector('#category-pills .preference-pill[data-category-id="0"]');
+    if (toateBtn) toateBtn.classList.remove('active');
+
     el.classList.toggle('active');
     const id = parseInt(el.dataset.categoryId);
     if (el.classList.contains('active')) {
@@ -71,6 +82,16 @@
     } else {
       selectedCategoryIds = selectedCategoryIds.filter(c => c !== id);
     }
+
+    // If nothing selected, activate "Toate"
+    if (selectedCategoryIds.length === 0 && toateBtn) toateBtn.classList.add('active');
+  }
+
+  function selectAllCategories(el) {
+    // Deselect all individual categories
+    document.querySelectorAll('#category-pills .preference-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    selectedCategoryIds = [];
   }
 
   async function savePreferences(e) {

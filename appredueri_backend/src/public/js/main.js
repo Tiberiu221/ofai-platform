@@ -390,13 +390,17 @@ window.shareOffer = async function(title, businessName) {
       showToast('Link copiat!', 'success');
     } catch (e) {
       // Fallback: select text from a temp input
-      const input = document.createElement('input');
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      showToast('Link copiat!', 'success');
+      try {
+        const input = document.createElement('input');
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast('Link copiat!', 'success');
+      } catch (err) {
+        showToast('Nu s-a putut copia link-ul. Încearcă din nou.', 'error');
+      }
     }
   }
 };
@@ -497,7 +501,9 @@ async function fetchSuggestions(q, dropdown) {
     dropdown.innerHTML = html;
     dropdown.classList.add('open');
   } catch (e) {
-    // Silently fail
+    console.error(e);
+    showToast('Eroare la căutare. Încearcă din nou.', 'error');
+    dropdown.classList.remove('open');
   }
 }
 

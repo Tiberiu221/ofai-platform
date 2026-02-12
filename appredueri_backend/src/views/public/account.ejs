@@ -17,8 +17,41 @@
         <%= webUser.first_name ? webUser.first_name.charAt(0).toUpperCase() : 'U' %>
       </div>
       <div class="account-info">
-        <h2 class="account-name"><%= webUser.first_name || '' %> <%= webUser.last_name || '' %></h2>
-        <p class="account-email"><%= webUser.email %></p>
+        <div id="profile-view">
+          <h2 class="account-name"><%= webUser.first_name || '' %> <%= webUser.last_name || '' %></h2>
+          <p class="account-email"><%= webUser.email %></p>
+          <button class="btn btn-ghost" onclick="showProfileEditForm()" style="margin-top: 8px; padding: 6px 12px; font-size: 0.875rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editează profilul
+          </button>
+          <% if (typeof lastProfileEdit !== 'undefined' && lastProfileEdit) { %>
+            <%
+              const lastEdit = new Date(lastProfileEdit);
+              const now = new Date();
+              const daysSince = Math.floor((now - lastEdit) / (1000 * 60 * 60 * 24));
+              const daysLeft = 30 - daysSince;
+            %>
+            <% if (daysLeft > 0) { %>
+              <p style="font-size: 0.8125rem; color: var(--text-muted); margin-top: 8px;">
+                Poți edita din nou pe <%= new Date(lastEdit.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('ro-RO') %>
+              </p>
+            <% } %>
+          <% } %>
+        </div>
+        <form id="profile-edit-form" style="display: none;">
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 6px;">Prenume</label>
+            <input type="text" id="edit-first-name" value="<%= webUser.first_name || '' %>" style="width: 100%; padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9375rem; font-family: inherit;">
+          </div>
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 6px;">Nume</label>
+            <input type="text" id="edit-last-name" value="<%= webUser.last_name || '' %>" style="width: 100%; padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.9375rem; font-family: inherit;">
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">Salvează</button>
+            <button type="button" class="btn btn-ghost" onclick="hideProfileEditForm()">Anulează</button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -109,5 +142,56 @@
 
   </div>
 </section>
+
+<script>
+  function showProfileEditForm() {
+    document.getElementById('profile-view').style.display = 'none';
+    document.getElementById('profile-edit-form').style.display = 'block';
+  }
+
+  function hideProfileEditForm() {
+    document.getElementById('profile-view').style.display = 'block';
+    document.getElementById('profile-edit-form').style.display = 'none';
+  }
+
+  document.getElementById('profile-edit-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const firstName = document.getElementById('edit-first-name').value.trim();
+    const lastName = document.getElementById('edit-last-name').value.trim();
+
+    try {
+      const res = await fetch('/api/web/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ first_name: firstName, last_name: lastName })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        if (typeof showToast === 'function') {
+          showToast(data.message || 'Profilul a fost actualizat!', 'success');
+        } else {
+          alert(data.message || 'Profilul a fost actualizat!');
+        }
+        // Reload page to show updated profile
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        if (typeof showToast === 'function') {
+          showToast(data.message || 'Eroare la actualizarea profilului', 'error');
+        } else {
+          alert(data.message || 'Eroare la actualizarea profilului');
+        }
+      }
+    } catch (err) {
+      console.error('Profile update error:', err);
+      if (typeof showToast === 'function') {
+        showToast('Eroare de conexiune', 'error');
+      } else {
+        alert('Eroare de conexiune');
+      }
+    }
+  });
+</script>
 
 <%- include('partials/footer') %>

@@ -25,6 +25,14 @@
       </button>
     </div>
 
+    <!-- Sort Bar -->
+    <div class="sort-bar">
+      <span class="sort-bar-label">Sortare:</span>
+      <a href="#" class="filter-pill<%= sort === 'recent' ? ' active' : '' %>" data-sort="recent" onclick="changeSort('recent'); return false;">Recent adăugate</a>
+      <a href="#" class="filter-pill<%= sort === 'rating' ? ' active' : '' %>" data-sort="rating" onclick="changeSort('rating'); return false;">Rating</a>
+      <a href="#" class="filter-pill<%= sort === 'distance' ? ' active' : '' %>" data-sort="distance" onclick="changeSort('distance'); return false;">Distanță</a>
+    </div>
+
     <!-- Search bar -->
     <div class="collection-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -345,6 +353,11 @@
     filterCollection('');
   }
 
+  function changeSort(sortValue) {
+    var currentTab = document.querySelector('.collection-tab.active').getAttribute('data-tab');
+    window.location.href = '/colectia-mea?sort=' + sortValue + '&tab=' + currentTab;
+  }
+
   function filterCollection(query) {
     var q = query.toLowerCase().trim();
     var activePanel = document.querySelector('.collection-panel:not([style*="display: none"])') || document.getElementById('panel-businesses');
@@ -384,6 +397,15 @@
       if (typeof showToast === 'function') showToast('Oferta eliminat\u0103 din favorite');
     } catch(e) { console.error(e); }
   }
+
+  // Restore tab from URL parameter on page load
+  (function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var tab = urlParams.get('tab');
+    if (tab === 'offers') {
+      switchCollectionTab('offers');
+    }
+  })();
 </script>
 
 <%- include('partials/footer') %>

@@ -51,6 +51,33 @@ router.get("/", async (req, res) => {
       ORDER BY offer_count DESC
     `);
 
+    // Load user preferences for personalization
+    let userPrefs = { city_id: null, category_ids: [] };
+    if (req.webUser) {
+      const prefsRes = await pool.query(
+        "SELECT preferred_city_id, preferred_category_ids FROM users WHERE id = $1",
+        [req.webUser.id]
+      );
+      if (prefsRes.rows[0]) {
+        userPrefs.city_id = prefsRes.rows[0].preferred_city_id || null;
+        userPrefs.category_ids = prefsRes.rows[0].preferred_category_ids || [];
+      }
+    }
+
+    // Build dynamic WHERE clause based on preferences
+    const featuredWhere = ["o.is_active = true", "o.end_date >= CURRENT_DATE"];
+    const featuredParams = [];
+    let paramIdx = 1;
+
+    if (userPrefs.city_id) {
+      featuredWhere.push(`b.city_id = $${paramIdx++}`);
+      featuredParams.push(userPrefs.city_id);
+    }
+    if (userPrefs.category_ids.length > 0) {
+      featuredWhere.push(`b.category_id = ANY($${paramIdx++})`);
+      featuredParams.push(userPrefs.category_ids);
+    }
+
     const featuredOffers = await pool.query(`
       SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
@@ -66,13 +93,13 @@ router.get("/", async (req, res) => {
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
-      WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
+      WHERE ${featuredWhere.join(" AND ")}
       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                ci.name, cat.name, o.logo_url
-      ORDER BY o.discount_value DESC
+      ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END) DESC
       LIMIT 5
-    `);
+    `, featuredParams);
 
     const cities = await pool.query(`
       SELECT c.id, c.name, COUNT(b.id) as business_count
@@ -105,7 +132,7 @@ router.get("/", async (req, res) => {
       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, ci.name, cat.name
       HAVING COUNT(DISTINCT o.id) > 0
-      ORDER BY COUNT(DISTINCT o.id) DESC, COALESCE(AVG(r.rating), 0) DESC
+      ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2) DESC, COALESCE(AVG(r.rating), 0) DESC
       LIMIT 8
     `);
 
@@ -134,6 +161,13 @@ router.get("/", async (req, res) => {
       followedOffers = followedRes.rows;
     }
 
+    // Get preferred city name for banner
+    let preferredCityName = null;
+    if (userPrefs.city_id) {
+      const cityName = cities.rows.find(c => c.id === userPrefs.city_id);
+      preferredCityName = cityName ? cityName.name : null;
+    }
+
     res.render("public/home", {
       stats,
       categories: categories.rows,
@@ -142,6 +176,8 @@ router.get("/", async (req, res) => {
       featuredBusinesses: featuredBusinesses.rows,
       topBusinesses: topBusinesses.rows,
       followedOffers,
+      preferredCityName,
+      hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),
       activePage: "home",
       webUser: req.webUser,
     });
@@ -930,6 +966,10 @@ router.get("/cont", requireWebAuth, async (req, res) => {
     );
     const bizRequest = bizReqRes.rows[0] || null;
 
+    // Get last_profile_edit
+    const userDetails = await pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]);
+    const lastProfileEdit = userDetails.rows[0]?.last_profile_edit || null;
+
     res.render("public/account", {
       activePage: "cont",
       webUser: req.webUser,
@@ -938,6 +978,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       followCount: parseInt(followCount.rows[0].total),
       reviewCount: parseInt(reviewCount.rows[0].total),
       bizRequest,
+      lastProfileEdit,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);
@@ -947,19 +988,39 @@ router.get("/cont", requireWebAuth, async (req, res) => {
 
 router.get("/colectia-mea", requireWebAuth, async (req, res) => {
   try {
+    const sort = req.query.sort || "recent";
+
+    // Sort for favorites (offers)
+    let favoritesOrderBy = "f.created_at DESC";
+    if (sort === "rating") {
+      favoritesOrderBy = "rating_avg DESC";
+    }
+    // distance will be handled client-side
+
     const favoritesRes = await pool.query(`
       SELECT o.id, o.title, o.discount_type, o.discount_value,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
              COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
-             ci.name as city_name
+             ci.name as city_name,
+             COALESCE(AVG(r.rating), 0) as rating_avg
       FROM favorite_offers f
       JOIN offers o ON o.id = f.offer_id
       JOIN businesses b ON b.id = o.business_id
       LEFT JOIN cities ci ON ci.id = b.city_id
+      LEFT JOIN reviews r ON r.business_id = b.id
       WHERE f.user_id = $1
-      ORDER BY f.created_at DESC
+      GROUP BY o.id, o.title, o.discount_type, o.discount_value,
+               b.name, b.logo_url, b.cover_image_url, ci.name, f.created_at
+      ORDER BY ${favoritesOrderBy}
     `, [req.webUser.id]);
+
+    // Sort for subscriptions (businesses)
+    let subscriptionsOrderBy = "MAX(f.created_at) DESC";
+    if (sort === "rating") {
+      subscriptionsOrderBy = "rating_avg DESC";
+    }
+    // distance will be handled client-side
 
     const subscriptionsRes = await pool.query(`
       SELECT b.id, b.name, b.logo_url, b.cover_image_url,
@@ -974,12 +1035,13 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
       LEFT JOIN reviews rev ON rev.business_id = b.id
       WHERE f.user_id = $1
       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, c.name, cat.name
-      ORDER BY MAX(f.created_at) DESC
+      ORDER BY ${subscriptionsOrderBy}
     `, [req.webUser.id]);
 
     res.render("public/colectia-mea", {
       favorites: favoritesRes.rows,
       subscriptions: subscriptionsRes.rows,
+      sort,
       activePage: "colectie",
       webUser: req.webUser,
     });
@@ -1839,6 +1901,34 @@ router.put("/api/web/preferences", requireWebAuth, async (req, res) => {
     res.json({ success: true, message: "Preferințele au fost salvate!" });
   } catch (err) {
     console.error("[Web API] Preferences error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// --- Update Profile ---
+router.put("/api/web/profile", requireWebAuth, async (req, res) => {
+  try {
+    const { first_name, last_name } = req.body || {};
+
+    // Check 30-day cooldown
+    const user = await pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]);
+    const lastEdit = user.rows[0]?.last_profile_edit;
+    if (lastEdit) {
+      const daysSince = (Date.now() - new Date(lastEdit).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < 30) {
+        const daysLeft = Math.ceil(30 - daysSince);
+        return res.status(429).json({ message: `Poți edita profilul din nou în ${daysLeft} zile.` });
+      }
+    }
+
+    await pool.query(
+      "UPDATE users SET first_name = $1, last_name = $2, last_profile_edit = NOW() WHERE id = $3",
+      [first_name?.trim() || null, last_name?.trim() || null, req.webUser.id]
+    );
+
+    res.json({ success: true, message: "Profilul a fost actualizat!" });
+  } catch (err) {
+    console.error("[Web API] Profile update error:", err);
     res.status(500).json({ message: "Eroare server" });
   }
 });
