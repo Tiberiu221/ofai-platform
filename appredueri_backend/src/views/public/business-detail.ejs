@@ -178,21 +178,38 @@
 <% } %>
 
 <!-- ═══════════════════════════════════════════════════════
-     GALLERY
+     GALLERY (Lightbox)
      ═══════════════════════════════════════════════════════ -->
 <% if (business.images && business.images.length > 0) { %>
-<section class="section" style="background: var(--bg-secondary);">
+<section class="section">
   <div class="container">
     <div class="bd-section-header">
       <h2 class="bd-section-title">Galerie</h2>
       <span class="bd-count-badge"><%= business.images.length %></span>
     </div>
-    <div class="bd-gallery-grid">
-      <% business.images.forEach((img, i) => { %>
-        <div class="bd-gallery-item reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
-          <img src="<%= img.url %>" alt="<%= business.name %>" loading="lazy">
+    <button class="bd-gallery-btn" onclick="openGallery()">
+      <img src="<%= business.images[0].url %>" class="bd-gallery-thumb" alt="Galerie <%= business.name %>">
+      <span class="bd-gallery-overlay">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        Vezi galeria (<%= business.images.length %>)
+      </span>
+    </button>
+
+    <!-- Lightbox Modal -->
+    <div class="gallery-modal" id="gallery-modal">
+      <div class="gallery-modal-backdrop" onclick="closeGallery()"></div>
+      <div class="gallery-modal-content">
+        <button class="gallery-modal-close" onclick="closeGallery()">&times;</button>
+        <button class="gallery-nav gallery-prev" onclick="galleryPrev()">&lsaquo;</button>
+        <img id="gallery-main-img" src="" alt="<%= business.name %>">
+        <button class="gallery-nav gallery-next" onclick="galleryNext()">&rsaquo;</button>
+        <div class="gallery-counter"><span id="gallery-idx">1</span> / <%= business.images.length %></div>
+        <div class="gallery-thumbs">
+          <% business.images.forEach((img, i) => { %>
+            <img src="<%= img.url %>" onclick="galleryGoTo(<%= i %>)" class="gallery-thumb-item<%= i === 0 ? ' active' : '' %>" data-idx="<%= i %>" alt="">
+          <% }); %>
         </div>
-      <% }); %>
+      </div>
     </div>
   </div>
 </section>

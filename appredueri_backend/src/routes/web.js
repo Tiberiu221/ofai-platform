@@ -1149,6 +1149,17 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
 
     const business = bizRes.rows[0];
 
+    // Gallery images
+    const imagesRes = await pool.query(
+      "SELECT id, image_url, sort_order FROM business_images WHERE business_id = $1 ORDER BY sort_order, id",
+      [businessId]
+    );
+    business.images = imagesRes.rows.map(img => ({
+      id: img.id,
+      url: img.image_url,
+      sort_order: img.sort_order
+    }));
+
     // Offers
     const offersRes = await pool.query(`
       SELECT id, title, discount_type, discount_value, start_date, end_date, is_active, logo_url
@@ -1388,6 +1399,52 @@ router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (
   } catch (err) {
     console.error("[Web API] Portal delete cover error:", err);
     res.status(500).json({ message: "Eroare" });
+  }
+});
+
+// Upload gallery image
+router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, portalUpload.single("image"), async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
+
+    // Check max 8 images
+    const countRes = await pool.query("SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1", [businessId]);
+    if (parseInt(countRes.rows[0].cnt) >= 8) {
+      return res.status(400).json({ message: "Maximum 8 imagini permise" });
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, "gallery");
+    const sortOrder = parseInt(countRes.rows[0].cnt) + 1;
+    const insertRes = await pool.query(
+      "INSERT INTO business_images (business_id, image_url, sort_order) VALUES ($1, $2, $3) RETURNING id",
+      [businessId, result.url, sortOrder]
+    );
+    res.json({ success: true, image: { id: insertRes.rows[0].id, url: result.url, sort_order: sortOrder } });
+  } catch (err) {
+    console.error("[Web API] Portal upload gallery error:", err);
+    res.status(500).json({ message: "Eroare la upload" });
+  }
+});
+
+// Delete gallery image
+router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId, imageId } = req.params;
+    const imgRes = await pool.query(
+      "SELECT image_url FROM business_images WHERE id = $1 AND business_id = $2",
+      [imageId, businessId]
+    );
+    if (imgRes.rows.length === 0) return res.status(404).json({ message: "Imaginea nu a fost găsită" });
+
+    const oldId = getPublicIdFromUrl(imgRes.rows[0].image_url);
+    if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+
+    await pool.query("DELETE FROM business_images WHERE id = $1 AND business_id = $2", [imageId, businessId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Portal delete gallery error:", err);
+    res.status(500).json({ message: "Eroare la ștergere" });
   }
 });
 

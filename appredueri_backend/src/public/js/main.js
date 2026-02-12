@@ -690,3 +690,80 @@ function initScrollArrows() {
   });
 }
 
+/* ─── GALLERY LIGHTBOX ──────────────────────────────────── */
+(function() {
+  let galleryImages = [];
+  let galleryIdx = 0;
+
+  function updateGallery() {
+    const mainImg = document.getElementById('gallery-main-img');
+    const idxSpan = document.getElementById('gallery-idx');
+    if (!mainImg || !galleryImages.length) return;
+    mainImg.src = galleryImages[galleryIdx];
+    if (idxSpan) idxSpan.textContent = galleryIdx + 1;
+
+    // Update active thumbnail
+    const thumbs = document.querySelectorAll('.gallery-thumb-item');
+    thumbs.forEach((t, i) => {
+      t.classList.toggle('active', i === galleryIdx);
+    });
+  }
+
+  window.openGallery = function() {
+    const modal = document.getElementById('gallery-modal');
+    if (!modal) return;
+
+    // Collect image URLs from thumbnails
+    galleryImages = [];
+    modal.querySelectorAll('.gallery-thumb-item').forEach(t => {
+      galleryImages.push(t.src);
+    });
+    galleryIdx = 0;
+    updateGallery();
+
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeGallery = function() {
+    const modal = document.getElementById('gallery-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  window.galleryNext = function() {
+    if (!galleryImages.length) return;
+    galleryIdx = (galleryIdx + 1) % galleryImages.length;
+    updateGallery();
+  };
+
+  window.galleryPrev = function() {
+    if (!galleryImages.length) return;
+    galleryIdx = (galleryIdx - 1 + galleryImages.length) % galleryImages.length;
+    updateGallery();
+  };
+
+  window.galleryGoTo = function(i) {
+    if (i < 0 || i >= galleryImages.length) return;
+    galleryIdx = i;
+    updateGallery();
+  };
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('gallery-modal');
+    if (!modal || !modal.classList.contains('open')) return;
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeGallery();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      galleryNext();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      galleryPrev();
+    }
+  });
+})();

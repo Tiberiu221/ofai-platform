@@ -93,7 +93,11 @@
       "WebFetch(domain:once-ui.com)",
       "WebFetch(domain:docs.once-ui.com)",
       "Bash(npm ls:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(psql:*)",
+      "Bash(powershell.exe -c \"node -c ''C:\\\\Users\\\\tiber\\\\Desktop\\\\AppReduceri\\\\appredueri_backend\\\\src\\\\routes\\\\web.js''; if \\($?\\) { Write-Host ''web.js syntax OK'' } else { Write-Host ''web.js syntax ERROR'' }\")",
+      "Bash(powershell.exe -NoProfile -Command \"node -c ''C:/Users/tiber/Desktop/AppReduceri/appredueri_backend/src/routes/web.js''\")",
+      "Bash(powershell.exe -NoProfile -Command \"node -c ''C:/Users/tiber/Desktop/AppReduceri/appredueri_backend/src/public/js/main.js''\")"
     ]
   }
 }

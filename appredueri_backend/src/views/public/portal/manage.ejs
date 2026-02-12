@@ -630,6 +630,102 @@
           </button>
         </div>
       </form>
+
+      <!-- Gallery Upload Section -->
+      <div class="glass-card" style="margin-top: 16px;">
+        <h3 class="section-title">Galerie foto</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+          Maximum 8 imagini. Recomandat: format landscape, minim 1200x800px.
+        </p>
+        <div class="gallery-upload-grid" id="gallery-grid">
+          <% if (business.images && business.images.length > 0) { %>
+            <% business.images.forEach((img) => { %>
+              <div class="gallery-upload-item" data-image-id="<%= img.id %>">
+                <img src="<%= img.url %>" alt="Galerie">
+                <button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(<%= img.id %>, this)" title="Șterge imaginea">&times;</button>
+              </div>
+            <% }); %>
+          <% } %>
+          <% if (!business.images || business.images.length < 8) { %>
+            <label class="gallery-upload-add" id="gallery-add-btn">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Adaugă</span>
+              <input type="file" accept="image/*" multiple style="display:none;" onchange="uploadGalleryImages(this)">
+            </label>
+          <% } %>
+        </div>
+      </div>
+
+      <style>
+        .gallery-upload-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+        }
+        .gallery-upload-item {
+          position: relative;
+          aspect-ratio: 4 / 3;
+          border-radius: var(--radius-md);
+          overflow: hidden;
+          border: 1px solid var(--border);
+          background: var(--bg-surface);
+        }
+        .gallery-upload-item img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .gallery-delete-btn {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(239, 68, 68, 0.9);
+          border: none;
+          color: #fff;
+          font-size: 1rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s;
+          line-height: 1;
+        }
+        .gallery-upload-item:hover .gallery-delete-btn {
+          opacity: 1;
+        }
+        .gallery-upload-add {
+          aspect-ratio: 4 / 3;
+          border-radius: var(--radius-md);
+          border: 2px dashed var(--border);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          color: var(--text-secondary);
+          cursor: pointer;
+          transition: border-color 0.2s, color 0.2s;
+          font-size: 0.8rem;
+        }
+        .gallery-upload-add:hover {
+          border-color: var(--accent);
+          color: var(--accent);
+        }
+        @media (max-width: 600px) {
+          .gallery-upload-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        @media (max-width: 400px) {
+          .gallery-upload-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+      </style>
     </div>
 
     <!-- ═══════════════════════════════════════
@@ -1051,6 +1147,106 @@
     })
     .catch(function() {
       previewBox.style.opacity = '1';
+      showToast('Eroare la ștergerea imaginii', 'error');
+    });
+  };
+
+  /* ════════════════════════════════
+     GALLERY UPLOAD / DELETE
+     ════════════════════════════════ */
+  window.uploadGalleryImages = function(input) {
+    var files = input.files;
+    if (!files || !files.length) return;
+
+    var grid = document.getElementById('gallery-grid');
+    var currentCount = grid.querySelectorAll('.gallery-upload-item').length;
+
+    // Check total limit
+    if (currentCount + files.length > 8) {
+      showToast('Maximum 8 imagini. Poți adăuga încă ' + (8 - currentCount) + '.', 'error');
+      input.value = '';
+      return;
+    }
+
+    var addBtn = document.getElementById('gallery-add-btn');
+
+    Array.from(files).forEach(function(file) {
+      // Validate size
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Fișierul "' + file.name + '" depășește 5MB', 'error');
+        return;
+      }
+
+      var formData = new FormData();
+      formData.append('image', file);
+
+      // Create temporary loading placeholder
+      var placeholder = document.createElement('div');
+      placeholder.className = 'gallery-upload-item';
+      placeholder.style.opacity = '0.5';
+      placeholder.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--text-secondary);font-size:0.75rem;">Se încarcă...</div>';
+      if (addBtn) grid.insertBefore(placeholder, addBtn);
+      else grid.appendChild(placeholder);
+
+      apiFetch('/api/web/portal/' + businessId + '/gallery', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success && data.image) {
+          placeholder.style.opacity = '1';
+          placeholder.setAttribute('data-image-id', data.image.id);
+          placeholder.innerHTML = '<img src="' + data.image.url + '" alt="Galerie">' +
+            '<button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(' + data.image.id + ', this)" title="Șterge imaginea">&times;</button>';
+
+          currentCount++;
+          // Hide add button if at limit
+          if (currentCount >= 8 && addBtn) {
+            addBtn.style.display = 'none';
+          }
+
+          showToast('Imagine adăugată cu succes', 'success');
+        } else {
+          placeholder.remove();
+          showToast(data.message || 'Eroare la încărcare', 'error');
+        }
+      })
+      .catch(function() {
+        placeholder.remove();
+        showToast('Eroare la încărcarea imaginii', 'error');
+      });
+    });
+
+    input.value = '';
+  };
+
+  window.deleteGalleryImage = function(imageId, btn) {
+    if (!confirm('Sigur vrei să ștergi această imagine din galerie?')) return;
+
+    var item = btn.closest('.gallery-upload-item');
+    if (item) item.style.opacity = '0.5';
+
+    apiFetch('/api/web/portal/' + businessId + '/gallery/' + imageId, {
+      method: 'DELETE'
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        if (item) item.remove();
+
+        // Show add button if was hidden
+        var addBtn = document.getElementById('gallery-add-btn');
+        if (addBtn) addBtn.style.display = '';
+
+        showToast('Imaginea a fost ștearsă din galerie', 'success');
+      } else {
+        if (item) item.style.opacity = '1';
+        showToast(data.message || 'Eroare la ștergere', 'error');
+      }
+    })
+    .catch(function() {
+      if (item) item.style.opacity = '1';
       showToast('Eroare la ștergerea imaginii', 'error');
     });
   };
