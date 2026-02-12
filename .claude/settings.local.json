@@ -92,7 +92,8 @@
       "WebFetch(domain:picsum.photos)",
       "WebFetch(domain:once-ui.com)",
       "WebFetch(domain:docs.once-ui.com)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }
