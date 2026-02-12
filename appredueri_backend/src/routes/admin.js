@@ -756,24 +756,12 @@ router.post("/business-images/:imageId/delete", async (req, res) => {
 //   Acești utilizatori vor avea acces la Business Portal pentru acel business
 // =====================================
 
-// DEBUG: Test if the owners route is reachable
-router.get("/businesses/:id/owners-debug", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const testResult = await pool.query("SELECT COUNT(*) as cnt FROM user_businesses WHERE business_id = $1", [id]);
-    res.json({ ok: true, businessId: id, ownerCount: testResult.rows[0].cnt, timestamp: new Date().toISOString(), version: "v2-debug" });
-  } catch (err) {
-    res.json({ ok: false, error: err.message });
-  }
-});
-
 /**
  * POST /admin/businesses/:id/owners
  * Adaugă un utilizator ca administrator al business-ului
  * Body: { email: string }
  */
-router.post("/businesses/:id/owners", async (req, res, next) => {
-  console.log("[Owners] POST HIT - params:", req.params, "body:", req.body);
+router.post("/businesses/:id/owners", async (req, res) => {
   const businessId = parseInt(req.params.id, 10);
 
   if (!businessId || isNaN(businessId)) {
@@ -782,7 +770,6 @@ router.post("/businesses/:id/owners", async (req, res, next) => {
 
   try {
     const email = ((req.body && req.body.email) || "").trim().toLowerCase();
-    console.log("[Owners] Parsed email:", email, "businessId:", businessId);
 
     if (!email) {
       return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_data`);

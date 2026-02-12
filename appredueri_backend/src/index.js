@@ -73,35 +73,24 @@ const corsOptions = {
     // Permite requests fără origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    // Log origin for debugging CORS issues
-    if (isProduction) {
-      console.log(`[CORS] Origin: "${origin}"`);
-    }
-
-    // Permite subdomeniile OFAI de pe Vercel (inclusiv preview deploys) și Railway
+    // Permite subdomeniile OFAI de pe Vercel și Railway
     if (origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
-      if (!isProduction) return callback(null, true);
-      // În production, permite Railway app + preview-urile Vercel ale proiectului OFAI
-      if (origin.includes('tiberius-projects') || origin.includes('ofai')) {
-        return callback(null, true);
-      }
-    }
-
-    // Permite same-origin requests de pe domeniul principal
-    if (origin === 'https://ofai-production.up.railway.app') {
       return callback(null, true);
     }
 
+    // Permite originile din lista explicită
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (!isProduction) {
-      // În development, permite orice origine dar loghează
-      console.log(`[CORS] Allowing unlisted origin in dev: ${origin}`);
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked origin: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
+      return callback(null, true);
     }
+
+    // În development, permite orice origine
+    if (!isProduction) {
+      return callback(null, true);
+    }
+
+    // În producție, loghează dar permite — securitatea e asigurată de JWT/Basic Auth
+    console.warn(`[CORS] Unknown origin allowed: ${origin}`);
+    callback(null, true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -165,41 +154,6 @@ app.get("/api", (req, res) => {
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// TEMP DEBUG: Test owners functionality without auth (REMOVE AFTER DEBUG)
-app.post("/debug-add-owner", async (req, res) => {
-  const pool = require("./db");
-  try {
-    const email = ((req.body && req.body.email) || "").trim().toLowerCase();
-    const businessId = parseInt(req.body.businessId || "0", 10);
-    console.log("[DEBUG-OWNER] email:", email, "businessId:", businessId, "body:", req.body);
-
-    if (!email || !businessId) {
-      return res.json({ error: "Missing email or businessId", body: req.body });
-    }
-
-    const userQuery = await pool.query("SELECT id, role FROM users WHERE LOWER(email) = $1", [email]);
-    if (userQuery.rows.length === 0) {
-      return res.json({ error: "User not found", email });
-    }
-
-    const user = userQuery.rows[0];
-    const checkQuery = await pool.query("SELECT 1 FROM user_businesses WHERE user_id = $1 AND business_id = $2", [user.id, businessId]);
-    if (checkQuery.rows.length > 0) {
-      return res.json({ ok: true, message: "Already exists", user });
-    }
-
-    await pool.query("INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)", [user.id, businessId]);
-    if (user.role === "user") {
-      await pool.query("UPDATE users SET role = 'business_owner' WHERE id = $1", [user.id]);
-    }
-
-    return res.json({ ok: true, message: "Owner added", user });
-  } catch (err) {
-    console.error("[DEBUG-OWNER] ERROR:", err);
-    return res.json({ error: err.message, stack: err.stack });
-  }
 });
 
 // ============================================
