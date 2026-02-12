@@ -1,0 +1,54 @@
+class ApiEndpoints {
+  ApiEndpoints._();
+
+  // Base URL — change for production
+  static const String baseUrl = 'https://ofai.ro'; // Production (switch to http://10.0.2.2:4000 for local dev)
+  static const String prodUrl = 'https://ofai.ro';
+
+  // Auth
+  static const String register = '/auth/register';
+  static const String login = '/auth/login';
+  static const String refresh = '/auth/refresh';
+  static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String verifyResetCode = '/auth/verify-reset-code';
+  static const String resetPassword = '/auth/reset-password';
+  static const String changePassword = '/auth/change-password';
+  static const String me = '/auth/me';
+
+  // Offers
+  static const String offers = '/offers';
+  static const String offersFeed = '/offers/feed';
+  static String offerDetail(int id) => '/offers/$id';
+
+  // Businesses
+  static const String businesses = '/businesses';
+  static String businessDetail(int id) => '/businesses/$id';
+  static String businessReviewSummary(int id) => '/businesses/$id/review-summary';
+
+  // Reviews
+  static String businessReviews(int id) => '/reviews/business/$id';
+  static const String reviews = '/reviews';
+
+  // Favorites
+  static const String favorites = '/favorites';
+  static String deleteFavorite(int offerId) => '/favorites/$offerId';
+
+  // Subscriptions
+  static const String subscriptions = '/subscriptions';
+  static String deleteSubscription(int businessId) => '/subscriptions/$businessId';
+
+  // Users
+  static const String userMe = '/users/me';
+  static const String userPreferences = '/users/me/preferences';
+  static const String userExport = '/users/me/export';
+  static const String userDelete = '/users/me';
+
+  // Push
+  static const String pushTokens = '/push-tokens';
+  static const String pushTokensMyDevices = '/push-tokens/my-devices';
+
+  // Static data
+  static const String cities = '/cities';
+  static const String categories = '/categories';
+}

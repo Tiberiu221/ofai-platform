@@ -104,7 +104,25 @@
       "Bash(npm run dev:*)",
       "Bash(cat:*)",
       "Bash(timeout:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(flutter --version:*)",
+      "Bash(dart --version:*)",
+      "Bash(git clone:*)",
+      "Bash(export PATH=\"C:/dev/flutter/bin:$PATH\")",
+      "Bash(/c/dev/flutter/bin/flutter:*)",
+      "Bash(yes:*)",
+      "Bash(\"C:/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe\" install -r \"C:/Users/tiber/Desktop/AppReduceri/ofai_flutter/build/app/outputs/flutter-apk/app-debug.apk\")",
+      "Bash(\"C:/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe\" shell am start -n ro.ofai.ofai_flutter/.MainActivity)",
+      "Bash(C:devflutterbinflutter analyze --no-pub)",
+      "Bash(/c/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe devices)",
+      "Bash(/c/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe:*)",
+      "Bash(C:devflutterbinflutter.bat analyze:*)",
+      "Bash(/c/dev/flutter/bin/flutter.bat analyze:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(/c/dev/flutter/bin/flutter.bat build:*)",
+      "Bash(C:devflutterbinflutter.bat pub get)",
+      "Bash(/c/dev/flutter/bin/flutter.bat pub get:*)"
     ]
   }
 }

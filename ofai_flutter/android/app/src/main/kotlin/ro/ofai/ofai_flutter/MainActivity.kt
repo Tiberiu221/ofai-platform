@@ -1,0 +1,5 @@
+package ro.ofai.ofai_flutter
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

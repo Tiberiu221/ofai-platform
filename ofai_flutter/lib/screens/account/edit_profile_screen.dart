@@ -1,0 +1,147 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../providers/auth_provider.dart';
+
+class EditProfileScreen extends ConsumerStatefulWidget {
+  const EditProfileScreen({super.key});
+
+  @override
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _firstNameCtrl;
+  late TextEditingController _lastNameCtrl;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authProvider).user;
+    _firstNameCtrl = TextEditingController(text: user?.firstName ?? '');
+    _lastNameCtrl = TextEditingController(text: user?.lastName ?? '');
+  }
+
+  @override
+  void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isSubmitting = true);
+
+    try {
+      await ApiClient().dio.put(ApiEndpoints.userMe, data: {
+        'first_name': _firstNameCtrl.text.trim(),
+        'last_name': _lastNameCtrl.text.trim(),
+      });
+      await ref.read(authProvider.notifier).refreshUser();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profil actualizat'),
+            backgroundColor: AppColors.bgSecondary,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Eroare: ${e.toString().split(':').last.trim()}'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Editează profilul'),
+        backgroundColor: AppColors.bgPrimary,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.pagePadding),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppSpacing.lg),
+              Text('Prenume', style: AppTypography.labelMedium),
+              const SizedBox(height: AppSpacing.sm),
+              TextFormField(
+                controller: _firstNameCtrl,
+                decoration: const InputDecoration(hintText: 'Prenumele tău'),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Prenumele este obligatoriu' : null,
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              Text('Nume', style: AppTypography.labelMedium),
+              const SizedBox(height: AppSpacing.sm),
+              TextFormField(
+                controller: _lastNameCtrl,
+                decoration: const InputDecoration(hintText: 'Numele tău'),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Numele este obligatoriu' : null,
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+
+              // Email (read-only)
+              Text('Email', style: AppTypography.labelMedium),
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.bgSecondary,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                ),
+                child: Text(
+                  ref.watch(authProvider).user?.email ?? '',
+                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.xxxl),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submit,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.bgPrimary,
+                          ),
+                        )
+                      : const Text('Salvează'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
