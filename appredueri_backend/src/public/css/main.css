@@ -3892,3 +3892,302 @@ ul, ol { list-style: none; }
   opacity: 0.5;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE ENHANCEMENTS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Grid auto-fill class (replaces inline style on home.ejs) */
+.offers-grid-auto {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* ─── Navbar: hide auth buttons on mobile (they're in overlay) ─── */
+@media (max-width: 768px) {
+  .nav-auth-btn {
+    display: none;
+  }
+
+  .navbar-wrapper {
+    padding: 8px 12px;
+  }
+
+  .navbar {
+    height: 50px;
+    padding: 0 16px;
+  }
+
+  .nav-logo span {
+    font-size: 1.1rem;
+  }
+
+  /* User menu dropdown - fix positioning on mobile */
+  .user-menu-dropdown {
+    right: -8px;
+    min-width: 220px;
+  }
+
+  /* Offer grid auto-fill override for mobile */
+  .offers-grid-auto {
+    grid-template-columns: 1fr;
+  }
+
+  /* Offer detail hero - intermediate size */
+  .offer-detail-hero {
+    height: 260px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+  }
+
+  .offer-detail-hero-overlay {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+  }
+
+  /* Offer detail content */
+  .offer-detail-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .offer-detail-badge {
+    font-size: 1.25rem;
+    padding: 6px 16px;
+    border-radius: 10px;
+  }
+
+  /* Breadcrumb mobile */
+  .bd-breadcrumb {
+    gap: 6px;
+    font-size: 0.75rem;
+  }
+
+  .bd-breadcrumb span {
+    max-width: 160px;
+  }
+
+  /* Scroll container - less padding on mobile */
+  .scroll-container {
+    padding: 0 28px;
+  }
+
+  /* Search bar full width in hero */
+  .search-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Section titles */
+  .section-title {
+    font-size: 1.35rem;
+  }
+
+  .section-label {
+    font-size: 0.8rem;
+  }
+
+  /* Hero compact */
+  .hero {
+    padding-top: 100px;
+    padding-bottom: 48px;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9375rem;
+  }
+
+  /* Touch targets - buttons and links */
+  .filter-pill,
+  .sort-pill {
+    min-height: 40px;
+    padding: 8px 16px;
+  }
+}
+
+/* ─── Small phones (480px) ─── */
+@media (max-width: 480px) {
+  .offers-grid-auto {
+    grid-template-columns: 1fr;
+  }
+
+  /* Offer detail */
+  .offer-detail-content h1 {
+    font-size: 1.35rem;
+  }
+
+  .offer-detail-badge {
+    font-size: 1.1rem;
+    padding: 5px 14px;
+  }
+
+  .offer-detail-hero {
+    margin-bottom: 20px;
+  }
+
+  /* Breadcrumb */
+  .bd-breadcrumb span {
+    max-width: 120px;
+  }
+
+  /* Scroll container - tighter */
+  .scroll-container {
+    padding: 0 24px;
+  }
+
+  /* Category grid tighter */
+  .categories-grid {
+    gap: 8px;
+  }
+
+  /* Section spacing */
+  .section {
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+  }
+
+  /* Hero */
+  .hero {
+    padding-top: 88px;
+    padding-bottom: 36px;
+  }
+
+  .hero-subtitle {
+    font-size: 0.875rem;
+  }
+
+  /* Filter/sort pills touch-friendly */
+  .filter-pill,
+  .sort-pill {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 0.8125rem;
+  }
+
+  /* Offer card content spacing */
+  .offer-content {
+    padding: 14px;
+  }
+
+  /* Auth cards */
+  .auth-card {
+    padding: 24px 18px;
+    border-radius: 16px;
+  }
+
+  .auth-title {
+    font-size: 1.35rem;
+  }
+}
+
+/* ─── Extra small phones (360px) ─── */
+@media (max-width: 360px) {
+  :root {
+    --container-px: 12px;
+  }
+
+  .navbar {
+    padding: 0 12px;
+  }
+
+  .hero {
+    padding-top: 80px;
+    padding-bottom: 32px;
+  }
+
+  .hero-title {
+    font-size: clamp(1.75rem, 8vw, 2.5rem);
+  }
+
+  .hero-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .hero-stats {
+    gap: 12px;
+  }
+
+  /* Categories - tighter on tiny screens */
+  .categories-grid {
+    gap: 6px;
+  }
+
+  .category-card {
+    padding: 12px 8px;
+  }
+
+  /* Business cards */
+  .biz-card-cover {
+    height: 70px;
+  }
+
+  /* Section titles smaller */
+  .section-title {
+    font-size: 1.1rem;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+  }
+
+  /* Offer detail */
+  .offer-detail-content h1 {
+    font-size: 1.2rem;
+  }
+
+  /* Breadcrumb */
+  .bd-breadcrumb span {
+    max-width: 90px;
+  }
+
+  .bd-breadcrumb {
+    font-size: 0.6875rem;
+  }
+
+  /* Business detail */
+  .bd-hero {
+    height: 120px;
+  }
+
+  .bd-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .bd-business-name {
+    font-size: 1.1rem;
+  }
+
+  /* Gallery full width */
+  .bd-gallery-btn {
+    max-width: 100%;
+  }
+
+  /* Scroll arrows tighter */
+  .scroll-container {
+    padding: 0 20px;
+  }
+
+  /* Footer */
+  .site-footer {
+    font-size: 0.8125rem;
+  }
+
+  /* Auth */
+  .auth-card {
+    padding: 20px 14px;
+  }
+
+  .auth-title {
+    font-size: 1.2rem;
+  }
+
+  /* Buttons full width on tiny screens */
+  .btn-lg {
+    padding: 12px 20px;
+    font-size: 0.9375rem;
+  }
+}
+

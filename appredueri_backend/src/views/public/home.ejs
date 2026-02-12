@@ -113,7 +113,7 @@
       <div class="section-label">🔔 Pentru tine</div>
       <h2 class="section-title" style="font-size: 1.5rem;">Noutati de la business-urile tale</h2>
     </div>
-    <div class="offers-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+    <div class="offers-grid offers-grid-auto">
       <% followedOffers.forEach((fo, i) => { %>
         <a href="/oferta/<%= fo.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 4) %>">
           <div class="offer-image-wrapper">

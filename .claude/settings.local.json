@@ -102,7 +102,9 @@
       "Bash(powershell.exe:*)",
       "Bash(npm run lint:*)",
       "Bash(npm run dev:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)"
     ]
   }
 }

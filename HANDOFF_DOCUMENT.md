@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 11 Februarie 2026 (Actualizat v11 — Security + Visual Polish + Bugfixes + returnTo)
+## Data: 12 Februarie 2026 (Actualizat v12 — GDPR & Security Hardening + JWT Refresh Tokens + Image Fix)
 
 ---
 
@@ -54,9 +54,10 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │   ├── auth.js             # Bearer token auth (mobile API)
 │   │   │   ├── businessAuth.js     # Bearer token + business ownership (mobile API)
 │   │   │   ├── adminAuth.js        # Admin HTTP basic auth
-│   │   │   └── rateLimiter.js      # Rate limiting (general, auth, admin, etc.)
+│   │   │   └── rateLimiter.js      # Rate limiting (general, auth, admin, etc.) — xForwardedFor: true
 │   │   ├── helpers/
-│   │   │   └── validate.js         # Validare input + paginare helpers
+│   │   │   ├── validate.js         # Validare input + paginare + validatePassword + createImageFilter
+│   │   │   └── jwt.js              # JWT helpers (generateToken 24h, generateRefreshToken)
 │   │   ├── config/
 │   │   │   └── llm.js              # Claude Haiku config
 │   │   ├── services/
@@ -118,7 +119,7 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │       ├── 03-verify.js       # Verificare calitate date scrapate
 │   │       ├── 04-cleanup.js      # Ștergere date scrapate (source='scraped')
 │   │       └── data/              # (gitignored) raw JSON + state + costs
-│   └── migrations/                # SQL migrations (latest: 013_business_requests)
+│   └── migrations/                # SQL migrations (latest: 017_fix_pixabay_logos)
 │
 └── n8n-workflows/                 # Exportabile .json pentru n8n
     └── WF1_New_Review_Notify_Owner.json
@@ -176,9 +177,10 @@ Exista **3 sisteme de auth** separate. Trebuie intelese bine:
 ### 1. Web Auth (cookie-based) — pentru site-ul public EJS
 - **Middleware:** `src/middleware/webAuth.js`
 - **Functii:** `optionalWebAuth` (seteaza `req.webUser` sau null), `requireWebAuth` (redirect la /login SAU 401 JSON)
-- **Mecanism:** Cookie `ofai_token` (httpOnly, Secure in prod, SameSite: lax, 30 zile)
+- **Mecanism:** Cookie `ofai_token` (httpOnly, Secure in prod, SameSite: lax, **24h** — schimbat de la 30d)
 - **Folosit de:** Toate rutele din `web.js` (pagini EJS + AJAX endpoints `/api/web/*`)
 - **IMPORTANT:** `requireWebAuth` detecteaza daca ruta e `/api/*` si returneaza 401 JSON (nu redirect HTML). Fara asta, `fetch()` urmareste 302 transparent → primeste HTML → `resp.json()` fail.
+- **NOTA:** Web-ul NU are refresh token cookie implementat. La expirare (24h), user-ul trebuie sa se re-logheze.
 
 ### 2. Business Portal Web Auth — cookie + ownership check
 - **Middleware:** `src/middleware/businessWebAuth.js`
@@ -187,10 +189,15 @@ Exista **3 sisteme de auth** separate. Trebuie intelese bine:
 - **Admin bypass:** Admins au acces la orice business
 - **Folosit de:** Rutele `/portal/*` si `/api/web/portal/*` din `web.js`
 
-### 3. Mobile API Auth (Bearer token) — pentru app-ul mobil
+### 3. Mobile API Auth (Bearer token + Refresh) — pentru app-ul mobil
 - **Middleware:** `src/middleware/auth.js` si `src/middleware/businessAuth.js`
-- **Mecanism:** Header `Authorization: Bearer <jwt_token>`
+- **Mecanism:** Header `Authorization: Bearer <jwt_token>` (access token, **24h**)
+- **Refresh token:** 30 zile, DB-backed (`refresh_tokens` table), rotativ
+- **Endpoints:** `POST /auth/refresh` (token rotation), `POST /auth/logout` (revoke)
+- **Mobile auto-refresh:** `api.ts` intercepteaza 401 → `POST /auth/refresh` → retry request cu token nou
+- **AuthContext.tsx:** Stocheaza refresh token in AsyncStorage, rotatie la fiecare refresh
 - **Folosit de:** Toate rutele din `offers.js`, `businesses.js`, `reviews.js`, etc.
+- **NOTA:** Utilizatorii existenti (cu token vechi de 30d) vor fi delogati la prima 401 (nu au refresh token)
 
 ### Pattern AJAX Web
 Paginile EJS care au interactiuni (favorite, follow, delete, etc.) folosesc:
@@ -216,13 +223,34 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 - [x] **Trust proxy:** Configurat pentru Railway/Cloudflare (cookie Secure, rate limiter IP)
 
 ### Security + Quick Wins + Mobile Features (Faza 3.7 — COMPLETA)
-- [x] **Helmet.js** security headers (CSP disabled for EJS inline scripts, COEP disabled for external images)
+- [x] **Helmet.js** security headers (CSP disabled, COEP disabled, **CORP disabled**, Referrer-Policy, Permissions-Policy)
 - [x] **Urgency badges** pe offer cards (expiring soon indicator)
 - [x] **Social proof** (favorite count) pe offer cards
 - [x] **Share button** pe offer-detail (Web Share API + clipboard fallback)
 - [x] **Search autosuggest** (debounced 300ms, skeleton loading, z-index layering)
 - [x] **Followed offers section** pe home page
 - [x] **Mobile:** deep linking, offline cache (cachedFetch + AsyncStorage TTL), haptics, share, offline banner
+
+### GDPR & Security Hardening (Faza 3.9 — COMPLETA, v12)
+- [x] **CORS** — block unknown origins in production (era allow-all)
+- [x] **Rate Limiting** — xForwardedFor: true pe toate limiterele, admin 200→60/min
+- [x] **Admin Auth** — crypto.timingSafeEqual() + fix password colon parsing
+- [x] **Sentry PII** — eliminat email din setUser()
+- [x] **File Upload** — MIME whitelist (jpeg/png/webp/gif), blocat SVG XSS
+- [x] **JWT Refresh Tokens** — access 24h, refresh 30d DB-backed cu rotatie
+- [x] **Mobile refresh** — auto-refresh pe 401, deduplication, AuthContext storage
+- [x] **Password validation** — min 8 chars + 1 digit (register/reset/change)
+- [x] **Account deletion** — DB transaction, cleanup 6 tabele, audit log
+- [x] **Error sanitization** — eliminat err.message din response-uri productie
+- [x] **n8n PII removal** — eliminat email/name/comment din webhooks
+- [x] **GDPR consent** — checkboxe register (web), timestamps in DB
+- [x] **Cookie banner** — consent cu localStorage
+- [x] **Data export** — GET /users/me/export (GDPR Article 20)
+- [x] **Security headers** — Referrer-Policy, Permissions-Policy
+- [x] **Audit log** — tabela + indexes
+- [x] **security.txt** — .well-known/security.txt
+- [x] **Helmet CORP fix** — crossOriginResourcePolicy: false (imagini externe blocate)
+- [x] **Logo-uri fix** — Pixabay expirate → DiceBear initials (migration 017)
 
 ### Visual Polish + Bugfixes (Faza 3.8 — COMPLETA)
 - [x] **Particle hero background** (canvas 2D, generic multi-instance, cursor attraction)
@@ -262,13 +290,17 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 ### Infrastructura
 - [x] Backend deployed pe Railway cu PostgreSQL
 - [x] Domeniu custom ofai.ro configurat (Cloudflare DNS)
-- [x] CORS configurat (restrictionat in productie)
+- [x] CORS configurat (block unknown origins in production, allow Vercel/Railway subdomains)
 - [x] SSL automat (Cloudflare Full mode)
 - [x] **Trust proxy** — `app.set("trust proxy", 1)` in production
-- [x] **Rate Limiting** — 100 req/min general, 10/15min auth, 5/15min verify-reset-code, 200/min admin
-- [x] **Sentry** — error tracking in productie
+- [x] **Rate Limiting** — 100 req/min general, 10/15min auth, 5/15min verify-reset-code, **60/min admin** (was 200), xForwardedFor: true
+- [x] **Sentry** — error tracking in productie (fara email PII)
 - [x] **Database Indexes** — queries optimizate
 - [x] **statement_timeout** — 10s max per query
+- [x] **Helmet.js** — CSP off, COEP off, CORP off, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy
+- [x] **Admin Auth** — timing-safe comparison (crypto.timingSafeEqual)
+- [x] **Audit Log** — tabela audit_log (account_delete, data_export, etc.)
+- [x] **security.txt** — .well-known/security.txt
 
 ### Business Portal (Web + Mobile API)
 - [x] **Web Portal** (`/portal`, `/portal/:businessId`)
@@ -294,6 +326,17 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 ---
 
 ## CE TREBUIE FACUT / CUNOSCUT
+
+### ⚠️ LOGO-URI SI COVER IMAGES (v12)
+- **Logo-uri:** Toate business-urile scraped au DiceBear placeholder (initiale pe fundal portocaliu). Trebuie inlocuite cu logo-uri reale via admin/business portal upload.
+- **Cover images:** Toate business-urile scraped au `cover_image_url = NULL`. User-ul se ocupa separat.
+- **DiceBear URL format:** `https://api.dicebear.com/7.x/initials/png?seed=BUSINESS_NAME&size=256&backgroundColor=f97316&textColor=ffffff`
+
+### ⚠️ GDPR — CE LIPSESTE INCA (v12)
+- [ ] **Mobile RegisterScreen** — checkboxe GDPR consent (accept_terms, accept_privacy) NU sunt adaugate pe mobile. Doar web register.ejs le are.
+- [ ] **Web refresh token cookie** — web-ul NU are `ofai_refresh` cookie. Access token 24h, la expirare user-ul se re-logheaza. Opțional de implementat.
+- [ ] **Cron job cleanup refresh_tokens** — tokens expirate/revocate trebuie sterse periodic: `DELETE FROM refresh_tokens WHERE expires_at < NOW() - INTERVAL '60 days'`
+- [ ] **Cron job cleanup push_notifications_log** — `DELETE FROM push_notifications_log WHERE created_at < NOW() - INTERVAL '90 days'`
 
 ### ⚠️ VERIFICARI PENDINTE (Add Business Feature — v10)
 Feature-ul "Add Business" a fost implementat recent si necesita verificari end-to-end:
@@ -512,7 +555,19 @@ Fara asta, `fetch()` urmareste 302 transparent → primeste 200 cu HTML → `res
 - Link-urile "Inregistreaza-te" / "Ai deja cont?" propaga returnTo intre pagini
 - Pattern: `const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";`
 
-### 8. business-detail hero class = `.bd-hero`
+### 8. Helmet.js — imagini externe
+Helmet seteaza implicit `Cross-Origin-Resource-Policy: same-origin` care blocheaza imagini de pe domenii externe (Cloudinary, DiceBear, Picsum). TREBUIE `crossOriginResourcePolicy: false` in config.
+Config complet Helmet:
+```javascript
+app.use(helmet({
+  contentSecurityPolicy: false,       // EJS inline scripts/styles
+  crossOriginEmbedderPolicy: false,   // imagini externe
+  crossOriginResourcePolicy: false,   // CRITICAL — fara asta, imaginile externe nu se incarca
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+}));
+```
+
+### 9. business-detail hero class = `.bd-hero`
 CSS targeteaza `.bd-hero` cu `height: 280px; overflow: hidden`.
 HTML-ul TREBUIE sa aiba `class="bd-hero"` (NU `.business-detail-hero`).
 Mismatch = imaginea cover apare fullscreen pentru o fractiune de secunda.
@@ -660,6 +715,18 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Removed TypeFx + testimonials
 - [x] 8 bugfixes: hero title, webAuth 401, cover flash, follow toast, z-index, returnTo, scroll arrows position
 
+### Faza 3.9 — GDPR & Security Hardening (COMPLETA - v12)
+- [x] CORS block unknown origins, rate limiting xForwardedFor, admin auth timing-safe
+- [x] Sentry PII removal, file upload MIME whitelist, error sanitization
+- [x] JWT refresh token rotation (backend + mobile): access 24h, refresh 30d DB-backed
+- [x] Password validation (8+ chars, 1 digit), complete account deletion (DB transaction)
+- [x] GDPR consent (web register checkboxes, timestamps), cookie banner, data export
+- [x] n8n PII removal, audit log, security headers, security.txt
+- [x] Helmet CORP fix (crossOriginResourcePolicy: false)
+- [x] Pixabay expired logos → DiceBear initials (migration 017)
+- [x] Migration 016: refresh_tokens, GDPR columns, audit_log
+- [x] Migration 017: Pixabay→DiceBear logo replacement
+
 ### Faza 3.5 - Feature Parity & Visual Polish (COMPLETA - v6)
 - [x] Ratings (avg + count) pe offer cards (home + oferte)
 - [x] Business logo inline pe offer cards (40px, flex row layout)
@@ -736,21 +803,96 @@ Workflows active: WF1 (new-review → email owner)
 
 ## PRIORITATI URMATOARE
 
-1. **🔍 Verificari Add Business (v10)** — test end-to-end: retry button, emails, /cont indicator, admin flow (vezi lista completa mai sus)
-2. **📱 Mobile Performance (Faza 5A)** — FlashList + expo-image + Reanimated + React.memo (cel mai mare impact vizual)
-3. **Rulează scraping pipeline** — `npm run scrape` + `npm run scrape:enrich` pt date reale
-4. **📱 Unistyles 3.0 (Faza 5B, opțional)** — C++ style engine, zero-rerender themes
-5. **Monetizare** — implementează Stripe + pricing tiers (49/99/199 RON)
-6. **Galerie imagini** — upload/delete gallery images in portal
-7. **Footer link-uri** — actualizeaza link-urile din footer.ejs
-8. **n8n WF2-WF6** — workflow-uri suplimentare
-9. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
-10. **Play Store** — publicare APK pe Google Play
-11. **Web polish** — verificare vizuala pe toate paginile, responsive testing, edge cases
+1. **🖼️ Cover images business-uri** — toate scraped businesses au cover NULL. User-ul decide abordarea.
+2. **📱 Mobile GDPR consent** — adauga checkboxe accept_terms/accept_privacy pe RegisterScreen mobile
+3. **📱 Mobile Performance (Faza 5A)** — FlashList + expo-image + Reanimated + React.memo (cel mai mare impact vizual)
+4. **🔍 Verificari Add Business (v10)** — test end-to-end: retry button, emails, /cont indicator, admin flow
+5. **📱 Unistyles 3.0 (Faza 5B, opțional)** — C++ style engine, zero-rerender themes
+6. **Monetizare** — implementează Stripe + pricing tiers (49/99/199 RON)
+7. **Galerie imagini** — upload/delete gallery images in portal
+8. **Cron jobs** — cleanup refresh_tokens (60d) + push_notifications_log (90d)
+9. **Web refresh token** — opțional ofai_refresh cookie httpOnly 30d
+10. **n8n WF2-WF6** — workflow-uri suplimentare
+11. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
+12. **Play Store** — publicare APK pe Google Play ($25 o singura data)
+13. **Web polish** — verificare vizuala pe toate paginile, responsive testing, edge cases
 
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 12 Februarie 2026 (v12 — GDPR & Security Hardening + JWT Refresh Tokens + Image Fix)
+
+**Sesiune de security audit complet + GDPR compliance + fix imagini:**
+
+**Batch 1 — CRITICAL Security:**
+- CORS: block unknown origins in production (era allow-all, callback(null, true))
+- Rate Limiting: enable xForwardedFor pe toate 5 limiterele (Railway proxy), admin 200→60/min
+- Admin Auth: crypto.timingSafeEqual() pentru Basic Auth + fix password colon parsing
+- Sentry: eliminat email din setUser(), pastrat doar id
+- File Upload: MIME whitelist (jpeg/png/webp/gif) via createImageFilter() helper, blocat SVG XSS
+
+**Batch 2 — HIGH Security Hardening:**
+- JWT: access token 30d→24h, refresh token 30d cu rotatie DB-backed
+- Endpoints noi: POST /auth/refresh (token rotation), POST /auth/logout (revoke)
+- Mobile api.ts: auto-refresh pe 401 cu deduplication (isRefreshing flag)
+- Mobile AuthContext.tsx: refresh token storage in AsyncStorage, rotation
+- Password validation: min 8 chars + 1 digit (register, reset, change)
+- Account deletion: DB transaction complet, cleanup refresh_tokens/push_tokens/user_businesses/review_responses/business_requests + audit log
+- Error sanitization: eliminat error: err.message din toate response-urile de productie
+- n8n PII: eliminat email/name/comment din webhook payloads (auth, web, reviews, subscriptions)
+- Data export: GET /users/me/export — GDPR Article 20
+
+**Batch 3 — GDPR Compliance:**
+- Consent la register (web): checkboxe terms + privacy, timestamps in DB (privacy_accepted_at, terms_accepted_at)
+- Cookie consent banner in footer.ejs (localStorage)
+- Privacy/Terms pages deja existau
+
+**Batch 4 — Medium:**
+- Security headers: Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=()/microphone=()/geolocation=(self)
+- Audit log table cu indexes (actions: account_delete, data_export, etc.)
+- security.txt (.well-known)
+
+**Post-deploy fixes:**
+- Helmet CORP fix: crossOriginResourcePolicy: false (imagini externe Cloudinary/DiceBear/Picsum erau blocate de Cross-Origin-Resource-Policy: same-origin implicit)
+- Pixabay expired logos: 100% din business-urile scraped aveau URL-uri temporare Pixabay (400 Bad Request). Inlocuite cu DiceBear initials via migration 017.
+
+**Migrations:**
+- 016_security_gdpr.sql — refresh_tokens table, GDPR columns (privacy_accepted_at, terms_accepted_at), audit_log table, push_notifications_log retention index. RULATA PE DB.
+- 017_fix_pixabay_logos.sql — UPDATE businesses SET logo_url = DiceBear URL WHERE logo_url LIKE '%pixabay%'. RULATA PE DB.
+
+**Commits:** `7cfeb0a` (security+GDPR hardening), `2a5aa48` (fix images — Helmet CORP)
+
+**Fisiere create:**
+- `src/migrations/016_security_gdpr.sql`
+- `src/migrations/017_fix_pixabay_logos.sql`
+- `src/public/.well-known/security.txt`
+
+**Fisiere modificate (19 total):**
+- `src/index.js` — CORS block, Helmet (CSP off, COEP off, CORP off, Referrer-Policy), Permissions-Policy middleware
+- `src/middleware/rateLimiter.js` — xForwardedFor: true (replace_all), admin 200→60
+- `src/middleware/adminAuth.js` — timingSafeEqual + colon password fix
+- `src/services/sentry.js` — eliminat email PII
+- `src/helpers/validate.js` — validatePassword(), createImageFilter(), ALLOWED_IMAGE_MIMES
+- `src/helpers/jwt.js` — 24h expiry, generateRefreshToken()
+- `src/routes/auth.js` — refresh token flow, consent, password validation, PII removal, error sanitization
+- `src/routes/users.js` — account deletion transaction, data export, error sanitization
+- `src/routes/web.js` — GDPR consent register, MIME whitelist, PII removal
+- `src/routes/admin.js` — MIME whitelist
+- `src/routes/business-portal.js` — MIME whitelist
+- `src/routes/reviews.js` — PII removal din webhook
+- `src/routes/subscriptions.js` — PII removal din webhook
+- `src/views/public/register.ejs` — GDPR checkboxe, password hint 8 chars
+- `src/views/public/partials/footer.ejs` — cookie consent banner
+- `appredueri_mobile/app/lib/api.ts` — auto-refresh pe 401, setRefreshTokenHandler
+- `appredueri_mobile/app/context/AuthContext.tsx` — refresh token storage/rotation
+
+**Ce NU s-a implementat (ramas TODO):**
+- Mobile RegisterScreen: checkboxe GDPR consent
+- Web refresh token cookie (ofai_refresh httpOnly)
+- Cron job cleanup refresh_tokens + push_notifications_log
+
+---
 
 ### 11 Februarie 2026 (v11 — Security + Visual Polish + Bugfixes + returnTo)
 
@@ -1106,3 +1248,21 @@ Setup initial proiect
 21. **Search autosuggest z-index** (v11): `.search-wrapper` needs `z-index: 10` for stacking context. `.search-suggest-dropdown` at `z-index: 200` + `backdrop-filter: blur(12px)`. API endpoint: `GET /api/web/search/suggest?q=...` (debounced 300ms).
 
 22. **TypeFx INCOMPATIBIL cu text-gradient** (v11): `background-clip: text` + `-webkit-text-fill-color: transparent` pe parent NU se mostenesc de child `<span>`. TypeFx wrappea textul in spans → gradientul disparea → text invizibil. NU reintroduce TypeFx pe text cu gradient.
+
+23. **JWT Refresh Token Flow** (v12): Access token = 24h (jwt.js `generateToken`), refresh token = 30d (crypto.randomBytes stored in `refresh_tokens` table). Mobile `api.ts` auto-refreshes on 401 with dedup (isRefreshing flag). `AuthContext.tsx` stores refresh token in AsyncStorage. Endpoints: `POST /auth/refresh` (rotatie — vechi revocat, nou emis), `POST /auth/logout` (revoke). La password change, toate refresh tokens sunt revocate.
+
+24. **GDPR Consent** (v12): `register.ejs` are 2 checkboxe: accept_terms + accept_privacy. Backend-ul (web.js POST /register + auth.js POST /auth/register) salveaza `privacy_accepted_at` si `terms_accepted_at` in users table. Campuri adaugate in migration 016. Mobile RegisterScreen NU are inca aceste checkboxe.
+
+25. **Account Deletion** (v12): `DELETE /users/me` face DB transaction: BEGIN → delete refresh_tokens, push_tokens, review_responses (via user reviews), favorites, subscriptions → anonimizeaza business_requests (user_id=NULL) → delete user_businesses → insert audit_log → delete users → COMMIT. Daca orice fails, ROLLBACK.
+
+26. **Audit Log** (v12): Tabela `audit_log` (migration 016) cu coloane: action, entity_type, entity_id, user_id, ip_address (INET), details (JSONB), created_at. Folosit in: account_delete, data_export. Pattern: `pool.query("INSERT INTO audit_log (action, entity_type, entity_id, user_id, ip_address) VALUES ($1,$2,$3,$4,$5)", [...])`.
+
+27. **Data Export** (v12): `GET /users/me/export` returneaza JSON complet: profile, preferences, reviews, favorites, subscriptions, followed_businesses, points, business_requests. Rate limited (reutilizeaza generalLimiter). Logheaza in audit_log.
+
+28. **DiceBear Logo URL Pattern** (v12): `https://api.dicebear.com/7.x/initials/png?seed=BUSINESS_NAME&size=256&backgroundColor=f97316&textColor=ffffff`. Background portocaliu (#f97316 = accent), text alb, format PNG 256px. CDN-cached (BunnyCDN, max-age=31919000). Fara API key necesar.
+
+29. **Helmet.js CORP** (v12): TREBUIE `crossOriginResourcePolicy: false` in Helmet config. Fara asta, browser-ul blocheaza TOATE imaginile de pe domenii externe (Cloudinary, DiceBear, Picsum). Cauza: Helmet seteaza implicit `Cross-Origin-Resource-Policy: same-origin`.
+
+30. **Error sanitization** (v12): Toate catch block-urile din auth.js si users.js returneaza generic `{ message: "Eroare server" }` fara `error: err.message`. Pattern: `console.error(...)` pentru logs interne, `res.status(500).json({ message: "Eroare server" })` pentru client.
+
+31. **Android build** (v12): Google Play Developer Account = $25 o singura data. EAS Build: `eas build --platform android --profile preview` (APK test, fara cont), `eas build --platform android --profile production` (AAB pentru Play Store). Keystore generat automat de EAS — salveaza-l!
