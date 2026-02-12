@@ -756,85 +756,82 @@ router.post("/business-images/:imageId/delete", async (req, res) => {
 //   Acești utilizatori vor avea acces la Business Portal pentru acel business
 // =====================================
 
+// DEBUG: Test if the owners route is reachable
+router.get("/businesses/:id/owners-debug", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const testResult = await pool.query("SELECT COUNT(*) as cnt FROM user_businesses WHERE business_id = $1", [id]);
+    res.json({ ok: true, businessId: id, ownerCount: testResult.rows[0].cnt, timestamp: new Date().toISOString(), version: "v2-debug" });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 /**
  * POST /admin/businesses/:id/owners
  * Adaugă un utilizator ca administrator al business-ului
  * Body: { email: string }
  */
-router.post("/businesses/:id/owners", async (req, res) => {
+router.post("/businesses/:id/owners", async (req, res, next) => {
+  console.log("[Owners] POST HIT - params:", req.params, "body:", req.body);
   const businessId = parseInt(req.params.id, 10);
 
-  // Validare de bază
   if (!businessId || isNaN(businessId)) {
     return res.redirect("/admin/businesses?err=invalid_id");
   }
 
   try {
     const email = ((req.body && req.body.email) || "").trim().toLowerCase();
-
-    console.log("[Owners] === START ADD OWNER ===");
-    console.log("[Owners] businessId:", businessId);
-    console.log("[Owners] email:", email);
+    console.log("[Owners] Parsed email:", email, "businessId:", businessId);
 
     if (!email) {
       return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_data`);
     }
+
     // Pas 1: Găsește user-ul după email
-    console.log("[Owners] Step 1: Finding user...");
     const userQuery = await pool.query(
       "SELECT id, role FROM users WHERE LOWER(email) = $1",
       [email]
     );
-    console.log("[Owners] User query result:", userQuery.rows);
-    
+
     if (userQuery.rows.length === 0) {
-      console.log("[Owners] User not found");
       return res.redirect(`/admin/businesses/${businessId}/edit?err=user_not_found`);
     }
-    
+
     const user = userQuery.rows[0];
-    console.log("[Owners] Found user:", user);
-    
+
     // Pas 2: Verifică dacă relația există deja
-    console.log("[Owners] Step 2: Checking existing relation...");
     const checkQuery = await pool.query(
       "SELECT 1 FROM user_businesses WHERE user_id = $1 AND business_id = $2",
       [user.id, businessId]
     );
-    console.log("[Owners] Check query result:", checkQuery.rows);
-    
+
     if (checkQuery.rows.length > 0) {
-      console.log("[Owners] Relation already exists, redirecting");
       return res.redirect(`/admin/businesses/${businessId}/edit`);
     }
-    
+
     // Pas 3: Inserează relația
-    console.log("[Owners] Step 3: Inserting relation...");
     await pool.query(
       "INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)",
       [user.id, businessId]
     );
-    console.log("[Owners] Relation inserted successfully");
-    
+
     // Pas 4: Actualizează rolul user-ului dacă e necesar
     if (user.role === "user") {
-      console.log("[Owners] Step 4: Updating user role...");
       await pool.query(
         "UPDATE users SET role = 'business_owner' WHERE id = $1",
         [user.id]
       );
-      console.log("[Owners] Role updated");
     }
-    
-    console.log("[Owners] === SUCCESS ===");
+
     return res.redirect(`/admin/businesses/${businessId}/edit`);
-    
+
   } catch (err) {
-    console.error("[Owners] === ERROR ===");
-    console.error("[Owners] Error message:", err.message);
-    console.error("[Owners] Error stack:", err.stack);
-    // Afișăm eroarea direct în browser pentru debug
-    return res.status(500).send(`<h1>Eroare</h1><pre>${err.message}\n\n${err.stack}</pre><br><a href="/admin/businesses/${businessId}/edit">Înapoi</a>`);
+    console.error("[Owners] Add owner error:", err.message, err.stack);
+    // Escape HTML to prevent XSS
+    const safeMsg = (err.message || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    const safeStack = (err.stack || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    return res.status(500).send(`<h1>Eroare la adăugare administrator</h1><pre>${safeMsg}\n\n${safeStack}</pre><br><a href="/admin/businesses/${businessId}/edit">Înapoi</a>`);
   }
 });
 
