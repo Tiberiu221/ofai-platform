@@ -105,6 +105,7 @@ app.use(cors(corsOptions));
 app.use(helmet({
   contentSecurityPolicy: false, // EJS templates use inline scripts/styles
   crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
+  crossOriginResourcePolicy: false, // Allow browsers to load images from external domains (Cloudinary, Picsum, DiceBear)
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
 

@@ -101,7 +101,8 @@
       "Bash(powershell.exe -NoProfile -Command \"cd ''C:/Users/tiber/Desktop/AppReduceri/appredueri_backend''; railway logs --limit 50 2>&1 | Select-String -Pattern ''Error|error|owners|Owners|500''\")",
       "Bash(powershell.exe:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(cat:*)"
     ]
   }
 }
