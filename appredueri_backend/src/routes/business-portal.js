@@ -5,7 +5,7 @@ const multer = require("multer");
 const { businessAuth, businessUserAuth } = require("../middleware/businessAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { triggerWebhook } = require("../services/n8n");
-const { parsePagination, paginatedResponse, sanitizeString } = require("../helpers/validate");
+const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage pentru Cloudinary)
@@ -13,13 +13,7 @@ const { parsePagination, paginatedResponse, sanitizeString } = require("../helpe
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    console.log("[Multer] File filter - mimetype:", file.mimetype);
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Doar imagini sunt permise"));
-    }
-    cb(null, true);
-  }
+  fileFilter: createImageFilter(), // Whitelist: JPEG, PNG, WebP, GIF
 });
 
 // =====================================

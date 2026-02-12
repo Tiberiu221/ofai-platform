@@ -15,7 +15,7 @@ const {
   getLatestValidReviewId
 } = require("../services/llm/summarizationService");
 const { sendBusinessApprovedEmail, sendBusinessRejectedEmail } = require("../services/email");
-const { parsePagination } = require("../helpers/validate");
+const { parsePagination, createImageFilter } = require("../helpers/validate");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage → Cloudinary)
@@ -32,12 +32,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // max 5MB
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype || !file.mimetype.startsWith("image/")) {
-      return cb(new Error("Fișierul trebuie să fie imagine"));
-    }
-    cb(null, true);
-  },
+  fileFilter: createImageFilter(), // Whitelist: JPEG, PNG, WebP, GIF
 });
 
 const uploadBusinessImage = upload; // Alias pentru claritate

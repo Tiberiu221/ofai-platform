@@ -157,15 +157,12 @@ router.post("/", authenticateToken, async (req, res) => {
           );
           const biz = bizInfo.rows[0];
           if (biz && biz.owner_email) {
+            // GDPR: no PII (emails, names) in webhook payloads
             triggerWebhook("/webhook/new-review", {
               review_id: reviewId,
               business_id: business_id,
               business_name: biz.business_name,
-              business_owner_email: biz.owner_email,
-              owner_first_name: biz.owner_first_name,
               rating: rating,
-              comment: comment || "",
-              reviewer_first_name: reviewerInfo.rows[0]?.first_name || "Un utilizator",
               created_at: new Date().toISOString(),
             });
           }

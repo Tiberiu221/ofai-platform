@@ -117,10 +117,9 @@ router.post("/", async (req, res) => {
 
     // Trigger n8n webhook only for new subscriptions (not duplicates)
     if (result.rowCount > 0) {
-      const userInfo = await pool.query("SELECT first_name FROM users WHERE id = $1", [userId]);
+      // GDPR: no PII in webhook payloads
       triggerWebhook("/webhook/new-subscriber", {
         user_id: userId,
-        user_first_name: userInfo.rows[0]?.first_name || "Un utilizator",
         business_id: parseInt(business_id, 10),
         created_at: new Date().toISOString(),
       });

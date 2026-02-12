@@ -5,10 +5,11 @@ const pool = require("../db");
 const authenticateToken = require("../middleware/auth");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
-const { isValidEmail, sanitizeString } = require("../helpers/validate");
-const { signToken } = require("../helpers/jwt");
+const { isValidEmail, sanitizeString, validatePassword } = require("../helpers/validate");
+const { signToken, generateRefreshToken } = require("../helpers/jwt");
 
 const SALT_ROUNDS = 10;
+const REFRESH_TOKEN_DAYS = 30;
 
 // Helper pentru a standardiza obiectul User trimis către Frontend
 function mapUserResponse(user, points = 0) {
@@ -21,17 +22,45 @@ function mapUserResponse(user, points = 0) {
     preferred_city_id: user.preferred_city_id,
     preferred_category_ids: user.preferred_category_ids || [],
     points: points || 0,
-    role: user.role || 'user', // user, business_owner, admin
+    role: user.role || 'user',
   };
+}
+
+/**
+ * Saves a refresh token to the database
+ * @param {number} userId
+ * @returns {string} the refresh token
+ */
+async function createRefreshToken(userId) {
+  const refreshToken = generateRefreshToken();
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+
+  await pool.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+    [userId, refreshToken, expiresAt]
+  );
+
+  return refreshToken;
 }
 
 // POST /auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, first_name, last_name } = req.body || {};
+    const { email, password, first_name, last_name, accept_terms, accept_privacy } = req.body || {};
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email și parola sunt obligatorii" });
+    }
+
+    // Validare forță parolă
+    const pwdCheck = validatePassword(password);
+    if (!pwdCheck.valid) {
+      return res.status(400).json({ message: pwdCheck.errors[0] });
+    }
+
+    // GDPR: consent obligatoriu (dacă trimis de client)
+    if (accept_terms === false || accept_privacy === false) {
+      return res.status(400).json({ message: "Trebuie să accepți Termenii și Politica de Confidențialitate" });
     }
 
     const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
@@ -41,46 +70,46 @@ router.post("/register", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // 1. Inserăm Userul
+    // Inserăm Userul cu consent timestamps
+    const now = new Date();
     const insertResult = await pool.query(
-      `INSERT INTO users (email, password_hash, first_name, last_name)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO users (email, password_hash, first_name, last_name, privacy_accepted_at, terms_accepted_at)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [email, passwordHash, first_name?.trim(), last_name?.trim()]
+      [email, passwordHash, first_name?.trim(), last_name?.trim(),
+       accept_privacy ? now : null, accept_terms ? now : null]
     );
 
     const user = insertResult.rows[0];
 
-    // 2. Inițializăm punctele cu 0 (opțional, dar sănătos pentru consistență)
-    // Dacă ai un trigger în DB care face asta, linia asta e redundantă dar nu strică.
+    // Inițializăm punctele cu 0
     await pool.query(
       `INSERT INTO user_points (user_id, total_points) VALUES ($1, 0) ON CONFLICT DO NOTHING`,
       [user.id]
     );
 
-    const token = signToken({ id: user.id }, "7d");
+    const token = signToken({ id: user.id });
+    const refreshToken = await createRefreshToken(user.id);
 
     // Trimite email de bun venit (async, nu blochează răspunsul)
     sendWelcomeEmail(user.email, user.first_name).catch(err => {
       console.error("[Auth] Failed to send welcome email:", err);
     });
 
-    // 4. Trigger n8n Webhook for Welcome Sequence
+    // Trigger n8n Webhook — GDPR: doar user_id, fără PII
     triggerWebhook("/webhook/new-user", {
       user_id: user.id,
-      email: user.email,
-      first_name: user.first_name,
       created_at: new Date().toISOString(),
     });
 
-    // La register, punctele sunt sigur 0
     return res.status(201).json({
       user: mapUserResponse(user, 0),
       token,
+      refreshToken,
     });
   } catch (err) {
     console.error("Eroare la /auth/register:", err);
-    return res.status(500).json({ message: "Eroare server", error: err.message });
+    return res.status(500).json({ message: "Eroare server" });
   }
 });
 
@@ -93,7 +122,6 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email și parolă sunt obligatorii" });
     }
 
-    // 1. Luăm Userul
     const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
 
     if (result.rowCount === 0) {
@@ -101,30 +129,107 @@ router.post("/login", async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    // Check if user is banned
+    if (user.banned_at) {
+      return res.status(403).json({ message: "Contul tău a fost suspendat" });
+    }
+
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
     }
 
-    // 2. Update last_active_at
+    // Update last_active_at
     await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [user.id]);
 
-    // 3. (FIX) Luăm Punctele explicit la Login
+    // Luăm Punctele explicit la Login
     const pointsRes = await pool.query(
       `SELECT total_points FROM user_points WHERE user_id = $1`,
       [user.id]
     );
     const points = pointsRes.rows[0]?.total_points || 0;
 
-    const token = signToken({ id: user.id }, "30d");
+    const token = signToken({ id: user.id });
+    const refreshToken = await createRefreshToken(user.id);
 
     return res.json({
       user: mapUserResponse(user, points),
       token,
+      refreshToken,
     });
   } catch (err) {
     console.error("Eroare la /auth/login:", err);
-    return res.status(500).json({ message: "Eroare server", error: err.message });
+    return res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// POST /auth/refresh — Refresh token rotation
+router.post("/refresh", async (req, res) => {
+  try {
+    const { refreshToken } = req.body || {};
+
+    if (!refreshToken) {
+      return res.status(400).json({ message: "Refresh token este obligatoriu" });
+    }
+
+    // Find the refresh token
+    const tokenRes = await pool.query(
+      `SELECT rt.*, u.id as uid, u.banned_at
+       FROM refresh_tokens rt
+       JOIN users u ON u.id = rt.user_id
+       WHERE rt.token = $1 AND rt.revoked_at IS NULL AND rt.expires_at > NOW()`,
+      [refreshToken]
+    );
+
+    if (tokenRes.rowCount === 0) {
+      return res.status(401).json({ message: "Refresh token invalid sau expirat" });
+    }
+
+    const tokenData = tokenRes.rows[0];
+
+    // Check if user is banned
+    if (tokenData.banned_at) {
+      await pool.query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1", [tokenData.id]);
+      return res.status(403).json({ message: "Contul tău a fost suspendat" });
+    }
+
+    // Revoke old refresh token (rotation)
+    await pool.query(
+      "UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1",
+      [tokenData.id]
+    );
+
+    // Issue new tokens
+    const newAccessToken = signToken({ id: tokenData.user_id });
+    const newRefreshToken = await createRefreshToken(tokenData.user_id);
+
+    return res.json({
+      token: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (err) {
+    console.error("Eroare la /auth/refresh:", err);
+    return res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// POST /auth/logout — Revoke refresh token
+router.post("/logout", async (req, res) => {
+  try {
+    const { refreshToken } = req.body || {};
+
+    if (refreshToken) {
+      await pool.query(
+        "UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1",
+        [refreshToken]
+      );
+    }
+
+    return res.json({ message: "Delogat cu succes" });
+  } catch (err) {
+    console.error("Eroare la /auth/logout:", err);
+    return res.status(500).json({ message: "Eroare server" });
   }
 });
 
@@ -138,7 +243,6 @@ function generateResetCode() {
 }
 
 // POST /auth/forgot-password
-// Trimite un cod de resetare pe email (în dev, îl afișăm în consolă)
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body || {};
@@ -147,13 +251,11 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(400).json({ message: "Email-ul este obligatoriu" });
     }
 
-    // Verificăm dacă utilizatorul există
     const userRes = await pool.query("SELECT id, email, first_name FROM users WHERE email = $1", [email.toLowerCase().trim()]);
-    
+
     if (userRes.rowCount === 0) {
-      // Nu dezvăluim dacă email-ul există sau nu (securitate)
-      return res.json({ 
-        message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare." 
+      return res.json({
+        message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare."
       });
     }
 
@@ -165,7 +267,6 @@ router.post("/forgot-password", async (req, res) => {
       [user.id]
     );
 
-    // Generăm un cod nou
     const resetCode = generateResetCode();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minute
 
@@ -174,13 +275,11 @@ router.post("/forgot-password", async (req, res) => {
       [user.id, resetCode, expiresAt]
     );
 
-    // Trimite email cu codul de resetare
     const emailResult = await sendPasswordResetEmail(user.email, resetCode, user.first_name);
-    
-    // În development, afișăm codul și în consolă pentru testare
+
     if (process.env.NODE_ENV !== 'production') {
       console.log("\n========================================");
-      console.log("🔐 PASSWORD RESET CODE (dev mode)");
+      console.log("PASSWORD RESET CODE (dev mode)");
       console.log("========================================");
       console.log(`Email: ${user.email}`);
       console.log(`Code: ${resetCode}`);
@@ -189,9 +288,8 @@ router.post("/forgot-password", async (req, res) => {
       console.log("========================================\n");
     }
 
-    return res.json({ 
+    return res.json({
       message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare.",
-      // În development, returnăm și codul pentru testare ușoară
       ...(process.env.NODE_ENV !== 'production' && { _devCode: resetCode })
     });
 
@@ -202,7 +300,6 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 // POST /auth/verify-reset-code
-// Verifică dacă codul este valid (fără a-l consuma)
 router.post("/verify-reset-code", async (req, res) => {
   try {
     const { email, code } = req.body || {};
@@ -212,12 +309,12 @@ router.post("/verify-reset-code", async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT prt.*, u.email 
+      `SELECT prt.*, u.email
        FROM password_reset_tokens prt
        JOIN users u ON u.id = prt.user_id
-       WHERE u.email = $1 
-         AND prt.token = $2 
-         AND prt.used_at IS NULL 
+       WHERE u.email = $1
+         AND prt.token = $2
+         AND prt.used_at IS NULL
          AND prt.expires_at > NOW()
        ORDER BY prt.created_at DESC
        LIMIT 1`,
@@ -237,7 +334,6 @@ router.post("/verify-reset-code", async (req, res) => {
 });
 
 // POST /auth/reset-password
-// Resetează parola folosind codul
 router.post("/reset-password", async (req, res) => {
   try {
     const { email, code, newPassword } = req.body || {};
@@ -246,18 +342,19 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Toate câmpurile sunt obligatorii" });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "Parola trebuie să aibă minim 6 caractere" });
+    // Validare forță parolă
+    const pwdCheck = validatePassword(newPassword);
+    if (!pwdCheck.valid) {
+      return res.status(400).json({ message: pwdCheck.errors[0] });
     }
 
-    // Verificăm token-ul
     const tokenRes = await pool.query(
-      `SELECT prt.*, u.id as user_id 
+      `SELECT prt.*, u.id as user_id
        FROM password_reset_tokens prt
        JOIN users u ON u.id = prt.user_id
-       WHERE u.email = $1 
-         AND prt.token = $2 
-         AND prt.used_at IS NULL 
+       WHERE u.email = $1
+         AND prt.token = $2
+         AND prt.used_at IS NULL
          AND prt.expires_at > NOW()
        ORDER BY prt.created_at DESC
        LIMIT 1`,
@@ -270,22 +367,25 @@ router.post("/reset-password", async (req, res) => {
 
     const tokenData = tokenRes.rows[0];
 
-    // Hash-uim noua parolă
     const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
-    // Actualizăm parola
     await pool.query(
       "UPDATE users SET password_hash = $1 WHERE id = $2",
       [passwordHash, tokenData.user_id]
     );
 
-    // Marcăm token-ul ca folosit
     await pool.query(
       "UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1",
       [tokenData.id]
     );
 
-    console.log(`✅ Password reset successful for user ID: ${tokenData.user_id}`);
+    // Revoke all refresh tokens for this user (force re-login)
+    await pool.query(
+      "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL",
+      [tokenData.user_id]
+    );
+
+    console.log(`Password reset successful for user ID: ${tokenData.user_id}`);
 
     return res.json({ message: "Parola a fost schimbată cu succes!" });
 
@@ -299,7 +399,6 @@ router.post("/reset-password", async (req, res) => {
 // CHANGE PASSWORD (autentificat)
 // ============================================
 
-// POST /auth/change-password
 router.post("/change-password", authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body || {};
@@ -308,32 +407,38 @@ router.post("/change-password", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: "Parola curentă și cea nouă sunt obligatorii" });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "Parola nouă trebuie să aibă minim 6 caractere" });
+    // Validare forță parolă
+    const pwdCheck = validatePassword(newPassword);
+    if (!pwdCheck.valid) {
+      return res.status(400).json({ message: pwdCheck.errors[0] });
     }
 
-    // Verificăm parola curentă
     const userRes = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.user.id]);
-    
+
     if (userRes.rowCount === 0) {
       return res.status(404).json({ message: "Utilizator negăsit" });
     }
 
     const isValid = await bcrypt.compare(currentPassword, userRes.rows[0].password_hash);
-    
+
     if (!isValid) {
       return res.status(401).json({ message: "Parola curentă este incorectă" });
     }
 
-    // Hash-uim și salvăm noua parolă
     const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    
+
     await pool.query(
       "UPDATE users SET password_hash = $1 WHERE id = $2",
       [passwordHash, req.user.id]
     );
 
-    console.log(`✅ Password changed for user ID: ${req.user.id}`);
+    // Revoke all refresh tokens (force re-login on other devices)
+    await pool.query(
+      "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL",
+      [req.user.id]
+    );
+
+    console.log(`Password changed for user ID: ${req.user.id}`);
 
     return res.json({ message: "Parola a fost schimbată cu succes!" });
 
@@ -362,12 +467,10 @@ router.get("/me", authenticateToken, async (req, res) => {
     const user = userRes.rows[0];
     const points = pointsRes.rows[0]?.total_points || 0;
 
-    const responseData = mapUserResponse(user, points);
-
-    res.json(responseData);
+    res.json(mapUserResponse(user, points));
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.status(500).json({ message: "Eroare server" });
   }
 });
 

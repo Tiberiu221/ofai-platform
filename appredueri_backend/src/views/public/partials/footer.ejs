@@ -45,6 +45,30 @@
 <!-- Toast container -->
 <div id="toast-container"></div>
 
+<!-- Cookie Consent Banner -->
+<div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; background:rgba(9,9,11,0.95); border-top:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); padding:16px 24px;">
+  <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <p style="margin:0; font-size:13px; color:#a1a1aa; line-height:1.5;">
+      Folosim cookie-uri esen&#539;iale pentru func&#539;ionarea site-ului.
+      <a href="/confidentialitate" style="color:#fb923c; text-decoration:none;">Politic&#259; de Confiden&#539;ialitate</a>
+    </p>
+    <button onclick="acceptCookies()" style="padding:8px 20px; background:#fb923c; color:#09090b; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">Accept</button>
+  </div>
+</div>
+<script>
+(function() {
+  if (!localStorage.getItem('cookie_consent')) {
+    var b = document.getElementById('cookie-banner');
+    if (b) b.style.display = 'block';
+  }
+})();
+function acceptCookies() {
+  localStorage.setItem('cookie_consent', '1');
+  var b = document.getElementById('cookie-banner');
+  if (b) b.style.display = 'none';
+}
+</script>
+
 <!-- JavaScript -->
 <script src="/js/main.js?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '7' %>"></script>
 </body>

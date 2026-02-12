@@ -163,6 +163,52 @@ function isValidRomanianPhone(phone) {
   return /^(\+?40|0)[2-9]\d{7,8}$/.test(cleaned);
 }
 
+/**
+ * Validate password strength
+ * Requirements: min 8 chars, at least 1 digit
+ * @param {string} password
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+function validatePassword(password) {
+  const errors = [];
+  if (!password || typeof password !== "string") {
+    errors.push("Parola este obligatorie.");
+    return { valid: false, errors };
+  }
+  if (password.length < 8) {
+    errors.push("Parola trebuie să aibă minim 8 caractere.");
+  }
+  if (!/\d/.test(password)) {
+    errors.push("Parola trebuie să conțină cel puțin o cifră.");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Allowed image MIME types for file uploads.
+ * Blocks SVG (XSS vector), TIFF, BMP, and other potentially dangerous formats.
+ */
+const ALLOWED_IMAGE_MIMES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+
+/**
+ * Creates a multer fileFilter that only allows safe image MIME types.
+ * @returns {Function} multer fileFilter callback
+ */
+function createImageFilter() {
+  return (req, file, cb) => {
+    if (ALLOWED_IMAGE_MIMES.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Tip de fișier nepermis: ${file.mimetype}. Doar JPEG, PNG, WebP și GIF sunt acceptate.`));
+    }
+  };
+}
+
 module.exports = {
   isValidEmail,
   sanitizeString,
@@ -172,4 +218,7 @@ module.exports = {
   paginatedResponse,
   validateBusinessRequest,
   isValidRomanianPhone,
+  ALLOWED_IMAGE_MIMES,
+  createImageFilter,
+  validatePassword,
 };

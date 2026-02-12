@@ -75,12 +75,24 @@
           id="password"
           name="password"
           class="auth-input"
-          placeholder="Minim 6 caractere"
+          placeholder="Minim 8 caractere, cel pu&#539;in o cifr&#259;"
           required
-          minlength="6"
+          minlength="8"
           autocomplete="new-password"
         >
-        <span class="auth-hint">Parola trebuie s&#259; aib&#259; minim 6 caractere</span>
+        <span class="auth-hint">Parola trebuie s&#259; aib&#259; minim 8 caractere &#537;i cel pu&#539;in o cifr&#259;</span>
+      </div>
+
+      <!-- GDPR Consent -->
+      <div class="auth-consent-group">
+        <label class="auth-consent-label">
+          <input type="checkbox" id="accept_terms" name="accept_terms" required>
+          <span>Accept <a href="/termeni" target="_blank" class="auth-link">Termenii &#537;i Condi&#539;iile</a></span>
+        </label>
+        <label class="auth-consent-label">
+          <input type="checkbox" id="accept_privacy" name="accept_privacy" required>
+          <span>Accept <a href="/confidentialitate" target="_blank" class="auth-link">Politica de Confiden&#539;ialitate</a></span>
+        </label>
       </div>
 
       <button type="submit" class="btn btn-primary btn-lg auth-submit">
@@ -243,6 +255,30 @@
     margin-top: 2px;
   }
 
+  .auth-consent-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .auth-consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary, #a1a1aa);
+    cursor: pointer;
+    line-height: 1.4;
+  }
+
+  .auth-consent-label input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: #fb923c;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
   .auth-footer-link {
     text-align: center;
     margin-top: 28px;
@@ -308,7 +344,11 @@ document.querySelector('.auth-form').addEventListener('submit', async (e) => {
     const resp = await fetch('/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, first_name, last_name, returnTo }),
+      body: JSON.stringify({
+        email, password, first_name, last_name, returnTo,
+        accept_terms: form.querySelector('#accept_terms').checked,
+        accept_privacy: form.querySelector('#accept_privacy').checked,
+      }),
     });
     const data = await resp.json();
 

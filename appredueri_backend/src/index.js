@@ -88,9 +88,9 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    // În producție, loghează dar permite — securitatea e asigurată de JWT/Basic Auth
-    console.warn(`[CORS] Unknown origin allowed: ${origin}`);
-    callback(null, true);
+    // În producție, BLOCHEAZĂ originile necunoscute
+    console.warn(`[CORS] Blocked unknown origin: ${origin}`);
+    callback(new Error("CORS policy: origin not allowed"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -105,7 +105,14 @@ app.use(cors(corsOptions));
 app.use(helmet({
   contentSecurityPolicy: false, // EJS templates use inline scripts/styles
   crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
 }));
+
+// Additional security headers not covered by Helmet
+app.use((req, res, next) => {
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
+  next();
+});
 
 // ============================================
 // RATE LIMITING (Global)

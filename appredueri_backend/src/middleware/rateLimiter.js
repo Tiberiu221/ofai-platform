@@ -18,7 +18,7 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Disable validation warning for default keyGenerator
-  validate: { xForwardedForHeader: false },
+  validate: { xForwardedForHeader: true },
 });
 
 /**
@@ -35,7 +35,7 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
+  validate: { xForwardedForHeader: true },
 });
 
 /**
@@ -51,7 +51,7 @@ const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
+  validate: { xForwardedForHeader: true },
 });
 
 /**
@@ -68,23 +68,23 @@ const verifyResetCodeLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
+  validate: { xForwardedForHeader: true },
 });
 
 /**
  * Rate limiter pentru admin routes
- * 200 requests per minut per IP
+ * 60 requests per minut per IP
  */
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minut
-  max: 200,
+  max: 60,
   message: {
     message: "Prea multe cereri admin. Te rugăm să aștepți.",
     retryAfter: 60,
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
+  validate: { xForwardedForHeader: true },
 });
 
 /**

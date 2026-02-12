@@ -1,0 +1,3 @@
+Contact: mailto:security@ofai.ro
+Preferred-Languages: ro, en
+Policy: https://ofai.ro/confidentialitate

@@ -11,7 +11,7 @@ const { optionalWebAuth, requireWebAuth } = require("../middleware/webAuth");
 const { signToken } = require("../helpers/jwt");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
-const { sanitizeString } = require("../helpers/validate");
+const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
@@ -19,10 +19,7 @@ const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require
 const portalUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) return cb(new Error("Doar imagini sunt permise"));
-    cb(null, true);
-  }
+  fileFilter: createImageFilter(), // Whitelist: JPEG, PNG, WebP, GIF
 });
 
 const SALT_ROUNDS = 10;
@@ -775,42 +772,47 @@ router.post("/login", async (req, res) => {
 // POST /register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, first_name, last_name } = req.body || {};
+    const { email, password, first_name, last_name, accept_terms, accept_privacy } = req.body || {};
     if (!email || !password) {
-      return res.status(400).json({ message: "Email și parola sunt obligatorii" });
+      return res.status(400).json({ message: "Email si parola sunt obligatorii" });
     }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Parola trebuie să aibă minim 6 caractere" });
+
+    // Password strength validation
+    const pwdCheck = validatePassword(password);
+    if (!pwdCheck.valid) {
+      return res.status(400).json({ message: pwdCheck.errors[0] });
     }
 
     const existing = await pool.query("SELECT id FROM users WHERE email = $1", [email.toLowerCase().trim()]);
     if (existing.rowCount > 0) {
-      return res.status(400).json({ message: "Există deja un cont cu acest email" });
+      return res.status(400).json({ message: "Exista deja un cont cu acest email" });
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const now = new Date();
     const insertResult = await pool.query(
-      "INSERT INTO users (email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING *",
-      [email.toLowerCase().trim(), passwordHash, first_name?.trim(), last_name?.trim()]
+      `INSERT INTO users (email, password_hash, first_name, last_name, privacy_accepted_at, terms_accepted_at)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [email.toLowerCase().trim(), passwordHash, first_name?.trim(), last_name?.trim(),
+       accept_privacy ? now : null, accept_terms ? now : null]
     );
     const user = insertResult.rows[0];
 
     await pool.query("INSERT INTO user_points (user_id, total_points) VALUES ($1, 0) ON CONFLICT DO NOTHING", [user.id]);
 
-    const token = signToken({ id: user.id }, "30d");
+    const token = signToken({ id: user.id });
 
     res.cookie("ofai_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // 24h (matches new access token expiry)
     });
 
-    // Async email + webhook
+    // Async email + webhook (GDPR: no PII in webhook)
     sendWelcomeEmail(user.email, user.first_name).catch(() => {});
     triggerWebhook("/webhook/new-user", {
-      user_id: user.id, email: user.email,
-      first_name: user.first_name, created_at: new Date().toISOString(),
+      user_id: user.id, created_at: new Date().toISOString(),
     });
 
     const returnTo = req.body.returnTo || "/cont";

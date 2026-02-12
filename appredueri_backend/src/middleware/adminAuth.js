@@ -1,5 +1,21 @@
+const crypto = require("crypto");
+
 const adminUser = process.env.ADMIN_USER;
 const adminPassword = process.env.ADMIN_PASSWORD;
+
+/**
+ * Timing-safe string comparison to prevent timing attacks.
+ * Pads both strings to the same length before comparing.
+ */
+function timingSafeCompare(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const maxLen = Math.max(a.length, b.length);
+  const bufA = Buffer.alloc(maxLen, 0);
+  const bufB = Buffer.alloc(maxLen, 0);
+  bufA.write(a);
+  bufB.write(b);
+  return crypto.timingSafeEqual(bufA, bufB) && a.length === b.length;
+}
 
 function adminAuth(req, res, next) {
   // Headerul de basic auth arata asa: "Basic base64(user:parola)"
@@ -18,13 +34,14 @@ function adminAuth(req, res, next) {
     return res.status(401).send("Credentiale invalide");
   }
 
-  const [user, password] = decoded.split(":");
+  const [user, ...passwordParts] = decoded.split(":");
+  const password = passwordParts.join(":"); // Handle passwords with colons
 
   if (!user || !password) {
     return res.status(401).send("Credentiale invalide");
   }
 
-  if (user === adminUser && password === adminPassword) {
+  if (timingSafeCompare(user, adminUser) && timingSafeCompare(password, adminPassword)) {
     return next();
   }
 

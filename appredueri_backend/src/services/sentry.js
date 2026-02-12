@@ -45,9 +45,9 @@ function initSentry(app) {
  */
 function sentryUserMiddleware(req, res, next) {
   if (sentryInitialized && req.user) {
+    // GDPR: Trimitem doar ID-ul, fără PII (email, nume)
     Sentry.setUser({
       id: req.user.id,
-      email: req.user.email,
     });
   }
   next();
