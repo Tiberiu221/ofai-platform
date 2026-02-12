@@ -72,16 +72,26 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Permite requests fără origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
+
+    // Log origin for debugging CORS issues
+    if (isProduction) {
+      console.log(`[CORS] Origin: "${origin}"`);
+    }
+
     // Permite subdomeniile OFAI de pe Vercel (inclusiv preview deploys) și Railway
     if (origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
       if (!isProduction) return callback(null, true);
-      // În production, permite preview-urile Vercel ale proiectului OFAI
+      // În production, permite Railway app + preview-urile Vercel ale proiectului OFAI
       if (origin.includes('tiberius-projects') || origin.includes('ofai')) {
         return callback(null, true);
       }
     }
-    
+
+    // Permite same-origin requests de pe domeniul principal
+    if (origin === 'https://ofai-production.up.railway.app') {
+      return callback(null, true);
+    }
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else if (!isProduction) {
