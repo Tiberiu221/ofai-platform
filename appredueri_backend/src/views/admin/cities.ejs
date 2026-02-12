@@ -1,0 +1,64 @@
+<%- include('partials/layout-top', { pageTitle: 'Orașe', activePage: 'cities' }) %>
+
+<div class="a-page-header">
+  <h1>Orașe</h1>
+</div>
+
+<% if (error) { %>
+  <div class="error-msg"><%= error %></div>
+<% } %>
+<% if (message) { %>
+  <div class="a-alert a-alert-success"><%= message %></div>
+<% } %>
+
+<!-- Adaugă oraș -->
+<div class="a-card" style="max-width: 500px; margin-bottom: 20px;">
+  <h3 style="margin-top: 0;">Adaugă oraș nou</h3>
+  <form method="post" action="/admin/cities" style="display: flex; gap: 10px; align-items: flex-end;">
+    <div style="flex: 1;">
+      <label for="new_city_name">Nume oraș</label>
+      <input type="text" id="new_city_name" name="name" placeholder="ex: București" required />
+    </div>
+    <button type="submit" class="a-btn a-btn-success" style="margin-top: 0;">Adaugă</button>
+  </form>
+</div>
+
+<% if (!cities || cities.length === 0) { %>
+  <p class="a-text-muted">Nu există orașe în sistem.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 60px;">ID</th>
+        <th>Nume</th>
+        <th style="width: 120px;">Business-uri</th>
+        <th style="width: 250px;">Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% cities.forEach(function(c) { %>
+        <tr>
+          <td><%= c.id %></td>
+          <td>
+            <form method="post" action="/admin/cities/<%= c.id %>" style="display: flex; gap: 8px; align-items: center; max-width: none;">
+              <input type="text" name="name" value="<%= c.name %>" required style="flex: 1;" />
+              <button type="submit" class="a-btn a-btn-sm">Salvează</button>
+            </form>
+          </td>
+          <td><%= c.businesses_count %></td>
+          <td>
+            <% if (parseInt(c.businesses_count) === 0) { %>
+              <form method="post" action="/admin/cities/<%= c.id %>/delete" style="display: inline; max-width: none;" data-confirm="Sigur vrei să ștergi orașul <%= c.name %>?">
+                <button type="submit" class="a-btn a-btn-sm a-btn-danger">Șterge</button>
+              </form>
+            <% } else { %>
+              <span class="a-text-muted" style="font-size: 12px;">Nu se poate șterge (are business-uri)</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

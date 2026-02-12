@@ -1,261 +1,131 @@
-<!doctype html>
-<html lang="ro">
-  <head>
-    <meta charset="utf-8" />
-    <title>Admin - Oferte</title>
-    <style>
-      body { font-family: sans-serif; padding: 20px; background: #0f0f13; color: #e5e7eb; }
-      h1 { margin-bottom: 16px; color: #f3f4f6; }
+<%- include('partials/layout-top', { pageTitle: 'Oferte', activePage: 'offers' }) %>
 
-      table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-      th, td { border: 1px solid #2e2e33; padding: 8px; font-size: 14px; }
-      th { background: #1f1f23; text-align: left; color: #9ca3af; }
+<div class="a-page-header">
+  <h1>Oferte</h1>
+  <a href="/admin/offers/new" class="a-btn">+ Adaugă ofertă nouă</a>
+</div>
 
-      a.button,
-      button.button {
-        display: inline-block;
-        padding: 6px 10px;
-        background: #2563eb;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 14px;
-        border: none;
-        cursor: pointer;
-      }
+<form method="get" action="/admin/offers" class="filters">
+  <div class="filters-row">
+    <label>
+      Oraș
+      <select name="city_id">
+        <option value="">Toate</option>
+        <% (cities || []).forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= String(filters.city_id) === String(c.id) ? "selected" : "" %>><%= c.name %></option>
+        <% }); %>
+      </select>
+    </label>
 
-      a.button.secondary {
-        background: #4b5563;
-      }
+    <label>
+      Categorie
+      <select name="category_id">
+        <option value="">Toate</option>
+        <% (categories || []).forEach(function(cat) { %>
+          <option value="<%= cat.id %>" <%= String(filters.category_id) === String(cat.id) ? "selected" : "" %>><%= cat.name %></option>
+        <% }); %>
+      </select>
+    </label>
 
-      .button-small {
-        padding: 4px 8px;
-        font-size: 12px;
-      }
+    <label>
+      Business
+      <select name="business_id">
+        <option value="">Toate</option>
+        <% (businesses || []).forEach(function(b) { %>
+          <option value="<%= b.id %>" <%= String(filters.business_id) === String(b.id) ? "selected" : "" %>>
+            <%= b.city_name %> - <%= b.category_name %> - <%= b.name %>
+          </option>
+        <% }); %>
+      </select>
+    </label>
+  </div>
 
-      .tag {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 12px;
-      }
-      .tag-on { background: #064e3b; color: #6ee7b7; }
-      .tag-off { background: #3b1111; color: #fca5a5; }
+  <div class="filters-row">
+    <label>
+      Caută
+      <input type="text" name="q" value="<%= filters.q || "" %>" placeholder="Titlu, descriere sau business..." />
+    </label>
 
-      .filters {
-        margin-top: 8px;
-        padding: 10px;
-        background: #18181b;
-        border-radius: 6px;
-        border: 1px solid #2e2e33;
-      }
-      .filters-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-      .filters label {
-        font-size: 13px;
-        display: flex;
-        flex-direction: column;
-        color: #d1d5db;
-      }
-      .filters select,
-      .filters input[type="text"] {
-        min-width: 140px;
-        padding: 4px 6px;
-        font-size: 13px;
-        margin-top: 3px;
-        background: #1a1a1f;
-        border: 1px solid #3a3a42;
-        border-radius: 4px;
-        color: #e5e7eb;
-      }
-      .filters-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+    <label>
+      Activă
+      <select name="is_active">
+        <option value="">Toate</option>
+        <option value="1" <%= filters.is_active === "1" ? "selected" : "" %>>Doar active</option>
+        <option value="0" <%= filters.is_active === "0" ? "selected" : "" %>>Doar inactive</option>
+      </select>
+    </label>
 
-      .actions-cell {
-        white-space: nowrap;
-      }
-      .actions-cell form {
-        display: inline-block;
-        margin: 0;
-      }
-      .actions-cell a {
-        margin-right: 6px;
-      }
+    <div class="filters-actions">
+      <button type="submit" class="button">Aplică filtre</button>
+      <a href="/admin/offers" class="button secondary">Resetează</a>
+    </div>
+  </div>
+</form>
 
-      a { color: #60a5fa; text-decoration: none; }
-    </style>
-  </head>
-  <body>
-    <h1>Oferte</h1>
+<% if (!offers || offers.length === 0) { %>
+  <p>Nu există oferte pentru filtrele curente.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Titlu</th>
+        <th>Business</th>
+        <th>Oraș</th>
+        <th>Categorie</th>
+        <th>Reducere</th>
+        <th>Activă</th>
+        <th>Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% offers.forEach(function(o) { %>
+        <tr>
+          <td><%= o.id %></td>
+          <td><%= o.title %></td>
+          <td><%= o.business_name %></td>
+          <td><%= o.city_name %></td>
+          <td><%= o.category_name %></td>
+          <td>
+            <% if (o.discount_type === "percent") { %>
+              <%= o.discount_value %>%
+            <% } else { %>
+              <%= o.discount_value %> lei
+            <% } %>
+          </td>
+          <td>
+            <% if (o.is_active) { %>
+              <span class="tag tag-on">DA</span>
+            <% } else { %>
+              <span class="tag tag-off">NU</span>
+            <% } %>
+          </td>
+          <td class="actions-cell">
+            <!-- Buton Editează -->
+            <a href="/admin/offers/<%= o.id %>/edit" class="button button-small secondary">
+              Editează
+            </a>
 
-    <p>
-      <a href="/admin/offers/new" class="button">+ Adaugă ofertă nouă</a>
-      &nbsp;|&nbsp;
-      <a href="/admin/businesses">Admin business-uri</a>
-      &nbsp;|&nbsp;
-      <a href="/admin/review-summaries">Review Summaries</a>
-    </p>
+            <!-- Buton Activează / Dezactivează -->
+            <form method="post" action="/admin/offers/<%= o.id %>/toggle-active" style="display:inline;">
+              <button type="submit" class="button button-small">
+                <%= o.is_active ? "Dezactivează" : "Activează" %>
+              </button>
+            </form>
 
-    <form method="get" action="/admin/offers" class="filters">
-      <div class="filters-row">
-        <label>
-          Oraș
-          <select name="city_id">
-            <option value="">Toate</option>
-            <% (cities || []).forEach(function(c) { %>
-              <option
-                value="<%= c.id %>"
-                <%= String(filters.city_id) === String(c.id) ? "selected" : "" %>
-              ><%= c.name %></option>
-            <% }); %>
-          </select>
-        </label>
+            <!-- Buton Șterge -->
+            <form method="post" action="/admin/offers/<%= o.id %>/delete" style="display:inline;" data-confirm="Sigur vrei să ștergi această ofertă? Această acțiune este definitivă.">
+              <button type="submit" class="button button-small" style="background:#dc2626;">
+                Șterge
+              </button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/offers', currentQuery: _qs }) %>
+<% } %>
 
-        <label>
-          Categorie
-          <select name="category_id">
-            <option value="">Toate</option>
-            <% (categories || []).forEach(function(cat) { %>
-              <option
-                value="<%= cat.id %>"
-                <%= String(filters.category_id) === String(cat.id) ? "selected" : "" %>
-              ><%= cat.name %></option>
-            <% }); %>
-          </select>
-        </label>
-
-        <label>
-          Business
-          <select name="business_id">
-            <option value="">Toate</option>
-            <% (businesses || []).forEach(function(b) { %>
-              <option
-                value="<%= b.id %>"
-                <%= String(filters.business_id) === String(b.id) ? "selected" : "" %>
-              >
-                <%= b.city_name %> - <%= b.category_name %> - <%= b.name %>
-              </option>
-            <% }); %>
-          </select>
-        </label>
-      </div>
-
-      <div class="filters-row">
-        <label>
-          Caută
-          <input
-            type="text"
-            name="q"
-            value="<%= filters.q || "" %>"
-            placeholder="Titlu, descriere sau business..."
-          />
-        </label>
-
-        <label>
-          Activă
-          <select name="is_active">
-            <option value="">Toate</option>
-            <option value="1" <%= filters.is_active === "1" ? "selected" : "" %>>
-              Doar active
-            </option>
-            <option value="0" <%= filters.is_active === "0" ? "selected" : "" %>>
-              Doar inactive
-            </option>
-          </select>
-        </label>
-
-        <div class="filters-actions">
-          <button type="submit" class="button">Aplică filtre</button>
-          <a href="/admin/offers" class="button secondary">Resetează</a>
-        </div>
-      </div>
-    </form>
-
-    <% if (!offers || offers.length === 0) { %>
-      <p>Nu există oferte pentru filtrele curente.</p>
-    <% } else { %>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Titlu</th>
-            <th>Business</th>
-            <th>Oraș</th>
-            <th>Categorie</th>
-            <th>Reducere</th>
-            <th>Activă</th>
-            <th>Acțiuni</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% offers.forEach(function(o) { %>
-            <tr>
-              <td><%= o.id %></td>
-              <td><%= o.title %></td>
-              <td><%= o.business_name %></td>
-              <td><%= o.city_name %></td>
-              <td><%= o.category_name %></td>
-              <td>
-                <% if (o.discount_type === "percent") { %>
-                  <%= o.discount_value %>%
-                <% } else { %>
-                  <%= o.discount_value %> lei
-                <% } %>
-              </td>
-              <td>
-                <% if (o.is_active) { %>
-                  <span class="tag tag-on">DA</span>
-                <% } else { %>
-                  <span class="tag tag-off">NU</span>
-                <% } %>
-              </td>
-              <td class="actions-cell">
-                <!-- Buton Editează -->
-                <a
-                  href="/admin/offers/<%= o.id %>/edit"
-                  class="button button-small secondary"
-                >
-                  Editează
-                </a>
-
-                <!-- Buton Activează / Dezactivează -->
-                <form
-                  method="post"
-                  action="/admin/offers/<%= o.id %>/toggle-active"
-                  style="display:inline;"
-                >
-                  <button type="submit" class="button button-small">
-                    <%= o.is_active ? "Dezactivează" : "Activează" %>
-                  </button>
-                </form>
-
-                <!-- Buton Șterge -->
-                <form
-                  method="post"
-                  action="/admin/offers/<%= o.id %>/delete"
-                  style="display:inline;"
-                  onsubmit="return confirm('Sigur vrei să ștergi această ofertă? Această acțiune este definitivă.');"
-                >
-                  <button
-                    type="submit"
-                    class="button button-small"
-                    style="background:#dc2626;"
-                  >
-                    Șterge
-                  </button>
-                </form>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    <% } %>
-  </body>
-</html>
+<%- include('partials/layout-bottom') %>

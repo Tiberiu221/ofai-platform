@@ -1,80 +1,48 @@
-<!doctype html>
-<html lang="ro">
-  <head>
-    <meta charset="utf-8" />
-    <title>Admin - Business nou</title>
-    <style>
-      body { font-family: sans-serif; padding: 20px; background: #0f0f13; color: #e5e7eb; }
-      h1 { margin-bottom: 16px; color: #f3f4f6; }
-      form { max-width: 600px; }
-      label { display: block; margin-top: 10px; font-weight: bold; color: #d1d5db; }
-      input[type="text"],
-      input[type="number"],
-      textarea,
-      select {
-        width: 100%;
-        padding: 6px;
-        margin-top: 4px;
-        box-sizing: border-box;
-        background: #1a1a1f;
-        border: 1px solid #3a3a42;
-        border-radius: 4px;
-        color: #e5e7eb;
-      }
-      textarea { min-height: 60px; }
-      button {
-        margin-top: 16px;
-        padding: 8px 16px;
-        background: #059669;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      a { text-decoration: none; color: #60a5fa; }
-    </style>
-  </head>
-  <body>
-    <h1>Business nou</h1>
+<%- include('partials/layout-top', { pageTitle: 'Business nou', activePage: 'businesses' }) %>
 
-    <p><a href="/admin/businesses">« Înapoi la lista de business-uri</a></p>
+<a href="/admin/businesses" class="back-link">&laquo; Înapoi la lista de business-uri</a>
 
-    <form method="post" action="/admin/businesses/new">
-      <label for="name">Nume business</label>
-      <input type="text" id="name" name="name" required />
+<h1>Business nou</h1>
 
-      <label for="city_id">Oraș</label>
-      <select id="city_id" name="city_id" required>
-        <option value="">Alege oraș...</option>
-        <% cities.forEach(function(c) { %>
-          <option value="<%= c.id %>"><%= c.name %></option>
-        <% }); %>
-      </select>
+<form method="post" action="/admin/businesses/new">
+  <label for="name">Nume business</label>
+  <input type="text" id="name" name="name" required />
 
-      <label for="category_id">Categorie</label>
-      <select id="category_id" name="category_id" required>
-        <option value="">Alege categorie...</option>
-        <% categories.forEach(function(cat) { %>
-          <option value="<%= cat.id %>"><%= cat.name %></option>
-        <% }); %>
-      </select>
+  <label for="city_id">Oraș</label>
+  <select id="city_id" name="city_id" required>
+    <option value="">Alege oraș...</option>
+    <% cities.forEach(function(c) { %>
+      <option value="<%= c.id %>"><%= c.name %></option>
+    <% }); %>
+  </select>
 
-      <label for="address">Adresă</label>
-      <textarea id="address" name="address" required></textarea>
+  <label for="category_id">Categorie</label>
+  <select id="category_id" name="category_id" required>
+    <option value="">Alege categorie...</option>
+    <% categories.forEach(function(cat) { %>
+      <option value="<%= cat.id %>"><%= cat.name %></option>
+    <% }); %>
+  </select>
 
-      <label for="lat">Lat</label>
-      <input type="text" id="lat" name="lat" />
+  <label for="address">Adresă</label>
+  <textarea id="address" name="address" required></textarea>
 
-      <label for="lng">Lng</label>
-      <input type="text" id="lng" name="lng" />
+  <label for="description">Descriere</label>
+  <textarea id="description" name="description" rows="3"></textarea>
 
-      <label for="phone">Telefon</label>
-      <input type="text" id="phone" name="phone" />
+  <label for="lat">Lat</label>
+  <input type="text" id="lat" name="lat" />
 
-      <label for="website">Website</label>
-      <input type="text" id="website" name="website" />
+  <label for="lng">Lng</label>
+  <input type="text" id="lng" name="lng" />
 
-      <button type="submit">Salvează business</button>
-    </form>
-  </body>
-</html>
+  <label for="phone">Telefon</label>
+  <input type="text" id="phone" name="phone" />
+
+  <label for="website">Website</label>
+  <input type="text" id="website" name="website" />
+
+  <button type="submit">Salvează business</button>
+</form>
+
+<%- include('partials/layout-bottom') %>

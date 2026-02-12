@@ -1,0 +1,81 @@
+<%- include('partials/layout-top', { pageTitle: 'Utilizatori', activePage: 'users' }) %>
+
+<div class="a-page-header">
+  <h1>Utilizatori</h1>
+</div>
+
+<!-- Filtre -->
+<form method="get" action="/admin/users" class="filters">
+  <div class="filters-row">
+    <label>
+      Caută
+      <input type="text" name="q" value="<%= filters.q || '' %>" placeholder="Email sau nume..." />
+    </label>
+    <label>
+      Rol
+      <select name="role">
+        <option value="">Toate</option>
+        <option value="user" <%= filters.role === 'user' ? 'selected' : '' %>>User</option>
+        <option value="business_owner" <%= filters.role === 'business_owner' ? 'selected' : '' %>>Business Owner</option>
+        <option value="admin" <%= filters.role === 'admin' ? 'selected' : '' %>>Admin</option>
+      </select>
+    </label>
+    <div class="filters-actions">
+      <button type="submit" class="a-btn">Aplică</button>
+      <a href="/admin/users" class="a-btn a-btn-secondary">Resetează</a>
+    </div>
+  </div>
+</form>
+
+<% if (!users || users.length === 0) { %>
+  <p class="a-text-muted">Nu există utilizatori pentru filtrele curente.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Email</th>
+        <th>Nume</th>
+        <th>Rol</th>
+        <th>Business-uri</th>
+        <th>Creat la</th>
+        <th>Status</th>
+        <th style="width: 100px;">Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(function(u) { %>
+        <tr>
+          <td><%= u.id %></td>
+          <td><%= u.email %></td>
+          <td><%= (u.first_name || '') + ' ' + (u.last_name || '') %></td>
+          <td>
+            <% if (u.role === 'admin') { %>
+              <span class="a-badge a-badge-primary">admin</span>
+            <% } else if (u.role === 'business_owner') { %>
+              <span class="a-badge a-badge-success">business_owner</span>
+            <% } else { %>
+              <span class="a-badge a-badge-info">user</span>
+            <% } %>
+          </td>
+          <td><%= u.businesses_count || 0 %></td>
+          <td><%= u.created_at ? new Date(u.created_at).toLocaleDateString('ro-RO') : '-' %></td>
+          <td>
+            <% if (u.banned_at) { %>
+              <span class="a-badge a-badge-danger">Banat</span>
+            <% } else { %>
+              <span class="a-badge a-badge-success">Activ</span>
+            <% } %>
+          </td>
+          <td>
+            <a href="/admin/users/<%= u.id %>/edit" class="a-btn a-btn-sm">Editează</a>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/users', currentQuery: _qs }) %>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

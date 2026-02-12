@@ -1,0 +1,103 @@
+<%- include('partials/layout-top', { pageTitle: 'Dashboard', activePage: 'dashboard' }) %>
+
+<h1>Dashboard</h1>
+
+<!-- Summary Cards -->
+<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-primary);"><%= stats.businesses %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Business-uri</div>
+  </div>
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-success);"><%= stats.activeOffers %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Oferte active</div>
+  </div>
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-info);"><%= stats.users %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Utilizatori</div>
+  </div>
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-warning-bright);"><%= stats.pendingRequests %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Cereri pending</div>
+  </div>
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-text);"><%= stats.recentReviews %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Recenzii (30 zile)</div>
+  </div>
+</div>
+
+<!-- Quick Stats -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px;">
+  <div class="a-card" style="padding: 16px;">
+    <div class="a-text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Vizualizări 7 zile</div>
+    <div style="font-size: 24px; font-weight: 600; margin-top: 4px;"><%= stats.views7d %></div>
+  </div>
+  <div class="a-card" style="padding: 16px;">
+    <div class="a-text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Vizualizări 30 zile</div>
+    <div style="font-size: 24px; font-weight: 600; margin-top: 4px;"><%= stats.views30d %></div>
+  </div>
+  <div class="a-card" style="padding: 16px;">
+    <div class="a-text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Useri noi 7 zile</div>
+    <div style="font-size: 24px; font-weight: 600; margin-top: 4px;"><%= stats.newUsers7d %></div>
+  </div>
+  <div class="a-card" style="padding: 16px;">
+    <div class="a-text-muted" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Recenzii 30 zile</div>
+    <div style="font-size: 24px; font-weight: 600; margin-top: 4px;"><%= stats.recentReviews %></div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+  <!-- Recent Business Requests -->
+  <div>
+    <h2 style="font-size: 16px; margin-bottom: 12px;">Cereri recente</h2>
+    <% if (recentRequests.length === 0) { %>
+      <p class="a-text-muted">Nicio cerere recentă.</p>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <% recentRequests.forEach(function(r) { %>
+          <div class="a-card" style="padding: 12px;">
+            <div class="a-flex-between">
+              <strong><%= r.name %></strong>
+              <span class="status-badge status-<%= r.status %>">
+                <%= r.status === 'pending' ? 'Pending' : r.status === 'approved' ? 'Aprobat' : 'Respins' %>
+              </span>
+            </div>
+            <div class="a-text-muted" style="font-size: 12px; margin-top: 4px;">
+              <%= r.user_email %> &bull; <%= r.created_at ? new Date(r.created_at).toLocaleDateString('ro-RO') : '' %>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <a href="/admin/business-requests" style="display: inline-block; margin-top: 8px; font-size: 13px;">Vezi toate &rarr;</a>
+    <% } %>
+  </div>
+
+  <!-- Recent Reviews -->
+  <div>
+    <h2 style="font-size: 16px; margin-bottom: 12px;">Recenzii recente</h2>
+    <% if (recentReviews.length === 0) { %>
+      <p class="a-text-muted">Nicio recenzie recentă.</p>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <% recentReviews.forEach(function(r) { %>
+          <div class="a-card" style="padding: 12px;">
+            <div class="a-flex-between">
+              <strong><%= r.business_name %></strong>
+              <span style="color: #fbbf24;"><%= '★'.repeat(r.rating) %></span>
+            </div>
+            <div style="font-size: 13px; margin-top: 4px; color: var(--a-text-secondary);">
+              <%= r.comment ? r.comment.slice(0, 80) + (r.comment.length > 80 ? '...' : '') : 'Fără comentariu' %>
+            </div>
+            <div class="a-text-muted" style="font-size: 12px; margin-top: 4px;">
+              <%= r.user_email %> &bull; <%= r.created_at ? new Date(r.created_at).toLocaleDateString('ro-RO') : '' %>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <a href="/admin/reviews" style="display: inline-block; margin-top: 8px; font-size: 13px;">Vezi toate &rarr;</a>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/layout-bottom') %>

@@ -200,9 +200,14 @@ app.use((err, req, res, next) => {
   // Pentru rutele admin, afișăm eroarea (cu escape HTML)
   if (req.path.startsWith('/admin')) {
     const safeMsg = (err.message || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    if (isProduction) {
+      return res.status(err.status || 500).send(
+        `<h1>Eroare Admin</h1><pre>${safeMsg}</pre><br><a href="/admin/dashboard">Înapoi</a>`
+      );
+    }
     const safeStack = (err.stack || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     return res.status(err.status || 500).send(
-      `<h1>Eroare Admin</h1><pre>${safeMsg}\n\n${safeStack}</pre><br><a href="/admin/businesses">Înapoi</a>`
+      `<h1>Eroare Admin</h1><pre>${safeMsg}\n\n${safeStack}</pre><br><a href="/admin/dashboard">Înapoi</a>`
     );
   }
   

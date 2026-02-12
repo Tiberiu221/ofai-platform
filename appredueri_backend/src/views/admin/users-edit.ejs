@@ -1,0 +1,137 @@
+<%- include('partials/layout-top', { pageTitle: 'Editează utilizator', activePage: 'users' }) %>
+
+<a href="/admin/users" class="back-link">&laquo; Înapoi la utilizatori</a>
+
+<h1>Editează utilizator: <%= user.email %></h1>
+
+<% if (error === 'invalid_role') { %>
+  <div class="error-msg">Rol invalid.</div>
+<% } else if (error === 'server_error') { %>
+  <div class="error-msg">A apărut o eroare.</div>
+<% } %>
+
+<% if (message) { %>
+  <div class="a-alert a-alert-success"><%= message %></div>
+<% } %>
+
+<!-- Ban/Unban -->
+<div class="a-card" style="max-width: 600px;">
+  <div class="a-flex-between">
+    <div>
+      <strong>Status:</strong>
+      <% if (user.banned_at) { %>
+        <span class="a-badge a-badge-danger">Banat la <%= new Date(user.banned_at).toLocaleString('ro-RO') %></span>
+      <% } else { %>
+        <span class="a-badge a-badge-success">Activ</span>
+      <% } %>
+    </div>
+    <div>
+      <% if (user.banned_at) { %>
+        <form method="post" action="/admin/users/<%= user.id %>/unban" style="display:inline;">
+          <button type="submit" class="a-btn a-btn-sm a-btn-success">Ridică ban</button>
+        </form>
+      <% } else { %>
+        <form method="post" action="/admin/users/<%= user.id %>/ban" style="display:inline;" data-confirm="Sigur vrei să banezi acest utilizator?">
+          <button type="submit" class="a-btn a-btn-sm a-btn-danger">Banează</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Edit form -->
+<h2 class="section-title">Date utilizator</h2>
+<form method="post" action="/admin/users/<%= user.id %>/edit">
+  <div class="a-form-group">
+    <label>Email</label>
+    <input type="text" value="<%= user.email %>" disabled style="opacity: 0.6;" />
+    <small>Email-ul nu poate fi schimbat din admin.</small>
+  </div>
+
+  <div class="a-form-group">
+    <label for="first_name">Prenume</label>
+    <input type="text" id="first_name" name="first_name" value="<%= user.first_name || '' %>" />
+  </div>
+
+  <div class="a-form-group">
+    <label for="last_name">Nume</label>
+    <input type="text" id="last_name" name="last_name" value="<%= user.last_name || '' %>" />
+  </div>
+
+  <div class="a-form-group">
+    <label for="role">Rol</label>
+    <select id="role" name="role">
+      <option value="user" <%= user.role === 'user' ? 'selected' : '' %>>User</option>
+      <option value="business_owner" <%= user.role === 'business_owner' ? 'selected' : '' %>>Business Owner</option>
+      <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
+    </select>
+  </div>
+
+  <button type="submit" class="a-btn">Salvează</button>
+</form>
+
+<!-- Business-uri deținute -->
+<h2 class="section-title">Business-uri deținute (<%= businesses.length %>)</h2>
+<% if (businesses.length === 0) { %>
+  <p class="a-text-muted">Acest utilizator nu deține niciun business.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nume</th>
+        <th>Oraș</th>
+        <th>Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% businesses.forEach(function(b) { %>
+        <tr>
+          <td><%= b.id %></td>
+          <td><%= b.name %></td>
+          <td><%= b.city_name || '-' %></td>
+          <td><a href="/admin/businesses/<%= b.id %>/edit" class="a-btn a-btn-sm a-btn-secondary">Vezi</a></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<!-- Recenzii recente -->
+<h2 class="section-title">Recenzii recente (<%= reviews.length %>)</h2>
+<% if (reviews.length === 0) { %>
+  <p class="a-text-muted">Acest utilizator nu are recenzii.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Business</th>
+        <th>Rating</th>
+        <th>Comentariu</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reviews.forEach(function(r) { %>
+        <tr>
+          <td><%= r.id %></td>
+          <td><%= r.business_name %></td>
+          <td><%= '★'.repeat(r.rating) %><%= '☆'.repeat(5 - r.rating) %></td>
+          <td><%= r.comment ? r.comment.slice(0, 100) + (r.comment.length > 100 ? '...' : '') : '-' %></td>
+          <td><%= r.created_at ? new Date(r.created_at).toLocaleDateString('ro-RO') : '-' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<!-- Info -->
+<div class="a-card a-mt-3" style="max-width: 600px;">
+  <p class="a-text-muted" style="margin: 0;">
+    <strong>Înregistrat la:</strong> <%= user.created_at ? new Date(user.created_at).toLocaleString('ro-RO') : '-' %><br>
+    <strong>User ID:</strong> <%= user.id %>
+  </p>
+</div>
+
+<%- include('partials/layout-bottom') %>

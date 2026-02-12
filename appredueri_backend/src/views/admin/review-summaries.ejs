@@ -1,133 +1,84 @@
-<!doctype html>
-<html lang="ro">
-  <head>
-    <meta charset="utf-8" />
-    <title>Admin - Review Summaries</title>
-    <style>
-      body { font-family: sans-serif; padding: 20px; color: #e5e7eb; background: #0f0f13; }
-      h1 { margin-bottom: 10px; color: #f3f4f6; }
-      .note { margin: 6px 0 16px; color: #9ca3af; font-size: 14px; }
+<%- include('partials/layout-top', { pageTitle: 'Review Summaries', activePage: 'review-summaries' }) %>
 
-      table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-      th, td { border: 1px solid #2e2e33; padding: 8px; font-size: 13px; text-align: left; vertical-align: top; }
-      th { background: #1f1f23; color: #9ca3af; }
+<h1>Review Summaries</h1>
+<div class="note">
+  Sistemul generează summary-uri prin batch la fiecare 2 zile. Adminul poate rula manual aici.
+</div>
 
-      a.button, button.button {
-        display: inline-block;
-        padding: 6px 10px;
-        background: #2563eb;
-        color: white;
-        text-decoration: none;
-        border-radius: 4px;
-        font-size: 13px;
-        border: none;
-        cursor: pointer;
-      }
-      a.button.secondary, button.button.secondary { background: #4b5563; }
-      button.button.danger { background: #dc2626; }
-      button.button.warning { background: #b45309; }
+<% if (message) { %>
+  <div class="message"><%= message %></div>
+<% } %>
+<% if (error) { %>
+  <div class="error"><%= error %></div>
+<% } %>
 
-      .button-small { padding: 4px 8px; font-size: 12px; margin-right: 6px; }
+<form method="post" action="/admin/review-summaries/run-batch" class="batch-form">
+  <label>
+    Limită business-uri (opțional):
+    <input type="number" name="limit" min="0" placeholder="0 = toate" />
+  </label>
+  <button type="submit" class="button">Rulează batch acum</button>
+</form>
 
-      .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
-      .tag-fresh { background: #064e3b; color: #6ee7b7; }
-      .tag-stale { background: #451a03; color: #fbbf24; }
-      .tag-missing { background: #27272a; color: #9ca3af; }
-      .tag-insufficient { background: #3b1111; color: #fca5a5; }
+<% if (!businesses || businesses.length === 0) { %>
+  <p>Nu există business-uri în sistem.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Business</th>
+        <th>Oraș</th>
+        <th>Categorie</th>
+        <th>Reviews</th>
+        <th>Status</th>
+        <th>Generat la</th>
+        <th>Ultim review (valid)</th>
+        <th>Snippet</th>
+        <th>Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% businesses.forEach(function(b) { %>
+        <tr>
+          <td><%= b.id %></td>
+          <td><%= b.name %></td>
+          <td><%= b.city_name %></td>
+          <td><%= b.category_name %></td>
+          <td><%= b.review_count %></td>
+          <td>
+            <% if (b.status === "fresh") { %>
+              <span class="tag tag-fresh">OK</span>
+            <% } else if (b.status === "stale") { %>
+              <span class="tag tag-stale">Necesită update</span>
+            <% } else if (b.status === "missing") { %>
+              <span class="tag tag-missing">Lipsește</span>
+            <% } else { %>
+              <span class="tag tag-insufficient">Insuficiente</span>
+            <% } %>
+          </td>
+          <td><%= b.generated_at ? new Date(b.generated_at).toLocaleString("ro-RO") : "-" %></td>
+          <td>
+            <% if (b.latest_valid_review_id) { %>
+              #<%= b.latest_valid_review_id %>
+            <% } else { %>
+              -
+            <% } %>
+          </td>
+          <td><%= b.summary_snippet || "-" %></td>
+          <td>
+            <form method="post" action="/admin/review-summaries/<%= b.id %>/regenerate" style="display:inline;">
+              <button type="submit" class="button button-small warning">Regenerare</button>
+            </form>
+            <form method="post" action="/admin/review-summaries/<%= b.id %>/clear" style="display:inline;" data-confirm="Sigur vrei să ștergi cache-ul?">
+              <button type="submit" class="button button-small danger">Șterge cache</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/review-summaries', currentQuery: '' }) %>
+<% } %>
 
-      .message { margin-top: 8px; padding: 8px; border-radius: 4px; background: #0c2d48; color: #7dd3fc; }
-      .error { margin-top: 8px; padding: 8px; border-radius: 4px; background: #3b1111; color: #fca5a5; }
-
-      .batch-form { margin: 14px 0; padding: 10px; background: #18181b; border: 1px solid #2e2e33; border-radius: 6px; }
-      .batch-form label { font-size: 13px; margin-right: 10px; color: #d1d5db; }
-      .batch-form input { padding: 4px 6px; font-size: 13px; width: 120px; background: #1a1a1f; border: 1px solid #3a3a42; border-radius: 4px; color: #e5e7eb; }
-    </style>
-  </head>
-  <body>
-    <h1>Review Summaries</h1>
-    <div class="note">
-      Sistemul generează summary-uri prin batch la fiecare 2 zile. Adminul poate rula manual aici.
-    </div>
-
-    <p>
-      <a href="/admin/businesses" class="button secondary">Admin business-uri</a>
-      &nbsp;|&nbsp;
-      <a href="/admin/offers" class="button secondary">Admin oferte</a>
-    </p>
-
-    <% if (message) { %>
-      <div class="message"><%= message %></div>
-    <% } %>
-    <% if (error) { %>
-      <div class="error"><%= error %></div>
-    <% } %>
-
-    <form method="post" action="/admin/review-summaries/run-batch" class="batch-form">
-      <label>
-        Limită business-uri (opțional):
-        <input type="number" name="limit" min="0" placeholder="0 = toate" />
-      </label>
-      <button type="submit" class="button">Rulează batch acum</button>
-    </form>
-
-    <% if (!businesses || businesses.length === 0) { %>
-      <p>Nu există business-uri în sistem.</p>
-    <% } else { %>
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Business</th>
-            <th>Oraș</th>
-            <th>Categorie</th>
-            <th>Reviews</th>
-            <th>Status</th>
-            <th>Generat la</th>
-            <th>Ultim review (valid)</th>
-            <th>Snippet</th>
-            <th>Acțiuni</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% businesses.forEach(function(b) { %>
-            <tr>
-              <td><%= b.id %></td>
-              <td><%= b.name %></td>
-              <td><%= b.city_name %></td>
-              <td><%= b.category_name %></td>
-              <td><%= b.review_count %></td>
-              <td>
-                <% if (b.status === "fresh") { %>
-                  <span class="tag tag-fresh">OK</span>
-                <% } else if (b.status === "stale") { %>
-                  <span class="tag tag-stale">Necesită update</span>
-                <% } else if (b.status === "missing") { %>
-                  <span class="tag tag-missing">Lipsește</span>
-                <% } else { %>
-                  <span class="tag tag-insufficient">Insuficiente</span>
-                <% } %>
-              </td>
-              <td><%= b.generated_at ? new Date(b.generated_at).toLocaleString("ro-RO") : "-" %></td>
-              <td>
-                <% if (b.latest_valid_review_id) { %>
-                  #<%= b.latest_valid_review_id %>
-                <% } else { %>
-                  -
-                <% } %>
-              </td>
-              <td><%= b.summary_snippet || "-" %></td>
-              <td>
-                <form method="post" action="/admin/review-summaries/<%= b.id %>/regenerate" style="display:inline;">
-                  <button type="submit" class="button button-small warning">Regenerare</button>
-                </form>
-                <form method="post" action="/admin/review-summaries/<%= b.id %>/clear" style="display:inline;" onsubmit="return confirm('Sigur vrei să ștergi cache-ul?');">
-                  <button type="submit" class="button button-small danger">Șterge cache</button>
-                </form>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
-    <% } %>
-  </body>
-</html>
+<%- include('partials/layout-bottom') %>

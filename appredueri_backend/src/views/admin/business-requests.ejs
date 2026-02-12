@@ -1,439 +1,172 @@
-<!doctype html>
-<html lang="ro">
+<%- include('partials/layout-top', { pageTitle: 'Cereri Business', activePage: 'business-requests' }) %>
 
-<head>
-  <meta charset="utf-8" />
-  <title>Admin - Cereri Business</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      color: #e5e7eb;
-      background: #0f0f13;
-    }
+<h1>Cereri Business</h1>
 
-    h1 {
-      margin-bottom: 16px;
-      color: #f3f4f6;
-    }
+<% if (typeof requests !== 'undefined') { %>
+  <% var urlParams = new URLSearchParams(typeof __query !== 'undefined' ? __query : ''); %>
+<% } %>
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 12px;
-    }
-
-    th,
-    td {
-      border: 1px solid #2e2e33;
-      padding: 8px;
-      font-size: 14px;
-      text-align: left;
-    }
-
-    th {
-      background: #1f1f23;
-      color: #9ca3af;
-    }
-
-    a.button,
-    button.button {
-      display: inline-block;
-      padding: 6px 10px;
-      background: #2563eb;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-      border: none;
-      cursor: pointer;
-    }
-
-    a.button.secondary {
-      background: #4b5563;
-    }
-
-    .button-small {
-      padding: 4px 8px;
-      font-size: 12px;
-      margin-right: 4px;
-    }
-
-    .btn-approve {
-      background: #16a34a;
-      color: white;
-      border: none;
-      padding: 4px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    .btn-reject {
-      background: #dc2626;
-      color: white;
-      border: none;
-      padding: 4px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-
-    /* AI Score badges */
-    .score-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .score-high {
-      background: rgba(34, 197, 94, 0.2);
-      color: #22c55e;
-    }
-
-    .score-medium {
-      background: rgba(251, 191, 36, 0.2);
-      color: #fbbf24;
-    }
-
-    .score-low {
-      background: rgba(239, 68, 68, 0.2);
-      color: #ef4444;
-    }
-
-    .score-none {
-      background: rgba(107, 114, 128, 0.2);
-      color: #9ca3af;
-    }
-
-    /* Status badges */
-    .status-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-
-    .status-pending {
-      background: rgba(251, 191, 36, 0.15);
-      color: #fbbf24;
-    }
-
-    .status-approved {
-      background: rgba(34, 197, 94, 0.15);
-      color: #22c55e;
-    }
-
-    .status-rejected {
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-    }
-
-    /* Flags */
-    .flag-tag {
-      display: inline-block;
-      padding: 1px 6px;
-      border-radius: 4px;
-      font-size: 10px;
-      background: rgba(239, 68, 68, 0.15);
-      color: #fca5a5;
-      margin: 1px;
-    }
-
-    /* Success/Error messages */
-    .msg-success {
-      padding: 8px 12px;
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.3);
-      border-radius: 6px;
-      color: #86efac;
-      margin-bottom: 12px;
-    }
-
-    .msg-error {
-      padding: 8px 12px;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 6px;
-      color: #fca5a5;
-      margin-bottom: 12px;
-    }
-
-    /* Details row */
-    .details-row {
-      display: none;
-    }
-
-    .details-row td {
-      background: #18181b;
-      padding: 12px 16px;
-    }
-
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      font-size: 13px;
-    }
-
-    .detail-label {
-      color: #9ca3af;
-      font-size: 11px;
-      text-transform: uppercase;
-    }
-
-    .detail-value {
-      color: #e5e7eb;
-    }
-
-    .ai-reasoning {
-      margin-top: 8px;
-      padding: 8px 12px;
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.2);
-      border-radius: 6px;
-      font-size: 13px;
-      color: #c7d2fe;
-    }
-
-    /* Reject modal */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal-box {
-      background: #1f1f23;
-      border: 1px solid #2e2e33;
-      border-radius: 12px;
-      padding: 24px;
-      width: 400px;
-      max-width: 90%;
-    }
-
-    .modal-box h3 {
-      margin: 0 0 12px;
-      color: #f3f4f6;
-    }
-
-    .modal-box textarea {
-      width: 100%;
-      padding: 8px;
-      background: #0f0f13;
-      border: 1px solid #2e2e33;
-      border-radius: 6px;
-      color: #e5e7eb;
-      font-family: inherit;
-      font-size: 14px;
-      resize: vertical;
-      min-height: 80px;
-      box-sizing: border-box;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-      justify-content: flex-end;
-    }
-
-    tr.clickable {
-      cursor: pointer;
-    }
-
-    tr.clickable:hover {
-      background: rgba(255, 255, 255, 0.02);
-    }
-  </style>
-</head>
-
-<body>
-  <h1>Cereri Business</h1>
-
-  <p>
-    <a href="/admin/businesses" class="button secondary">Înapoi la Business-uri</a>
+<% if (typeof requests === 'undefined' || requests.length === 0) { %>
+  <p>Nu există cereri de business.</p>
+<% } else { %>
+  <p style="color: #9ca3af; font-size: 13px;">
+    <%= requests.filter(function(r) { return r.status === 'pending'; }).length %> cereri în așteptare
+    &bull;
+    <%= requests.length %> total
+    &bull;
+    Click pe un rând pentru detalii
   </p>
 
-  <% if (typeof requests !== 'undefined') { %>
-    <% var urlParams = new URLSearchParams(typeof __query !== 'undefined' ? __query : ''); %>
-  <% } %>
-
-  <% if (typeof requests === 'undefined' || requests.length === 0) { %>
-    <p>Nu există cereri de business.</p>
-  <% } else { %>
-    <p style="color: #9ca3af; font-size: 13px;">
-      <%= requests.filter(function(r) { return r.status === 'pending'; }).length %> cereri în așteptare
-      &bull;
-      <%= requests.length %> total
-      &bull;
-      Click pe un rând pentru detalii
-    </p>
-
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nume Business</th>
-          <th>Categorie</th>
-          <th>Oraș</th>
-          <th>User</th>
-          <th>AI Score</th>
-          <th>Flags</th>
-          <th>Status</th>
-          <th>Data</th>
-          <th style="width: 180px;">Acțiuni</th>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nume Business</th>
+        <th>Categorie</th>
+        <th>Oraș</th>
+        <th>User</th>
+        <th>AI Score</th>
+        <th>Flags</th>
+        <th>Status</th>
+        <th>Data</th>
+        <th style="width: 180px;">Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% requests.forEach(function(r, idx) { %>
+        <tr class="clickable" onclick="toggleDetails(<%= idx %>)">
+          <td><%= r.id %></td>
+          <td><strong><%= r.name %></strong></td>
+          <td><%= r.category_name || '—' %></td>
+          <td><%= r.city_name || '—' %></td>
+          <td>
+            <%= r.user_email %>
+            <% if (r.user_first_name) { %>
+              <br><small style="color: #9ca3af;"><%= r.user_first_name %> <%= r.user_last_name %></small>
+            <% } %>
+          </td>
+          <td>
+            <% if (r.ai_score === null || r.ai_score === undefined) { %>
+              <span class="score-badge score-none">N/A</span>
+            <% } else if (r.ai_score >= 70) { %>
+              <span class="score-badge score-high"><%= r.ai_score %></span>
+            <% } else if (r.ai_score >= 40) { %>
+              <span class="score-badge score-medium"><%= r.ai_score %></span>
+            <% } else { %>
+              <span class="score-badge score-low"><%= r.ai_score %></span>
+            <% } %>
+          </td>
+          <td>
+            <% var flags = []; %>
+            <% try { flags = typeof r.ai_flags === 'string' ? JSON.parse(r.ai_flags) : (r.ai_flags || []); } catch(e) {} %>
+            <% flags.forEach(function(f) { %>
+              <span class="flag-tag"><%= f %></span>
+            <% }); %>
+            <% if (flags.length === 0) { %><span style="color: #6b7280;">—</span><% } %>
+          </td>
+          <td>
+            <span class="status-badge status-<%= r.status %>">
+              <%= r.status === 'pending' ? 'În așteptare' : r.status === 'approved' ? 'Aprobat' : 'Respins' %>
+            </span>
+          </td>
+          <td><%= new Date(r.created_at).toLocaleDateString('ro-RO') %></td>
+          <td onclick="event.stopPropagation()">
+            <% if (r.status === 'pending') { %>
+              <form action="/admin/business-requests/<%= r.id %>/approve" method="POST" style="display: inline;" data-confirm="Aprobă business-ul <%= r.name.replace(/'/g, "\\'") %>?">
+                <button type="submit" class="btn-approve">Aprobă</button>
+              </form>
+              <button class="btn-reject" onclick="openRejectModal(<%= r.id %>, '<%- r.name.replace(/'/g, "\\'") %>')">Respinge</button>
+            <% } else if (r.status === 'approved' && r.business_id) { %>
+              <a href="/admin/businesses/<%= r.business_id %>/edit" class="button button-small secondary">Vezi business</a>
+            <% } else { %>
+              <span style="color: #6b7280; font-size: 12px;">—</span>
+            <% } %>
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        <% requests.forEach(function(r, idx) { %>
-          <tr class="clickable" onclick="toggleDetails(<%= idx %>)">
-            <td><%= r.id %></td>
-            <td><strong><%= r.name %></strong></td>
-            <td><%= r.category_name || '—' %></td>
-            <td><%= r.city_name || '—' %></td>
-            <td>
-              <%= r.user_email %>
-              <% if (r.user_first_name) { %>
-                <br><small style="color: #9ca3af;"><%= r.user_first_name %> <%= r.user_last_name %></small>
-              <% } %>
-            </td>
-            <td>
-              <% if (r.ai_score === null || r.ai_score === undefined) { %>
-                <span class="score-badge score-none">N/A</span>
-              <% } else if (r.ai_score >= 70) { %>
-                <span class="score-badge score-high"><%= r.ai_score %></span>
-              <% } else if (r.ai_score >= 40) { %>
-                <span class="score-badge score-medium"><%= r.ai_score %></span>
-              <% } else { %>
-                <span class="score-badge score-low"><%= r.ai_score %></span>
-              <% } %>
-            </td>
-            <td>
-              <% var flags = []; %>
-              <% try { flags = typeof r.ai_flags === 'string' ? JSON.parse(r.ai_flags) : (r.ai_flags || []); } catch(e) {} %>
-              <% flags.forEach(function(f) { %>
-                <span class="flag-tag"><%= f %></span>
-              <% }); %>
-              <% if (flags.length === 0) { %><span style="color: #6b7280;">—</span><% } %>
-            </td>
-            <td>
-              <span class="status-badge status-<%= r.status %>">
-                <%= r.status === 'pending' ? 'În așteptare' : r.status === 'approved' ? 'Aprobat' : 'Respins' %>
-              </span>
-            </td>
-            <td><%= new Date(r.created_at).toLocaleDateString('ro-RO') %></td>
-            <td onclick="event.stopPropagation()">
-              <% if (r.status === 'pending') { %>
-                <form action="/admin/business-requests/<%= r.id %>/approve" method="POST" style="display: inline;" onsubmit="return confirm('Aprobă business-ul <%- r.name.replace(/'/g, "\\'") %>?')">
-                  <button type="submit" class="btn-approve">Aprobă</button>
-                </form>
-                <button class="btn-reject" onclick="openRejectModal(<%= r.id %>, '<%- r.name.replace(/'/g, "\\'") %>')">Respinge</button>
-              <% } else if (r.status === 'approved' && r.business_id) { %>
-                <a href="/admin/businesses/<%= r.business_id %>/edit" class="button button-small secondary">Vezi business</a>
-              <% } else { %>
-                <span style="color: #6b7280; font-size: 12px;">—</span>
-              <% } %>
-            </td>
-          </tr>
-          <!-- Details row -->
-          <tr class="details-row" id="details-<%= idx %>">
-            <td colspan="10">
-              <div class="detail-grid">
-                <div>
-                  <div class="detail-label">Adresă</div>
-                  <div class="detail-value"><%= r.address || '—' %></div>
-                </div>
-                <div>
-                  <div class="detail-label">Telefon</div>
-                  <div class="detail-value"><%= r.phone || '—' %></div>
-                </div>
-                <div>
-                  <div class="detail-label">Website</div>
-                  <div class="detail-value">
-                    <% if (r.website) { %>
-                      <a href="<%= r.website %>" target="_blank" rel="noopener" style="color: #60a5fa;"><%= r.website %></a>
-                    <% } else { %>—<% } %>
-                  </div>
-                </div>
-                <div>
-                  <div class="detail-label">Descriere</div>
-                  <div class="detail-value"><%= r.description || '—' %></div>
+        <!-- Details row -->
+        <tr class="details-row" id="details-<%= idx %>">
+          <td colspan="10">
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">Adresă</div>
+                <div class="detail-value"><%= r.address || '—' %></div>
+              </div>
+              <div>
+                <div class="detail-label">Telefon</div>
+                <div class="detail-value"><%= r.phone || '—' %></div>
+              </div>
+              <div>
+                <div class="detail-label">Website</div>
+                <div class="detail-value">
+                  <% if (r.website) { %>
+                    <a href="<%= r.website %>" target="_blank" rel="noopener" style="color: #60a5fa;"><%= r.website %></a>
+                  <% } else { %>—<% } %>
                 </div>
               </div>
-              <% if (r.ai_reasoning) { %>
-                <div class="ai-reasoning">
-                  <strong>AI Reasoning:</strong> <%= r.ai_reasoning %>
-                </div>
-              <% } %>
-              <% if (r.admin_notes) { %>
-                <div style="margin-top: 8px; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; font-size: 13px; color: #fca5a5;">
-                  <strong>Motiv respingere:</strong> <%= r.admin_notes %>
-                </div>
-              <% } %>
-              <% if (r.reviewed_at) { %>
-                <div style="margin-top: 6px; font-size: 11px; color: #6b7280;">
-                  Revizuit la: <%= new Date(r.reviewed_at).toLocaleString('ro-RO') %>
-                  <% if (r.reviewer_email) { %> de <%= r.reviewer_email %><% } %>
-                </div>
-              <% } %>
-            </td>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  <% } %>
+              <div>
+                <div class="detail-label">Descriere</div>
+                <div class="detail-value"><%= r.description || '—' %></div>
+              </div>
+            </div>
+            <% if (r.ai_reasoning) { %>
+              <div class="ai-reasoning">
+                <strong>AI Reasoning:</strong> <%= r.ai_reasoning %>
+              </div>
+            <% } %>
+            <% if (r.admin_notes) { %>
+              <div style="margin-top: 8px; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 6px; font-size: 13px; color: #fca5a5;">
+                <strong>Motiv respingere:</strong> <%= r.admin_notes %>
+              </div>
+            <% } %>
+            <% if (r.reviewed_at) { %>
+              <div style="margin-top: 6px; font-size: 11px; color: #6b7280;">
+                Revizuit la: <%= new Date(r.reviewed_at).toLocaleString('ro-RO') %>
+                <% if (r.reviewer_email) { %> de <%= r.reviewer_email %><% } %>
+              </div>
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/business-requests', currentQuery: '' }) %>
+<% } %>
 
-  <!-- Reject Modal -->
-  <div class="modal-overlay" id="reject-modal">
-    <div class="modal-box">
-      <h3>Respinge cererea</h3>
-      <p style="color: #9ca3af; font-size: 13px; margin: 0 0 12px;" id="reject-modal-name"></p>
-      <form id="reject-form" method="POST">
-        <textarea name="reason" placeholder="Motiv respingere (opțional)..." maxlength="500"></textarea>
-        <div class="modal-actions">
-          <button type="button" class="button secondary" onclick="closeRejectModal()">Anulează</button>
-          <button type="submit" class="btn-reject" style="padding: 6px 16px; font-size: 14px;">Respinge</button>
-        </div>
-      </form>
-    </div>
+<!-- Reject Modal -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal-box">
+    <h3>Respinge cererea</h3>
+    <p style="color: #9ca3af; font-size: 13px; margin: 0 0 12px;" id="reject-modal-name"></p>
+    <form id="reject-form" method="POST">
+      <textarea name="reason" placeholder="Motiv respingere (opțional)..." maxlength="500"></textarea>
+      <div class="modal-actions">
+        <button type="button" class="button secondary" onclick="closeRejectModal()">Anulează</button>
+        <button type="submit" class="btn-reject" style="padding: 6px 16px; font-size: 14px;">Respinge</button>
+      </div>
+    </form>
   </div>
+</div>
 
-  <script>
-    function toggleDetails(idx) {
-      var row = document.getElementById('details-' + idx);
-      row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
-    }
+<script>
+  function toggleDetails(idx) {
+    var row = document.getElementById('details-' + idx);
+    row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
+  }
 
-    function openRejectModal(id, name) {
-      document.getElementById('reject-modal-name').textContent = 'Business: ' + name;
-      document.getElementById('reject-form').action = '/admin/business-requests/' + id + '/reject';
-      document.getElementById('reject-modal').classList.add('active');
-    }
+  function openRejectModal(id, name) {
+    document.getElementById('reject-modal-name').textContent = 'Business: ' + name;
+    document.getElementById('reject-form').action = '/admin/business-requests/' + id + '/reject';
+    document.getElementById('reject-modal').classList.add('active');
+  }
 
-    function closeRejectModal() {
-      document.getElementById('reject-modal').classList.remove('active');
-    }
+  function closeRejectModal() {
+    document.getElementById('reject-modal').classList.remove('active');
+  }
 
-    // Close modal on overlay click
-    document.getElementById('reject-modal').addEventListener('click', function(e) {
-      if (e.target === this) closeRejectModal();
-    });
-  </script>
-</body>
+  // Close modal on overlay click
+  document.getElementById('reject-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeRejectModal();
+  });
+</script>
 
-</html>
+<%- include('partials/layout-bottom') %>

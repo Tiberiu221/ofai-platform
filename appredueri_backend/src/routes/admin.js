@@ -4,7 +4,7 @@ const pool = require("../db");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
-const adminAuth = require("../middleware/adminAuth");
+// Note: adminAuth is applied globally in index.js via app.use("/admin", adminLimiter, adminAuth, adminRouter)
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { LLM_CONFIG } = require("../config/llm");
 const { triggerWebhook } = require("../services/n8n");
@@ -15,13 +15,10 @@ const {
   getLatestValidReviewId
 } = require("../services/llm/summarizationService");
 const { sendBusinessApprovedEmail, sendBusinessRejectedEmail } = require("../services/email");
+const { parsePagination } = require("../helpers/validate");
 
 // =====================================
-//   CONFIG UPLOADS
-// =====================================
-
-// =====================================
-//   CONFIG UPLOADS (Memory Storage)
+//   CONFIG UPLOADS (Memory Storage → Cloudinary)
 // =====================================
 
 const uploadsRoot = path.join(__dirname, "..", "uploads");
@@ -147,7 +144,79 @@ async function loadReviewSummaryAdminData() {
 //   ROOT ADMIN
 // =====================================
 router.get("/", (req, res) => {
-  res.redirect("/admin/offers");
+  res.redirect("/admin/dashboard");
+});
+
+// =====================================
+//   DASHBOARD
+// =====================================
+
+router.get("/dashboard", async (req, res) => {
+  try {
+    // Core stats (these tables definitely exist)
+    const [
+      businessCount,
+      activeOfferCount,
+      userCount,
+      pendingRequestCount,
+      recentReviewCount,
+      newUsers7d,
+      recentRequests,
+      recentReviews
+    ] = await Promise.all([
+      pool.query("SELECT COUNT(*) FROM businesses"),
+      pool.query("SELECT COUNT(*) FROM offers WHERE is_active = true AND end_date >= CURRENT_DATE"),
+      pool.query("SELECT COUNT(*) FROM users"),
+      pool.query("SELECT COUNT(*) FROM business_requests WHERE status = 'pending'"),
+      pool.query("SELECT COUNT(*) FROM reviews WHERE created_at >= NOW() - INTERVAL '30 days'"),
+      pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
+      pool.query(`
+        SELECT br.id, br.name, br.status, br.created_at,
+               u.email AS user_email
+        FROM business_requests br
+        LEFT JOIN users u ON u.id = br.user_id
+        ORDER BY br.created_at DESC LIMIT 5
+      `),
+      pool.query(`
+        SELECT r.id, r.rating, r.comment, r.created_at,
+               u.email AS user_email,
+               b.name AS business_name
+        FROM reviews r
+        JOIN users u ON u.id = r.user_id
+        JOIN businesses b ON b.id = r.business_id
+        ORDER BY r.created_at DESC LIMIT 5
+      `),
+    ]);
+
+    // Views stats (table might not exist)
+    let views7d = 0, views30d = 0;
+    try {
+      const v7 = await pool.query("SELECT COUNT(*) FROM business_views WHERE viewed_at >= NOW() - INTERVAL '7 days'");
+      const v30 = await pool.query("SELECT COUNT(*) FROM business_views WHERE viewed_at >= NOW() - INTERVAL '30 days'");
+      views7d = parseInt(v7.rows[0].count);
+      views30d = parseInt(v30.rows[0].count);
+    } catch (e) {
+      // business_views table might not exist
+    }
+
+    res.render("admin/dashboard", {
+      stats: {
+        businesses: parseInt(businessCount.rows[0].count),
+        activeOffers: parseInt(activeOfferCount.rows[0].count),
+        users: parseInt(userCount.rows[0].count),
+        pendingRequests: parseInt(pendingRequestCount.rows[0].count),
+        recentReviews: parseInt(recentReviewCount.rows[0].count),
+        views7d,
+        views30d,
+        newUsers7d: parseInt(newUsers7d.rows[0].count),
+      },
+      recentRequests: recentRequests.rows,
+      recentReviews: recentReviews.rows,
+    });
+  } catch (err) {
+    console.error("[Admin] Dashboard error:", err);
+    res.status(500).send("Eroare server");
+  }
 });
 
 // =====================================
@@ -156,10 +225,15 @@ router.get("/", (req, res) => {
 
 router.get("/review-summaries", async (req, res) => {
   try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
     const { rows, minReviews } = await loadReviewSummaryAdminData();
+    const total = rows.length;
+    const paginatedRows = rows.slice(offset, offset + limit);
+
     res.render("admin/review-summaries", {
-      businesses: rows,
+      businesses: paginatedRows,
       minReviews,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       message: req.query.msg || "",
       error: req.query.err || ""
     });
@@ -248,8 +322,38 @@ router.post("/review-summaries/:id/clear", async (req, res) => {
 
 // GET /admin/businesses
 router.get("/businesses", async (req, res) => {
-  const error = req.query.err || "";
   try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
+    const { q, city_id, category_id } = req.query;
+
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    if (q && q.trim()) {
+      filters.push(`(b.name ILIKE $${idx} OR b.address ILIKE $${idx})`);
+      values.push(`%${q.trim()}%`);
+      idx++;
+    }
+    if (city_id) {
+      filters.push(`c.id = $${idx++}`);
+      values.push(parseInt(city_id));
+    }
+    if (category_id) {
+      filters.push(`cat.id = $${idx++}`);
+      values.push(parseInt(category_id));
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    // Count total
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM businesses b JOIN cities c ON c.id = b.city_id JOIN categories cat ON cat.id = b.category_id ${whereClause}`,
+      values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    // Fetch page
     const result = await pool.query(`
       SELECT
         b.id, b.name, c.id AS city_id, c.name AS city_name,
@@ -258,9 +362,25 @@ router.get("/businesses", async (req, res) => {
       FROM businesses b
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
-      ORDER BY c.name, cat.name, b.name;
-    `);
-    res.render("admin/businesses-list", { businesses: result.rows, error });
+      ${whereClause}
+      ORDER BY b.id DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    // Cities and categories for filters
+    const [citiesRes, categoriesRes] = await Promise.all([
+      pool.query("SELECT id, name FROM cities ORDER BY name"),
+      pool.query("SELECT id, name FROM categories ORDER BY name"),
+    ]);
+
+    res.render("admin/businesses-list", {
+      businesses: result.rows,
+      cities: citiesRes.rows,
+      categories: categoriesRes.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      filters: { q: q || "", city_id: city_id || "", category_id: category_id || "" },
+      error: req.query.err || "",
+    });
   } catch (err) {
     console.error("Eroare la admin /businesses:", err);
     res.status(500).send("Eroare server");
@@ -296,10 +416,11 @@ router.post("/businesses/new", async (req, res) => {
       lng,
       phone,
       website,
+      description,
     } = req.body;
     await pool.query(
-      `INSERT INTO businesses (name, city_id, category_id, address, lat, lng, phone, website)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      `INSERT INTO businesses (name, city_id, category_id, address, lat, lng, phone, website, description)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [
         name,
         city_id ? parseInt(city_id) : null,
@@ -309,6 +430,7 @@ router.post("/businesses/new", async (req, res) => {
         lng ? parseFloat(lng) : null,
         phone || null,
         website || null,
+        description || null,
       ]
     );
     res.redirect("/admin/businesses");
@@ -377,46 +499,6 @@ router.get("/businesses/:id/edit", async (req, res) => {
   }
 });
 
-// UPDATE location (edit inline)
-router.post("/businesses/:businessId/locations/:locationId", async (req, res) => {
-  const { businessId, locationId } = req.params;
-  const { city_id, address, phone, lat, lng } = req.body;
-
-  if (!city_id || !address) {
-    return res.status(400).send("city_id și address sunt obligatorii");
-  }
-
-  try {
-    await pool.query(
-      `
-      UPDATE business_locations
-      SET city_id = $1,
-          address = $2,
-          phone = $3,
-          lat = $4,
-          lng = $5
-      WHERE id = $6 AND business_id = $7
-      `,
-      [
-        Number(city_id),
-        address,
-        phone || null,
-        lat === "" || lat == null ? null : Number(lat),
-        lng === "" || lng == null ? null : Number(lng),
-        Number(locationId),
-        Number(businessId),
-      ]
-    );
-
-    return res.redirect(`/admin/businesses/${businessId}/locations`);
-  } catch (err) {
-    console.error("Update location error:", err);
-    return res.status(500).send(`Eroare la update location: ${err.message}`);
-  }
-});
-
-
-
 // POST /admin/businesses/:id/edit (Update business + locații & booking)
 router.post("/businesses/:id/edit", async (req, res) => {
   const id = parseInt(req.params.id, 10);
@@ -432,12 +514,9 @@ router.post("/businesses/:id/edit", async (req, res) => {
       lng,
       phone,
       website,
+      description,
       locations,
     } = req.body;
-
-    console.log("=== BODY LA EDIT BUSINESS ===");
-    console.log(JSON.stringify(req.body, null, 2));
-    console.log("=== SFÂRȘIT BODY ===");
 
     // 1) Update business
     await pool.query(
@@ -451,8 +530,9 @@ router.post("/businesses/:id/edit", async (req, res) => {
         lat = $5,
         lng = $6,
         phone = $7,
-        website = $8
-      WHERE id = $9
+        website = $8,
+        description = $9
+      WHERE id = $10
       `,
       [
         name,
@@ -463,6 +543,7 @@ router.post("/businesses/:id/edit", async (req, res) => {
         lng ? parseFloat(lng) : null,
         phone || null,
         website || null,
+        description || null,
         id,
       ]
     );
@@ -567,7 +648,6 @@ router.post(
   "/businesses/:id/logo",
   uploadBusinessImage.single("logo"),
   async (req, res) => {
-    console.log("=== UPLOAD LOGO (Cloudinary) ===");
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).send("ID invalid");
 
@@ -591,7 +671,6 @@ router.post(
         id,
       ]);
 
-      console.log("Logo saved successfully:", result.url);
       res.redirect(`/admin/businesses/${id}/edit`);
     } catch (err) {
       console.error("Error saving logo:", err);
@@ -870,6 +949,7 @@ router.post("/businesses/:id/owners/:userId/delete", async (req, res) => {
 // GET /admin/offers
 router.get("/offers", async (req, res) => {
   try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
     const { city_id, category_id, business_id, is_active, q } = req.query;
     const filters = [];
     const values = [];
@@ -898,6 +978,13 @@ router.get("/offers", async (req, res) => {
     }
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    // Count total
+    const countQuery = `SELECT COUNT(*) FROM offers o JOIN businesses b ON b.id = o.business_id JOIN cities c ON c.id = b.city_id JOIN categories cat ON cat.id = b.category_id ${whereClause}`;
+    const countRes = await pool.query(countQuery, values);
+    const total = parseInt(countRes.rows[0].count);
+
+    // Fetch page
     const offersQuery = `
       SELECT o.id, o.title, o.is_active, o.discount_type, o.discount_value,
              b.name AS business_name, c.name AS city_name, cat.name AS category_name
@@ -905,12 +992,13 @@ router.get("/offers", async (req, res) => {
       JOIN businesses b ON b.id = o.business_id
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
-      ${whereClause} ORDER BY o.id DESC;
+      ${whereClause} ORDER BY o.id DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
     `;
 
     const [offersResult, citiesResult, categoriesResult, businessesResult] =
       await Promise.all([
-        pool.query(offersQuery, values),
+        pool.query(offersQuery, [...values, limit, offset]),
         pool.query("SELECT id, name FROM cities ORDER BY name"),
         pool.query("SELECT id, name FROM categories ORDER BY name"),
         pool.query(
@@ -923,6 +1011,7 @@ router.get("/offers", async (req, res) => {
       cities: citiesResult.rows,
       categories: categoriesResult.rows,
       businesses: businessesResult.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       filters: {
         city_id: city_id || "",
         category_id: category_id || "",
@@ -1229,7 +1318,7 @@ router.post("/offers/:id/delete", async (req, res) => {
 // =====================================
 
 // GET: List locations for a business
-router.get("/businesses/:id/locations", adminAuth, async (req, res) => {
+router.get("/businesses/:id/locations", async (req, res) => {
   const businessId = req.params.id;
   try {
     // Get business details for context
@@ -1269,7 +1358,7 @@ router.get("/businesses/:id/locations", adminAuth, async (req, res) => {
   }
 });
 
-// POST: Add new location
+// POST: Update existing location (inline edit from locations page)
 router.post("/businesses/:businessId/locations/:locationId", async (req, res) => {
   const { businessId, locationId } = req.params;
   const { city_id, address, phone, lat, lng } = req.body;
@@ -1322,7 +1411,6 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
 // POST: Delete location
 router.post(
   "/businesses/:id/locations/:locId/delete",
-  adminAuth,
   async (req, res) => {
     const { id, locId } = req.params;
     try {
@@ -1343,8 +1431,13 @@ router.post(
 // =====================================
 
 // GET /admin/business-requests — list all requests
-router.get("/business-requests", adminAuth, async (req, res) => {
+router.get("/business-requests", async (req, res) => {
   try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
+
+    const countRes = await pool.query("SELECT COUNT(*) FROM business_requests");
+    const total = parseInt(countRes.rows[0].count);
+
     const { rows: requests } = await pool.query(`
       SELECT br.*,
              u.email as user_email, u.first_name as user_first_name, u.last_name as user_last_name,
@@ -1359,9 +1452,13 @@ router.get("/business-requests", adminAuth, async (req, res) => {
       ORDER BY
         CASE br.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 END,
         br.created_at DESC
-    `);
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
 
-    res.render("admin/business-requests", { requests });
+    res.render("admin/business-requests", {
+      requests,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
   } catch (err) {
     console.error("[Admin] Business requests list error:", err);
     res.status(500).send("Eroare la încărcarea cererilor.");
@@ -1369,7 +1466,7 @@ router.get("/business-requests", adminAuth, async (req, res) => {
 });
 
 // POST /admin/business-requests/:id/approve
-router.post("/business-requests/:id/approve", adminAuth, async (req, res) => {
+router.post("/business-requests/:id/approve", async (req, res) => {
   const requestId = parseInt(req.params.id, 10);
   const client = await pool.connect();
 
@@ -1442,7 +1539,7 @@ router.post("/business-requests/:id/approve", adminAuth, async (req, res) => {
 });
 
 // POST /admin/business-requests/:id/reject
-router.post("/business-requests/:id/reject", adminAuth, async (req, res) => {
+router.post("/business-requests/:id/reject", async (req, res) => {
   const requestId = parseInt(req.params.id, 10);
   const reason = req.body.reason ? req.body.reason.trim().slice(0, 500) : null;
 
@@ -1477,6 +1574,383 @@ router.post("/business-requests/:id/reject", adminAuth, async (req, res) => {
   } catch (err) {
     console.error("[Admin] Reject business request error:", err);
     res.status(500).send("Eroare la respingerea cererii.");
+  }
+});
+
+// =====================================
+//   USERS MANAGEMENT
+// =====================================
+
+// GET /admin/users — list with pagination, search, filter
+router.get("/users", async (req, res) => {
+  try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
+    const { q, role } = req.query;
+
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    if (q && q.trim()) {
+      filters.push(`(u.email ILIKE $${idx} OR u.first_name ILIKE $${idx} OR u.last_name ILIKE $${idx})`);
+      values.push(`%${q.trim()}%`);
+      idx++;
+    }
+    if (role) {
+      filters.push(`u.role = $${idx++}`);
+      values.push(role);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM users u ${whereClause}`,
+      values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.created_at, u.banned_at,
+             COUNT(ub.business_id) AS businesses_count
+      FROM users u
+      LEFT JOIN user_businesses ub ON ub.user_id = u.id
+      ${whereClause}
+      GROUP BY u.id
+      ORDER BY u.id DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    res.render("admin/users-list", {
+      users: result.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      filters: { q: q || "", role: role || "" },
+    });
+  } catch (err) {
+    console.error("[Admin] Users list error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// GET /admin/users/:id/edit
+router.get("/users/:id/edit", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    const [userRes, businessesRes, reviewsRes] = await Promise.all([
+      pool.query("SELECT * FROM users WHERE id = $1", [id]),
+      pool.query(`
+        SELECT b.id, b.name, c.name AS city_name
+        FROM user_businesses ub
+        JOIN businesses b ON b.id = ub.business_id
+        LEFT JOIN cities c ON c.id = b.city_id
+        WHERE ub.user_id = $1
+        ORDER BY b.name
+      `, [id]),
+      pool.query(`
+        SELECT r.id, r.rating, r.comment, r.created_at, b.name AS business_name
+        FROM reviews r
+        JOIN businesses b ON b.id = r.business_id
+        WHERE r.user_id = $1
+        ORDER BY r.created_at DESC
+        LIMIT 20
+      `, [id]),
+    ]);
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).send("Utilizatorul nu există");
+    }
+
+    res.render("admin/users-edit", {
+      user: userRes.rows[0],
+      businesses: businessesRes.rows,
+      reviews: reviewsRes.rows,
+      error: req.query.err || "",
+      message: req.query.message || "",
+    });
+  } catch (err) {
+    console.error("[Admin] User edit error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// POST /admin/users/:id/edit
+router.post("/users/:id/edit", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    const { first_name, last_name, role } = req.body;
+    const validRoles = ["user", "business_owner", "admin"];
+
+    if (!validRoles.includes(role)) {
+      return res.redirect(`/admin/users/${id}/edit?err=invalid_role`);
+    }
+
+    await pool.query(
+      "UPDATE users SET first_name = $1, last_name = $2, role = $3 WHERE id = $4",
+      [first_name || null, last_name || null, role, id]
+    );
+
+    res.redirect(`/admin/users/${id}/edit?message=${encodeURIComponent("Utilizator actualizat cu succes")}`);
+  } catch (err) {
+    console.error("[Admin] User update error:", err);
+    res.redirect(`/admin/users/${id}/edit?err=server_error`);
+  }
+});
+
+// POST /admin/users/:id/ban
+router.post("/users/:id/ban", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    await pool.query("UPDATE users SET banned_at = NOW() WHERE id = $1", [id]);
+    res.redirect(`/admin/users/${id}/edit?message=${encodeURIComponent("Utilizator banat")}`);
+  } catch (err) {
+    console.error("[Admin] Ban error:", err);
+    res.redirect(`/admin/users/${id}/edit?err=server_error`);
+  }
+});
+
+// POST /admin/users/:id/unban
+router.post("/users/:id/unban", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    await pool.query("UPDATE users SET banned_at = NULL WHERE id = $1", [id]);
+    res.redirect(`/admin/users/${id}/edit?message=${encodeURIComponent("Ban ridicat")}`);
+  } catch (err) {
+    console.error("[Admin] Unban error:", err);
+    res.redirect(`/admin/users/${id}/edit?err=server_error`);
+  }
+});
+
+// =====================================
+//   CITIES MANAGEMENT
+// =====================================
+
+router.get("/cities", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.id, c.name, COUNT(b.id) AS businesses_count
+      FROM cities c
+      LEFT JOIN businesses b ON b.city_id = c.id
+      GROUP BY c.id
+      ORDER BY c.name
+    `);
+    res.render("admin/cities", {
+      cities: result.rows,
+      error: req.query.err || "",
+      message: req.query.message || "",
+    });
+  } catch (err) {
+    console.error("[Admin] Cities error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+router.post("/cities", async (req, res) => {
+  try {
+    const name = (req.body.name || "").trim();
+    if (!name) {
+      return res.redirect("/admin/cities?err=Numele este obligatoriu");
+    }
+    await pool.query("INSERT INTO cities (name) VALUES ($1)", [name]);
+    res.redirect(`/admin/cities?message=${encodeURIComponent("Oraș adăugat: " + name)}`);
+  } catch (err) {
+    console.error("[Admin] Add city error:", err);
+    res.redirect(`/admin/cities?err=${encodeURIComponent("Eroare la adăugare")}`);
+  }
+});
+
+router.post("/cities/:id", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.redirect("/admin/cities?err=ID invalid");
+
+  try {
+    const name = (req.body.name || "").trim();
+    if (!name) {
+      return res.redirect("/admin/cities?err=Numele este obligatoriu");
+    }
+    await pool.query("UPDATE cities SET name = $1 WHERE id = $2", [name, id]);
+    res.redirect(`/admin/cities?message=${encodeURIComponent("Oraș actualizat")}`);
+  } catch (err) {
+    console.error("[Admin] Update city error:", err);
+    res.redirect(`/admin/cities?err=${encodeURIComponent("Eroare la actualizare")}`);
+  }
+});
+
+router.post("/cities/:id/delete", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.redirect("/admin/cities?err=ID invalid");
+
+  try {
+    // Check if city has businesses
+    const countRes = await pool.query(
+      "SELECT COUNT(*) AS cnt FROM businesses WHERE city_id = $1",
+      [id]
+    );
+    if (parseInt(countRes.rows[0].cnt) > 0) {
+      return res.redirect(`/admin/cities?err=${encodeURIComponent("Nu poți șterge acest oraș — are " + countRes.rows[0].cnt + " business-uri asociate")}`);
+    }
+    await pool.query("DELETE FROM cities WHERE id = $1", [id]);
+    res.redirect(`/admin/cities?message=${encodeURIComponent("Oraș șters")}`);
+  } catch (err) {
+    console.error("[Admin] Delete city error:", err);
+    res.redirect(`/admin/cities?err=${encodeURIComponent("Eroare la ștergere")}`);
+  }
+});
+
+// =====================================
+//   CATEGORIES MANAGEMENT
+// =====================================
+
+router.get("/categories", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.id, c.name, COUNT(b.id) AS businesses_count
+      FROM categories c
+      LEFT JOIN businesses b ON b.category_id = c.id
+      GROUP BY c.id
+      ORDER BY c.name
+    `);
+    res.render("admin/categories", {
+      categories: result.rows,
+      error: req.query.err || "",
+      message: req.query.message || "",
+    });
+  } catch (err) {
+    console.error("[Admin] Categories error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+router.post("/categories", async (req, res) => {
+  try {
+    const name = (req.body.name || "").trim();
+    if (!name) {
+      return res.redirect("/admin/categories?err=Numele este obligatoriu");
+    }
+    await pool.query("INSERT INTO categories (name) VALUES ($1)", [name]);
+    res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie adăugată: " + name)}`);
+  } catch (err) {
+    console.error("[Admin] Add category error:", err);
+    res.redirect(`/admin/categories?err=${encodeURIComponent("Eroare la adăugare")}`);
+  }
+});
+
+router.post("/categories/:id", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.redirect("/admin/categories?err=ID invalid");
+
+  try {
+    const name = (req.body.name || "").trim();
+    if (!name) {
+      return res.redirect("/admin/categories?err=Numele este obligatoriu");
+    }
+    await pool.query("UPDATE categories SET name = $1 WHERE id = $2", [name, id]);
+    res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie actualizată")}`);
+  } catch (err) {
+    console.error("[Admin] Update category error:", err);
+    res.redirect(`/admin/categories?err=${encodeURIComponent("Eroare la actualizare")}`);
+  }
+});
+
+router.post("/categories/:id/delete", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.redirect("/admin/categories?err=ID invalid");
+
+  try {
+    const countRes = await pool.query(
+      "SELECT COUNT(*) AS cnt FROM businesses WHERE category_id = $1",
+      [id]
+    );
+    if (parseInt(countRes.rows[0].cnt) > 0) {
+      return res.redirect(`/admin/categories?err=${encodeURIComponent("Nu poți șterge această categorie — are " + countRes.rows[0].cnt + " business-uri asociate")}`);
+    }
+    await pool.query("DELETE FROM categories WHERE id = $1", [id]);
+    res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie ștearsă")}`);
+  } catch (err) {
+    console.error("[Admin] Delete category error:", err);
+    res.redirect(`/admin/categories?err=${encodeURIComponent("Eroare la ștergere")}`);
+  }
+});
+
+// =====================================
+//   REVIEWS MODERATION
+// =====================================
+
+router.get("/reviews", async (req, res) => {
+  try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
+    const { q, rating, business_id } = req.query;
+
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    if (q && q.trim()) {
+      filters.push(`(r.comment ILIKE $${idx} OR u.email ILIKE $${idx} OR b.name ILIKE $${idx})`);
+      values.push(`%${q.trim()}%`);
+      idx++;
+    }
+    if (rating) {
+      filters.push(`r.rating = $${idx++}`);
+      values.push(parseInt(rating));
+    }
+    if (business_id) {
+      filters.push(`r.business_id = $${idx++}`);
+      values.push(parseInt(business_id));
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM reviews r JOIN users u ON u.id = r.user_id JOIN businesses b ON b.id = r.business_id ${whereClause}`,
+      values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT r.id, r.rating, r.comment, r.created_at,
+             u.id AS user_id, u.email, u.first_name, u.last_name,
+             b.id AS business_id, b.name AS business_name,
+             (SELECT COUNT(*) FROM review_responses rr WHERE rr.review_id = r.id) > 0 AS has_response
+      FROM reviews r
+      JOIN users u ON u.id = r.user_id
+      JOIN businesses b ON b.id = r.business_id
+      ${whereClause}
+      ORDER BY r.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    res.render("admin/reviews-list", {
+      reviews: result.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      filters: { q: q || "", rating: rating || "", business_id: business_id || "" },
+      message: req.query.message || "",
+      error: req.query.err || "",
+    });
+  } catch (err) {
+    console.error("[Admin] Reviews list error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+router.post("/reviews/:id/delete", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    // Delete associated review responses first
+    await pool.query("DELETE FROM review_responses WHERE review_id = $1", [id]);
+    await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+    res.redirect(`/admin/reviews?message=${encodeURIComponent("Recenzie ștearsă")}`);
+  } catch (err) {
+    console.error("[Admin] Delete review error:", err);
+    res.redirect(`/admin/reviews?err=${encodeURIComponent("Eroare la ștergere")}`);
   }
 });
 

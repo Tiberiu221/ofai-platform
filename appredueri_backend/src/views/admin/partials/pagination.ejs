@@ -1,0 +1,31 @@
+<% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+<div class="a-pagination">
+  <%
+    // Build base URL preserving existing query params except page
+    const url = new URL(baseUrl, 'http://localhost');
+    const params = new URLSearchParams(typeof currentQuery !== 'undefined' ? currentQuery : '');
+    params.delete('page');
+    const qs = params.toString();
+    const prefix = baseUrl + (qs ? '?' + qs + '&' : '?');
+  %>
+
+  <% if (pagination.page > 1) { %>
+    <a href="<%= prefix %>page=<%= pagination.page - 1 %>" class="a-pagination-btn">&laquo; Anterior</a>
+  <% } %>
+
+  <%
+    let startPage = Math.max(1, pagination.page - 2);
+    let endPage = Math.min(pagination.totalPages, pagination.page + 2);
+  %>
+
+  <% for (let p = startPage; p <= endPage; p++) { %>
+    <a href="<%= prefix %>page=<%= p %>" class="a-pagination-btn <%= p === pagination.page ? 'active' : '' %>"><%= p %></a>
+  <% } %>
+
+  <% if (pagination.page < pagination.totalPages) { %>
+    <a href="<%= prefix %>page=<%= pagination.page + 1 %>" class="a-pagination-btn">Următor &raquo;</a>
+  <% } %>
+
+  <span class="a-pagination-info"><%= pagination.total %> total</span>
+</div>
+<% } %>

@@ -1,307 +1,121 @@
-<!doctype html>
-<html lang="ro">
+<%- include('partials/layout-top', { pageTitle: 'Locații Business', activePage: 'businesses' }) %>
 
-<head>
-    <meta charset="utf-8" />
-    <title>Admin - Locații Business</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            color: #e5e7eb;
-            background: #0f0f13;
-        }
+<a href="/admin/businesses" class="back-link">← Înapoi la Business-uri</a>
 
-        h1,
-        h2 {
-            margin-bottom: 16px;
-            color: #f3f4f6;
-        }
+<h2>Locații pentru: <strong><%= business.name %></strong></h2>
 
-        h3 {
-            color: #f3f4f6;
-        }
+<div class="form-box">
+  <h3 style="margin-top:0;">Adaugă o locație nouă</h3>
+  <form action="/admin/businesses/<%= business.id %>/locations" method="POST">
 
-        /* Container Formular */
-        .form-box {
-            background: #18181b;
-            padding: 20px;
-            border: 1px solid #2e2e33;
-            margin-bottom: 30px;
-            border-radius: 6px;
-        }
-
-        .form-group {
-            margin-bottom: 12px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 6px;
-            font-size: 14px;
-            color: #d1d5db;
-        }
-
-        /* Input-uri */
-        input[type="text"],
-        input[type="number"],
-        select {
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #3a3a42;
-            border-radius: 4px;
-            max-width: 400px;
-            background: #1a1a1f;
-            color: #e5e7eb;
-        }
-
-        /* Tabele */
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            border: 1px solid #2e2e33;
-            padding: 10px;
-            font-size: 14px;
-            text-align: left;
-            vertical-align: top;
-        }
-
-        th {
-            background: #1f1f23;
-            color: #9ca3af;
-        }
-
-        /* Input-uri din tabel */
-        table input[type="text"],
-        table input[type="number"],
-        table select {
-            max-width: 100%;
-            width: 100%;
-            padding: 6px 8px;
-            font-size: 13px;
-            border-radius: 4px;
-            background: #1a1a1f;
-            border: 1px solid #3a3a42;
-            color: #e5e7eb;
-        }
-
-        .coords-row {
-            display: flex;
-            gap: 8px;
-            min-width: 220px;
-        }
-
-        .coords-row input {
-            max-width: none;
-        }
-
-        .row-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* Butoane */
-        .button {
-            display: inline-block;
-            padding: 8px 16px;
-            background: #2563eb;
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .button:hover {
-            background: #1d4ed8;
-        }
-
-        .button.secondary {
-            background: #4b5563;
-        }
-
-        .button.secondary:hover {
-            background: #374151;
-        }
-
-        .button.danger {
-            background: #dc2626;
-        }
-
-        .button.danger:hover {
-            background: #b91c1c;
-        }
-
-        .button-small {
-            padding: 6px 10px;
-            font-size: 12px;
-            line-height: 1.2;
-        }
-
-        .back-link {
-            margin-bottom: 20px;
-            display: inline-block;
-            text-decoration: none;
-            color: #60a5fa;
-            font-weight: bold;
-        }
-
-        .hint {
-            margin-top: 6px;
-            color: #9ca3af;
-            font-size: 12px;
-        }
-    </style>
-</head>
-
-<body>
-
-    <a href="/admin/businesses" class="back-link">← Înapoi la Business-uri</a>
-
-    <h2>Locații pentru: <strong>
-            <%= business.name %>
-        </strong></h2>
-
-    <div class="form-box">
-        <h3 style="margin-top:0;">Adaugă o locație nouă</h3>
-        <form action="/admin/businesses/<%= business.id %>/locations" method="POST">
-
-            <div class="form-group">
-                <label>Oraș</label>
-                <select name="city_id" required>
-                    <% cities.forEach(city=> { %>
-                        <option value="<%= city.id %>">
-                            <%= city.name %>
-                        </option>
-                        <% }) %>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Adresă</label>
-                <input type="text" name="address" placeholder="Str. Exemplu nr. 1" required>
-            </div>
-
-            <div class="form-group">
-                <label>Telefon (opțional)</label>
-                <input type="text" name="phone" placeholder="07xx...">
-            </div>
-
-            <div class="form-group">
-                <label>Coordonate (Lat / Lng)</label>
-                <div style="display: flex; gap: 10px; max-width: 400px;">
-                    <input type="number" step="any" name="lat" placeholder="Lat (ex: 44.42)">
-                    <input type="number" step="any" name="lng" placeholder="Lng (ex: 26.10)">
-                </div>
-                <div class="hint">Poți lăsa gol dacă nu ai coordonate acum.</div>
-            </div>
-
-            <div style="margin-top: 15px;">
-                <button type="submit" class="button">Salvează Locația</button>
-            </div>
-        </form>
+    <div class="form-group">
+      <label>Oraș</label>
+      <select name="city_id" required>
+        <% cities.forEach(city => { %>
+          <option value="<%= city.id %>"><%= city.name %></option>
+        <% }) %>
+      </select>
     </div>
 
-    <h3>Locații existente (<%= locations.length %>)</h3>
+    <div class="form-group">
+      <label>Adresă</label>
+      <input type="text" name="address" placeholder="Str. Exemplu nr. 1" required>
+    </div>
 
-    <% if (locations.length===0) { %>
-        <p style="color: #9ca3af; font-style: italic;">Acest business nu are locații secundare definite.</p>
-        <% } else { %>
+    <div class="form-group">
+      <label>Telefon (opțional)</label>
+      <input type="text" name="phone" placeholder="07xx...">
+    </div>
 
-            <p class="hint">Editează câmpurile direct în tabel și apasă “Salvează”.</p>
+    <div class="form-group">
+      <label>Coordonate (Lat / Lng)</label>
+      <div style="display: flex; gap: 10px; max-width: 400px;">
+        <input type="number" step="any" name="lat" placeholder="Lat (ex: 44.42)">
+        <input type="number" step="any" name="lng" placeholder="Lng (ex: 26.10)">
+      </div>
+      <div class="hint">Poți lăsa gol dacă nu ai coordonate acum.</div>
+    </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th style="min-width: 160px;">Oraș</th>
-                        <th>Adresă</th>
-                        <th style="min-width: 140px;">Telefon</th>
-                        <th style="min-width: 260px;">Coordonate</th>
-                        <th style="width: 180px;">Acțiuni</th>
-                    </tr>
-                </thead>
+    <div style="margin-top: 15px;">
+      <button type="submit" class="button">Salvează Locația</button>
+    </div>
+  </form>
+</div>
 
-                <tbody>
-                    <% locations.forEach(loc=> { %>
-                        <% const formId=`edit-loc-${loc.id}`; %>
-                            <% const locCityId=(loc.city_id ?? loc.cityId ?? loc.cityID); %>
+<h3>Locații existente (<%= locations.length %>)</h3>
 
-                                <!-- form separat (valid HTML), apoi inputurile din row îl referă prin atributul form="" -->
-                                <form id="<%= formId %>"
-                                    action="/admin/businesses/<%= business.id %>/locations/<%= loc.id %>" method="POST">
-                                </form>
+<% if (locations.length === 0) { %>
+  <p style="color: #9ca3af; font-style: italic;">Acest business nu are locații secundare definite.</p>
+<% } else { %>
 
-                                <tr>
-                                    <td>
-                                        <select name="city_id" required form="<%= formId %>">
-                                            <% cities.forEach(city=> { %>
-                                                <% const selectedById=(locCityId !=null &&
-                                                    Number(locCityId)===Number(city.id)); const
-                                                    selectedByName=(!selectedById && loc.city_name &&
-                                                    city.name===loc.city_name); const selected=selectedById ||
-                                                    selectedByName; %>
-                                                    <option value="<%= city.id %>" <%=selected ? "selected" : "" %>><%=
-                                                            city.name %>
-                                                    </option>
-                                                    <% }) %>
-                                        </select>
-                                    </td>
+  <p class="hint">Editează câmpurile direct în tabel și apasă "Salvează".</p>
 
-                                    <td>
-                                        <input type="text" name="address" value="<%= loc.address || "" %>" required
-                                            form="<%= formId %>" />
-                                    </td>
+  <table>
+    <thead>
+      <tr>
+        <th style="min-width: 160px;">Oraș</th>
+        <th>Adresă</th>
+        <th style="min-width: 140px;">Telefon</th>
+        <th style="min-width: 260px;">Coordonate</th>
+        <th style="width: 180px;">Acțiuni</th>
+      </tr>
+    </thead>
 
-                                    <td>
-                                        <input type="text" name="phone" value="<%= loc.phone || "" %>"
-                                            placeholder="07xx..." form="<%= formId %>" />
-                                    </td>
+    <tbody>
+      <% locations.forEach(loc => { %>
+        <% const formId = `edit-loc-${loc.id}`; %>
+        <% const locCityId = (loc.city_id ?? loc.cityId ?? loc.cityID); %>
 
-                                    <td>
-                                        <div class="coords-row">
-                                            <input type="number" step="any" name="lat" value="<%= (loc.lat ?? "") %>"
-                                                placeholder="Lat" form="<%= formId %>" />
-                                            <input type="number" step="any" name="lng" value="<%= (loc.lng ?? "") %>"
-                                                placeholder="Lng" form="<%= formId %>" />
-                                        </div>
+        <!-- form separat (valid HTML), apoi inputurile din row îl referă prin atributul form="" -->
+        <form id="<%= formId %>" action="/admin/businesses/<%= business.id %>/locations/<%= loc.id %>" method="POST">
+        </form>
 
-                                        <% if(loc.lat && loc.lng) { %>
-                                            <div class="hint">Curent: <code><%= loc.lat %>, <%= loc.lng %></code></div>
-                                            <% } else { %>
-                                                <div class="hint" style="color:#f87171;">Lipsă coordonate</div>
-                                                <% } %>
-                                    </td>
+        <tr>
+          <td>
+            <select name="city_id" required form="<%= formId %>">
+              <% cities.forEach(city => { %>
+                <% const selectedById = (locCityId != null && Number(locCityId) === Number(city.id)); %>
+                <% const selectedByName = (!selectedById && loc.city_name && city.name === loc.city_name); %>
+                <% const selected = selectedById || selectedByName; %>
+                <option value="<%= city.id %>" <%= selected ? "selected" : "" %>><%= city.name %></option>
+              <% }) %>
+            </select>
+          </td>
 
-                                    <td>
-                                        <div class="row-actions">
-                                            <button type="submit" class="button button-small"
-                                                form="<%= formId %>">Salvează</button>
+          <td>
+            <input type="text" name="address" value="<%= loc.address || "" %>" required form="<%= formId %>" />
+          </td>
 
-                                            <form
-                                                action="/admin/businesses/<%= business.id %>/locations/<%= loc.id %>/delete"
-                                                method="POST"
-                                                onsubmit="return confirm('Sigur vrei să ștergi această locație?');"
-                                                style="margin:0;">
-                                                <button type="submit" class="button button-small danger">Șterge</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <% }) %>
-                </tbody>
-            </table>
+          <td>
+            <input type="text" name="phone" value="<%= loc.phone || "" %>" placeholder="07xx..." form="<%= formId %>" />
+          </td>
+
+          <td>
+            <div class="coords-row">
+              <input type="number" step="any" name="lat" value="<%= (loc.lat ?? "") %>" placeholder="Lat" form="<%= formId %>" />
+              <input type="number" step="any" name="lng" value="<%= (loc.lng ?? "") %>" placeholder="Lng" form="<%= formId %>" />
+            </div>
+
+            <% if(loc.lat && loc.lng) { %>
+              <div class="hint">Curent: <code><%= loc.lat %>, <%= loc.lng %></code></div>
+            <% } else { %>
+              <div class="hint" style="color:#f87171;">Lipsă coordonate</div>
             <% } %>
+          </td>
 
-</body>
+          <td>
+            <div class="row-actions">
+              <button type="submit" class="button button-small" form="<%= formId %>">Salvează</button>
 
-</html>
+              <form action="/admin/businesses/<%= business.id %>/locations/<%= loc.id %>/delete" method="POST" data-confirm="Sigur vrei să ștergi această locație?" style="margin:0;">
+                <button type="submit" class="button button-small danger">Șterge</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

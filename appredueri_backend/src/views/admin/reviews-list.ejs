@@ -1,0 +1,93 @@
+<%- include('partials/layout-top', { pageTitle: 'Recenzii', activePage: 'reviews' }) %>
+
+<div class="a-page-header">
+  <h1>Recenzii</h1>
+</div>
+
+<% if (message) { %>
+  <div class="a-alert a-alert-success"><%= message %></div>
+<% } %>
+<% if (error) { %>
+  <div class="a-alert a-alert-danger"><%= error %></div>
+<% } %>
+
+<!-- Filtre -->
+<form method="get" action="/admin/reviews" class="filters">
+  <div class="filters-row">
+    <label>
+      Caută
+      <input type="text" name="q" value="<%= filters.q || '' %>" placeholder="Comentariu, email sau business..." />
+    </label>
+    <label>
+      Rating
+      <select name="rating">
+        <option value="">Toate</option>
+        <option value="5" <%= filters.rating === '5' ? 'selected' : '' %>>★★★★★ (5)</option>
+        <option value="4" <%= filters.rating === '4' ? 'selected' : '' %>>★★★★☆ (4)</option>
+        <option value="3" <%= filters.rating === '3' ? 'selected' : '' %>>★★★☆☆ (3)</option>
+        <option value="2" <%= filters.rating === '2' ? 'selected' : '' %>>★★☆☆☆ (2)</option>
+        <option value="1" <%= filters.rating === '1' ? 'selected' : '' %>>★☆☆☆☆ (1)</option>
+      </select>
+    </label>
+    <div class="filters-actions">
+      <button type="submit" class="a-btn">Aplică</button>
+      <a href="/admin/reviews" class="a-btn a-btn-secondary">Resetează</a>
+    </div>
+  </div>
+</form>
+
+<% if (!reviews || reviews.length === 0) { %>
+  <p class="a-text-muted">Nu există recenzii pentru filtrele curente.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 50px;">ID</th>
+        <th>Utilizator</th>
+        <th>Business</th>
+        <th style="width: 100px;">Rating</th>
+        <th>Comentariu</th>
+        <th style="width: 80px;">Răspuns</th>
+        <th style="width: 100px;">Data</th>
+        <th style="width: 80px;">Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reviews.forEach(function(r) { %>
+        <tr>
+          <td><%= r.id %></td>
+          <td>
+            <a href="/admin/users/<%= r.user_id %>/edit"><%= r.email %></a>
+            <% if (r.first_name) { %>
+              <br><small class="a-text-muted"><%= r.first_name %> <%= r.last_name || '' %></small>
+            <% } %>
+          </td>
+          <td>
+            <a href="/admin/businesses/<%= r.business_id %>/edit"><%= r.business_name %></a>
+          </td>
+          <td>
+            <span style="color: #fbbf24;"><%= '★'.repeat(r.rating) %></span><span class="a-text-muted"><%= '☆'.repeat(5 - r.rating) %></span>
+          </td>
+          <td><%= r.comment ? r.comment.slice(0, 100) + (r.comment.length > 100 ? '...' : '') : '-' %></td>
+          <td>
+            <% if (r.has_response) { %>
+              <span class="a-badge a-badge-success">Da</span>
+            <% } else { %>
+              <span class="a-badge" style="background: #27272a; color: #6b7280;">Nu</span>
+            <% } %>
+          </td>
+          <td><%= r.created_at ? new Date(r.created_at).toLocaleDateString('ro-RO') : '-' %></td>
+          <td>
+            <form method="post" action="/admin/reviews/<%= r.id %>/delete" style="display:inline; max-width: none;" data-confirm="Sigur vrei să ștergi această recenzie? Se va șterge și răspunsul asociat.">
+              <button type="submit" class="a-btn a-btn-sm a-btn-danger">Șterge</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/reviews', currentQuery: _qs }) %>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

@@ -1,166 +1,94 @@
-<!doctype html>
-<html lang="ro">
+<%- include('partials/layout-top', { pageTitle: 'Business-uri', activePage: 'businesses' }) %>
 
-<head>
-  <meta charset="utf-8" />
-  <title>Admin - Business-uri</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      color: #e5e7eb;
-      background: #0f0f13;
-    }
-
-    h1 {
-      margin-bottom: 16px;
-      color: #f3f4f6;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 12px;
-    }
-
-    th,
-    td {
-      border: 1px solid #2e2e33;
-      padding: 8px;
-      font-size: 14px;
-      text-align: left;
-    }
-
-    th {
-      background: #1f1f23;
-      color: #9ca3af;
-    }
-
-    /* Butoane */
-    a.button,
-    button.button {
-      display: inline-block;
-      padding: 6px 10px;
-      background: #2563eb;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-      border: none;
-      cursor: pointer;
-    }
-
-    a.button.secondary {
-      background: #4b5563;
-    }
-
-    a.button.info {
-      background: #0891b2;
-    }
-
-    /* Turcoaz pentru Locații */
-    a.button.danger,
-    button.button.danger {
-      background: #dc2626;
-      border: none;
-      cursor: pointer;
-    }
-
-    .button-small {
-      padding: 4px 8px;
-      font-size: 12px;
-      margin-right: 4px;
-    }
-
-    .error-msg {
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 4px;
-      background: #3b1111;
-      color: #fca5a5;
-      border: 1px solid #5c1d1d;
-      max-width: 700px;
-    }
-  </style>
-</head>
-
-<body>
+<div class="a-page-header">
   <h1>Business-uri</h1>
+  <a href="/admin/businesses/new" class="a-btn">+ Adaugă business nou</a>
+</div>
 
-  <% if (typeof error !=="undefined" && error==="has_offers" ) { %>
-    <div class="error-msg">
-      Nu poți șterge acest business pentru că are oferte asociate.
-      Șterge sau mută mai întâi ofertele lui, apoi revino aici.
+<% if (typeof error !== "undefined" && error === "has_offers") { %>
+  <div class="error-msg">
+    Nu poți șterge acest business pentru că are oferte asociate.
+    Șterge sau mută mai întâi ofertele lui, apoi revino aici.
+  </div>
+<% } %>
+
+<!-- Filtre și căutare -->
+<form method="get" action="/admin/businesses" class="filters">
+  <div class="filters-row">
+    <label>
+      Caută
+      <input type="text" name="q" value="<%= filters.q || '' %>" placeholder="Nume sau adresă..." />
+    </label>
+    <label>
+      Oraș
+      <select name="city_id">
+        <option value="">Toate</option>
+        <% (cities || []).forEach(function(c) { %>
+          <option value="<%= c.id %>" <%= String(filters.city_id) === String(c.id) ? "selected" : "" %>><%= c.name %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label>
+      Categorie
+      <select name="category_id">
+        <option value="">Toate</option>
+        <% (categories || []).forEach(function(cat) { %>
+          <option value="<%= cat.id %>" <%= String(filters.category_id) === String(cat.id) ? "selected" : "" %>><%= cat.name %></option>
+        <% }); %>
+      </select>
+    </label>
+    <div class="filters-actions">
+      <button type="submit" class="a-btn">Aplică</button>
+      <a href="/admin/businesses" class="a-btn a-btn-secondary">Resetează</a>
     </div>
-    <% } %>
+  </div>
+</form>
 
-      <p>
-        <a href="/admin/businesses/new" class="button">+ Adaugă business nou</a>
-        &nbsp;|&nbsp;
-        <a href="/admin/business-requests" class="button" style="background: #d97706;">Cereri Business</a>
-        &nbsp;|&nbsp;
-        <a href="/admin/offers" class="button secondary">Vezi oferte</a>
-        &nbsp;|&nbsp;
-        <a href="/admin/review-summaries" class="button secondary">Review Summaries</a>
-      </p>
+<% if (!businesses || businesses.length === 0) { %>
+  <p>Nu există business-uri în sistem.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nume</th>
+        <th>Oraș</th>
+        <th>Categorie</th>
+        <th>Adresă</th>
+        <th>Telefon</th>
+        <th style="width: 220px;">Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% businesses.forEach(function(b) { %>
+        <tr>
+          <td><%= b.id %></td>
+          <td><%= b.name %></td>
+          <td><%= b.city_name %></td>
+          <td><%= b.category_name %></td>
+          <td><%= b.address || "" %></td>
+          <td><%= b.phone || "" %></td>
+          <td>
+            <a href="/admin/businesses/<%= b.id %>/locations" class="button button-small info">
+              Locații
+            </a>
 
-      <% if (!businesses || businesses.length===0) { %>
-        <p>Nu există business-uri în sistem.</p>
-        <% } else { %>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nume</th>
-                <th>Oraș</th>
-                <th>Categorie</th>
-                <th>Adresă</th>
-                <th>Telefon</th>
-                <th style="width: 220px;">Acțiuni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% businesses.forEach(function(b) { %>
-                <tr>
-                  <td>
-                    <%= b.id %>
-                  </td>
-                  <td>
-                    <%= b.name %>
-                  </td>
-                  <td>
-                    <%= b.city_name %>
-                  </td>
-                  <td>
-                    <%= b.category_name %>
-                  </td>
-                  <td>
-                    <%= b.address || "" %>
-                  </td>
-                  <td>
-                    <%= b.phone || "" %>
-                  </td>
-                  <td>
-                    <a href="/admin/businesses/<%= b.id %>/locations" class="button button-small info">
-                      Locații
-                    </a>
+            <a href="/admin/businesses/<%= b.id %>/edit" class="button button-small">
+              Editează
+            </a>
 
-                    <a href="/admin/businesses/<%= b.id %>/edit" class="button button-small">
-                      Editează
-                    </a>
+            <form method="post" action="/admin/businesses/<%= b.id %>/delete" style="display:inline;" data-confirm="Sigur vrei să ștergi acest business?">
+              <button type="submit" class="button button-small danger">
+                Șterge
+              </button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/businesses', currentQuery: _qs }) %>
+<% } %>
 
-                    <form method="post" action="/admin/businesses/<%= b.id %>/delete" style="display:inline;"
-                      onsubmit="return confirm('Sigur vrei să ștergi acest business?');">
-                      <button type="submit" class="button button-small danger">
-                        Șterge
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-                <% }); %>
-            </tbody>
-          </table>
-          <% } %>
-</body>
-
-</html>
+<%- include('partials/layout-bottom') %>
