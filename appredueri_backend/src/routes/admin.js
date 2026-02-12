@@ -763,22 +763,22 @@ router.post("/business-images/:imageId/delete", async (req, res) => {
  */
 router.post("/businesses/:id/owners", async (req, res) => {
   const businessId = parseInt(req.params.id, 10);
-  const email = (req.body.email || "").trim().toLowerCase();
-  
-  console.log("[Owners] === START ADD OWNER ===");
-  console.log("[Owners] businessId:", businessId);
-  console.log("[Owners] email:", email);
-  
+
   // Validare de bază
   if (!businessId || isNaN(businessId)) {
     return res.redirect("/admin/businesses?err=invalid_id");
   }
-  
-  if (!email) {
-    return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_data`);
-  }
 
   try {
+    const email = ((req.body && req.body.email) || "").trim().toLowerCase();
+
+    console.log("[Owners] === START ADD OWNER ===");
+    console.log("[Owners] businessId:", businessId);
+    console.log("[Owners] email:", email);
+
+    if (!email) {
+      return res.redirect(`/admin/businesses/${businessId}/edit?err=invalid_data`);
+    }
     // Pas 1: Găsește user-ul după email
     console.log("[Owners] Step 1: Finding user...");
     const userQuery = await pool.query(
