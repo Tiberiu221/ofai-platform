@@ -1,0 +1,1360 @@
+{
+  "categories": {
+    "Clinica": [
+      {
+        "id": 6129205,
+        "src": "https://images.pexels.com/photos/6129205/pexels-photo-6129205.jpeg",
+        "landscape": "https://images.pexels.com/photos/6129205/pexels-photo-6129205.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6243,
+        "height": 4162
+      },
+      {
+        "id": 5996644,
+        "src": "https://images.pexels.com/photos/5996644/pexels-photo-5996644.jpeg",
+        "landscape": "https://images.pexels.com/photos/5996644/pexels-photo-5996644.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pavel Danilyuk",
+        "width": 5501,
+        "height": 3672
+      },
+      {
+        "id": 6129450,
+        "src": "https://images.pexels.com/photos/6129450/pexels-photo-6129450.jpeg",
+        "landscape": "https://images.pexels.com/photos/6129450/pexels-photo-6129450.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6586,
+        "height": 4391
+      },
+      {
+        "id": 8460125,
+        "src": "https://images.pexels.com/photos/8460125/pexels-photo-8460125.jpeg",
+        "landscape": "https://images.pexels.com/photos/8460125/pexels-photo-8460125.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Los Muertos Crew",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 5452221,
+        "src": "https://images.pexels.com/photos/5452221/pexels-photo-5452221.jpeg",
+        "landscape": "https://images.pexels.com/photos/5452221/pexels-photo-5452221.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5935,
+        "height": 3957
+      },
+      {
+        "id": 7789609,
+        "src": "https://images.pexels.com/photos/7789609/pexels-photo-7789609.jpeg",
+        "landscape": "https://images.pexels.com/photos/7789609/pexels-photo-7789609.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan Babydov",
+        "width": 5608,
+        "height": 3739
+      },
+      {
+        "id": 6129645,
+        "src": "https://images.pexels.com/photos/6129645/pexels-photo-6129645.jpeg",
+        "landscape": "https://images.pexels.com/photos/6129645/pexels-photo-6129645.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6168,
+        "height": 4112
+      },
+      {
+        "id": 5407235,
+        "src": "https://images.pexels.com/photos/5407235/pexels-photo-5407235.jpeg",
+        "landscape": "https://images.pexels.com/photos/5407235/pexels-photo-5407235.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 3922,
+        "height": 2615
+      },
+      {
+        "id": 35528721,
+        "src": "https://images.pexels.com/photos/35528721/pexels-photo-35528721.jpeg",
+        "landscape": "https://images.pexels.com/photos/35528721/pexels-photo-35528721.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Saúl Sigüenza",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 6235012,
+        "src": "https://images.pexels.com/photos/6235012/pexels-photo-6235012.jpeg",
+        "landscape": "https://images.pexels.com/photos/6235012/pexels-photo-6235012.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 6000,
+        "height": 4000
+      }
+    ],
+    "Frizerie": [
+      {
+        "id": 4625644,
+        "src": "https://images.pexels.com/photos/4625644/pexels-photo-4625644.jpeg",
+        "landscape": "https://images.pexels.com/photos/4625644/pexels-photo-4625644.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Antoni Shkraba Studio",
+        "width": 4000,
+        "height": 2667
+      },
+      {
+        "id": 4625632,
+        "src": "https://images.pexels.com/photos/4625632/pexels-photo-4625632.jpeg",
+        "landscape": "https://images.pexels.com/photos/4625632/pexels-photo-4625632.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Antoni Shkraba Studio",
+        "width": 4000,
+        "height": 2667
+      },
+      {
+        "id": 13138585,
+        "src": "https://images.pexels.com/photos/13138585/pexels-photo-13138585.jpeg",
+        "landscape": "https://images.pexels.com/photos/13138585/pexels-photo-13138585.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Marvin  Sacdalan",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 3998403,
+        "src": "https://images.pexels.com/photos/3998403/pexels-photo-3998403.jpeg",
+        "landscape": "https://images.pexels.com/photos/3998403/pexels-photo-3998403.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 7697434,
+        "src": "https://images.pexels.com/photos/7697434/pexels-photo-7697434.jpeg",
+        "landscape": "https://images.pexels.com/photos/7697434/pexels-photo-7697434.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6342,
+        "height": 4228
+      },
+      {
+        "id": 897255,
+        "src": "https://images.pexels.com/photos/897255/pexels-photo-897255.jpeg",
+        "landscape": "https://images.pexels.com/photos/897255/pexels-photo-897255.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Jose Ricardo Barraza Morachis",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 3998405,
+        "src": "https://images.pexels.com/photos/3998405/pexels-photo-3998405.jpeg",
+        "landscape": "https://images.pexels.com/photos/3998405/pexels-photo-3998405.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 5514,
+        "height": 3676
+      },
+      {
+        "id": 15437571,
+        "src": "https://images.pexels.com/photos/15437571/pexels-photo-15437571.jpeg",
+        "landscape": "https://images.pexels.com/photos/15437571/pexels-photo-15437571.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Alex Albert",
+        "width": 5616,
+        "height": 3744
+      },
+      {
+        "id": 7697329,
+        "src": "https://images.pexels.com/photos/7697329/pexels-photo-7697329.jpeg",
+        "landscape": "https://images.pexels.com/photos/7697329/pexels-photo-7697329.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 4677,
+        "height": 3118
+      },
+      {
+        "id": 7518736,
+        "src": "https://images.pexels.com/photos/7518736/pexels-photo-7518736.jpeg",
+        "landscape": "https://images.pexels.com/photos/7518736/pexels-photo-7518736.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pavel Danilyuk",
+        "width": 5436,
+        "height": 3629
+      }
+    ],
+    "Beauty": [
+      {
+        "id": 3997356,
+        "src": "https://images.pexels.com/photos/3997356/pexels-photo-3997356.jpeg",
+        "landscape": "https://images.pexels.com/photos/3997356/pexels-photo-3997356.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 5855,
+        "height": 3903
+      },
+      {
+        "id": 3736313,
+        "src": "https://images.pexels.com/photos/3736313/pexels-photo-3736313.jpeg",
+        "landscape": "https://images.pexels.com/photos/3736313/pexels-photo-3736313.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Polina Tankilevitch",
+        "width": 3500,
+        "height": 2333
+      },
+      {
+        "id": 3997349,
+        "src": "https://images.pexels.com/photos/3997349/pexels-photo-3997349.jpeg",
+        "landscape": "https://images.pexels.com/photos/3997349/pexels-photo-3997349.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 7755653,
+        "src": "https://images.pexels.com/photos/7755653/pexels-photo-7755653.jpeg",
+        "landscape": "https://images.pexels.com/photos/7755653/pexels-photo-7755653.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 34930156,
+        "src": "https://images.pexels.com/photos/34930156/pexels-photo-34930156.jpeg",
+        "landscape": "https://images.pexels.com/photos/34930156/pexels-photo-34930156.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "José Antonio Otegui Auzmendi",
+        "width": 4898,
+        "height": 3265
+      },
+      {
+        "id": 7755211,
+        "src": "https://images.pexels.com/photos/7755211/pexels-photo-7755211.jpeg",
+        "landscape": "https://images.pexels.com/photos/7755211/pexels-photo-7755211.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 5040,
+        "height": 3360
+      },
+      {
+        "id": 6954964,
+        "src": "https://images.pexels.com/photos/6954964/pexels-photo-6954964.jpeg",
+        "landscape": "https://images.pexels.com/photos/6954964/pexels-photo-6954964.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 6625,
+        "height": 4417
+      },
+      {
+        "id": 7755660,
+        "src": "https://images.pexels.com/photos/7755660/pexels-photo-7755660.jpeg",
+        "landscape": "https://images.pexels.com/photos/7755660/pexels-photo-7755660.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 7755452,
+        "src": "https://images.pexels.com/photos/7755452/pexels-photo-7755452.jpeg",
+        "landscape": "https://images.pexels.com/photos/7755452/pexels-photo-7755452.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 7755218,
+        "src": "https://images.pexels.com/photos/7755218/pexels-photo-7755218.jpeg",
+        "landscape": "https://images.pexels.com/photos/7755218/pexels-photo-7755218.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6720,
+        "height": 4480
+      }
+    ],
+    "Auto": [
+      {
+        "id": 4480505,
+        "src": "https://images.pexels.com/photos/4480505/pexels-photo-4480505.jpeg",
+        "landscape": "https://images.pexels.com/photos/4480505/pexels-photo-4480505.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 8986132,
+        "src": "https://images.pexels.com/photos/8986132/pexels-photo-8986132.jpeg",
+        "landscape": "https://images.pexels.com/photos/8986132/pexels-photo-8986132.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Artem Podrez",
+        "width": 6240,
+        "height": 4160
+      },
+      {
+        "id": 474,
+        "src": "https://images.pexels.com/photos/474/black-and-white-car-vehicle-vintage.jpg",
+        "landscape": "https://images.pexels.com/photos/474/black-and-white-car-vehicle-vintage.jpg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gratisography",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 4489794,
+        "src": "https://images.pexels.com/photos/4489794/pexels-photo-4489794.jpeg",
+        "landscape": "https://images.pexels.com/photos/4489794/pexels-photo-4489794.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 5853,
+        "height": 3902
+      },
+      {
+        "id": 4489718,
+        "src": "https://images.pexels.com/photos/4489718/pexels-photo-4489718.jpeg",
+        "landscape": "https://images.pexels.com/photos/4489718/pexels-photo-4489718.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 5701,
+        "height": 3801
+      },
+      {
+        "id": 8986035,
+        "src": "https://images.pexels.com/photos/8986035/pexels-photo-8986035.jpeg",
+        "landscape": "https://images.pexels.com/photos/8986035/pexels-photo-8986035.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Artem Podrez",
+        "width": 6240,
+        "height": 4160
+      },
+      {
+        "id": 279949,
+        "src": "https://images.pexels.com/photos/279949/pexels-photo-279949.jpeg",
+        "landscape": "https://images.pexels.com/photos/279949/pexels-photo-279949.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pixabay",
+        "width": 5616,
+        "height": 3744
+      },
+      {
+        "id": 33559286,
+        "src": "https://images.pexels.com/photos/33559286/pexels-photo-33559286.jpeg",
+        "landscape": "https://images.pexels.com/photos/33559286/pexels-photo-33559286.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Auto Tech",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 33814735,
+        "src": "https://images.pexels.com/photos/33814735/pexels-photo-33814735.jpeg",
+        "landscape": "https://images.pexels.com/photos/33814735/pexels-photo-33814735.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Renee Razumov",
+        "width": 8164,
+        "height": 5443
+      },
+      {
+        "id": 5276374,
+        "src": "https://images.pexels.com/photos/5276374/pexels-photo-5276374.jpeg",
+        "landscape": "https://images.pexels.com/photos/5276374/pexels-photo-5276374.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Enis Yavuz",
+        "width": 5472,
+        "height": 3648
+      }
+    ],
+    "Restaurant": [
+      {
+        "id": 33033776,
+        "src": "https://images.pexels.com/photos/33033776/pexels-photo-33033776.jpeg",
+        "landscape": "https://images.pexels.com/photos/33033776/pexels-photo-33033776.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Szymon Shields",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 14738384,
+        "src": "https://images.pexels.com/photos/14738384/pexels-photo-14738384.jpeg",
+        "landscape": "https://images.pexels.com/photos/14738384/pexels-photo-14738384.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan Dražić",
+        "width": 4032,
+        "height": 3024
+      },
+      {
+        "id": 35420091,
+        "src": "https://images.pexels.com/photos/35420091/pexels-photo-35420091.jpeg",
+        "landscape": "https://images.pexels.com/photos/35420091/pexels-photo-35420091.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Szymon Shields",
+        "width": 5224,
+        "height": 3483
+      },
+      {
+        "id": 33474112,
+        "src": "https://images.pexels.com/photos/33474112/pexels-photo-33474112.jpeg",
+        "landscape": "https://images.pexels.com/photos/33474112/pexels-photo-33474112.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Deane Bayas",
+        "width": 3000,
+        "height": 2000
+      },
+      {
+        "id": 32399760,
+        "src": "https://images.pexels.com/photos/32399760/pexels-photo-32399760.jpeg",
+        "landscape": "https://images.pexels.com/photos/32399760/pexels-photo-32399760.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Consuelo Borroni",
+        "width": 5472,
+        "height": 3648
+      },
+      {
+        "id": 12645217,
+        "src": "https://images.pexels.com/photos/12645217/pexels-photo-12645217.jpeg",
+        "landscape": "https://images.pexels.com/photos/12645217/pexels-photo-12645217.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Denys Gromov",
+        "width": 7008,
+        "height": 4672
+      },
+      {
+        "id": 33033780,
+        "src": "https://images.pexels.com/photos/33033780/pexels-photo-33033780.jpeg",
+        "landscape": "https://images.pexels.com/photos/33033780/pexels-photo-33033780.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Szymon Shields",
+        "width": 5483,
+        "height": 3655
+      },
+      {
+        "id": 33474116,
+        "src": "https://images.pexels.com/photos/33474116/pexels-photo-33474116.jpeg",
+        "landscape": "https://images.pexels.com/photos/33474116/pexels-photo-33474116.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Deane Bayas",
+        "width": 3000,
+        "height": 2000
+      },
+      {
+        "id": 13485216,
+        "src": "https://images.pexels.com/photos/13485216/pexels-photo-13485216.jpeg",
+        "landscape": "https://images.pexels.com/photos/13485216/pexels-photo-13485216.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Nadin Sh",
+        "width": 4841,
+        "height": 3631
+      },
+      {
+        "id": 34989205,
+        "src": "https://images.pexels.com/photos/34989205/pexels-photo-34989205.jpeg",
+        "landscape": "https://images.pexels.com/photos/34989205/pexels-photo-34989205.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Szymon Shields",
+        "width": 6000,
+        "height": 4000
+      }
+    ],
+    "Cafenea": [
+      {
+        "id": 15865550,
+        "src": "https://images.pexels.com/photos/15865550/pexels-photo-15865550.jpeg",
+        "landscape": "https://images.pexels.com/photos/15865550/pexels-photo-15865550.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Meri Verbina",
+        "width": 6048,
+        "height": 4024
+      },
+      {
+        "id": 31755819,
+        "src": "https://images.pexels.com/photos/31755819/pexels-photo-31755819.jpeg",
+        "landscape": "https://images.pexels.com/photos/31755819/pexels-photo-31755819.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gu Ko",
+        "width": 4737,
+        "height": 3854
+      },
+      {
+        "id": 32185717,
+        "src": "https://images.pexels.com/photos/32185717/pexels-photo-32185717.jpeg",
+        "landscape": "https://images.pexels.com/photos/32185717/pexels-photo-32185717.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gu Ko",
+        "width": 4494,
+        "height": 3556
+      },
+      {
+        "id": 162886,
+        "src": "https://images.pexels.com/photos/162886/coffee-glass-beverage-coffee-mug-162886.jpeg",
+        "landscape": "https://images.pexels.com/photos/162886/coffee-glass-beverage-coffee-mug-162886.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pixabay",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 34030760,
+        "src": "https://images.pexels.com/photos/34030760/pexels-photo-34030760.jpeg",
+        "landscape": "https://images.pexels.com/photos/34030760/pexels-photo-34030760.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Busenur Demirkan",
+        "width": 4608,
+        "height": 3072
+      },
+      {
+        "id": 15076693,
+        "src": "https://images.pexels.com/photos/15076693/pexels-photo-15076693.jpeg",
+        "landscape": "https://images.pexels.com/photos/15076693/pexels-photo-15076693.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Nishess Shakya",
+        "width": 4370,
+        "height": 2917
+      },
+      {
+        "id": 31872071,
+        "src": "https://images.pexels.com/photos/31872071/pexels-photo-31872071.jpeg",
+        "landscape": "https://images.pexels.com/photos/31872071/pexels-photo-31872071.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gu Ko",
+        "width": 4006,
+        "height": 3635
+      },
+      {
+        "id": 171346,
+        "src": "https://images.pexels.com/photos/171346/pexels-photo-171346.jpeg",
+        "landscape": "https://images.pexels.com/photos/171346/pexels-photo-171346.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "David Bares",
+        "width": 2816,
+        "height": 2112
+      },
+      {
+        "id": 30119452,
+        "src": "https://images.pexels.com/photos/30119452/pexels-photo-30119452.jpeg",
+        "landscape": "https://images.pexels.com/photos/30119452/pexels-photo-30119452.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Rodrigo Ortega",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 31767946,
+        "src": "https://images.pexels.com/photos/31767946/pexels-photo-31767946.jpeg",
+        "landscape": "https://images.pexels.com/photos/31767946/pexels-photo-31767946.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gu Ko",
+        "width": 3840,
+        "height": 2160
+      }
+    ],
+    "Fitness": [
+      {
+        "id": 12250460,
+        "src": "https://images.pexels.com/photos/12250460/pexels-photo-12250460.jpeg",
+        "landscape": "https://images.pexels.com/photos/12250460/pexels-photo-12250460.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Mario García",
+        "width": 4624,
+        "height": 3468
+      },
+      {
+        "id": 11075080,
+        "src": "https://images.pexels.com/photos/11075080/pexels-photo-11075080.jpeg",
+        "landscape": "https://images.pexels.com/photos/11075080/pexels-photo-11075080.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Caio",
+        "width": 6016,
+        "height": 4000
+      },
+      {
+        "id": 6388514,
+        "src": "https://images.pexels.com/photos/6388514/pexels-photo-6388514.jpeg",
+        "landscape": "https://images.pexels.com/photos/6388514/pexels-photo-6388514.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5629,
+        "height": 3753
+      },
+      {
+        "id": 6046977,
+        "src": "https://images.pexels.com/photos/6046977/pexels-photo-6046977.png",
+        "landscape": "https://images.pexels.com/photos/6046977/pexels-photo-6046977.png?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Total Shape",
+        "width": 3000,
+        "height": 2000
+      },
+      {
+        "id": 8033019,
+        "src": "https://images.pexels.com/photos/8033019/pexels-photo-8033019.jpeg",
+        "landscape": "https://images.pexels.com/photos/8033019/pexels-photo-8033019.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "MART  PRODUCTION",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 3076511,
+        "src": "https://images.pexels.com/photos/3076511/pexels-photo-3076511.jpeg",
+        "landscape": "https://images.pexels.com/photos/3076511/pexels-photo-3076511.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Jonathan Borba",
+        "width": 5472,
+        "height": 3648
+      },
+      {
+        "id": 11513151,
+        "src": "https://images.pexels.com/photos/11513151/pexels-photo-11513151.jpeg",
+        "landscape": "https://images.pexels.com/photos/11513151/pexels-photo-11513151.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Frank Schrader",
+        "width": 4000,
+        "height": 2668
+      },
+      {
+        "id": 2261481,
+        "src": "https://images.pexels.com/photos/2261481/pexels-photo-2261481.jpeg",
+        "landscape": "https://images.pexels.com/photos/2261481/pexels-photo-2261481.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Victor Freitas",
+        "width": 6000,
+        "height": 4001
+      },
+      {
+        "id": 6046983,
+        "src": "https://images.pexels.com/photos/6046983/pexels-photo-6046983.png",
+        "landscape": "https://images.pexels.com/photos/6046983/pexels-photo-6046983.png?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Total Shape",
+        "width": 3000,
+        "height": 2000
+      },
+      {
+        "id": 47084,
+        "src": "https://images.pexels.com/photos/47084/gym-exercise-fitness-workout-47084.jpeg",
+        "landscape": "https://images.pexels.com/photos/47084/gym-exercise-fitness-workout-47084.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pixabay",
+        "width": 5176,
+        "height": 3580
+      }
+    ],
+    "Spa & Wellness": [
+      {
+        "id": 5659015,
+        "src": "https://images.pexels.com/photos/5659015/pexels-photo-5659015.jpeg",
+        "landscape": "https://images.pexels.com/photos/5659015/pexels-photo-5659015.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan S",
+        "width": 6420,
+        "height": 4280
+      },
+      {
+        "id": 9335987,
+        "src": "https://images.pexels.com/photos/9335987/pexels-photo-9335987.jpeg",
+        "landscape": "https://images.pexels.com/photos/9335987/pexels-photo-9335987.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "olia danilevich",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 5659008,
+        "src": "https://images.pexels.com/photos/5659008/pexels-photo-5659008.jpeg",
+        "landscape": "https://images.pexels.com/photos/5659008/pexels-photo-5659008.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan S",
+        "width": 6069,
+        "height": 4046
+      },
+      {
+        "id": 5659021,
+        "src": "https://images.pexels.com/photos/5659021/pexels-photo-5659021.jpeg",
+        "landscape": "https://images.pexels.com/photos/5659021/pexels-photo-5659021.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan S",
+        "width": 6155,
+        "height": 4103
+      },
+      {
+        "id": 18120174,
+        "src": "https://images.pexels.com/photos/18120174/pexels-photo-18120174.jpeg",
+        "landscape": "https://images.pexels.com/photos/18120174/pexels-photo-18120174.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Halosa Sapa",
+        "width": 3051,
+        "height": 2034
+      },
+      {
+        "id": 5659016,
+        "src": "https://images.pexels.com/photos/5659016/pexels-photo-5659016.jpeg",
+        "landscape": "https://images.pexels.com/photos/5659016/pexels-photo-5659016.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan S",
+        "width": 6383,
+        "height": 4255
+      },
+      {
+        "id": 5659014,
+        "src": "https://images.pexels.com/photos/5659014/pexels-photo-5659014.jpeg",
+        "landscape": "https://images.pexels.com/photos/5659014/pexels-photo-5659014.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan S",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 5659017,
+        "src": "https://images.pexels.com/photos/5659017/pexels-photo-5659017.jpeg",
+        "landscape": "https://images.pexels.com/photos/5659017/pexels-photo-5659017.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ivan S",
+        "width": 5817,
+        "height": 3878
+      },
+      {
+        "id": 5240677,
+        "src": "https://images.pexels.com/photos/5240677/pexels-photo-5240677.jpeg",
+        "landscape": "https://images.pexels.com/photos/5240677/pexels-photo-5240677.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Anete Lusina",
+        "width": 6016,
+        "height": 4016
+      },
+      {
+        "id": 5793799,
+        "src": "https://images.pexels.com/photos/5793799/pexels-photo-5793799.jpeg",
+        "landscape": "https://images.pexels.com/photos/5793799/pexels-photo-5793799.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Yan Krukau",
+        "width": 6000,
+        "height": 4000
+      }
+    ],
+    "Optica": [
+      {
+        "id": 13430482,
+        "src": "https://images.pexels.com/photos/13430482/pexels-photo-13430482.jpeg",
+        "landscape": "https://images.pexels.com/photos/13430482/pexels-photo-13430482.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Saliem Moeslan",
+        "width": 5000,
+        "height": 3268
+      },
+      {
+        "id": 8570581,
+        "src": "https://images.pexels.com/photos/8570581/pexels-photo-8570581.jpeg",
+        "landscape": "https://images.pexels.com/photos/8570581/pexels-photo-8570581.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gonzalo Guzmán García",
+        "width": 3463,
+        "height": 2479
+      },
+      {
+        "id": 5621862,
+        "src": "https://images.pexels.com/photos/5621862/pexels-photo-5621862.jpeg",
+        "landscape": "https://images.pexels.com/photos/5621862/pexels-photo-5621862.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gustavo Fring",
+        "width": 5760,
+        "height": 3840
+      },
+      {
+        "id": 5202049,
+        "src": "https://images.pexels.com/photos/5202049/pexels-photo-5202049.jpeg",
+        "landscape": "https://images.pexels.com/photos/5202049/pexels-photo-5202049.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 5257,
+        "height": 3505
+      },
+      {
+        "id": 5202050,
+        "src": "https://images.pexels.com/photos/5202050/pexels-photo-5202050.jpeg",
+        "landscape": "https://images.pexels.com/photos/5202050/pexels-photo-5202050.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 5472,
+        "height": 3648
+      },
+      {
+        "id": 18279389,
+        "src": "https://images.pexels.com/photos/18279389/pexels-photo-18279389.jpeg",
+        "landscape": "https://images.pexels.com/photos/18279389/pexels-photo-18279389.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Joseph  Okon",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 5202060,
+        "src": "https://images.pexels.com/photos/5202060/pexels-photo-5202060.jpeg",
+        "landscape": "https://images.pexels.com/photos/5202060/pexels-photo-5202060.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 6610,
+        "height": 4407
+      },
+      {
+        "id": 131018,
+        "src": "https://images.pexels.com/photos/131018/pexels-photo-131018.jpeg",
+        "landscape": "https://images.pexels.com/photos/131018/pexels-photo-131018.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Stephen Niemeier",
+        "width": 5543,
+        "height": 3473
+      },
+      {
+        "id": 7357978,
+        "src": "https://images.pexels.com/photos/7357978/pexels-photo-7357978.jpeg",
+        "landscape": "https://images.pexels.com/photos/7357978/pexels-photo-7357978.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Evgeniy Alekseyev",
+        "width": 5102,
+        "height": 3402
+      },
+      {
+        "id": 7357970,
+        "src": "https://images.pexels.com/photos/7357970/pexels-photo-7357970.jpeg",
+        "landscape": "https://images.pexels.com/photos/7357970/pexels-photo-7357970.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Evgeniy Alekseyev",
+        "width": 5241,
+        "height": 3494
+      }
+    ],
+    "Farmacie": [
+      {
+        "id": 8657301,
+        "src": "https://images.pexels.com/photos/8657301/pexels-photo-8657301.jpeg",
+        "landscape": "https://images.pexels.com/photos/8657301/pexels-photo-8657301.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6571,
+        "height": 4381
+      },
+      {
+        "id": 8657369,
+        "src": "https://images.pexels.com/photos/8657369/pexels-photo-8657369.jpeg",
+        "landscape": "https://images.pexels.com/photos/8657369/pexels-photo-8657369.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6483,
+        "height": 4322
+      },
+      {
+        "id": 5742325,
+        "src": "https://images.pexels.com/photos/5742325/pexels-photo-5742325.jpeg",
+        "landscape": "https://images.pexels.com/photos/5742325/pexels-photo-5742325.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "George Morina",
+        "width": 7296,
+        "height": 5472
+      },
+      {
+        "id": 8657300,
+        "src": "https://images.pexels.com/photos/8657300/pexels-photo-8657300.jpeg",
+        "landscape": "https://images.pexels.com/photos/8657300/pexels-photo-8657300.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 3873146,
+        "src": "https://images.pexels.com/photos/3873146/pexels-photo-3873146.jpeg",
+        "landscape": "https://images.pexels.com/photos/3873146/pexels-photo-3873146.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Polina Tankilevitch",
+        "width": 3000,
+        "height": 2000
+      },
+      {
+        "id": 8657295,
+        "src": "https://images.pexels.com/photos/8657295/pexels-photo-8657295.jpeg",
+        "landscape": "https://images.pexels.com/photos/8657295/pexels-photo-8657295.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6601,
+        "height": 4401
+      },
+      {
+        "id": 161688,
+        "src": "https://images.pexels.com/photos/161688/medical-tablets-pills-drug-161688.jpeg",
+        "landscape": "https://images.pexels.com/photos/161688/medical-tablets-pills-drug-161688.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pixabay",
+        "width": 4608,
+        "height": 3456
+      },
+      {
+        "id": 14797864,
+        "src": "https://images.pexels.com/photos/14797864/pexels-photo-14797864.jpeg",
+        "landscape": "https://images.pexels.com/photos/14797864/pexels-photo-14797864.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "World Sikh Organization of Canada",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 9155926,
+        "src": "https://images.pexels.com/photos/9155926/pexels-photo-9155926.jpeg",
+        "landscape": "https://images.pexels.com/photos/9155926/pexels-photo-9155926.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Towfiqu barbhuiya",
+        "width": 6240,
+        "height": 4160
+      },
+      {
+        "id": 8657365,
+        "src": "https://images.pexels.com/photos/8657365/pexels-photo-8657365.jpeg",
+        "landscape": "https://images.pexels.com/photos/8657365/pexels-photo-8657365.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 6400,
+        "height": 4267
+      }
+    ],
+    "Veterinar": [
+      {
+        "id": 6235017,
+        "src": "https://images.pexels.com/photos/6235017/pexels-photo-6235017.jpeg",
+        "landscape": "https://images.pexels.com/photos/6235017/pexels-photo-6235017.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 7469224,
+        "src": "https://images.pexels.com/photos/7469224/pexels-photo-7469224.jpeg",
+        "landscape": "https://images.pexels.com/photos/7469224/pexels-photo-7469224.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Mikhail Nilov",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 6235124,
+        "src": "https://images.pexels.com/photos/6235124/pexels-photo-6235124.jpeg",
+        "landscape": "https://images.pexels.com/photos/6235124/pexels-photo-6235124.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5599,
+        "height": 3733
+      },
+      {
+        "id": 6235650,
+        "src": "https://images.pexels.com/photos/6235650/pexels-photo-6235650.jpeg",
+        "landscape": "https://images.pexels.com/photos/6235650/pexels-photo-6235650.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 6234610,
+        "src": "https://images.pexels.com/photos/6234610/pexels-photo-6234610.jpeg",
+        "landscape": "https://images.pexels.com/photos/6234610/pexels-photo-6234610.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5769,
+        "height": 3846
+      },
+      {
+        "id": 6560385,
+        "src": "https://images.pexels.com/photos/6560385/pexels-photo-6560385.jpeg",
+        "landscape": "https://images.pexels.com/photos/6560385/pexels-photo-6560385.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ermelinda Maglione",
+        "width": 3872,
+        "height": 2592
+      },
+      {
+        "id": 6235114,
+        "src": "https://images.pexels.com/photos/6235114/pexels-photo-6235114.jpeg",
+        "landscape": "https://images.pexels.com/photos/6235114/pexels-photo-6235114.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5326,
+        "height": 3551
+      },
+      {
+        "id": 6234635,
+        "src": "https://images.pexels.com/photos/6234635/pexels-photo-6234635.jpeg",
+        "landscape": "https://images.pexels.com/photos/6234635/pexels-photo-6234635.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 33394245,
+        "src": "https://images.pexels.com/photos/33394245/pexels-photo-33394245.jpeg",
+        "landscape": "https://images.pexels.com/photos/33394245/pexels-photo-33394245.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tahir Xəlfəquliyev",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 7469220,
+        "src": "https://images.pexels.com/photos/7469220/pexels-photo-7469220.jpeg",
+        "landscape": "https://images.pexels.com/photos/7469220/pexels-photo-7469220.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Mikhail Nilov",
+        "width": 6000,
+        "height": 4000
+      }
+    ],
+    "Stomatologie": [
+      {
+        "id": 6627413,
+        "src": "https://images.pexels.com/photos/6627413/pexels-photo-6627413.jpeg",
+        "landscape": "https://images.pexels.com/photos/6627413/pexels-photo-6627413.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 6627715,
+        "src": "https://images.pexels.com/photos/6627715/pexels-photo-6627715.jpeg",
+        "landscape": "https://images.pexels.com/photos/6627715/pexels-photo-6627715.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 6720,
+        "height": 4480
+      },
+      {
+        "id": 31017708,
+        "src": "https://images.pexels.com/photos/31017708/pexels-photo-31017708.jpeg",
+        "landscape": "https://images.pexels.com/photos/31017708/pexels-photo-31017708.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "The Row Dental",
+        "width": 3000,
+        "height": 2000
+      },
+      {
+        "id": 3946835,
+        "src": "https://images.pexels.com/photos/3946835/pexels-photo-3946835.jpeg",
+        "landscape": "https://images.pexels.com/photos/3946835/pexels-photo-3946835.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Andrea Piacquadio",
+        "width": 5760,
+        "height": 3840
+      },
+      {
+        "id": 6502552,
+        "src": "https://images.pexels.com/photos/6502552/pexels-photo-6502552.jpeg",
+        "landscape": "https://images.pexels.com/photos/6502552/pexels-photo-6502552.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "cottonbro studio",
+        "width": 4746,
+        "height": 3164
+      },
+      {
+        "id": 4269370,
+        "src": "https://images.pexels.com/photos/4269370/pexels-photo-4269370.jpeg",
+        "landscape": "https://images.pexels.com/photos/4269370/pexels-photo-4269370.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Cedric Fauntleroy",
+        "width": 8245,
+        "height": 5497
+      },
+      {
+        "id": 52527,
+        "src": "https://images.pexels.com/photos/52527/dentist-pain-borowac-cure-52527.jpeg",
+        "landscape": "https://images.pexels.com/photos/52527/dentist-pain-borowac-cure-52527.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Pixabay",
+        "width": 4928,
+        "height": 3264
+      },
+      {
+        "id": 6363882,
+        "src": "https://images.pexels.com/photos/6363882/pexels-photo-6363882.jpeg",
+        "landscape": "https://images.pexels.com/photos/6363882/pexels-photo-6363882.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Enis Yavuz",
+        "width": 3575,
+        "height": 2860
+      },
+      {
+        "id": 4971503,
+        "src": "https://images.pexels.com/photos/4971503/pexels-photo-4971503.jpeg",
+        "landscape": "https://images.pexels.com/photos/4971503/pexels-photo-4971503.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Gustavo Fring",
+        "width": 5760,
+        "height": 3840
+      },
+      {
+        "id": 6627563,
+        "src": "https://images.pexels.com/photos/6627563/pexels-photo-6627563.jpeg",
+        "landscape": "https://images.pexels.com/photos/6627563/pexels-photo-6627563.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Karolina Grabowska www.kaboompics.com",
+        "width": 6720,
+        "height": 4480
+      }
+    ],
+    "Florarie": [
+      {
+        "id": 10636730,
+        "src": "https://images.pexels.com/photos/10636730/pexels-photo-10636730.jpeg",
+        "landscape": "https://images.pexels.com/photos/10636730/pexels-photo-10636730.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "1ndex",
+        "width": 3318,
+        "height": 2279
+      },
+      {
+        "id": 9627833,
+        "src": "https://images.pexels.com/photos/9627833/pexels-photo-9627833.jpeg",
+        "landscape": "https://images.pexels.com/photos/9627833/pexels-photo-9627833.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Katherine Agh Aghapishvili",
+        "width": 5184,
+        "height": 3456
+      },
+      {
+        "id": 3894238,
+        "src": "https://images.pexels.com/photos/3894238/pexels-photo-3894238.jpeg",
+        "landscape": "https://images.pexels.com/photos/3894238/pexels-photo-3894238.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Andrea Piacquadio",
+        "width": 7680,
+        "height": 5120
+      },
+      {
+        "id": 6097858,
+        "src": "https://images.pexels.com/photos/6097858/pexels-photo-6097858.jpeg",
+        "landscape": "https://images.pexels.com/photos/6097858/pexels-photo-6097858.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Laura James",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 33486193,
+        "src": "https://images.pexels.com/photos/33486193/pexels-photo-33486193.jpeg",
+        "landscape": "https://images.pexels.com/photos/33486193/pexels-photo-33486193.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Anna Stepko",
+        "width": 3219,
+        "height": 2175
+      },
+      {
+        "id": 15452466,
+        "src": "https://images.pexels.com/photos/15452466/pexels-photo-15452466.jpeg",
+        "landscape": "https://images.pexels.com/photos/15452466/pexels-photo-15452466.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Diego F. Parra",
+        "width": 7360,
+        "height": 4912
+      },
+      {
+        "id": 5410077,
+        "src": "https://images.pexels.com/photos/5410077/pexels-photo-5410077.jpeg",
+        "landscape": "https://images.pexels.com/photos/5410077/pexels-photo-5410077.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Amina Filkins",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 2111192,
+        "src": "https://images.pexels.com/photos/2111192/pexels-photo-2111192.jpeg",
+        "landscape": "https://images.pexels.com/photos/2111192/pexels-photo-2111192.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Waldemar Brandt",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 32477274,
+        "src": "https://images.pexels.com/photos/32477274/pexels-photo-32477274.jpeg",
+        "landscape": "https://images.pexels.com/photos/32477274/pexels-photo-32477274.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Ebrar photography",
+        "width": 2600,
+        "height": 2080
+      },
+      {
+        "id": 7535448,
+        "src": "https://images.pexels.com/photos/7535448/pexels-photo-7535448.jpeg",
+        "landscape": "https://images.pexels.com/photos/7535448/pexels-photo-7535448.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Los Muertos Crew",
+        "width": 4056,
+        "height": 2709
+      }
+    ],
+    "Curatatorie": [
+      {
+        "id": 5591639,
+        "src": "https://images.pexels.com/photos/5591639/pexels-photo-5591639.jpeg",
+        "landscape": "https://images.pexels.com/photos/5591639/pexels-photo-5591639.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "RDNE Stock project",
+        "width": 6482,
+        "height": 4321
+      },
+      {
+        "id": 8774650,
+        "src": "https://images.pexels.com/photos/8774650/pexels-photo-8774650.jpeg",
+        "landscape": "https://images.pexels.com/photos/8774650/pexels-photo-8774650.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5028,
+        "height": 3771
+      },
+      {
+        "id": 10190477,
+        "src": "https://images.pexels.com/photos/10190477/pexels-photo-10190477.jpeg",
+        "landscape": "https://images.pexels.com/photos/10190477/pexels-photo-10190477.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Maria Tsegelnik",
+        "width": 6240,
+        "height": 4160
+      },
+      {
+        "id": 34276852,
+        "src": "https://images.pexels.com/photos/34276852/pexels-photo-34276852.jpeg",
+        "landscape": "https://images.pexels.com/photos/34276852/pexels-photo-34276852.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Jerson Martins",
+        "width": 6016,
+        "height": 4000
+      },
+      {
+        "id": 8774420,
+        "src": "https://images.pexels.com/photos/8774420/pexels-photo-8774420.jpeg",
+        "landscape": "https://images.pexels.com/photos/8774420/pexels-photo-8774420.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5568,
+        "height": 3712
+      },
+      {
+        "id": 8774451,
+        "src": "https://images.pexels.com/photos/8774451/pexels-photo-8774451.jpeg",
+        "landscape": "https://images.pexels.com/photos/8774451/pexels-photo-8774451.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 8774640,
+        "src": "https://images.pexels.com/photos/8774640/pexels-photo-8774640.jpeg",
+        "landscape": "https://images.pexels.com/photos/8774640/pexels-photo-8774640.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5785,
+        "height": 3857
+      },
+      {
+        "id": 8774443,
+        "src": "https://images.pexels.com/photos/8774443/pexels-photo-8774443.jpeg",
+        "landscape": "https://images.pexels.com/photos/8774443/pexels-photo-8774443.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 8774642,
+        "src": "https://images.pexels.com/photos/8774642/pexels-photo-8774642.jpeg",
+        "landscape": "https://images.pexels.com/photos/8774642/pexels-photo-8774642.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Tima Miroshnichenko",
+        "width": 5998,
+        "height": 3999
+      },
+      {
+        "id": 3215941,
+        "src": "https://images.pexels.com/photos/3215941/pexels-photo-3215941.jpeg",
+        "landscape": "https://images.pexels.com/photos/3215941/pexels-photo-3215941.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Susanne Jutzeler, suju-foto",
+        "width": 5584,
+        "height": 3726
+      }
+    ],
+    "Foto & Video": [
+      {
+        "id": 3800848,
+        "src": "https://images.pexels.com/photos/3800848/pexels-photo-3800848.jpeg",
+        "landscape": "https://images.pexels.com/photos/3800848/pexels-photo-3800848.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Harrison Haines",
+        "width": 6016,
+        "height": 4016
+      },
+      {
+        "id": 4793158,
+        "src": "https://images.pexels.com/photos/4793158/pexels-photo-4793158.jpeg",
+        "landscape": "https://images.pexels.com/photos/4793158/pexels-photo-4793158.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Anete Lusina",
+        "width": 6016,
+        "height": 4016
+      },
+      {
+        "id": 1787236,
+        "src": "https://images.pexels.com/photos/1787236/pexels-photo-1787236.jpeg",
+        "landscape": "https://images.pexels.com/photos/1787236/pexels-photo-1787236.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Luis Quintero",
+        "width": 6000,
+        "height": 4000
+      },
+      {
+        "id": 20218217,
+        "src": "https://images.pexels.com/photos/20218217/pexels-photo-20218217.jpeg",
+        "landscape": "https://images.pexels.com/photos/20218217/pexels-photo-20218217.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Laura Oliveira",
+        "width": 5222,
+        "height": 3481
+      },
+      {
+        "id": 5577960,
+        "src": "https://images.pexels.com/photos/5577960/pexels-photo-5577960.jpeg",
+        "landscape": "https://images.pexels.com/photos/5577960/pexels-photo-5577960.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Neron Photos",
+        "width": 4868,
+        "height": 3245
+      },
+      {
+        "id": 8389702,
+        "src": "https://images.pexels.com/photos/8389702/pexels-photo-8389702.jpeg",
+        "landscape": "https://images.pexels.com/photos/8389702/pexels-photo-8389702.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Amar  Preciado",
+        "width": 12462,
+        "height": 8308
+      },
+      {
+        "id": 1787220,
+        "src": "https://images.pexels.com/photos/1787220/pexels-photo-1787220.jpeg",
+        "landscape": "https://images.pexels.com/photos/1787220/pexels-photo-1787220.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Luis Quintero",
+        "width": 6240,
+        "height": 4160
+      },
+      {
+        "id": 11234300,
+        "src": "https://images.pexels.com/photos/11234300/pexels-photo-11234300.jpeg",
+        "landscape": "https://images.pexels.com/photos/11234300/pexels-photo-11234300.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Amar  Preciado",
+        "width": 6048,
+        "height": 4024
+      },
+      {
+        "id": 106011,
+        "src": "https://images.pexels.com/photos/106011/pexels-photo-106011.jpeg",
+        "landscape": "https://images.pexels.com/photos/106011/pexels-photo-106011.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "AS Photography",
+        "width": 4254,
+        "height": 2836
+      },
+      {
+        "id": 18880007,
+        "src": "https://images.pexels.com/photos/18880007/pexels-photo-18880007.jpeg",
+        "landscape": "https://images.pexels.com/photos/18880007/pexels-photo-18880007.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+        "photographer": "Amar  Preciado",
+        "width": 6000,
+        "height": 4000
+      }
+    ]
+  },
+  "cities": {
+    "Bucuresti": {
+      "id": 28898472,
+      "src": "https://images.pexels.com/photos/28898472/pexels-photo-28898472.jpeg",
+      "landscape": "https://images.pexels.com/photos/28898472/pexels-photo-28898472.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Uiliam Nörnberg",
+      "width": 6000,
+      "height": 4000
+    },
+    "Cluj-Napoca": {
+      "id": 1444108,
+      "src": "https://images.pexels.com/photos/1444108/pexels-photo-1444108.jpeg",
+      "landscape": "https://images.pexels.com/photos/1444108/pexels-photo-1444108.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Vlad Bagacian",
+      "width": 5184,
+      "height": 3456
+    },
+    "Timisoara": {
+      "id": 15022383,
+      "src": "https://images.pexels.com/photos/15022383/pexels-photo-15022383.jpeg",
+      "landscape": "https://images.pexels.com/photos/15022383/pexels-photo-15022383.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Adrian Frentescu",
+      "width": 4889,
+      "height": 3255
+    },
+    "Iasi": {
+      "id": 14337862,
+      "src": "https://images.pexels.com/photos/14337862/pexels-photo-14337862.jpeg",
+      "landscape": "https://images.pexels.com/photos/14337862/pexels-photo-14337862.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Reanimated Man X",
+      "width": 5184,
+      "height": 3456
+    },
+    "Constanta": {
+      "id": 28748312,
+      "src": "https://images.pexels.com/photos/28748312/pexels-photo-28748312.jpeg",
+      "landscape": "https://images.pexels.com/photos/28748312/pexels-photo-28748312.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Jakub Zerdzicki",
+      "width": 3000,
+      "height": 2000
+    },
+    "Craiova": {
+      "id": 5740926,
+      "src": "https://images.pexels.com/photos/5740926/pexels-photo-5740926.jpeg",
+      "landscape": "https://images.pexels.com/photos/5740926/pexels-photo-5740926.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Sorin Ciupitu",
+      "width": 3648,
+      "height": 2736
+    },
+    "Brasov": {
+      "id": 11534893,
+      "src": "https://images.pexels.com/photos/11534893/pexels-photo-11534893.jpeg",
+      "landscape": "https://images.pexels.com/photos/11534893/pexels-photo-11534893.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Παναγιώτης Αρκουμάνης",
+      "width": 3456,
+      "height": 2304
+    },
+    "Galati": {
+      "id": 32313663,
+      "src": "https://images.pexels.com/photos/32313663/pexels-photo-32313663.jpeg",
+      "landscape": "https://images.pexels.com/photos/32313663/pexels-photo-32313663.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Neacsu Tudor",
+      "width": 5234,
+      "height": 3470
+    },
+    "Oradea": {
+      "id": 34440234,
+      "src": "https://images.pexels.com/photos/34440234/pexels-photo-34440234.jpeg",
+      "landscape": "https://images.pexels.com/photos/34440234/pexels-photo-34440234.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Cosmin Turbatu",
+      "width": 3072,
+      "height": 2048
+    },
+    "Sibiu": {
+      "id": 33319463,
+      "src": "https://images.pexels.com/photos/33319463/pexels-photo-33319463.jpeg",
+      "landscape": "https://images.pexels.com/photos/33319463/pexels-photo-33319463.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Mosquito",
+      "width": 4000,
+      "height": 3000
+    },
+    "Ploiesti": {
+      "id": 9849228,
+      "src": "https://images.pexels.com/photos/9849228/pexels-photo-9849228.jpeg",
+      "landscape": "https://images.pexels.com/photos/9849228/pexels-photo-9849228.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Naomi",
+      "width": 3913,
+      "height": 3552
+    },
+    "Arad": {
+      "id": 10811595,
+      "src": "https://images.pexels.com/photos/10811595/pexels-photo-10811595.jpeg",
+      "landscape": "https://images.pexels.com/photos/10811595/pexels-photo-10811595.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Fii pefază",
+      "width": 4886,
+      "height": 3430
+    },
+    "Pitesti": {
+      "id": 28898472,
+      "src": "https://images.pexels.com/photos/28898472/pexels-photo-28898472.jpeg",
+      "landscape": "https://images.pexels.com/photos/28898472/pexels-photo-28898472.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Uiliam Nörnberg",
+      "width": 6000,
+      "height": 4000
+    },
+    "Baia Mare": {
+      "id": 18358279,
+      "src": "https://images.pexels.com/photos/18358279/pexels-photo-18358279.jpeg",
+      "landscape": "https://images.pexels.com/photos/18358279/pexels-photo-18358279.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Anita Szabó",
+      "width": 3067,
+      "height": 2045
+    },
+    "Targu Mures": {
+      "id": 30743448,
+      "src": "https://images.pexels.com/photos/30743448/pexels-photo-30743448.jpeg",
+      "landscape": "https://images.pexels.com/photos/30743448/pexels-photo-30743448.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
+      "photographer": "Ábrahám Szilárd",
+      "width": 3464,
+      "height": 2309
+    }
+  },
+  "meta": {
+    "curatedAt": "2026-02-13T16:07:40.191Z",
+    "totalPhotos": 165
+  }
+}
