@@ -24,6 +24,7 @@ class HomeScreen extends ConsumerWidget {
     final offersAsync = ref.watch(isLoggedIn ? feedProvider : popularOffersProvider);
     final businessesAsync = ref.watch(homeBusinessesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final citiesAsync = ref.watch(citiesProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -35,6 +36,7 @@ class HomeScreen extends ConsumerWidget {
             ref.invalidate(popularOffersProvider);
             ref.invalidate(homeBusinessesProvider);
             ref.invalidate(categoriesProvider);
+            ref.invalidate(citiesProvider);
           },
           child: CustomScrollView(
             slivers: [
@@ -101,6 +103,16 @@ class HomeScreen extends ConsumerWidget {
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
+              // Section header: Categorii
+              SliverToBoxAdapter(
+                child: _SectionHeader(
+                  title: 'Categorii',
+                  onViewAll: () => context.push('/categories'),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
+
               // Categories
               SliverToBoxAdapter(
                 child: categoriesAsync.when(
@@ -121,6 +133,63 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   loading: () => const SizedBox(height: 44),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+              // Section header: Orase
+              SliverToBoxAdapter(
+                child: _SectionHeader(
+                  title: 'Descopera orase',
+                  onViewAll: () => context.push('/cities'),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
+
+              // Cities horizontal chips
+              SliverToBoxAdapter(
+                child: citiesAsync.when(
+                  data: (cities) => SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                      itemCount: cities.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final city = cities[index];
+                        return GestureDetector(
+                          onTap: () => context.push('/explore?city=${city.id}'),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.sm,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgCard,
+                              borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on_outlined, size: 16, color: AppColors.accent),
+                                const SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  city.name,
+                                  style: AppTypography.labelMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  loading: () => const SizedBox(height: 40),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),

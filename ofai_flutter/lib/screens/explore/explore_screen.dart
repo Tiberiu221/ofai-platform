@@ -14,6 +14,8 @@ import '../../widgets/business_card.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_state.dart' as w;
+import '../../widgets/search_suggest_dropdown.dart';
+import '../../providers/search_suggest_provider.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -44,6 +46,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     _offersScrollController.dispose();
     _businessesScrollController.dispose();
     _debounce?.cancel();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -61,15 +64,27 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     }
   }
 
+  bool _showSuggest = false;
+  final FocusNode _searchFocusNode = FocusNode();
+
   void _onSearchChanged(String query) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
+      // Update autosuggest
+      ref.read(searchSuggestProvider.notifier).search(query);
+      setState(() => _showSuggest = query.length >= 2);
+      // Update list filters
       if (_tabController.index == 0) {
         ref.read(offersListProvider.notifier).setFilter(query: query);
       } else {
         ref.read(businessesListProvider.notifier).setFilter(query: query);
       }
     });
+  }
+
+  void _dismissSuggest() {
+    setState(() => _showSuggest = false);
+    _searchFocusNode.unfocus();
   }
 
   @override
@@ -94,42 +109,53 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
 
             const SizedBox(height: AppSpacing.md),
 
-            // Search
+            // Search + autosuggest dropdown
             Padding(
               padding: AppSpacing.pageH,
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                style: AppTypography.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: 'Caută oferte, business-uri...',
-                  hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.close, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            _onSearchChanged('');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppColors.bgCard,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                    borderSide: BorderSide(color: AppColors.border),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: _onSearchChanged,
+                    style: AppTypography.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: 'Cauta oferte, business-uri...',
+                      hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                _onSearchChanged('');
+                                ref.read(searchSuggestProvider.notifier).clear();
+                                setState(() => _showSuggest = false);
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AppColors.bgCard,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                        borderSide: BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                        borderSide: BorderSide(color: AppColors.accent),
+                      ),
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                    borderSide: BorderSide(color: AppColors.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                    borderSide: BorderSide(color: AppColors.accent),
-                  ),
-                ),
+                  if (_showSuggest)
+                    SearchSuggestDropdown(
+                      onDismiss: _dismissSuggest,
+                    ),
+                ],
               ),
             ),
 

@@ -48,6 +48,13 @@ class ApiEndpoints {
   static const String pushTokens = '/push-tokens';
   static const String pushTokensMyDevices = '/push-tokens/my-devices';
 
+  // Search
+  static const String searchSuggest = '/api/web/search/suggest';
+
+  // Business Requests
+  static const String businessRequests = '/api/business-requests';
+  static const String myBusinessRequests = '/api/business-requests/mine';
+
   // Static data
   static const String cities = '/cities';
   static const String categories = '/categories';

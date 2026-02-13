@@ -1,19 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/favorites_provider.dart';
+import '../../providers/subscriptions_provider.dart';
+import '../../providers/business_requests_provider.dart';
 
-class AccountScreen extends ConsumerWidget {
+class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends ConsumerState<AccountScreen> {
+  bool _didFetch = false;
+
+  void _tryFetch() {
+    final auth = ref.read(authProvider);
+    if (auth.status == AuthStatus.authenticated && !_didFetch) {
+      _didFetch = true;
+      ref.read(favoritesProvider.notifier).fetch();
+      ref.read(subscriptionsProvider.notifier).fetch();
+      ref.read(businessRequestsProvider.notifier).fetchMyRequests();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final user = auth.user;
+
+    // Listen for auth changes to trigger fetch
+    ref.listen<AuthState>(authProvider, (prev, next) {
+      if (next.status == AuthStatus.authenticated && !_didFetch) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _tryFetch());
+      }
+    });
 
     if (!isLoggedIn) {
       return Scaffold(
@@ -35,7 +63,7 @@ class AccountScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Conectează-te pentru a accesa contul tău',
+                  'Conecteaza-te pentru a accesa contul tau',
                   style: AppTypography.bodyLarge.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -46,7 +74,7 @@ class AccountScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => context.push('/login'),
-                    child: const Text('Conectează-te'),
+                    child: const Text('Conecteaza-te'),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -54,7 +82,7 @@ class AccountScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () => context.push('/register'),
-                    child: const Text('Creează cont'),
+                    child: const Text('Creeaza cont'),
                   ),
                 ),
               ],
@@ -63,6 +91,15 @@ class AccountScreen extends ConsumerWidget {
         ),
       );
     }
+
+    // Trigger fetch after auth confirmed
+    if (!_didFetch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _tryFetch());
+    }
+
+    final favState = ref.watch(favoritesProvider);
+    final subState = ref.watch(subscriptionsProvider);
+    final bizReqState = ref.watch(businessRequestsProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -96,9 +133,52 @@ class AccountScreen extends ConsumerWidget {
                 ),
               ),
 
+              const SizedBox(height: AppSpacing.xxl),
+
+              // Stats row
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.star_outline,
+                      value: '${user?.points ?? 0}',
+                      label: 'Puncte',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.bookmark_outline,
+                      value: '${favState.favoriteIds.length}',
+                      label: 'Favorite',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _StatCard(
+                      icon: Icons.notifications_none,
+                      value: '${subState.subscribedIds.length}',
+                      label: 'Urmariri',
+                    ),
+                  ),
+                ],
+              ),
+
+              // Business request status card
+              if (bizReqState.latestRequest != null) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _BusinessRequestStatusCard(request: bizReqState.latestRequest!),
+              ],
+
               const SizedBox(height: AppSpacing.xxxl),
 
               // Menu items
+              _MenuItem(
+                icon: Icons.add_business,
+                label: 'Adauga un business',
+                onTap: () => context.push('/business-request'),
+                accent: true,
+              ),
               _MenuItem(
                 icon: Icons.person_outline,
                 label: 'Profilul meu',
@@ -106,12 +186,12 @@ class AccountScreen extends ConsumerWidget {
               ),
               _MenuItem(
                 icon: Icons.tune_outlined,
-                label: 'Preferințe',
+                label: 'Preferinte',
                 onTap: () => context.push('/account/preferences'),
               ),
               _MenuItem(
                 icon: Icons.lock_outline,
-                label: 'Schimbă parola',
+                label: 'Schimba parola',
                 onTap: () => context.push('/account/change-password'),
               ),
 
@@ -121,9 +201,29 @@ class AccountScreen extends ConsumerWidget {
 
               _MenuItem(
                 icon: Icons.download_outlined,
-                label: 'Exportă datele mele',
+                label: 'Exporta datele mele',
                 onTap: () => context.push('/account/data-export'),
               ),
+              _MenuItem(
+                icon: Icons.description_outlined,
+                label: 'Termeni si conditii',
+                onTap: () => _openWebPage('https://ofai.ro/termeni'),
+              ),
+              _MenuItem(
+                icon: Icons.privacy_tip_outlined,
+                label: 'Confidentialitate',
+                onTap: () => _openWebPage('https://ofai.ro/confidentialitate'),
+              ),
+              _MenuItem(
+                icon: Icons.help_outline,
+                label: 'Ajutor',
+                onTap: () => _openWebPage('https://ofai.ro/ajutor'),
+              ),
+
+              const SizedBox(height: AppSpacing.xxl),
+              const Divider(),
+              const SizedBox(height: AppSpacing.lg),
+
               _MenuItem(
                 icon: Icons.logout,
                 label: 'Deconectare',
@@ -139,7 +239,7 @@ class AccountScreen extends ConsumerWidget {
 
               _MenuItem(
                 icon: Icons.delete_forever_outlined,
-                label: 'Șterge contul',
+                label: 'Sterge contul',
                 onTap: () => context.push('/account/delete-account'),
                 danger: true,
               ),
@@ -148,6 +248,129 @@ class AccountScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _openWebPage(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+}
+
+class _BusinessRequestStatusCard extends StatelessWidget {
+  final dynamic request;
+
+  const _BusinessRequestStatusCard({required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    Color statusColor;
+    IconData statusIcon;
+    String statusText;
+
+    if (request.isPending) {
+      statusColor = Colors.amber;
+      statusIcon = Icons.hourglass_top;
+      statusText = 'Cererea ta este in asteptare';
+    } else if (request.isApproved) {
+      statusColor = Colors.green;
+      statusIcon = Icons.check_circle_outline;
+      statusText = 'Business-ul tau a fost aprobat!';
+    } else {
+      statusColor = AppColors.danger;
+      statusIcon = Icons.cancel_outlined;
+      statusText = 'Cererea a fost respinsa';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  statusText,
+                  style: AppTypography.labelMedium.copyWith(color: statusColor),
+                ),
+              ),
+            ],
+          ),
+          if (request.isRejected && request.adminNotes != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              request.adminNotes!,
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            request.name,
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.accent, size: 24),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            value,
+            style: AppTypography.headlineMedium.copyWith(
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTypography.labelSmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
       ),
     );
   }

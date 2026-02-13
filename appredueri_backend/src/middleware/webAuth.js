@@ -7,7 +7,14 @@ const { verifyToken } = require("../helpers/jwt");
  */
 async function optionalWebAuth(req, res, next) {
   try {
-    const token = req.cookies?.ofai_token;
+    let token = req.cookies?.ofai_token;
+    // Fallback: Accept Bearer token from mobile clients
+    if (!token) {
+      const authHeader = req.get("Authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.slice(7);
+      }
+    }
     if (!token) {
       req.webUser = null;
       return next();
@@ -41,7 +48,14 @@ async function requireWebAuth(req, res, next) {
   const isApi = req.path.startsWith("/api/");
 
   try {
-    const token = req.cookies?.ofai_token;
+    let token = req.cookies?.ofai_token;
+    // Fallback: Accept Bearer token from mobile clients
+    if (!token) {
+      const authHeader = req.get("Authorization");
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.slice(7);
+      }
+    }
     if (!token) {
       if (isApi) return res.status(401).json({ message: "Trebuie să fii conectat" });
       return res.redirect("/login");

@@ -23,6 +23,9 @@ import 'screens/account/change_password_screen.dart';
 import 'screens/account/data_export_screen.dart';
 import 'screens/account/delete_account_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
+import 'screens/categories/categories_screen.dart';
+import 'screens/cities/cities_screen.dart';
+import 'screens/business_request/business_request_screen.dart';
 
 // Shell for bottom navigation
 class _ShellScreen extends StatelessWidget {
@@ -252,6 +255,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/account/delete-account',
         builder: (context, state) => const DeleteAccountScreen(),
+      ),
+
+      // Browse routes
+      GoRoute(
+        path: '/categories',
+        builder: (context, state) => const CategoriesScreen(),
+      ),
+      GoRoute(
+        path: '/cities',
+        builder: (context, state) => const CitiesScreen(),
+      ),
+      GoRoute(
+        path: '/business-request',
+        builder: (context, state) => const BusinessRequestScreen(),
       ),
     ],
   );

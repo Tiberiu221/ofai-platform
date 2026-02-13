@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 12 Februarie 2026 (Actualizat v12 — GDPR & Security Hardening + JWT Refresh Tokens + Image Fix)
+## Data: 12 Februarie 2026 (Actualizat v13 — Flutter App Faza 0-3 Complete)
 
 ---
 
@@ -11,7 +11,8 @@
 
 **Tech Stack:**
 - **Frontend Web:** EJS (server-rendered) pe Express — site-ul public complet
-- **Frontend Mobile:** React Native / Expo (cross-platform: web + mobile) — doar dev
+- **Frontend Mobile (Legacy):** React Native / Expo (cross-platform) — `appredueri_mobile/` — doar dev, inlocuit de Flutter
+- **Frontend Mobile (Flutter):** Flutter 3.41 / Dart 3.11 — `ofai_flutter/` — app-ul nativ care inlocuieste React Native
 - **Backend:** Node.js / Express
 - **Database:** PostgreSQL
 - **Hosting:** Railway (backend + EJS site + static assets, totul pe acelasi server)
@@ -29,7 +30,31 @@
 
 ```
 C:\Users\tiber\Desktop\AppReduceri\
-├── appredueri_mobile/     # Frontend React Native/Expo (doar mobile dev)
+├── ofai_flutter/          # ★ Flutter App (inlocuieste React Native)
+│   ├── lib/
+│   │   ├── core/
+│   │   │   ├── network/           # ApiClient (Dio), ApiEndpoints, ApiExceptions
+│   │   │   ├── storage/           # SecureStorage (tokens), AppPreferences (onboarding)
+│   │   │   ├── theme/             # AppColors, AppTypography, AppSpacing, AppTheme, PageTransitions
+│   │   │   └── utils/             # Launchers (call/whatsapp/maps/share)
+│   │   ├── models/                # Offer, Business, User, Review, PaginatedResponse
+│   │   ├── providers/             # Riverpod: auth, offers, businesses, favorites, subscriptions, static_data
+│   │   ├── screens/
+│   │   │   ├── home/              # HomeScreen (feed/popular offers, categories, businesses)
+│   │   │   ├── explore/           # ExploreScreen (search, filters, pagination)
+│   │   │   ├── collection/        # CollectionScreen (favorites + subscriptions tabs)
+│   │   │   ├── account/           # AccountScreen + sub-screens (edit, password, preferences, export, delete)
+│   │   │   ├── auth/              # Login, Register, ForgotPassword, VerifyCode, ResetPassword
+│   │   │   ├── offer/             # OfferDetailScreen (gallery, share, booking)
+│   │   │   ├── business/          # BusinessDetailScreen (gallery, share, reviews)
+│   │   │   └── onboarding/        # OnboardingScreen (3-page welcome flow)
+│   │   ├── widgets/               # OfferCard, BusinessCard, CategoryChip, SkeletonLoader, EmptyState, ErrorState, FullscreenGallery
+│   │   ├── app.dart               # GoRouter (routes, shell, transitions, onboarding redirect)
+│   │   └── main.dart              # ProviderScope + OFAIApp entry point
+│   ├── android/                   # Android config (deep linking intent filters)
+│   └── pubspec.yaml               # Dependencies
+│
+├── appredueri_mobile/     # Legacy React Native/Expo (inlocuit de Flutter)
 │   ├── app/               # Expo Router pages
 │   └── components/        # Componente reutilizabile
 │
@@ -141,8 +166,11 @@ C:\Users\tiber\Desktop\AppReduceri\
 
 ### Development
 - **Website (EJS):** http://localhost:4000 (`npm run dev` in backend)
-- **Mobile (Expo):** http://localhost:8081 (`npx expo start --web`)
+- **Mobile (Expo Legacy):** http://localhost:8081 (`npx expo start --web`)
+- **Mobile (Flutter):** `cd ofai_flutter && flutter run` (emulator) sau `flutter build apk --debug` (APK)
 - **Backend API:** http://localhost:4000 (`npm run dev`)
+- **Flutter SDK:** `C:\dev\flutter` (v3.41.0 stable, Dart 3.11.0)
+- **Android SDK:** `C:\Users\tiber\AppData\Local\Android\Sdk`
 
 ### Railway Environment Variables (Backend)
 ```
@@ -209,6 +237,80 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 ---
 
 ## CE ESTE COMPLET
+
+### Flutter App — OFAI Mobile (Faza 0-3 — COMPLETA, v13)
+
+**App nativ Flutter care inlocuieste React Native/Expo. Package: `ro.ofai.ofai_flutter`**
+
+**Faza 0 — Setup & Auth:**
+- [x] Flutter project setup (Dart 3.11, Material 3)
+- [x] Theme system: AppColors, AppTypography, AppSpacing (dark mode only, accent #FB923C)
+- [x] Dio HTTP client cu auth interceptor (Bearer token, auto-refresh pe 401 cu dedup Completer)
+- [x] SecureStorage (flutter_secure_storage) pentru access/refresh tokens
+- [x] Auth provider (Riverpod StateNotifier): login, register, logout, refreshUser
+- [x] GoRouter navigation cu ShellRoute (bottom nav 4 tabs)
+
+**Faza 1 — Models & Core Screens:**
+- [x] Models: Offer, Business, User, Review, City, Category, PaginatedResponse
+- [x] Providers: offers (popular, search, feed), businesses, favorites, subscriptions, static_data, auth
+- [x] Widgets: OfferCard, BusinessCard, CategoryChip, SkeletonLoader, EmptyState, ErrorState
+- [x] HomeScreen: categories, popular offers/personalized feed, businesses
+- [x] ExploreScreen: search, city/category filters, sort, infinite scroll
+
+**Faza 2 — Detail & Account:**
+- [x] OfferDetailScreen: SliverAppBar, image gallery, discount badge, booking actions, share
+- [x] BusinessDetailScreen: cover image, info, offers list, reviews, share
+- [x] CollectionScreen: Favorites tab + Subscriptions tab (with swipe-to-dismiss)
+- [x] AccountScreen + sub-screens: EditProfile, ChangePassword, Preferences, DataExport, DeleteAccount
+
+**Faza 3 — Features Complete:**
+- [x] Forgot/Reset Password: 3-screen flow (email → 6-digit code → new password)
+- [x] Share: share_plus integration on offer/business detail screens
+- [x] Fullscreen Gallery: PageView + InteractiveViewer (pinch-to-zoom, swipe)
+- [x] Personalized Feed: `/offers/feed` for logged-in users, fallback to popular
+- [x] Deep Linking: Android intent filters for `https://ofai.ro` URLs
+- [x] Onboarding: 3-page PageView with SharedPreferences persistence
+- [x] Page Transitions: slideUp for details, fade for auth (CustomTransitionPage)
+- [ ] Push Notifications: SKIPPED — backend uses Expo tokens, NOT FCM (requires backend change)
+
+**Flutter Dependencies:**
+```yaml
+flutter_riverpod: ^2.6.1    # State management
+go_router: ^14.8.1           # Navigation + deep linking
+dio: ^5.7.0                  # HTTP client
+flutter_secure_storage: ^9.2.4  # Secure token storage
+cached_network_image: ^3.4.1 # Image caching
+shimmer: ^3.0.0              # Skeleton loading
+google_fonts: ^6.2.1         # DM Serif Display + Inter
+geolocator: ^13.0.2          # Location
+share_plus: ^10.1.4          # Share sheet
+shared_preferences: ^2.3.4   # Onboarding prefs
+url_launcher: ^6.3.1         # Phone/WhatsApp/Maps/Web
+package_info_plus: ^8.1.3    # App version
+intl: ^0.19.0                # Date formatting
+```
+
+**Comenzi Flutter:**
+```bash
+cd C:\Users\tiber\Desktop\AppReduceri\ofai_flutter
+
+# Development
+flutter run                          # Run pe emulator conectat
+flutter run -d emulator-5554         # Run pe emulator specific
+
+# Build
+flutter analyze                      # Static analysis (0 errors expected)
+flutter build apk --debug            # Debug APK (~60MB)
+flutter build apk --release          # Release APK (signed, optimized)
+flutter build appbundle              # AAB pentru Google Play
+
+# Install manual pe emulator
+adb install -r build/app/outputs/flutter-apk/app-debug.apk
+adb shell monkey -p ro.ofai.ofai_flutter -c android.intent.category.LAUNCHER 1
+
+# Test deep linking
+adb shell am start -a android.intent.action.VIEW -d "https://ofai.ro/offer/1" ro.ofai.ofai_flutter
+```
 
 ### Migrare Completa Site EJS (Faza 3 — COMPLETA)
 - [x] **Auth web:** Login, Register, Forgot Password, Reset Password (cookie JWT)
@@ -785,6 +887,33 @@ Workflows active: WF1 (new-review → email owner)
 - RN Paper (MD3) — impune Material Design, conflictă cu designul glassmorphic
 - react-native-reusables (shadcn) — depinde de NativeWind
 
+### Flutter Faza 0 — Setup & Auth (COMPLETA - v13)
+- [x] Flutter project (Dart 3.11, package ro.ofai.ofai_flutter)
+- [x] Theme: AppColors, AppTypography, AppSpacing (dark mode, accent #FB923C, DM Serif Display)
+- [x] Dio + auth interceptor (Bearer token, 401 auto-refresh cu Completer dedup)
+- [x] SecureStorage, GoRouter, Riverpod StateNotifier auth
+
+### Flutter Faza 1 — Models & Screens (COMPLETA - v13)
+- [x] Models: Offer, Business, User, Review, City, Category, PaginatedResponse
+- [x] Providers: offers, businesses, favorites, subscriptions, static_data, auth, feed
+- [x] Widgets: OfferCard, BusinessCard, CategoryChip, SkeletonLoader, EmptyState, ErrorState
+- [x] HomeScreen + ExploreScreen (search, filters, sort, infinite scroll)
+
+### Flutter Faza 2 — Detail & Account (COMPLETA - v13)
+- [x] OfferDetailScreen + BusinessDetailScreen (gallery, share, booking, reviews)
+- [x] CollectionScreen (favorites + subscriptions tabs, swipe-to-dismiss)
+- [x] AccountScreen + 5 sub-screens (edit, password, preferences, export, delete)
+
+### Flutter Faza 3 — Features Complete (COMPLETA - v13)
+- [x] Forgot/Reset Password (3 screens: email → 6-digit code → new password)
+- [x] Share (share_plus pe detail screens)
+- [x] Fullscreen Gallery (PageView + InteractiveViewer pinch-to-zoom)
+- [x] Personalized Feed (/offers/feed when authenticated, fallback to popular)
+- [x] Deep Linking (Android intent filters for https://ofai.ro)
+- [x] Onboarding (3-page PageView + SharedPreferences)
+- [x] Page Transitions (slideUp details, fade auth — CustomTransitionPage)
+- [ ] Push Notifications — SKIPPED (backend uses Expo tokens, requires backend FCM support)
+
 ### Faza 6 - Monetizare (TODO)
 - [ ] Pricing: Freemium + 3 tiers (49/99/199 RON/lună) + pay-per-offer (29 RON)
 - [ ] Stripe integration
@@ -794,7 +923,6 @@ Workflows active: WF1 (new-review → email owner)
 ### Faza 7 - Scalare (TODO)
 - [ ] Self-service onboarding
 - [ ] Referral system
-- [ ] Deep links
 - [ ] n8n WF2-WF6
 - [ ] iOS Build (necesita Mac/Apple Developer $99/an)
 - [ ] Play Store publicare
@@ -803,23 +931,86 @@ Workflows active: WF1 (new-review → email owner)
 
 ## PRIORITATI URMATOARE
 
-1. **🖼️ Cover images business-uri** — toate scraped businesses au cover NULL. User-ul decide abordarea.
-2. **📱 Mobile GDPR consent** — adauga checkboxe accept_terms/accept_privacy pe RegisterScreen mobile
-3. **📱 Mobile Performance (Faza 5A)** — FlashList + expo-image + Reanimated + React.memo (cel mai mare impact vizual)
-4. **🔍 Verificari Add Business (v10)** — test end-to-end: retry button, emails, /cont indicator, admin flow
-5. **📱 Unistyles 3.0 (Faza 5B, opțional)** — C++ style engine, zero-rerender themes
-6. **Monetizare** — implementează Stripe + pricing tiers (49/99/199 RON)
-7. **Galerie imagini** — upload/delete gallery images in portal
-8. **Cron jobs** — cleanup refresh_tokens (60d) + push_notifications_log (90d)
-9. **Web refresh token** — opțional ofai_refresh cookie httpOnly 30d
+1. **📱 Flutter Testing & Bugfix** — testing manual al app-ului Flutter, fix bugs gasite
+2. **📱 Flutter Push Notifications** — backend trebuie updatat sa accepte FCM tokens (nu doar Expo). Apoi firebase_messaging in Flutter.
+3. **📱 Flutter GDPR consent** — adauga checkboxe accept_terms/accept_privacy pe RegisterScreen Flutter
+4. **📱 Play Store publicare** — `flutter build appbundle`, Google Play Developer ($25), signing key
+5. **🖼️ Cover images business-uri** — toate scraped businesses au cover NULL. User-ul decide abordarea.
+6. **🔍 Verificari Add Business (v10)** — test end-to-end: retry button, emails, /cont indicator, admin flow
+7. **Monetizare** — implementează Stripe + pricing tiers (49/99/199 RON)
+8. **Galerie imagini** — upload/delete gallery images in portal
+9. **Cron jobs** — cleanup refresh_tokens (60d) + push_notifications_log (90d)
 10. **n8n WF2-WF6** — workflow-uri suplimentare
 11. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
-12. **Play Store** — publicare APK pe Google Play ($25 o singura data)
 13. **Web polish** — verificare vizuala pe toate paginile, responsive testing, edge cases
 
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 12 Februarie 2026 (v13 — Flutter App Faza 0-3 Complete)
+
+**App Flutter complet construit de la zero, inlocuieste React Native/Expo. 4 faze implementate in 3 sesiuni.**
+
+**Faza 0 — Setup (sesiunea 1):**
+- Flutter project cu Dart 3.11, package `ro.ofai.ofai_flutter`
+- Theme system complet: AppColors (dark mode, accent #FB923C), AppTypography (DM Serif Display + Inter via google_fonts), AppSpacing
+- Dio ApiClient cu Bearer token auth interceptor, auto-refresh pe 401 cu Completer dedup queue
+- SecureStorage (flutter_secure_storage) pentru access + refresh tokens
+- GoRouter cu ShellRoute (4 bottom nav tabs), auth redirect
+- Riverpod StateNotifier pentru auth (login, register, logout, _checkAuth pe startup)
+
+**Faza 1 — Models & Core Screens (sesiunea 1):**
+- Models Dart: Offer (+OfferBusiness, +OfferLocation, +Booking, +GalleryImage), Business (+BusinessLocation, +BusinessReview), User, Review, City, Category, PaginatedResponse
+- Providers Riverpod: popularOffersProvider, searchOffersProvider, feedProvider, offerDetailProvider, homeBusinessesProvider, searchBusinessesProvider, businessDetailProvider, favoritesProvider (cu toggle optimistic), subscriptionsProvider (cu toggle optimistic), citiesProvider, categoriesProvider
+- Widgets reutilizabile: OfferCard, BusinessCard, CategoryChip, SkeletonLoader (3 types), EmptyState, ErrorState
+- HomeScreen: categorii chips, oferte populare/personalizate, business-uri
+- ExploreScreen: search bar, city/category filter chips, sort dropdown, infinite scroll cu loadMore
+
+**Faza 2 — Detail & Account (sesiunea 2):**
+- OfferDetailScreen: SliverAppBar cu imagine, discount badge, gallery horizontal, booking actions (call/whatsapp/web/maps)
+- BusinessDetailScreen: SliverAppBar cover, business info, offers list, reviews cu rating distribution
+- CollectionScreen: TabBar custom (Favorite/Urmarite), swipe-to-dismiss cu undo SnackBar
+- AccountScreen: menu items grid, app version (package_info_plus)
+- 5 sub-screens: EditProfileScreen, ChangePasswordScreen, PreferencesScreen, DataExportScreen, DeleteAccountScreen
+
+**Faza 3 — Features (sesiunea 3):**
+- ForgotPasswordScreen → VerifyCodeScreen (6-digit auto-advance + paste + backspace nav + 15min timer) → ResetPasswordScreen
+- Share: `share_plus` integration in launchers.dart + share IconButton pe detail screens
+- FullscreenGallery: `Navigator.push(PageRouteBuilder)` modal, PageView + InteractiveViewer (0.5x-4x zoom)
+- feedProvider: GET /offers/feed for authenticated users, fallback to popular
+- Deep linking: AndroidManifest intent-filter `https://ofai.ro`, GoRouter handles /offer/:id + /business/:id
+- Onboarding: 3-page PageView (Descoperă oferte / Urmărește business-uri / Economisește mai mult), SharedPreferences persistence, `onboardingDoneProvider` FutureProvider + invalidate on complete
+- Page transitions: `slideUpTransition()` (Offset 0→0.15, fade, 250ms) for details, `fadeTransition()` (200ms) for auth
+- Push Notifications: SKIPPED — backend `isValidExpoPushToken()` accepta doar format Expo, nu FCM
+
+**Bugfixes descoperite in testing:**
+- Onboarding buttons nu funcționau: `onboardingDoneProvider` (FutureProvider) era cached cu `false` → `context.go('/')` redirecta inapoi la /onboarding. Fix: `ref.invalidate(onboardingDoneProvider)` inainte de navigate.
+- Collection tab nu incarca: `_fetchIfNeeded()` apela `fetch()` sincron din `build()` → setState during build. Fix: mutat in `addPostFrameCallback` + `ref.listen` pe authProvider.
+
+**Fisiere create (7):**
+- `lib/screens/auth/forgot_password_screen.dart`
+- `lib/screens/auth/verify_code_screen.dart`
+- `lib/screens/auth/reset_password_screen.dart`
+- `lib/widgets/fullscreen_gallery.dart`
+- `lib/screens/onboarding/onboarding_screen.dart`
+- `lib/core/storage/preferences.dart`
+- `lib/core/theme/page_transitions.dart`
+
+**Fisiere modificate (9) in Faza 3:**
+- `lib/app.dart` — routes noi, onboarding redirect, page transitions
+- `lib/screens/auth/login_screen.dart` — "Ai uitat parola?" link
+- `lib/core/utils/launchers.dart` — shareOffer, shareBusiness
+- `lib/screens/offer/offer_detail_screen.dart` — share button + gallery tap
+- `lib/screens/business/business_detail_screen.dart` — share button + gallery tap
+- `lib/providers/offers_provider.dart` — feedProvider
+- `lib/screens/home/home_screen.dart` — feedProvider + "Pentru tine" title
+- `android/app/src/main/AndroidManifest.xml` — deep linking intent filter
+- `pubspec.yaml` — shared_preferences
+
+**Total fisiere in ofai_flutter/lib/ (Faza 0-3): ~35 fisiere Dart**
+
+---
 
 ### 12 Februarie 2026 (v12 — GDPR & Security Hardening + JWT Refresh Tokens + Image Fix)
 
@@ -1265,4 +1456,18 @@ Setup initial proiect
 
 30. **Error sanitization** (v12): Toate catch block-urile din auth.js si users.js returneaza generic `{ message: "Eroare server" }` fara `error: err.message`. Pattern: `console.error(...)` pentru logs interne, `res.status(500).json({ message: "Eroare server" })` pentru client.
 
-31. **Android build** (v12): Google Play Developer Account = $25 o singura data. EAS Build: `eas build --platform android --profile preview` (APK test, fara cont), `eas build --platform android --profile production` (AAB pentru Play Store). Keystore generat automat de EAS — salveaza-l!
+31. **Android build (Expo Legacy)** (v12): Google Play Developer Account = $25 o singura data. EAS Build: `eas build --platform android --profile preview` (APK test, fara cont), `eas build --platform android --profile production` (AAB pentru Play Store). Keystore generat automat de EAS — salveaza-l!
+
+32. **Flutter App Architecture** (v13): Riverpod 2.x (StateNotifier + FutureProvider), GoRouter 14.x (ShellRoute cu bottom nav, standalone routes cu `pageBuilder:` pentru custom transitions). Dio 5.x cu interceptor: skip auth pe `/auth/login|register|forgot-password|verify-reset-code|reset-password`, auto-refresh pe 401 cu Completer queue (dedup). API base URL configurat in `ApiEndpoints.baseUrl` (`https://ofai.ro` prod, `http://10.0.2.2:4000` local dev).
+
+33. **Flutter Theme** (v13): Dark mode only. `AppColors` = OFAI brand colors (#06060A bg, #FB923C accent). `AppTypography` = Google Fonts (DM Serif Display headings, Inter body). `AppSpacing` = consistent spacing tokens + `pageH`/`pagePadding` edge insets. `AppTheme.dark` = MaterialApp ThemeData complet configurat (ElevatedButton, InputDecoration, BottomNavigationBar, etc.).
+
+34. **Flutter Onboarding** (v13): `onboardingDoneProvider` = FutureProvider<bool> care citeste SharedPreferences. GoRouter redirect: daca `!isDone && !isOnboardingRoute` → redirect la `/onboarding`. IMPORTANT: dupa `setOnboardingDone()`, TREBUIE `ref.invalidate(onboardingDoneProvider)` inainte de `context.go('/')` — altfel FutureProvider returneaza valoarea cached `false` si GoRouter face redirect loop.
+
+35. **Flutter Collection fetch timing** (v13): NU apela `StateNotifier.fetch()` sincron din `build()` — cauzeaza setState during build, Riverpod poate ignora notificarea. Foloseste `WidgetsBinding.instance.addPostFrameCallback((_) => _tryFetch())` sau `ref.listen` pe auth provider.
+
+36. **Flutter Push Notifications** (v13): Backend-ul valideaza push tokens cu `isValidExpoPushToken()` care accepta DOAR format `ExponentPushToken[...]`. Flutter foloseste `firebase_messaging` care produce FCM tokens. Pentru a suporta Flutter, backend-ul trebuie updatat sa accepte si FCM tokens + adaugat delivery via Firebase Cloud Messaging (nu doar Expo push service).
+
+37. **Flutter Deep Linking** (v13): AndroidManifest intent-filter cu `android:autoVerify="true"` pe `https://ofai.ro`. GoRouter handles `/offer/:id` si `/business/:id` automatic. iOS deep linking (Associated Domains + apple-app-site-association) NU e implementat inca.
+
+38. **share_plus v10 API** (v13): Flutter app foloseste `Share.share(text, subject: title)`. Versiunea v11+ a schimbat API-ul la `SharePlus.instance.share(...)`. NU face upgrade la v11 fara refactoring.
