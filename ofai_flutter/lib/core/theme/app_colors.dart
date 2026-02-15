@@ -34,6 +34,9 @@ class AppColors {
   // Gradients
   static const accentGradient = [Color(0xFFFB923C), Color(0xFFF97316)];
 
+  // Glass
+  static const bgGlass = Color(0xCC0C0C12); // bgSecondary ~80% alpha
+
   // Overlays
   static const overlay = Color(0x80000000); // rgba(0,0,0,0.5)
   static const overlayLight = Color(0x33000000); // rgba(0,0,0,0.2)

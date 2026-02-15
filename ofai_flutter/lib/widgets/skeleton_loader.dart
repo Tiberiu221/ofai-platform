@@ -18,8 +18,11 @@ class SkeletonLoader extends StatelessWidget {
     return Shimmer.fromColors(
       baseColor: AppColors.bgSecondary,
       highlightColor: AppColors.bgCard,
-      child: Column(
-        children: List.generate(count, (i) {
+      child: ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: count,
+        itemBuilder: (_, i) {
           switch (type) {
             case SkeletonType.offerCard:
               return _offerSkeleton();
@@ -28,7 +31,7 @@ class SkeletonLoader extends StatelessWidget {
             case SkeletonType.horizontalCard:
               return _horizontalSkeleton();
           }
-        }),
+        },
       ),
     );
   }

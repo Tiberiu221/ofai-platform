@@ -70,6 +70,24 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
+              // Stats row
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                  child: Row(
+                    children: [
+                      _StatPill(value: '530+', label: 'Business-uri'),
+                      const SizedBox(width: AppSpacing.sm),
+                      _StatPill(value: '1148+', label: 'Oferte active'),
+                      const SizedBox(width: AppSpacing.sm),
+                      _StatPill(value: '2', label: 'Orașe'),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+
               // Search bar (tap → explore)
               SliverToBoxAdapter(
                 child: Padding(
@@ -332,6 +350,40 @@ class _SectionHeader extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _StatPill({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: AppTypography.headlineSmall.copyWith(color: AppColors.accent),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: AppTypography.captionMuted,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
@@ -50,24 +51,26 @@ class OfferDetailScreen extends ConsumerWidget {
                       ),
                     ],
                     flexibleSpace: FlexibleSpaceBar(
-                      background: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (heroImage != null && heroImage.isNotEmpty)
-                            CachedNetworkImage(
-                              imageUrl: heroImage,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(color: AppColors.bgSecondary),
-                              errorWidget: (_, __, ___) => Container(
+                      background: Hero(
+                        tag: 'offer-image-$offerId',
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            if (heroImage != null && heroImage.isNotEmpty)
+                              CachedNetworkImage(
+                                imageUrl: heroImage,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => Container(color: AppColors.bgSecondary),
+                                errorWidget: (_, __, ___) => Container(
+                                  color: AppColors.bgSecondary,
+                                  child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
+                                ),
+                              )
+                            else
+                              Container(
                                 color: AppColors.bgSecondary,
                                 child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
                               ),
-                            )
-                          else
-                            Container(
-                              color: AppColors.bgSecondary,
-                              child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
-                            ),
                           // Gradient overlay
                           const DecoratedBox(
                             decoration: BoxDecoration(
@@ -96,6 +99,7 @@ class OfferDetailScreen extends ConsumerWidget {
                               ),
                             ),
                         ],
+                        ),
                       ),
                     ),
                   ),
@@ -368,7 +372,10 @@ class OfferDetailScreen extends ConsumerWidget {
                   bottom: AppSpacing.xxl,
                   right: AppSpacing.pagePadding,
                   child: FloatingActionButton.extended(
-                    onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
+                    onPressed: () {
+                      HapticFeedback.mediumImpact();
+                      ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
+                    },
                     backgroundColor: isFav ? AppColors.accent : AppColors.bgCard,
                     icon: Icon(
                       isFav ? Icons.bookmark : Icons.bookmark_border,

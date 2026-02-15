@@ -26,6 +26,9 @@ import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/categories/categories_screen.dart';
 import 'screens/cities/cities_screen.dart';
 import 'screens/business_request/business_request_screen.dart';
+import 'screens/legal/terms_screen.dart';
+import 'screens/legal/privacy_screen.dart';
+import 'screens/help/help_screen.dart';
 
 // Shell for bottom navigation
 class _ShellScreen extends StatelessWidget {
@@ -269,6 +272,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/business-request',
         builder: (context, state) => const BusinessRequestScreen(),
+      ),
+
+      // Legal & Help routes
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const TermsScreen(),
+      ),
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const PrivacyScreen(),
+      ),
+      GoRoute(
+        path: '/help',
+        builder: (context, state) => const HelpScreen(),
       ),
     ],
   );

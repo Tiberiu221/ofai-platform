@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -61,33 +62,38 @@ class _BusinessRequestScreenState
     if (success) {
       showDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.bgSecondary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          ),
-          title: Text(
-            'Cerere trimisa!',
-            style: AppTypography.headlineSmall,
-          ),
-          content: Text(
-            'Cererea ta a fost inregistrata. O vom analiza si te vom notifica cand va fi aprobata.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+        barrierColor: AppColors.overlay,
+        builder: (ctx) => BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: AlertDialog(
+            backgroundColor: AppColors.bgGlass,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              side: const BorderSide(color: AppColors.borderLight, width: 0.5),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.pop();
-              },
-              child: Text(
-                'OK',
-                style: TextStyle(color: AppColors.accent),
+            title: Text(
+              'Cerere trimisa!',
+              style: AppTypography.headlineSmall,
+            ),
+            content: Text(
+              'Cererea ta a fost inregistrata. O vom analiza si te vom notifica cand va fi aprobata.',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
-          ],
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.pop();
+                },
+                child: Text(
+                  'OK',
+                  style: TextStyle(color: AppColors.accent),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     } else {

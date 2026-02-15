@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
@@ -15,6 +16,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/search_suggest_dropdown.dart';
+import '../../widgets/fade_in_item.dart';
 import '../../providers/search_suggest_provider.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -242,14 +244,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
 
             // Tab content
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Offers tab
-                  _buildOffersTab(offersState),
-                  // Businesses tab
-                  _buildBusinessesTab(businessesState),
-                ],
+              child: GestureDetector(
+                onPanDown: (_) => FocusScope.of(context).unfocus(),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Offers tab
+                    _buildOffersTab(offersState),
+                    // Businesses tab
+                    _buildBusinessesTab(businessesState),
+                  ],
+                ),
               ),
             ),
           ],
@@ -296,7 +301,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
             );
           }
-          return OfferCard(offer: state.offers[index]);
+          return FadeInItem(
+            index: index,
+            child: OfferCard(offer: state.offers[index]),
+          );
         },
       ),
     );
@@ -340,7 +348,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
             );
           }
-          return BusinessCard(business: state.businesses[index]);
+          return FadeInItem(
+            index: index,
+            child: BusinessCard(business: state.businesses[index]),
+          );
         },
       ),
     );
@@ -384,17 +395,34 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     setState(() {});
   }
 
+  void _showGlassBottomSheet({required Widget child}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.overlay,
+      builder: (_) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppColors.bgGlass,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
+              border: Border(top: BorderSide(color: AppColors.borderLight, width: 0.5)),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showCityPicker(AsyncValue<List<City>> citiesAsync) {
     final cities = citiesAsync.valueOrNull;
     if (cities == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
-      ),
-      builder: (_) => _PickerSheet(
+    _showGlassBottomSheet(
+      child: _PickerSheet(
         title: 'Alege orașul',
         items: [
           _PickerItem(label: 'Toate orașele', value: null),
@@ -421,13 +449,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     final categories = categoriesAsync.valueOrNull;
     if (categories == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
-      ),
-      builder: (_) => _PickerSheet(
+    _showGlassBottomSheet(
+      child: _PickerSheet(
         title: 'Alege categoria',
         items: [
           _PickerItem(label: 'Toate categoriile', value: null),
@@ -451,13 +474,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   }
 
   void _showSortPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
-      ),
-      builder: (_) => _PickerSheet(
+    _showGlassBottomSheet(
+      child: _PickerSheet(
         title: 'Sortare',
         items: [
           _PickerItem(label: 'Implicit', value: null),

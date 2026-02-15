@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -207,17 +206,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               _MenuItem(
                 icon: Icons.description_outlined,
                 label: 'Termeni si conditii',
-                onTap: () => _openWebPage('https://ofai.ro/termeni'),
+                onTap: () => context.push('/terms'),
               ),
               _MenuItem(
                 icon: Icons.privacy_tip_outlined,
                 label: 'Confidentialitate',
-                onTap: () => _openWebPage('https://ofai.ro/confidentialitate'),
+                onTap: () => context.push('/privacy'),
               ),
               _MenuItem(
                 icon: Icons.help_outline,
                 label: 'Ajutor',
-                onTap: () => _openWebPage('https://ofai.ro/ajutor'),
+                onTap: () => context.push('/help'),
               ),
 
               const SizedBox(height: AppSpacing.xxl),
@@ -252,12 +251,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     );
   }
 
-  Future<void> _openWebPage(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
 }
 
 class _BusinessRequestStatusCard extends StatelessWidget {

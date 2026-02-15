@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -437,11 +438,19 @@ class BusinessDetailScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
-      ),
-      builder: (_) => StatefulBuilder(
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.overlay,
+      builder: (_) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: AppColors.bgGlass,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.cardRadius)),
+              border: Border(top: BorderSide(color: AppColors.borderLight, width: 0.5)),
+            ),
+            child: StatefulBuilder(
         builder: (context, setState) => Padding(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.pagePadding,
@@ -526,6 +535,9 @@ class BusinessDetailScreen extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
           ),
         ),
       ),

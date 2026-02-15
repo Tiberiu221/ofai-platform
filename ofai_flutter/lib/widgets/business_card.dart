@@ -5,6 +5,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
 import '../models/business.dart';
+import 'tap_scale.dart';
 
 class BusinessCard extends StatelessWidget {
   final Business business;
@@ -13,7 +14,7 @@ class BusinessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return TapScale(
       onTap: () => context.push('/business/${business.id}'),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),

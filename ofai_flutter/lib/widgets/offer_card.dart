@@ -5,6 +5,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
 import '../models/offer.dart';
+import 'tap_scale.dart';
 
 class OfferCard extends StatelessWidget {
   final Offer offer;
@@ -19,7 +20,7 @@ class OfferCard extends StatelessWidget {
   }
 
   Widget _buildVertical(BuildContext context) {
-    return GestureDetector(
+    return TapScale(
       onTap: () => context.push('/offer/${offer.id}'),
       child: Container(
         decoration: BoxDecoration(
@@ -34,17 +35,20 @@ class OfferCard extends StatelessWidget {
             // Image
             AspectRatio(
               aspectRatio: 16 / 10,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildImage(),
-                  if (offer.discountValue != null)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: _buildBadge(),
-                    ),
-                ],
+              child: Hero(
+                tag: 'offer-image-${offer.id}',
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _buildImage(),
+                    if (offer.discountValue != null)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: _buildBadge(),
+                      ),
+                  ],
+                ),
               ),
             ),
             // Content
@@ -60,6 +64,15 @@ class OfferCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppSpacing.xs),
+                  if (offer.description != null && offer.description!.isNotEmpty) ...[
+                    Text(
+                      offer.description!,
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
                   if (offer.business != null) ...[
                     Text(
                       offer.business!.name,
@@ -68,13 +81,28 @@ class OfferCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      [offer.business!.category, offer.business!.city]
-                          .where((s) => s != null && s.isNotEmpty)
-                          .join(' \u2022 '),
-                      style: AppTypography.captionMuted,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
+                          Icon(Icons.star, size: 12, color: AppColors.accent),
+                          const SizedBox(width: 2),
+                          Text(
+                            offer.business!.rating!.toStringAsFixed(1),
+                            style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                        ],
+                        Expanded(
+                          child: Text(
+                            [offer.business!.category, offer.business!.city]
+                                .where((s) => s != null && s.isNotEmpty)
+                                .join(' \u2022 '),
+                            style: AppTypography.captionMuted,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -87,7 +115,7 @@ class OfferCard extends StatelessWidget {
   }
 
   Widget _buildHorizontal(BuildContext context) {
-    return GestureDetector(
+    return TapScale(
       onTap: () => context.push('/offer/${offer.id}'),
       child: Container(
         width: 260,

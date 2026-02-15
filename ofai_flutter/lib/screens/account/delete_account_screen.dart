@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,22 +41,30 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgSecondary,
-        title: const Text('Confirmare ștergere'),
-        content: const Text(
-          'Ești sigur că vrei să-ți ștergi contul? Această acțiune este ireversibilă și toate datele tale vor fi șterse permanent.',
+      barrierColor: AppColors.overlay,
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: AlertDialog(
+          backgroundColor: AppColors.bgGlass,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            side: const BorderSide(color: AppColors.borderLight, width: 0.5),
+          ),
+          title: const Text('Confirmare ștergere'),
+          content: const Text(
+            'Ești sigur că vrei să-ți ștergi contul? Această acțiune este ireversibilă și toate datele tale vor fi șterse permanent.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Anulează'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('Șterge contul', style: TextStyle(color: AppColors.danger)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Anulează'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Șterge contul', style: TextStyle(color: AppColors.danger)),
-          ),
-        ],
       ),
     );
 
