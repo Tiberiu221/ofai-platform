@@ -15,11 +15,36 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSearchSubmit(String query) {
+    if (query.trim().isEmpty) {
+      context.go('/explore');
+    } else {
+      context.go('/explore?q=${Uri.encodeComponent(query.trim())}');
+    }
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final offersAsync = ref.watch(isLoggedIn ? feedProvider : popularOffersProvider);
@@ -104,12 +129,12 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         _StatPill(
-                          value: citiesAsync.when(
-                            data: (cities) => '${cities.length}',
+                          value: categoriesAsync.when(
+                            data: (cats) => '${cats.length}',
                             loading: () => '...',
                             error: (_, __) => '-',
                           ),
-                          label: 'Orase',
+                          label: 'Categorii',
                         ),
                       ],
                     ),
@@ -119,33 +144,47 @@ class HomeScreen extends ConsumerWidget {
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
 
-              // Search bar (tap -> explore)
+              // Search bar — submit navigates to Explore with query
               SliverToBoxAdapter(
                 child: FadeInItem(
                   index: 2,
                   child: Padding(
                     padding: AppSpacing.pageH,
-                    child: GestureDetector(
-                      onTap: () => context.go('/explore'),
-                      child: Container(
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: AppColors.bgCard,
-                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                          border: Border.all(color: AppColors.border),
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      onSubmitted: _onSearchSubmit,
+                      textInputAction: TextInputAction.search,
+                      style: AppTypography.bodyMedium,
+                      decoration: InputDecoration(
+                        hintText: 'Cauta oferte, business-uri...',
+                        hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
+                        prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: _searchController,
+                          builder: (_, value, __) => value.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                  },
+                                )
+                              : const SizedBox.shrink(),
                         ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: AppSpacing.lg),
-                            Icon(Icons.search, color: AppColors.textTertiary, size: 20),
-                            const SizedBox(width: AppSpacing.sm),
-                            Text(
-                              'Cauta oferte, business-uri...',
-                              style: AppTypography.bodyMedium.copyWith(
-                                color: AppColors.textTertiary,
-                              ),
-                            ),
-                          ],
+                        filled: true,
+                        fillColor: AppColors.bgCard,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                          borderSide: BorderSide(color: AppColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                          borderSide: BorderSide(color: AppColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                          borderSide: BorderSide(color: AppColors.accent),
                         ),
                       ),
                     ),
@@ -274,7 +313,7 @@ class HomeScreen extends ConsumerWidget {
                             );
                           }
                           return SizedBox(
-                            height: 260,
+                            height: 280,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),

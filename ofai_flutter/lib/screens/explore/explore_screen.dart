@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -33,12 +34,28 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   final _businessesScrollController = ScrollController();
   Timer? _debounce;
 
+  String? _lastAppliedQuery;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _offersScrollController.addListener(_onOffersScroll);
     _businessesScrollController.addListener(_onBusinessesScroll);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final q = GoRouterState.of(context).uri.queryParameters['q'];
+    if (q != null && q.isNotEmpty && q != _lastAppliedQuery) {
+      _lastAppliedQuery = q;
+      _searchController.text = q;
+      // Trigger search after build completes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _onSearchChanged(q);
+      });
+    }
   }
 
   @override

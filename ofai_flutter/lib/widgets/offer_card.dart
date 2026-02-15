@@ -10,6 +10,8 @@ import '../core/utils/formatters.dart';
 import '../models/offer.dart';
 import '../providers/auth_provider.dart';
 import '../providers/favorites_provider.dart';
+import '../providers/location_provider.dart';
+import '../core/utils/distance.dart';
 import 'tap_scale.dart';
 
 class OfferCard extends ConsumerWidget {
@@ -17,6 +19,35 @@ class OfferCard extends ConsumerWidget {
   final bool horizontal;
 
   const OfferCard({super.key, required this.offer, this.horizontal = false});
+
+  /// Returns formatted distance string or null if unavailable.
+  /// Tries business.lat/lng first, then falls back to first location with coords.
+  String? _distanceText(WidgetRef ref) {
+    final locAsync = ref.watch(userLocationProvider);
+    final pos = locAsync.valueOrNull;
+    if (pos == null) return null;
+
+    double? bLat = offer.business?.lat;
+    double? bLng = offer.business?.lng;
+
+    // Fallback: use first location with coordinates
+    if (bLat == null || bLng == null) {
+      final locs = offer.locations;
+      if (locs != null) {
+        for (final loc in locs) {
+          if (loc.lat != null && loc.lng != null) {
+            bLat = loc.lat;
+            bLng = loc.lng;
+            break;
+          }
+        }
+      }
+    }
+
+    if (bLat == null || bLng == null) return null;
+    final km = DistanceUtils.haversine(pos.latitude, pos.longitude, bLat, bLng);
+    return DistanceUtils.format(km);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -91,29 +122,46 @@ class OfferCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
-                          Icon(Icons.star, size: 12, color: AppColors.accent),
-                          const SizedBox(width: 2),
-                          Text(
-                            offer.business!.rating!.toStringAsFixed(1),
-                            style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                    Builder(builder: (_) {
+                      final dist = _distanceText(ref);
+                      final locationPart = dist != null
+                          ? '$dist distanță de tine'
+                          : offer.business!.city;
+                      return Row(
+                        children: [
+                          if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
+                            Icon(Icons.star, size: 12, color: AppColors.accent),
+                            const SizedBox(width: 2),
+                            Text(
+                              offer.business!.rating!.toStringAsFixed(1),
+                              style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                            ),
+                            if (offer.business!.ratingCount != null && offer.business!.ratingCount! > 0) ...[
+                              const SizedBox(width: 2),
+                              Text(
+                                '(${offer.business!.ratingCount})',
+                                style: AppTypography.captionMuted,
+                              ),
+                            ],
+                            const SizedBox(width: AppSpacing.sm),
+                          ],
+                          if (locationPart != null && locationPart.isNotEmpty) ...[
+                            Icon(Icons.location_on_outlined, size: 12, color: AppColors.textTertiary),
+                            const SizedBox(width: 2),
+                          ],
+                          Expanded(
+                            child: Text(
+                              [offer.business!.category, locationPart]
+                                  .where((s) => s != null && s.isNotEmpty)
+                                  .join(' \u2022 '),
+                              style: AppTypography.captionMuted,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          const SizedBox(width: AppSpacing.sm),
                         ],
-                        Expanded(
-                          child: Text(
-                            [offer.business!.category, offer.business!.city]
-                                .where((s) => s != null && s.isNotEmpty)
-                                .join(' \u2022 '),
-                            style: AppTypography.captionMuted,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+                      );
+                    }),
                   ],
                 ],
               ),
@@ -168,13 +216,72 @@ class OfferCard extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  if (offer.business != null)
+                  if (offer.business != null) ...[
                     Text(
                       offer.business!.name,
                       style: AppTypography.caption,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    // Row 1: rating + category
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        children: [
+                          if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
+                            Icon(Icons.star, size: 12, color: AppColors.accent),
+                            const SizedBox(width: 2),
+                            Text(
+                              offer.business!.rating!.toStringAsFixed(1),
+                              style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                            ),
+                            if (offer.business!.ratingCount != null && offer.business!.ratingCount! > 0) ...[
+                              const SizedBox(width: 2),
+                              Text(
+                                '(${offer.business!.ratingCount})',
+                                style: AppTypography.captionMuted,
+                              ),
+                            ],
+                            const SizedBox(width: AppSpacing.sm),
+                          ],
+                          if (offer.business!.category != null && offer.business!.category!.isNotEmpty)
+                            Expanded(
+                              child: Text(
+                                offer.business!.category!,
+                                style: AppTypography.captionMuted,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // Row 2: distance or city
+                    Builder(builder: (_) {
+                      final dist = _distanceText(ref);
+                      final locationLabel = dist != null
+                          ? '$dist distanță de tine'
+                          : offer.business!.city;
+                      if (locationLabel == null || locationLabel.isEmpty) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on_outlined, size: 12, color: AppColors.textTertiary),
+                            const SizedBox(width: 2),
+                            Expanded(
+                              child: Text(
+                                locationLabel,
+                                style: AppTypography.captionMuted,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                 ],
               ),
             ),
