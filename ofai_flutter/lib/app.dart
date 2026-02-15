@@ -1,8 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
+import 'core/theme/app_typography.dart';
+import 'core/theme/app_spacing.dart';
 import 'core/theme/page_transitions.dart';
 import 'core/storage/preferences.dart';
 import 'providers/auth_provider.dart';
@@ -30,67 +33,92 @@ import 'screens/legal/terms_screen.dart';
 import 'screens/legal/privacy_screen.dart';
 import 'screens/help/help_screen.dart';
 
-// Shell for bottom navigation
+// Shell for bottom navigation with glassmorphic effect
 class _ShellScreen extends StatelessWidget {
   final Widget child;
   final int currentIndex;
 
   const _ShellScreen({required this.child, required this.currentIndex});
 
+  static const _items = [
+    _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Acasa'),
+    _NavItem(icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Exploreaza'),
+    _NavItem(icon: Icons.bookmark_outline, activeIcon: Icons.bookmark, label: 'Colectia mea'),
+    _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Cont'),
+  ];
+
+  static const _routes = ['/', '/explore', '/collection', '/account'];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: child,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-            top: BorderSide(color: AppColors.border, width: 1),
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: AppSpacing.bottomNavHeight + MediaQuery.of(context).padding.bottom,
+            decoration: const BoxDecoration(
+              color: AppColors.bgGlass,
+              border: Border(
+                top: BorderSide(color: AppColors.borderLight, width: 0.5),
+              ),
+            ),
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(_items.length, (i) {
+                final item = _items[i];
+                final isActive = i == currentIndex;
+                return Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => context.go(_routes[i]),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          isActive ? item.activeIcon : item.icon,
+                          size: 24,
+                          color: isActive ? AppColors.accent : AppColors.textTertiary,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.label,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: isActive ? AppColors.accent : AppColors.textTertiary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Active indicator dot
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: isActive ? 4 : 0,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: currentIndex,
-          onTap: (index) {
-            switch (index) {
-              case 0:
-                context.go('/');
-                break;
-              case 1:
-                context.go('/explore');
-                break;
-              case 2:
-                context.go('/collection');
-                break;
-              case 3:
-                context.go('/account');
-                break;
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Acasă',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.explore_outlined),
-              activeIcon: Icon(Icons.explore),
-              label: 'Explorează',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_outline),
-              activeIcon: Icon(Icons.bookmark),
-              label: 'Colecția mea',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Cont',
-            ),
-          ],
         ),
       ),
     );
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  const _NavItem({required this.icon, required this.activeIcon, required this.label});
 }
 
 // Tab index helper

@@ -14,80 +14,102 @@ class BusinessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasCover = business.coverImage != null && business.coverImage!.isNotEmpty;
+
     return TapScale(
       onTap: () => context.push('/business/${business.id}'),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(color: AppColors.border),
         ),
-        child: Row(
+        child: Column(
           children: [
-            // Logo
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-              child: SizedBox(
-                width: 56,
-                height: 56,
-                child: _buildLogo(),
+            // Optional cover image strip
+            if (hasCover)
+              SizedBox(
+                height: 64,
+                width: double.infinity,
+                child: CachedNetworkImage(
+                  imageUrl: business.coverImage!,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => Container(color: AppColors.bgSecondary),
+                  errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Main row content
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
                 children: [
-                  Text(
-                    business.name,
-                    style: AppTypography.labelLarge,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  // Logo
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                    child: SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: _buildLogo(),
+                    ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    [business.categoryName, business.cityName]
-                        .where((s) => s.isNotEmpty)
-                        .join(' \u2022 '),
-                    style: AppTypography.captionMuted,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Row(
-                    children: [
-                      // Rating
-                      if (business.rating != null && business.rating! > 0) ...[
-                        Icon(Icons.star, size: 14, color: AppColors.accent),
-                        const SizedBox(width: 2),
+                  const SizedBox(width: AppSpacing.md),
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          business.rating!.toStringAsFixed(1),
-                          style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                          business.name,
+                          style: AppTypography.labelLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (business.ratingCount != null)
-                          Text(
-                            ' (${business.ratingCount})',
-                            style: AppTypography.captionMuted,
-                          ),
-                        const SizedBox(width: AppSpacing.sm),
-                      ],
-                      // Offers count
-                      if (business.activeOffersCount != null && business.activeOffersCount! > 0) ...[
-                        Icon(Icons.local_offer_outlined, size: 12, color: AppColors.textTertiary),
-                        const SizedBox(width: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          '${business.activeOffersCount} oferte',
+                          [business.categoryName, business.cityName]
+                              .where((s) => s.isNotEmpty)
+                              .join(' \u2022 '),
                           style: AppTypography.captionMuted,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          children: [
+                            // Rating
+                            if (business.rating != null && business.rating! > 0) ...[
+                              Icon(Icons.star, size: 14, color: AppColors.accent),
+                              const SizedBox(width: 2),
+                              Text(
+                                business.rating!.toStringAsFixed(1),
+                                style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                              ),
+                              if (business.ratingCount != null)
+                                Text(
+                                  ' (${business.ratingCount})',
+                                  style: AppTypography.captionMuted,
+                                ),
+                              const SizedBox(width: AppSpacing.sm),
+                            ],
+                            // Offers count
+                            if (business.activeOffersCount != null && business.activeOffersCount! > 0) ...[
+                              Icon(Icons.local_offer_outlined, size: 12, color: AppColors.textTertiary),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${business.activeOffersCount} oferte',
+                                style: AppTypography.captionMuted,
+                              ),
+                            ],
+                          ],
                         ),
                       ],
-                    ],
+                    ),
                   ),
+                  Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
           ],
         ),
       ),

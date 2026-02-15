@@ -188,6 +188,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 label: 'Schimba parola',
                 onTap: () => context.push('/account/change-password'),
               ),
+              _MenuItem(
+                icon: Icons.help_outline,
+                label: 'Ajutor',
+                onTap: () => context.push('/help'),
+              ),
 
               const SizedBox(height: AppSpacing.lg),
               const Divider(),
@@ -208,11 +213,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 spacing: AppSpacing.md,
                 runSpacing: AppSpacing.xs,
                 children: [
-                  _FooterLink(
-                    label: 'Ajutor',
-                    onTap: () => context.push('/help'),
-                  ),
-                  Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
                   _FooterLink(
                     label: 'Termeni',
                     onTap: () => context.push('/terms'),

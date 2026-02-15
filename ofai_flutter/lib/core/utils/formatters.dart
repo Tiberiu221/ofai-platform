@@ -34,6 +34,32 @@ class Formatters {
     return count.toString();
   }
 
+  /// Returns urgency text for offers ending soon, null if > 7 days away
+  static String? timeLeft(String? endDateStr) {
+    if (endDateStr == null) return null;
+    final endDate = DateTime.tryParse(endDateStr);
+    if (endDate == null) return null;
+    final now = DateTime.now();
+    final diff = endDate.difference(now);
+    if (diff.isNegative) return 'Expirata';
+    if (diff.inHours < 24) return 'Ultima zi!';
+    if (diff.inDays == 1) return '1 zi ramasa';
+    if (diff.inDays <= 7) return '${diff.inDays} zile ramase';
+    return null;
+  }
+
+  /// Returns urgency level: 0=none, 1=warning (2-7 days), 2=danger (0-1 day)
+  static int urgencyLevel(String? endDateStr) {
+    if (endDateStr == null) return 0;
+    final endDate = DateTime.tryParse(endDateStr);
+    if (endDate == null) return 0;
+    final diff = endDate.difference(DateTime.now());
+    if (diff.isNegative) return 2;
+    if (diff.inHours < 48) return 2;
+    if (diff.inDays <= 7) return 1;
+    return 0;
+  }
+
   static String timeAgo(DateTime? date) {
     if (date == null) return '';
     final diff = DateTime.now().difference(date);

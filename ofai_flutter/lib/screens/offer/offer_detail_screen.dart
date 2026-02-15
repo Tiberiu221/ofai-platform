@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,11 +9,13 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/launchers.dart';
+import '../../models/offer.dart' show Booking;
 import '../../providers/offers_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
+import '../../widgets/animated_toggle_fab.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -39,68 +42,88 @@ class OfferDetailScreen extends ConsumerWidget {
             children: [
               CustomScrollView(
                 slivers: [
-                  // Hero image
+                  // Hero image with parallax effect
                   SliverAppBar(
                     expandedHeight: 240,
                     pinned: true,
                     backgroundColor: AppColors.bgPrimary,
+                    stretch: true,
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.share_outlined),
                         onPressed: () => Launchers.shareOffer(offer.title, offer.id),
                       ),
                     ],
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: Hero(
-                        tag: 'offer-image-$offerId',
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            if (heroImage != null && heroImage.isNotEmpty)
-                              CachedNetworkImage(
-                                imageUrl: heroImage,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(color: AppColors.bgSecondary),
-                                errorWidget: (_, __, ___) => Container(
-                                  color: AppColors.bgSecondary,
-                                  child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
+                    flexibleSpace: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final top = constraints.biggest.height;
+                        final expandedHeight = 240 + MediaQuery.of(context).padding.top;
+                        final collapsedHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
+                        final scrollFraction = ((expandedHeight - top) / (expandedHeight - collapsedHeight)).clamp(0.0, 1.0);
+                        final parallaxOffset = scrollFraction * 30;
+
+                        return FlexibleSpaceBar(
+                          background: Hero(
+                            tag: 'offer-image-$offerId',
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Transform.translate(
+                                  offset: Offset(0, parallaxOffset),
+                                  child: heroImage != null && heroImage.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: heroImage,
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) => Container(color: AppColors.bgSecondary),
+                                          errorWidget: (_, __, ___) => Container(
+                                            color: AppColors.bgSecondary,
+                                            child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
+                                          ),
+                                        )
+                                      : Container(
+                                          color: AppColors.bgSecondary,
+                                          child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
+                                        ),
                                 ),
-                              )
-                            else
-                              Container(
-                                color: AppColors.bgSecondary,
-                                child: const Icon(Icons.local_offer_outlined, size: 48, color: AppColors.textTertiary),
-                              ),
-                          // Gradient overlay
-                          const DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Color(0xBB080808)],
-                              ),
+                                // Gradient overlay (fixed, above parallax)
+                                const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [Colors.transparent, Color(0xBB080808)],
+                                    ),
+                                  ),
+                                ),
+                                // Discount badge
+                                if (offer.discountValue != null)
+                                  Positioned(
+                                    top: 80,
+                                    right: 16,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.accent,
+                                        borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.accent.withValues(alpha: 0.4),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        offer.discountLabel,
+                                        style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                          // Discount badge
-                          if (offer.discountValue != null)
-                            Positioned(
-                              top: 80,
-                              right: 16,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                                ),
-                                child: Text(
-                                  offer.discountLabel,
-                                  style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
-                                ),
-                              ),
-                            ),
-                        ],
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
 
@@ -115,15 +138,17 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           const SizedBox(height: AppSpacing.md),
 
-                          // Date range
+                          // Date range + progress bar
                           if (startDate != null || endDate != null) ...[
                             Row(
                               children: [
                                 Icon(Icons.calendar_today, size: 16, color: AppColors.textTertiary),
                                 const SizedBox(width: AppSpacing.xs),
-                                Text(
-                                  'Valabilă: ${Formatters.date(startDate)} - ${Formatters.date(endDate)}',
-                                  style: AppTypography.caption,
+                                Expanded(
+                                  child: Text(
+                                    'Valabila: ${Formatters.date(startDate)} - ${Formatters.date(endDate)}',
+                                    style: AppTypography.caption,
+                                  ),
                                 ),
                                 const SizedBox(width: AppSpacing.sm),
                                 Container(
@@ -135,7 +160,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    offer.isActive ? 'Activă' : 'Expirată',
+                                    offer.isActive ? 'Activa' : 'Expirata',
                                     style: AppTypography.labelSmall.copyWith(
                                       color: offer.isActive ? AppColors.success : AppColors.danger,
                                     ),
@@ -143,6 +168,11 @@ class OfferDetailScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
+                            // Expiry progress bar
+                            if (offer.isActive && startDate != null && endDate != null) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              _ExpiryProgressBar(startDate: startDate, endDate: endDate),
+                            ],
                             const SizedBox(height: AppSpacing.lg),
                           ],
 
@@ -318,7 +348,10 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Gallery
                           if (offer.gallery != null && offer.gallery!.isNotEmpty) ...[
-                            _SectionTitle('Galerie'),
+                            Text(
+                              'Galerie (${offer.gallery!.length})',
+                              style: AppTypography.headlineSmall,
+                            ),
                             const SizedBox(height: AppSpacing.sm),
                           ],
                         ],
@@ -361,32 +394,57 @@ class OfferDetailScreen extends ConsumerWidget {
                       ),
                     ),
 
-                  // Bottom padding for FAB
-                  const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                  // Bottom padding for FAB + booking bar
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: booking != null && booking.hasBooking ? 160 : 100,
+                    ),
+                  ),
                 ],
               ),
 
-              // Favorite FAB
-              if (isLoggedIn)
+              // Sticky booking CTA bar
+              if (booking != null && booking.hasBooking)
                 Positioned(
-                  bottom: AppSpacing.xxl,
-                  right: AppSpacing.pagePadding,
-                  child: FloatingActionButton.extended(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
-                    },
-                    backgroundColor: isFav ? AppColors.accent : AppColors.bgCard,
-                    icon: Icon(
-                      isFav ? Icons.bookmark : Icons.bookmark_border,
-                      color: isFav ? AppColors.bgPrimary : AppColors.accent,
-                    ),
-                    label: Text(
-                      isFav ? 'Salvată' : 'Salvează',
-                      style: AppTypography.labelMedium.copyWith(
-                        color: isFav ? AppColors.bgPrimary : AppColors.accent,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ClipRRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.pagePadding,
+                          AppSpacing.md,
+                          isLoggedIn ? 80 : AppSpacing.pagePadding,
+                          MediaQuery.of(context).padding.bottom + AppSpacing.md,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppColors.bgGlass,
+                          border: Border(
+                            top: BorderSide(color: AppColors.borderLight, width: 0.5),
+                          ),
+                        ),
+                        child: _BookingCTA(booking: booking),
                       ),
                     ),
+                  ),
+                ),
+
+              // Favorite FAB with bounce animation
+              if (isLoggedIn)
+                Positioned(
+                  bottom: booking != null && booking.hasBooking
+                      ? MediaQuery.of(context).padding.bottom + AppSpacing.md + 6
+                      : AppSpacing.xxl,
+                  right: AppSpacing.pagePadding,
+                  child: AnimatedToggleFab(
+                    isActive: isFav,
+                    onTap: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
+                    activeIcon: Icons.bookmark,
+                    inactiveIcon: Icons.bookmark_border,
+                    activeLabel: 'Salvata',
+                    inactiveLabel: 'Salveaza',
                   ),
                 ),
             ],
@@ -458,6 +516,102 @@ class _ActionChip extends StatelessWidget {
             const SizedBox(width: 6),
             Text(label, style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingCTA extends StatelessWidget {
+  final Booking booking;
+
+  const _BookingCTA({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    // Pick the primary booking action (first available)
+    IconData icon;
+    String label;
+    VoidCallback onTap;
+
+    if (booking.phone != null) {
+      icon = Icons.phone;
+      label = 'Suna acum';
+      onTap = () => Launchers.call(booking.phone!);
+    } else if (booking.whatsapp != null) {
+      icon = Icons.message;
+      label = 'WhatsApp';
+      onTap = () => Launchers.whatsApp(booking.whatsapp!);
+    } else if (booking.url != null) {
+      icon = Icons.language;
+      label = 'Rezerva online';
+      onTap = () => Launchers.website(booking.url!);
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.accent,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accent.withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: AppColors.bgPrimary),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              label,
+              style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpiryProgressBar extends StatelessWidget {
+  final DateTime startDate;
+  final DateTime endDate;
+
+  const _ExpiryProgressBar({required this.startDate, required this.endDate});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final totalDuration = endDate.difference(startDate).inHours.toDouble();
+    final elapsed = now.difference(startDate).inHours.toDouble();
+    final progress = totalDuration > 0 ? (elapsed / totalDuration).clamp(0.0, 1.0) : 0.0;
+
+    // Color from green -> warning -> danger
+    Color barColor;
+    if (progress < 0.5) {
+      barColor = AppColors.success;
+    } else if (progress < 0.8) {
+      barColor = AppColors.warning;
+    } else {
+      barColor = AppColors.danger;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(2),
+      child: SizedBox(
+        height: 4,
+        child: LinearProgressIndicator(
+          value: progress,
+          backgroundColor: AppColors.bgSecondary,
+          valueColor: AlwaysStoppedAnimation<Color>(barColor),
         ),
       ),
     );

@@ -13,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/review_card.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
+import '../../widgets/animated_toggle_fab.dart';
 
 class BusinessDetailScreen extends ConsumerWidget {
   final int businessId;
@@ -39,10 +40,11 @@ class BusinessDetailScreen extends ConsumerWidget {
             children: [
               CustomScrollView(
                 slivers: [
-                  // Cover
+                  // Cover with parallax
                   SliverAppBar(
                     expandedHeight: 220,
                     pinned: true,
+                    stretch: true,
                     backgroundColor: AppColors.bgPrimary,
                     actions: [
                       IconButton(
@@ -50,49 +52,61 @@ class BusinessDetailScreen extends ConsumerWidget {
                         onPressed: () => Launchers.shareBusiness(business.name, business.id),
                       ),
                     ],
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (coverUrl != null && coverUrl.isNotEmpty)
-                            CachedNetworkImage(
-                              imageUrl: coverUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => Container(color: AppColors.bgSecondary),
-                              errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
-                            )
-                          else
-                            Container(color: AppColors.bgSecondary),
-                          const DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Color(0xCC080808)],
-                              ),
-                            ),
-                          ),
-                          // Logo overlay
-                          Positioned(
-                            bottom: 16,
-                            left: 20,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: SizedBox(
-                                width: 56,
-                                height: 56,
-                                child: business.logoUrl != null
+                    flexibleSpace: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final top = constraints.biggest.height;
+                        final expandedHeight = 220 + MediaQuery.of(context).padding.top;
+                        final collapsedHeight = kToolbarHeight + MediaQuery.of(context).padding.top;
+                        final scrollFraction = ((expandedHeight - top) / (expandedHeight - collapsedHeight)).clamp(0.0, 1.0);
+                        final parallaxOffset = scrollFraction * 30;
+
+                        return FlexibleSpaceBar(
+                          background: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Transform.translate(
+                                offset: Offset(0, parallaxOffset),
+                                child: coverUrl != null && coverUrl.isNotEmpty
                                     ? CachedNetworkImage(
-                                        imageUrl: business.logoUrl!,
+                                        imageUrl: coverUrl,
                                         fit: BoxFit.cover,
-                                        errorWidget: (_, __, ___) => _Initial(business.name),
+                                        placeholder: (_, __) => Container(color: AppColors.bgSecondary),
+                                        errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
                                       )
-                                    : _Initial(business.name),
+                                    : Container(color: AppColors.bgSecondary),
                               ),
-                            ),
+                              const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.transparent, Color(0xCC080808)],
+                                  ),
+                                ),
+                              ),
+                              // Logo overlay
+                              Positioned(
+                                bottom: 16,
+                                left: 20,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox(
+                                    width: 56,
+                                    height: 56,
+                                    child: business.logoUrl != null
+                                        ? CachedNetworkImage(
+                                            imageUrl: business.logoUrl!,
+                                            fit: BoxFit.cover,
+                                            errorWidget: (_, __, ___) => _Initial(business.name),
+                                          )
+                                        : _Initial(business.name),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
 
@@ -286,7 +300,10 @@ class BusinessDetailScreen extends ConsumerWidget {
 
                           // Images gallery
                           if (business.images != null && business.images!.isNotEmpty) ...[
-                            Text('Galerie', style: AppTypography.headlineSmall),
+                            Text(
+                              'Galerie (${business.images!.length})',
+                              style: AppTypography.headlineSmall,
+                            ),
                             const SizedBox(height: AppSpacing.sm),
                           ],
                         ],
@@ -395,24 +412,18 @@ class BusinessDetailScreen extends ConsumerWidget {
                 ],
               ),
 
-              // Subscribe FAB
+              // Subscribe FAB with bounce animation
               if (isLoggedIn)
                 Positioned(
                   bottom: AppSpacing.xxl,
                   right: AppSpacing.pagePadding,
-                  child: FloatingActionButton.extended(
-                    onPressed: () => ref.read(subscriptionsProvider.notifier).toggleSubscription(business.id),
-                    backgroundColor: isSub ? AppColors.accent : AppColors.bgCard,
-                    icon: Icon(
-                      isSub ? Icons.notifications_active : Icons.notifications_none,
-                      color: isSub ? AppColors.bgPrimary : AppColors.accent,
-                    ),
-                    label: Text(
-                      isSub ? 'Urmărit' : 'Urmărește',
-                      style: AppTypography.labelMedium.copyWith(
-                        color: isSub ? AppColors.bgPrimary : AppColors.accent,
-                      ),
-                    ),
+                  child: AnimatedToggleFab(
+                    isActive: isSub,
+                    onTap: () => ref.read(subscriptionsProvider.notifier).toggleSubscription(business.id),
+                    activeIcon: Icons.notifications_active,
+                    inactiveIcon: Icons.notifications_none,
+                    activeLabel: 'Urmarit',
+                    inactiveLabel: 'Urmareste',
                   ),
                 ),
             ],
@@ -427,6 +438,15 @@ class BusinessDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showSuccessOverlay(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (_) => const _SuccessOverlay(),
     );
   }
 
@@ -523,10 +543,14 @@ class BusinessDetailScreen extends ConsumerWidget {
                         );
                     if (context.mounted) {
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(success ? 'Recenzia a fost trimisă!' : 'Eroare la trimitere'),
-                        backgroundColor: success ? AppColors.success : AppColors.danger,
-                      ));
+                      if (success) {
+                        _showSuccessOverlay(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Eroare la trimitere'),
+                          backgroundColor: AppColors.danger,
+                        ));
+                      }
                     }
                   },
                   child: isSubmitting
@@ -593,6 +617,93 @@ class _InfoTile extends StatelessWidget {
             if (onTap != null)
               Icon(Icons.open_in_new, size: 16, color: AppColors.textTertiary),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SuccessOverlay extends StatefulWidget {
+  const _SuccessOverlay();
+
+  @override
+  State<_SuccessOverlay> createState() => _SuccessOverlayState();
+}
+
+class _SuccessOverlayState extends State<_SuccessOverlay> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.15), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.15, end: 0.95), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 0.95, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 15),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.0), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
+    ]).animate(_controller);
+
+    _controller.forward().then((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, __) => Opacity(
+        opacity: _opacity.value,
+        child: Center(
+          child: Transform.scale(
+            scale: _scale.value,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.success.withValues(alpha: 0.4),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_rounded, size: 48, color: Colors.white),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Trimis!',
+                    style: AppTypography.labelMedium.copyWith(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
