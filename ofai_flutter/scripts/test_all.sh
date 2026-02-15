@@ -66,8 +66,8 @@ echo ""
 # ─── Step 3: Build Check (dry run) ───
 echo -e "${BLUE}[3/3] Checking build (dry run)...${NC}"
 TOTAL=$((TOTAL + 1))
-if flutter build ios --no-codesign --debug --no-pub 2>&1 | tail -5 | grep -qiE "built|success"; then
-  echo -e "${GREEN}  ✓ iOS build check passed${NC}"
+if flutter build apk --debug --no-pub 2>&1 | tail -5 | grep -qiE "built|success"; then
+  echo -e "${GREEN}  ✓ APK build check passed${NC}"
   PASS=$((PASS + 1))
 else
   # Try just checking if it compiles without full build
