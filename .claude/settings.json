@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/tiberiubojan/development/ofai/ofai_flutter && export PATH=\"/opt/homebrew/bin:$HOME/development/flutter/bin:$PATH\" && flutter analyze --no-pub 2>&1 | grep -E '(error|warning|No issues)' | head -20",
+            "timeout": 30,
+            "statusMessage": "Analyzing Flutter code..."
+          }
+        ]
+      }
+    ]
+  }
+}
