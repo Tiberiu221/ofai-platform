@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -173,12 +174,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
               // Menu items
               _MenuItem(
-                icon: Icons.add_business,
-                label: 'Adauga un business',
-                onTap: () => context.push('/business-request'),
-                accent: true,
-              ),
-              _MenuItem(
                 icon: Icons.person_outline,
                 label: 'Profilul meu',
                 onTap: () => context.push('/account/edit-profile'),
@@ -194,7 +189,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 onTap: () => context.push('/account/change-password'),
               ),
 
-              const SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: AppSpacing.lg),
               const Divider(),
               const SizedBox(height: AppSpacing.lg),
 
@@ -204,46 +199,52 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 onTap: () => context.push('/account/data-export'),
               ),
               _MenuItem(
-                icon: Icons.description_outlined,
-                label: 'Termeni si conditii',
-                onTap: () => context.push('/terms'),
-              ),
-              _MenuItem(
-                icon: Icons.privacy_tip_outlined,
-                label: 'Confidentialitate',
-                onTap: () => context.push('/privacy'),
-              ),
-              _MenuItem(
-                icon: Icons.help_outline,
-                label: 'Ajutor',
-                onTap: () => context.push('/help'),
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-              const Divider(),
-              const SizedBox(height: AppSpacing.lg),
-
-              _MenuItem(
                 icon: Icons.logout,
                 label: 'Deconectare',
                 onTap: () {
                   ref.read(authProvider.notifier).logout();
                 },
-                danger: true,
               ),
 
-              const SizedBox(height: AppSpacing.xxl),
-              const Divider(),
-              const SizedBox(height: AppSpacing.lg),
-
-              _MenuItem(
-                icon: Icons.delete_forever_outlined,
-                label: 'Sterge contul',
+              // Footer links
+              const SizedBox(height: AppSpacing.xxxl * 2),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  _FooterLink(
+                    label: 'Ajutor',
+                    onTap: () => context.push('/help'),
+                  ),
+                  Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
+                  _FooterLink(
+                    label: 'Termeni',
+                    onTap: () => context.push('/terms'),
+                  ),
+                  Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
+                  _FooterLink(
+                    label: 'Confidentialitate',
+                    onTap: () => context.push('/privacy'),
+                  ),
+                  Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
+                  _FooterLink(
+                    label: 'Adauga business',
+                    onTap: () => launchUrl(Uri.parse('https://ofai.ro/pentru-business'), mode: LaunchMode.externalApplication),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              GestureDetector(
                 onTap: () => context.push('/account/delete-account'),
-                danger: true,
+                child: Text(
+                  'Sterge contul',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.danger.withValues(alpha: 0.6),
+                  ),
+                ),
               ),
-
-              const SizedBox(height: AppSpacing.xxl),
+              const SizedBox(height: AppSpacing.xxxl),
             ],
           ),
         ),
@@ -373,24 +374,16 @@ class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool accent;
-  final bool danger;
 
   const _MenuItem({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.accent = false,
-    this.danger = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = danger
-        ? AppColors.danger
-        : accent
-            ? AppColors.accent
-            : AppColors.textPrimary;
+    const color = AppColors.textPrimary;
 
     return InkWell(
       onTap: onTap,
@@ -416,6 +409,26 @@ class _MenuItem extends StatelessWidget {
               size: 20,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FooterLink extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _FooterLink({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: AppTypography.labelSmall.copyWith(
+          color: AppColors.textTertiary,
         ),
       ),
     );

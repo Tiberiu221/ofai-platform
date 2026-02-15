@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,8 +22,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _acceptTerms = false;
-  bool _acceptPrivacy = false;
+  bool _acceptAll = false;
   bool _isLoading = false;
   String? _error;
 
@@ -37,8 +37,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (!_acceptTerms || !_acceptPrivacy) {
-      setState(() => _error = 'Trebuie să accepți termenii și politica de confidențialitate.');
+    if (!_acceptAll) {
+      setState(() => _error = 'Trebuie sa accepti termenii si politica de confidentialitate.');
       return;
     }
 
@@ -53,8 +53,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         password: _passwordController.text,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        acceptTerms: _acceptTerms,
-        acceptPrivacy: _acceptPrivacy,
+        acceptTerms: _acceptAll,
+        acceptPrivacy: _acceptAll,
       );
       if (mounted) context.go('/');
     } on ApiException catch (e) {
@@ -189,17 +189,61 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // GDPR checkboxes
-                    _CheckboxRow(
-                      value: _acceptTerms,
-                      onChanged: (v) => setState(() => _acceptTerms = v ?? false),
-                      text: 'Accept Termenii și Condițiile',
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _CheckboxRow(
-                      value: _acceptPrivacy,
-                      onChanged: (v) => setState(() => _acceptPrivacy = v ?? false),
-                      text: 'Accept Politica de Confidențialitate',
+                    // GDPR checkbox
+                    GestureDetector(
+                      onTap: () => setState(() => _acceptAll = !_acceptAll),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _acceptAll,
+                              onChanged: (v) => setState(() => _acceptAll = v ?? false),
+                              activeColor: AppColors.accent,
+                              side: const BorderSide(color: AppColors.textTertiary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Accept '),
+                                  TextSpan(
+                                    text: 'Termenii',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.accent,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: AppColors.accent,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () => context.push('/terms'),
+                                  ),
+                                  const TextSpan(text: ' si '),
+                                  TextSpan(
+                                    text: 'Politica de confidentialitate',
+                                    style: AppTypography.bodySmall.copyWith(
+                                      color: AppColors.accent,
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: AppColors.accent,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () => context.push('/privacy'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: AppSpacing.xxl),
@@ -259,47 +303,3 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 }
 
-class _CheckboxRow extends StatelessWidget {
-  final bool value;
-  final ValueChanged<bool?> onChanged;
-  final String text;
-
-  const _CheckboxRow({
-    required this.value,
-    required this.onChanged,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: Checkbox(
-              value: value,
-              onChanged: onChanged,
-              activeColor: AppColors.accent,
-              side: const BorderSide(color: AppColors.textTertiary),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              text,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
