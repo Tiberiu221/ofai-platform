@@ -77,7 +77,7 @@ class OfferDetailScreen extends ConsumerWidget {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Color(0xBB06060A)],
+                                colors: [Colors.transparent, Color(0xBB080808)],
                               ),
                             ),
                           ),

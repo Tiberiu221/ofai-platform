@@ -4,8 +4,8 @@ class AppColors {
   AppColors._();
 
   // Backgrounds
-  static const bgPrimary = Color(0xFF06060A);
-  static const bgSecondary = Color(0xFF0C0C12);
+  static const bgPrimary = Color(0xFF080808);
+  static const bgSecondary = Color(0xFF111111);
   static const bgCard = Color(0x0AFFFFFF); // rgba(255,255,255,0.04)
   static const bgCardHover = Color(0x14FFFFFF); // rgba(255,255,255,0.08)
   static const bgInput = Color(0x0AFFFFFF);
@@ -35,7 +35,7 @@ class AppColors {
   static const accentGradient = [Color(0xFFFB923C), Color(0xFFF97316)];
 
   // Glass
-  static const bgGlass = Color(0xCC0C0C12); // bgSecondary ~80% alpha
+  static const bgGlass = Color(0xCC111111); // bgSecondary ~80% alpha
 
   // Overlays
   static const overlay = Color(0x80000000); // rgba(0,0,0,0.5)

@@ -68,7 +68,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Color(0xCC06060A)],
+                                colors: [Colors.transparent, Color(0xCC080808)],
                               ),
                             ),
                           ),
