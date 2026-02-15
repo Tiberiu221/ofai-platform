@@ -194,11 +194,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               const SizedBox(height: AppSpacing.lg),
 
               _MenuItem(
-                icon: Icons.download_outlined,
-                label: 'Exporta datele mele',
-                onTap: () => context.push('/account/data-export'),
-              ),
-              _MenuItem(
                 icon: Icons.logout,
                 label: 'Deconectare',
                 onTap: () {
@@ -234,15 +229,26 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xl),
-              GestureDetector(
-                onTap: () => context.push('/account/delete-account'),
-                child: Text(
-                  'Sterge contul',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.danger.withValues(alpha: 0.6),
+              const SizedBox(height: AppSpacing.lg),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppSpacing.md,
+                children: [
+                  _FooterLink(
+                    label: 'Exporta datele',
+                    onTap: () => context.push('/account/data-export'),
                   ),
-                ),
+                  Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
+                  GestureDetector(
+                    onTap: () => context.push('/account/delete-account'),
+                    child: Text(
+                      'Sterge contul',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.danger.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.xxxl),
             ],
