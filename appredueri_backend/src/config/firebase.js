@@ -91,4 +91,46 @@ function getMessaging() {
   return admin.messaging();
 }
 
-module.exports = { initializeFirebase, isAvailable, getMessaging };
+/**
+ * Get diagnostic info about Firebase init status (for /push-tokens/health)
+ */
+function getDiagnostics() {
+  const raw = process.env.FIREBASE_ADMINSDK_JSON;
+  if (!raw) return { status: "no_env_var" };
+
+  // Try to parse and report what fails
+  let cleaned = raw;
+  const fixes = [];
+
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1);
+    fixes.push("stripped_quotes");
+  }
+  if (cleaned.includes('\\"')) {
+    cleaned = cleaned.replace(/\\"/g, '"');
+    fixes.push("unescaped_quotes");
+  }
+
+  try {
+    const obj = JSON.parse(cleaned);
+    const fields = Object.keys(obj);
+    const hasRequired = ["project_id", "client_email", "private_key"].every(f => !!obj[f]);
+    return {
+      status: available ? "initialized" : "parsed_but_init_failed",
+      fixes,
+      fields,
+      hasRequired,
+      projectId: obj.project_id || null,
+    };
+  } catch (e) {
+    return {
+      status: "parse_error",
+      error: e.message,
+      fixes,
+      first50: raw.substring(0, 50),
+      last30: raw.substring(raw.length - 30),
+    };
+  }
+}
+
+module.exports = { initializeFirebase, isAvailable, getMessaging, getDiagnostics };

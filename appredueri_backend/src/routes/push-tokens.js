@@ -8,7 +8,7 @@ const router = express.Router();
 const pool = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const pushService = require('../services/pushNotifications');
-const { isAvailable: isFirebaseAvailable } = require('../config/firebase');
+const { isAvailable: isFirebaseAvailable, getDiagnostics } = require('../config/firebase');
 
 // ============================================
 // DIAGNOSTIC ENDPOINT
@@ -23,6 +23,7 @@ router.get('/health', (req, res) => {
     firebaseAvailable: isFirebaseAvailable(),
     envVarSet: !!process.env.FIREBASE_ADMINSDK_JSON,
     envVarLength: process.env.FIREBASE_ADMINSDK_JSON?.length || 0,
+    diagnostics: getDiagnostics(),
     timestamp: new Date().toISOString(),
   });
 });
