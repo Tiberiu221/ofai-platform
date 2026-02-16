@@ -93,9 +93,11 @@ async function sendFcmNotifications(messages) {
 
   const messaging = getMessaging();
   if (!messaging) {
-    console.warn('[Push/FCM] Firebase not initialized — skipping FCM send');
+    console.warn(`[Push/FCM] Firebase not initialized — skipping ${messages.length} FCM message(s). Check FIREBASE_ADMINSDK_JSON env var.`);
     return { success: false, sent: 0, failed: messages.length, invalidTokens: [] };
   }
+
+  console.log(`[Push/FCM] Sending ${messages.length} message(s) via Firebase...`);
 
   let totalSuccess = 0;
   let totalFailure = 0;
@@ -156,6 +158,8 @@ async function sendPushNotifications(messages) {
       console.warn('[Push] Unknown token format:', msg.to?.substring(0, 30));
     }
   }
+
+  console.log(`[Push] Routing ${messages.length} messages: ${expoMessages.length} expo, ${fcmMessages.length} fcm`);
 
   let totalSent = 0;
   let totalFailed = 0;
@@ -220,6 +224,8 @@ async function sendToUser(db, userId, notification) {
  * Send notification to all subscribers of a business
  */
 async function sendToBusinessSubscribers(db, businessId, notification) {
+  console.log(`[Push] sendToBusinessSubscribers called for business ${businessId}, firebase available: ${isFirebaseAvailable()}`);
+
   const { rows: tokens } = await db.query(`
     SELECT DISTINCT pt.token
     FROM push_tokens pt
@@ -232,6 +238,8 @@ async function sendToBusinessSubscribers(db, businessId, notification) {
     console.log(`[Push] No subscribers with tokens for business ${businessId}`);
     return { success: true, sent: 0 };
   }
+
+  console.log(`[Push] Found ${tokens.length} token(s) for business ${businessId} subscribers`);
 
   const messages = tokens.map(t => ({
     to: t.token,

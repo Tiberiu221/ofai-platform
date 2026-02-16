@@ -8,6 +8,24 @@ const router = express.Router();
 const pool = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const pushService = require('../services/pushNotifications');
+const { isAvailable: isFirebaseAvailable } = require('../config/firebase');
+
+// ============================================
+// DIAGNOSTIC ENDPOINT
+// ============================================
+
+/**
+ * GET /push-tokens/health
+ * Quick diagnostic to check if Firebase is initialized on this server
+ */
+router.get('/health', (req, res) => {
+  res.json({
+    firebaseAvailable: isFirebaseAvailable(),
+    envVarSet: !!process.env.FIREBASE_ADMINSDK_JSON,
+    envVarLength: process.env.FIREBASE_ADMINSDK_JSON?.length || 0,
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // ============================================
 // USER ENDPOINTS
@@ -177,9 +195,9 @@ router.post('/admin/send', authenticateToken, requireAdmin, async (req, res) => 
 
       case 'subscribers':
         const { rows: subTokens } = await pool.query(`
-          SELECT COUNT(DISTINCT pt.token) 
+          SELECT COUNT(DISTINCT pt.token)
           FROM push_tokens pt
-          JOIN subscriptions s ON s.user_id = pt.user_id
+          JOIN followed_businesses s ON s.user_id = pt.user_id
           WHERE s.business_id = $1 AND pt.is_active = TRUE
         `, [targetId]);
         tokensCount = parseInt(subTokens[0].count);
