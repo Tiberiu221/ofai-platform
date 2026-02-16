@@ -296,10 +296,7 @@
   .response-char-count { font-size: 0.7rem; color: var(--text-tertiary); text-align: right; margin-top: 4px; }
 
   /* ── Stats Tab ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(3, 1fr) !important; } }
-  @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr) !important; } }
-  @media (max-width: 400px) { .stats-grid { grid-template-columns: 1fr !important; } }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; }
 
   .stat-card {
     padding: 18px; border-radius: var(--radius-md);
@@ -978,7 +975,7 @@
           viewsTrend = 100;
         }
       %>
-      <div class="stats-grid" style="margin-top: 20px; grid-template-columns: repeat(6, 1fr);">
+      <div class="stats-grid" style="margin-top: 20px;">
         <div class="stat-card">
           <div class="stat-value"><%= analytics.views ? analytics.views.last_30d : 0 %></div>
           <div class="stat-label">Vizualizări (30 zile)</div>
@@ -1017,12 +1014,37 @@
           <% } %>
         </div>
         <div class="stat-card">
-          <div class="stat-value"><%= analytics.clicks ? analytics.clicks.last30d : 0 %></div>
-          <div class="stat-label">Click-uri (30 zile)</div>
-          <% if (analytics.clicks && analytics.clicks.total > 0) { %>
-            <div class="stat-subtext"><%= analytics.clicks.total %> total</div>
-          <% } %>
+          <div class="stat-value"><%= analytics.codeReveals ? analytics.codeReveals.last30d : 0 %></div>
+          <div class="stat-label">Coduri dezv.</div>
         </div>
+        <%
+          var actionCards = {
+            phone: { label: 'Apeluri', icon: '📞' },
+            whatsapp: { label: 'WhatsApp', icon: '💬' },
+            website: { label: 'Vizite site', icon: '🌐' },
+            navigate: { label: 'Direcții', icon: '📍' },
+            booking_url: { label: 'Rezervări link', icon: '🔗' },
+            share: { label: 'Distribuiri', icon: '📤' },
+            copy_code: { label: 'Coduri copiate', icon: '📋' },
+            gallery: { label: 'Galerie', icon: '🖼️' },
+            follow: { label: 'Urmăriri noi', icon: '❤️' },
+            favorite: { label: 'Favorite', icon: '⭐' }
+          };
+          var clickCards = [];
+          if (analytics.clicks && analytics.clicks.breakdown) {
+            analytics.clicks.breakdown.forEach(function(c) {
+              if (c.last30d > 0 && actionCards[c.action]) {
+                clickCards.push({ value: c.last30d, label: actionCards[c.action].label, icon: actionCards[c.action].icon });
+              }
+            });
+          }
+        %>
+        <% clickCards.forEach(function(card) { %>
+          <div class="stat-card">
+            <div class="stat-value"><%= card.icon %> <%= card.value %></div>
+            <div class="stat-label"><%= card.label %></div>
+          </div>
+        <% }); %>
       </div>
 
       <!-- Rating Distribution -->
