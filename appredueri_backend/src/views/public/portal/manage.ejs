@@ -984,7 +984,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-value"><%= analytics.codeReveals ? analytics.codeReveals.last30d : 0 %></div>
-          <div class="stat-label">Coduri revelate</div>
+          <div class="stat-label">Coduri folosite</div>
         </div>
         <%
           var actionCards = {
@@ -1009,8 +1009,8 @@
         %>
         <% clickCards.forEach(function(card) { %>
           <div class="stat-card">
-            <div class="stat-value"><%= card.icon %> <%= card.value %></div>
-            <div class="stat-label"><%= card.label %></div>
+            <div class="stat-value"><%= card.value %></div>
+            <div class="stat-label"><%= card.icon %> <%= card.label %></div>
           </div>
         <% }); %>
       </div>
