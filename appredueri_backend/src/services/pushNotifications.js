@@ -1,44 +1,51 @@
 /**
  * Push Notifications Service
- * Utilizează Expo Push API pentru trimiterea notificărilor
- * 
- * Documentație: https://docs.expo.dev/push-notifications/sending-notifications/
+ * Supports both Expo Push API and Firebase Cloud Messaging (FCM).
+ *
+ * Token routing is automatic: Expo tokens go to Expo API, FCM tokens go to Firebase.
  */
+
+const { isAvailable: isFirebaseAvailable, getMessaging } = require("../config/firebase");
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 /**
- * Validează un Expo Push Token
- * Format valid: ExponentPushToken[xxx] sau ExpoPushToken[xxx]
+ * Validate an Expo Push Token
+ * Format: ExponentPushToken[xxx] or ExpoPushToken[xxx]
  */
 function isValidExpoPushToken(token) {
-  return typeof token === 'string' && 
-         (token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['));
+  return typeof token === 'string' &&
+    (token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['));
 }
 
 /**
- * Trimite notificări către mai multe tokens
- * @param {Array} messages - Array de obiecte { to, title, body, data }
- * @returns {Promise<Object>} - Rezultatul trimiterii
+ * Validate an FCM token (long base64-ish string, typically 100-200+ chars)
  */
-async function sendPushNotifications(messages) {
+function isValidFcmToken(token) {
+  return typeof token === 'string' && token.length >= 100 && !token.startsWith('ExponentPushToken[') && !token.startsWith('ExpoPushToken[');
+}
+
+/**
+ * Detect token type. Returns 'expo', 'fcm', or null.
+ */
+function detectTokenType(token) {
+  if (isValidExpoPushToken(token)) return 'expo';
+  if (isValidFcmToken(token)) return 'fcm';
+  return null;
+}
+
+/**
+ * Send notifications via Expo Push API
+ */
+async function sendExpoNotifications(messages) {
   if (!messages || messages.length === 0) {
-    return { success: true, sent: 0, results: [] };
+    return { success: true, sent: 0, failed: 0, invalidTokens: [] };
   }
 
-  // Filtrează doar tokens valide
-  const validMessages = messages.filter(msg => isValidExpoPushToken(msg.to));
-  
-  if (validMessages.length === 0) {
-    console.log('[Push] No valid tokens to send to');
-    return { success: true, sent: 0, results: [] };
-  }
-
-  // Expo acceptă maxim 100 de notificări per request
-  const chunks = chunkArray(validMessages, 100);
-  const allResults = [];
+  const chunks = chunkArray(messages, 100);
   let totalSuccess = 0;
   let totalFailure = 0;
+  const invalidTokens = [];
 
   for (const chunk of chunks) {
     try {
@@ -53,39 +60,133 @@ async function sendPushNotifications(messages) {
       });
 
       const result = await response.json();
-      
+
       if (result.data) {
         result.data.forEach((item, index) => {
           if (item.status === 'ok') {
             totalSuccess++;
           } else {
             totalFailure++;
-            console.error(`[Push] Failed for token ${chunk[index]?.to}:`, item.message);
+            if (item.details?.error === 'DeviceNotRegistered') {
+              invalidTokens.push(chunk[index]?.to);
+            }
+            console.error(`[Push/Expo] Failed for token ${chunk[index]?.to}:`, item.message);
           }
         });
-        allResults.push(...result.data);
       }
     } catch (error) {
-      console.error('[Push] Error sending chunk:', error);
+      console.error('[Push/Expo] Error sending chunk:', error);
       totalFailure += chunk.length;
     }
   }
 
-  console.log(`[Push] Sent: ${totalSuccess} success, ${totalFailure} failed`);
-  
+  return { success: totalFailure === 0, sent: totalSuccess, failed: totalFailure, invalidTokens };
+}
+
+/**
+ * Send notifications via Firebase Cloud Messaging
+ */
+async function sendFcmNotifications(messages) {
+  if (!messages || messages.length === 0) {
+    return { success: true, sent: 0, failed: 0, invalidTokens: [] };
+  }
+
+  const messaging = getMessaging();
+  if (!messaging) {
+    console.warn('[Push/FCM] Firebase not initialized — skipping FCM send');
+    return { success: false, sent: 0, failed: messages.length, invalidTokens: [] };
+  }
+
+  let totalSuccess = 0;
+  let totalFailure = 0;
+  const invalidTokens = [];
+
+  for (const msg of messages) {
+    try {
+      await messaging.send({
+        token: msg.to,
+        notification: {
+          title: msg.title,
+          body: msg.body,
+        },
+        data: msg.data ? Object.fromEntries(
+          Object.entries(msg.data).map(([k, v]) => [k, String(v)])
+        ) : {},
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+      });
+      totalSuccess++;
+    } catch (error) {
+      totalFailure++;
+      if (error.code === 'messaging/invalid-registration-token' ||
+          error.code === 'messaging/registration-token-not-registered') {
+        invalidTokens.push(msg.to);
+      }
+      console.error(`[Push/FCM] Failed for token ${msg.to?.substring(0, 30)}...:`, error.code || error.message);
+    }
+  }
+
+  return { success: totalFailure === 0, sent: totalSuccess, failed: totalFailure, invalidTokens };
+}
+
+/**
+ * Send push notifications — automatically routes Expo vs FCM tokens
+ * @param {Array} messages - Array of { to, title, body, data }
+ */
+async function sendPushNotifications(messages) {
+  if (!messages || messages.length === 0) {
+    return { success: true, sent: 0, failed: 0 };
+  }
+
+  const expoMessages = [];
+  const fcmMessages = [];
+
+  for (const msg of messages) {
+    const type = detectTokenType(msg.to);
+    if (type === 'expo') {
+      expoMessages.push(msg);
+    } else if (type === 'fcm') {
+      fcmMessages.push(msg);
+    } else {
+      console.warn('[Push] Unknown token format:', msg.to?.substring(0, 30));
+    }
+  }
+
+  let totalSent = 0;
+  let totalFailed = 0;
+  const allInvalidTokens = [];
+
+  if (expoMessages.length > 0) {
+    const expoResult = await sendExpoNotifications(expoMessages);
+    totalSent += expoResult.sent;
+    totalFailed += expoResult.failed;
+    allInvalidTokens.push(...expoResult.invalidTokens);
+  }
+
+  if (fcmMessages.length > 0) {
+    const fcmResult = await sendFcmNotifications(fcmMessages);
+    totalSent += fcmResult.sent;
+    totalFailed += fcmResult.failed;
+    allInvalidTokens.push(...fcmResult.invalidTokens);
+  }
+
+  console.log(`[Push] Sent: ${totalSent} success, ${totalFailed} failed (expo: ${expoMessages.length}, fcm: ${fcmMessages.length})`);
+
   return {
-    success: totalFailure === 0,
-    sent: totalSuccess,
-    failed: totalFailure,
-    results: allResults,
+    success: totalFailed === 0,
+    sent: totalSent,
+    failed: totalFailed,
+    invalidTokens: allInvalidTokens,
   };
 }
 
 /**
- * Trimite o notificare către un singur user
- * @param {Object} db - Database pool
- * @param {number} userId - ID-ul userului
- * @param {Object} notification - { title, body, data }
+ * Send notification to a single user
  */
 async function sendToUser(db, userId, notification) {
   const { rows: tokens } = await db.query(
@@ -106,22 +207,24 @@ async function sendToUser(db, userId, notification) {
     data: notification.data || {},
   }));
 
-  return sendPushNotifications(messages);
+  const result = await sendPushNotifications(messages);
+
+  if (result.invalidTokens.length > 0) {
+    await deactivateInvalidTokens(db, result.invalidTokens);
+  }
+
+  return result;
 }
 
 /**
- * Trimite notificare către toți subscriberii unui business
- * @param {Object} db - Database pool
- * @param {number} businessId - ID-ul business-ului
- * @param {Object} notification - { title, body, data }
+ * Send notification to all subscribers of a business
  */
 async function sendToBusinessSubscribers(db, businessId, notification) {
-  // Ia toți userii abonați la acest business care au push tokens active
   const { rows: tokens } = await db.query(`
-    SELECT DISTINCT pt.token 
+    SELECT DISTINCT pt.token
     FROM push_tokens pt
     JOIN subscriptions s ON s.user_id = pt.user_id
-    WHERE s.business_id = $1 
+    WHERE s.business_id = $1
       AND pt.is_active = TRUE
   `, [businessId]);
 
@@ -135,16 +238,20 @@ async function sendToBusinessSubscribers(db, businessId, notification) {
     sound: 'default',
     title: notification.title,
     body: notification.body,
-    data: { ...notification.data, businessId },
+    data: { ...notification.data, businessId: String(businessId) },
   }));
 
-  return sendPushNotifications(messages);
+  const result = await sendPushNotifications(messages);
+
+  if (result.invalidTokens.length > 0) {
+    await deactivateInvalidTokens(db, result.invalidTokens);
+  }
+
+  return result;
 }
 
 /**
- * Trimite notificare către toți userii (broadcast)
- * @param {Object} db - Database pool
- * @param {Object} notification - { title, body, data }
+ * Send notification to all users (broadcast)
  */
 async function sendToAll(db, notification) {
   const { rows: tokens } = await db.query(
@@ -164,21 +271,24 @@ async function sendToAll(db, notification) {
     data: notification.data || {},
   }));
 
-  return sendPushNotifications(messages);
+  const result = await sendPushNotifications(messages);
+
+  if (result.invalidTokens.length > 0) {
+    await deactivateInvalidTokens(db, result.invalidTokens);
+  }
+
+  return result;
 }
 
 /**
- * Trimite notificare către userii dintr-un anumit oraș
- * @param {Object} db - Database pool
- * @param {number} cityId - ID-ul orașului
- * @param {Object} notification - { title, body, data }
+ * Send notification to users in a specific city
  */
 async function sendToCity(db, cityId, notification) {
   const { rows: tokens } = await db.query(`
-    SELECT DISTINCT pt.token 
+    SELECT DISTINCT pt.token
     FROM push_tokens pt
     JOIN users u ON u.id = pt.user_id
-    WHERE u.city_id = $1 
+    WHERE u.city_id = $1
       AND pt.is_active = TRUE
   `, [cityId]);
 
@@ -192,21 +302,25 @@ async function sendToCity(db, cityId, notification) {
     sound: 'default',
     title: notification.title,
     body: notification.body,
-    data: { ...notification.data, cityId },
+    data: { ...notification.data, cityId: String(cityId) },
   }));
 
-  return sendPushNotifications(messages);
+  const result = await sendPushNotifications(messages);
+
+  if (result.invalidTokens.length > 0) {
+    await deactivateInvalidTokens(db, result.invalidTokens);
+  }
+
+  return result;
 }
 
 /**
- * Loghează notificarea în baza de date
- * @param {Object} db - Database pool
- * @param {Object} logData - Datele pentru log
+ * Log notification to database
  */
 async function logNotification(db, logData) {
   try {
     await db.query(`
-      INSERT INTO push_notifications_log 
+      INSERT INTO push_notifications_log
         (title, body, data, sent_by, target_type, target_id, tokens_count, success_count, failure_count)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `, [
@@ -226,13 +340,11 @@ async function logNotification(db, logData) {
 }
 
 /**
- * Dezactivează tokens invalide (DeviceNotRegistered)
- * @param {Object} db - Database pool
- * @param {Array} tokens - Array de tokens de dezactivat
+ * Deactivate invalid/expired push tokens
  */
 async function deactivateInvalidTokens(db, tokens) {
   if (!tokens || tokens.length === 0) return;
-  
+
   try {
     await db.query(
       'UPDATE push_tokens SET is_active = FALSE, updated_at = NOW() WHERE token = ANY($1)',
@@ -245,7 +357,7 @@ async function deactivateInvalidTokens(db, tokens) {
 }
 
 /**
- * Helper: împarte array în chunks
+ * Helper: split array into chunks
  */
 function chunkArray(array, size) {
   const chunks = [];
@@ -257,6 +369,8 @@ function chunkArray(array, size) {
 
 module.exports = {
   isValidExpoPushToken,
+  isValidFcmToken,
+  detectTokenType,
   sendPushNotifications,
   sendToUser,
   sendToBusinessSubscribers,

@@ -27,32 +27,35 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Token is required' });
     }
 
-    if (!pushService.isValidExpoPushToken(token)) {
-      return res.status(400).json({ error: 'Invalid Expo push token format' });
+    // Detect token type (Expo or FCM)
+    const detectedType = pushService.detectTokenType(token);
+    if (!detectedType) {
+      return res.status(400).json({ error: 'Invalid push token format (expected Expo or FCM)' });
     }
 
     const validPlatforms = ['ios', 'android', 'web'];
     const normalizedPlatform = platform?.toLowerCase() || 'android';
-    
+
     if (!validPlatforms.includes(normalizedPlatform)) {
       return res.status(400).json({ error: 'Invalid platform. Must be ios, android, or web' });
     }
 
     // Upsert: insert sau update dacă token există deja
     const result = await pool.query(`
-      INSERT INTO push_tokens (user_id, token, platform, device_name, is_active, updated_at)
-      VALUES ($1, $2, $3, $4, TRUE, NOW())
-      ON CONFLICT (token) 
-      DO UPDATE SET 
+      INSERT INTO push_tokens (user_id, token, token_type, platform, device_name, is_active, updated_at)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW())
+      ON CONFLICT (token)
+      DO UPDATE SET
         user_id = $1,
-        platform = $3,
-        device_name = $4,
+        token_type = $3,
+        platform = $4,
+        device_name = $5,
         is_active = TRUE,
         updated_at = NOW()
-      RETURNING id, token, platform, device_name, created_at
-    `, [userId, token, normalizedPlatform, deviceName || null]);
+      RETURNING id, token, token_type, platform, device_name, created_at
+    `, [userId, token, detectedType, normalizedPlatform, deviceName || null]);
 
-    console.log(`[Push] Token saved for user ${userId}: ${token.substring(0, 30)}...`);
+    console.log(`[Push] Token saved for user ${userId}: ${detectedType} on ${normalizedPlatform}`);
 
     res.json({
       success: true,

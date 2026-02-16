@@ -9,6 +9,7 @@ import 'core/theme/app_spacing.dart';
 import 'core/theme/page_transitions.dart';
 import 'core/storage/preferences.dart';
 import 'providers/auth_provider.dart';
+import 'services/push_notification_service.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/explore/explore_screen.dart';
 import 'screens/collection/collection_screen.dart';
@@ -157,6 +158,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // If on auth routes and already authenticated, go home
       if (isAuth && isAuthRoute) return '/';
+
+      // Handle push notification deep links
+      if (isAuth && state.uri.path == '/') {
+        final deepLink = PushNotificationService().consumePendingDeepLink();
+        if (deepLink != null) return deepLink;
+      }
 
       return null;
     },

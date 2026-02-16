@@ -11,6 +11,10 @@ const { initSentry, sentryRequestHandler, sentryErrorHandler, sentryUserMiddlewa
 // Middleware Auth
 const adminAuth = require("./middleware/adminAuth");
 
+// Firebase (for FCM push notifications)
+const { initializeFirebase } = require("./config/firebase");
+initializeFirebase();
+
 // Rate Limiting
 const { generalLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
 

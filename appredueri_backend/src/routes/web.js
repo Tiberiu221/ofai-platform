@@ -8,7 +8,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const pool = require("../db");
 const { optionalWebAuth, requireWebAuth } = require("../middleware/webAuth");
-const { signToken } = require("../helpers/jwt");
+const { signToken, generateRefreshToken } = require("../helpers/jwt");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
 const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
@@ -23,6 +23,36 @@ const portalUpload = multer({
 });
 
 const SALT_ROUNDS = 10;
+const REFRESH_TOKEN_DAYS = 30;
+
+/**
+ * Helper: create and store a refresh token in DB
+ */
+async function createWebRefreshToken(userId) {
+  const refreshToken = generateRefreshToken();
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+  await pool.query(
+    `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+    [userId, refreshToken, expiresAt]
+  );
+  return refreshToken;
+}
+
+/** Cookie options for web auth */
+const ACCESS_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 24 * 60 * 60 * 1000, // 24h
+  path: "/",
+};
+const REFRESH_COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000, // 30d
+  path: "/",
+};
 
 // Apply optional auth to ALL web routes
 router.use(optionalWebAuth);
@@ -751,14 +781,11 @@ router.post("/login", async (req, res) => {
 
     await pool.query("UPDATE users SET last_active_at = NOW() WHERE id = $1", [user.id]);
 
-    const token = signToken({ id: user.id }, "30d");
+    const token = signToken({ id: user.id }, "24h");
+    const refreshToken = await createWebRefreshToken(user.id);
 
-    res.cookie("ofai_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("ofai_token", token, ACCESS_COOKIE_OPTS);
+    res.cookie("ofai_refresh_token", refreshToken, REFRESH_COOKIE_OPTS);
 
     const returnTo = req.body.returnTo || "/cont";
     const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";
@@ -801,13 +828,10 @@ router.post("/register", async (req, res) => {
     await pool.query("INSERT INTO user_points (user_id, total_points) VALUES ($1, 0) ON CONFLICT DO NOTHING", [user.id]);
 
     const token = signToken({ id: user.id });
+    const refreshToken = await createWebRefreshToken(user.id);
 
-    res.cookie("ofai_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24h (matches new access token expiry)
-    });
+    res.cookie("ofai_token", token, ACCESS_COOKIE_OPTS);
+    res.cookie("ofai_refresh_token", refreshToken, REFRESH_COOKIE_OPTS);
 
     // Async email + webhook (GDPR: no PII in webhook)
     sendWelcomeEmail(user.email, user.first_name).catch(() => {});
@@ -895,8 +919,20 @@ router.post("/reset-password", async (req, res) => {
 });
 
 // GET /logout
-router.get("/logout", (req, res) => {
-  res.clearCookie("ofai_token");
+router.get("/logout", async (req, res) => {
+  try {
+    const refreshToken = req.cookies?.ofai_refresh_token;
+    if (refreshToken) {
+      await pool.query(
+        "UPDATE refresh_tokens SET revoked_at = NOW() WHERE token = $1 AND revoked_at IS NULL",
+        [refreshToken]
+      );
+    }
+  } catch (err) {
+    console.error("[Web] Logout revoke error:", err);
+  }
+  res.clearCookie("ofai_token", { path: "/" });
+  res.clearCookie("ofai_refresh_token", { path: "/" });
   res.redirect("/");
 });
 
@@ -1939,7 +1975,8 @@ router.delete("/api/web/delete-account", requireWebAuth, async (req, res) => {
     await pool.query("DELETE FROM user_points WHERE user_id = $1", [req.webUser.id]);
     await pool.query("DELETE FROM users WHERE id = $1", [req.webUser.id]);
 
-    res.clearCookie("ofai_token");
+    res.clearCookie("ofai_token", { path: "/" });
+    res.clearCookie("ofai_refresh_token", { path: "/" });
     res.json({ success: true, redirect: "/" });
   } catch (err) {
     console.error("[Web API] Delete account error:", err);

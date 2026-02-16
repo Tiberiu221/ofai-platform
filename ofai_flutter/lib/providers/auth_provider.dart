@@ -4,6 +4,7 @@ import '../core/network/api_endpoints.dart';
 import '../core/network/api_exceptions.dart';
 import '../core/storage/secure_storage.dart';
 import '../models/user.dart';
+import '../services/push_notification_service.dart';
 
 // Auth state
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
@@ -51,6 +52,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await _api.dio.get(ApiEndpoints.me);
       final user = User.fromJson(response.data['user'] ?? response.data);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+
+      // Re-register push on app restart
+      PushNotificationService().initialize();
     } catch (_) {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
@@ -72,6 +76,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final user = User.fromJson(data['user']);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+
+      // Register for push notifications
+      PushNotificationService().initialize();
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la autentificare';
       state = state.copyWith(status: AuthStatus.unauthenticated, error: msg);
@@ -108,6 +115,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final user = User.fromJson(data['user']);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+
+      // Register for push notifications
+      PushNotificationService().initialize();
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la înregistrare';
       state = state.copyWith(status: AuthStatus.unauthenticated, error: msg);
@@ -116,6 +126,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // Unregister push token before clearing auth
+    await PushNotificationService().onLogout();
+
     try {
       final refreshToken = await SecureStorage.getRefreshToken();
       if (refreshToken != null) {

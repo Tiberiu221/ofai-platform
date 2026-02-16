@@ -5,6 +5,7 @@ const multer = require("multer");
 const { businessAuth, businessUserAuth } = require("../middleware/businessAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { triggerWebhook } = require("../services/n8n");
+const pushService = require("../services/pushNotifications");
 const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
 
 // =====================================
@@ -416,12 +417,13 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
 
     console.log("[BusinessPortal] Offer created with ID:", result.rows[0].id);
 
-    // Trigger n8n webhook for new offer (push to subscribers + high-value broadcast)
+    // Trigger n8n webhook for new offer
     const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
+    const bizName = bizNameRes.rows[0]?.name || "Business";
     triggerWebhook("/webhook/new-offer", {
       offer_id: result.rows[0].id,
       business_id: parseInt(businessId),
-      business_name: bizNameRes.rows[0]?.name || "Business",
+      business_name: bizName,
       title: title,
       discount_type: discount_type || null,
       discount_value: discount_value ? Number(discount_value) : null,
@@ -429,6 +431,18 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       end_date: end_date || null,
       created_at: new Date().toISOString(),
     });
+
+    // Push notification to subscribers (fire-and-forget)
+    const discountText = discount_value ? ` (-${discount_value}%)` : "";
+    pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
+      title: `${bizName} are o ofertă nouă!`,
+      body: `${title}${discountText}`,
+      data: {
+        type: "new_offer",
+        offerId: String(result.rows[0].id),
+        businessId: String(businessId),
+      },
+    }).catch(err => console.error("[Push] New offer push error:", err));
 
     res.json({ success: true, offer_id: result.rows[0].id });
   } catch (err) {
