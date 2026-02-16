@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../core/storage/secure_storage.dart';
@@ -10,7 +9,7 @@ import '../core/storage/secure_storage.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint('[Push] Background message: ${message.messageId}');
+  print('[Push] Background message: ${message.messageId}');
 }
 
 class PushNotificationService {
@@ -18,41 +17,49 @@ class PushNotificationService {
   factory PushNotificationService() => _instance;
   PushNotificationService._internal();
 
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  // Lazy getter — only access after Firebase.initializeApp() has completed
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   String? _currentToken;
   bool _initialized = false;
 
   /// Called after successful login/register to set up push notifications.
   Future<void> initialize() async {
+    print('[Push] initialize() called, _initialized=$_initialized');
     if (_initialized) return;
 
     try {
       // Register background handler
       FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      print('[Push] Background handler registered');
 
       // Request permission (required for Android 13+ and iOS)
+      print('[Push] Requesting permission...');
       final settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
         provisional: false,
       );
+      print('[Push] Permission status: ${settings.authorizationStatus}');
 
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        debugPrint('[Push] Permission denied by user');
+        print('[Push] Permission denied by user');
         return;
       }
 
       // Get FCM token
+      print('[Push] Getting FCM token...');
       _currentToken = await _messaging.getToken();
       if (_currentToken != null) {
-        debugPrint('[Push] FCM Token: ${_currentToken!.substring(0, 30)}...');
+        print('[Push] FCM Token: ${_currentToken!.substring(0, 30)}...');
         await _registerTokenWithBackend(_currentToken!);
+      } else {
+        print('[Push] FCM token is null!');
       }
 
       // Listen for token refresh
       _messaging.onTokenRefresh.listen((newToken) {
-        debugPrint('[Push] Token refreshed');
+        print('[Push] Token refreshed');
         _currentToken = newToken;
         _registerTokenWithBackend(newToken);
       });
@@ -70,9 +77,10 @@ class PushNotificationService {
       }
 
       _initialized = true;
-      debugPrint('[Push] Service initialized');
-    } catch (e) {
-      debugPrint('[Push] Init error: $e');
+      print('[Push] Service initialized successfully');
+    } catch (e, stack) {
+      print('[Push] Init error: $e');
+      print('[Push] Stack: $stack');
     }
   }
 
@@ -90,18 +98,15 @@ class PushNotificationService {
           'deviceName': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
         },
       );
-      debugPrint('[Push] Token registered with backend');
+      print('[Push] Token registered with backend');
     } catch (e) {
-      debugPrint('[Push] Token registration failed: $e');
+      print('[Push] Token registration failed: $e');
     }
   }
 
   /// Handle foreground notification — just log for now
   void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('[Push] Foreground: ${message.notification?.title}');
-    // Foreground notifications are shown automatically by Firebase on Android
-    // if a notification channel is configured. For custom handling, use
-    // flutter_local_notifications package.
+    print('[Push] Foreground: ${message.notification?.title}');
   }
 
   /// Handle notification tap — deep link to relevant screen
@@ -109,15 +114,13 @@ class PushNotificationService {
     final data = message.data;
     final type = data['type'];
 
-    // Navigation will be handled by the app's GoRouter.
-    // Store the pending deep link for the router to pick up.
     if (type == 'new_offer' && data['offerId'] != null) {
       _pendingDeepLink = '/offer/${data['offerId']}';
     } else if (data['businessId'] != null) {
       _pendingDeepLink = '/business/${data['businessId']}';
     }
 
-    debugPrint('[Push] Notification tap → $_pendingDeepLink');
+    print('[Push] Notification tap -> $_pendingDeepLink');
   }
 
   /// Pending deep link from notification tap (consumed by router)
@@ -145,9 +148,9 @@ class PushNotificationService {
       await _messaging.deleteToken();
       _currentToken = null;
       _initialized = false;
-      debugPrint('[Push] Logout cleanup done');
+      print('[Push] Logout cleanup done');
     } catch (e) {
-      debugPrint('[Push] Logout cleanup error: $e');
+      print('[Push] Logout cleanup error: $e');
     }
   }
 }

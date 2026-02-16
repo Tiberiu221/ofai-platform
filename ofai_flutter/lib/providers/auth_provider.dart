@@ -54,7 +54,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(status: AuthStatus.authenticated, user: user);
 
       // Re-register push on app restart
-      PushNotificationService().initialize();
+      PushNotificationService().initialize().catchError((e) {
+        print('[Push] Init failed: $e');
+      });
     } catch (_) {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }
@@ -78,7 +80,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(status: AuthStatus.authenticated, user: user);
 
       // Register for push notifications
-      PushNotificationService().initialize();
+      PushNotificationService().initialize().catchError((e) {
+        print('[Push] Init failed: $e');
+      });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la autentificare';
       state = state.copyWith(status: AuthStatus.unauthenticated, error: msg);
@@ -117,7 +121,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState(status: AuthStatus.authenticated, user: user);
 
       // Register for push notifications
-      PushNotificationService().initialize();
+      PushNotificationService().initialize().catchError((e) {
+        print('[Push] Init failed: $e');
+      });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la înregistrare';
       state = state.copyWith(status: AuthStatus.unauthenticated, error: msg);
