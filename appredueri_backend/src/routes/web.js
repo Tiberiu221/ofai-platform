@@ -11,6 +11,7 @@ const { optionalWebAuth, requireWebAuth } = require("../middleware/webAuth");
 const { signToken, generateRefreshToken } = require("../helpers/jwt");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
+const pushService = require("../services/pushNotifications");
 const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const multer = require("multer");
@@ -1531,6 +1532,20 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
         discount_type || 'percentage', discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active !== false,
         booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null]);
+
+    // Push notification to subscribers (fire-and-forget)
+    const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
+    const bizName = bizNameRes.rows[0]?.name || "Business";
+    const discountText = discount_value ? ` (-${discount_value}%)` : "";
+    pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
+      title: `${bizName} are o ofertă nouă!`,
+      body: `${title}${discountText}`,
+      data: {
+        type: "new_offer",
+        offerId: String(result.rows[0].id),
+        businessId: String(businessId),
+      },
+    }).catch(err => console.error("[Push] New offer push error:", err));
 
     res.json({ success: true, offer_id: result.rows[0].id });
   } catch (err) {
