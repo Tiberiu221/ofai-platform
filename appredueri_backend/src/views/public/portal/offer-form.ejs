@@ -362,6 +362,159 @@
       padding-top: 100px;
     }
   }
+
+  /* ─── PROMO CODES LIST ──────────────────────────────────── */
+  .pc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .pc-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s;
+  }
+  .pc-row:hover {
+    border-color: var(--border-hover);
+  }
+  .pc-row input[type="text"] {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .pc-row input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(251,146,60,0.1);
+  }
+  .pc-row input[type="text"]::placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* Toggle mini */
+  .pc-toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .pc-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+  .pc-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.25s;
+  }
+  .pc-toggle-slider::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    transition: transform 0.25s, background 0.25s;
+  }
+  .pc-toggle input:checked + .pc-toggle-slider {
+    background: var(--accent);
+  }
+  .pc-toggle input:checked + .pc-toggle-slider::after {
+    transform: translateX(18px);
+    background: #fff;
+  }
+  .pc-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 48px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .pc-status.active { color: var(--accent); }
+  .pc-status.inactive { color: var(--text-muted); }
+
+  .pc-remove {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .pc-remove:hover {
+    color: #ef4444;
+    background: rgba(239,68,68,0.1);
+  }
+
+  .pc-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-sans);
+  }
+  .pc-add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(251,146,60,0.05);
+  }
+
+  .pc-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  @media (max-width: 500px) {
+    .pc-row {
+      flex-wrap: wrap;
+    }
+    .pc-row input[type="text"] {
+      width: 100%;
+      flex: none;
+    }
+  }
 </style>
 
 <section class="of-page-header">
@@ -527,17 +680,18 @@
           </div>
         </div>
 
-        <!-- ═══ Section 3: Cod promoțional ═══ -->
+        <!-- ═══ Section 3: Coduri promoționale ═══ -->
         <div class="of-section">
           <h2 class="of-section-title">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            Cod promoțional
+            Coduri promoționale
           </h2>
-          <div class="of-field">
-            <label class="of-label" for="of-promo-code">Cod de reducere</label>
-            <input type="text" id="of-promo-code" name="promo_code" class="of-input" placeholder="Ex: REDUCERE20, OFAI2024" value="<%= offer ? (offer.promo_code || '') : '' %>" maxlength="100">
-            <div class="of-hint">Opțional. Utilizatorii vor vedea un buton "Dezvăluie codul" pe pagina ofertei.</div>
-          </div>
+          <div id="pc-list" class="pc-list"></div>
+          <button type="button" id="pc-add-btn" class="pc-add-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Adaugă cod
+          </button>
+          <div class="of-hint" style="margin-top: 10px;">Opțional. Utilizatorii vor vedea un buton "Dezvăluie codul" pe pagina ofertei. Poți adăuga mai multe coduri și le poți activa/dezactiva individual.</div>
         </div>
 
         <!-- ═══ Actions ═══ -->
@@ -572,6 +726,83 @@
   const businessId = '<%= business.id %>';
   const offerId = '<%= offer ? offer.id : '' %>';
   const isEdit = !!offerId;
+
+  // ─── Promo codes dynamic list ────────────────────────────────
+  var promoCodes = <%- JSON.stringify(typeof promoCodes !== 'undefined' && promoCodes ? promoCodes : []) %>;
+  var pcListEl = document.getElementById('pc-list');
+  var pcAddBtn = document.getElementById('pc-add-btn');
+
+  function escHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderPromoCodes() {
+    if (promoCodes.length === 0) {
+      pcListEl.innerHTML = '<div class="pc-empty">Niciun cod promoțional adăugat</div>';
+      return;
+    }
+    pcListEl.innerHTML = '';
+    promoCodes.forEach(function(pc, idx) {
+      var row = document.createElement('div');
+      row.className = 'pc-row';
+      row.dataset.idx = idx;
+      row.innerHTML =
+        '<input type="text" value="' + escHtml(pc.code || '') + '" ' +
+          'placeholder="Ex: REDUCERE20" maxlength="100" data-field="code" data-idx="' + idx + '">' +
+        '<label class="pc-toggle">' +
+          '<input type="checkbox" ' + (pc.is_active !== false ? 'checked' : '') + ' data-field="toggle" data-idx="' + idx + '">' +
+          '<span class="pc-toggle-slider"></span>' +
+        '</label>' +
+        '<span class="pc-status ' + (pc.is_active !== false ? 'active' : 'inactive') + '">' +
+          (pc.is_active !== false ? 'Activ' : 'Inactiv') +
+        '</span>' +
+        '<button type="button" class="pc-remove" data-field="remove" data-idx="' + idx + '" title="Elimină codul">&times;</button>';
+      pcListEl.appendChild(row);
+    });
+  }
+
+  // Event delegation
+  pcListEl.addEventListener('input', function(e) {
+    var idx = parseInt(e.target.dataset.idx);
+    if (e.target.dataset.field === 'code' && !isNaN(idx)) {
+      promoCodes[idx].code = e.target.value;
+    }
+  });
+
+  pcListEl.addEventListener('change', function(e) {
+    var idx = parseInt(e.target.dataset.idx);
+    if (e.target.dataset.field === 'toggle' && !isNaN(idx)) {
+      promoCodes[idx].is_active = e.target.checked;
+      var status = e.target.closest('.pc-row').querySelector('.pc-status');
+      if (status) {
+        status.textContent = e.target.checked ? 'Activ' : 'Inactiv';
+        status.className = 'pc-status ' + (e.target.checked ? 'active' : 'inactive');
+      }
+    }
+  });
+
+  pcListEl.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-field="remove"]');
+    if (btn) {
+      var idx = parseInt(btn.dataset.idx);
+      if (!isNaN(idx)) {
+        promoCodes.splice(idx, 1);
+        renderPromoCodes();
+      }
+    }
+  });
+
+  pcAddBtn.addEventListener('click', function() {
+    promoCodes.push({ code: '', is_active: true });
+    renderPromoCodes();
+    // Focus the new input
+    var inputs = pcListEl.querySelectorAll('input[type="text"]');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+
+  renderPromoCodes();
 
   // ─── Discount type toggle ──────────────────────────────────
   const discountTypeSelect = document.getElementById('of-discount-type');
@@ -677,7 +908,7 @@
       booking_whatsapp: document.getElementById('of-booking-whatsapp-input').value.trim(),
       booking_url: document.getElementById('of-booking-url-input').value.trim(),
       booking_instructions: document.getElementById('of-booking-instructions-input').value.trim(),
-      promo_code: document.getElementById('of-promo-code').value.trim() || null
+      promo_codes: promoCodes.filter(function(pc) { return pc.code && pc.code.trim(); })
     };
 
     try {

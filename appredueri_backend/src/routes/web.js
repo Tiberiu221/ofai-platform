@@ -459,7 +459,8 @@ router.get("/oferta/:id", async (req, res) => {
         o.id, o.business_id, o.title, o.description,
         o.discount_type, o.discount_value, o.conditions,
         o.start_date, o.end_date, o.is_active,
-        o.logo_url as offer_logo, o.promo_code,
+        o.logo_url as offer_logo,
+        EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
         o.booking_type as offer_booking_type,
         o.booking_phone as offer_booking_phone,
         o.booking_whatsapp as offer_booking_whatsapp,
@@ -547,7 +548,7 @@ router.get("/oferta/:id", async (req, res) => {
       start_date: row.start_date,
       end_date: row.end_date,
       is_active: row.is_active,
-      has_promo_code: !!row.promo_code,
+      has_promo_code: !!row.has_promo_code,
       image_url: row.business_cover || row.offer_logo || row.business_logo,
       booking,
       business: {
@@ -587,24 +588,32 @@ router.get("/oferta/:id", async (req, res) => {
 router.post("/api/web/offers/:id/reveal-code", requireWebAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("SELECT promo_code FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
 
-    if (result.rows.length === 0) {
+    // First check if offer exists and is active
+    const offerCheck = await pool.query("SELECT id FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
+    if (offerCheck.rows.length === 0) {
       return res.status(404).json({ message: "Oferta nu există" });
     }
 
-    const promoCode = result.rows[0].promo_code;
-    if (!promoCode) {
-      return res.status(404).json({ message: "Această ofertă nu are cod promoțional" });
+    // Get a random active promo code for this offer
+    const result = await pool.query(
+      "SELECT id, code FROM promo_codes WHERE offer_id = $1 AND is_active = TRUE ORDER BY RANDOM() LIMIT 1",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Această ofertă nu are cod promoțional activ" });
     }
 
-    // Log reveal (fire-and-forget)
+    const promoRow = result.rows[0];
+
+    // Log reveal with promo_code_id (fire-and-forget)
     pool.query(
-      "INSERT INTO code_reveals (offer_id, user_id, viewer_ip) VALUES ($1, $2, $3)",
-      [id, req.webUser.id, req.ip || null]
+      "INSERT INTO code_reveals (offer_id, user_id, viewer_ip, promo_code_id) VALUES ($1, $2, $3, $4)",
+      [id, req.webUser.id, req.ip || null, promoRow.id]
     ).catch(() => {});
 
-    res.json({ promo_code: promoCode });
+    res.json({ promo_code: promoRow.code });
   } catch (err) {
     console.error("[Web] Reveal code error:", err);
     res.status(500).json({ message: "Eroare server" });
@@ -1442,14 +1451,21 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
     if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
     const offerRes = await pool.query(
-      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions FROM offers WHERE id = $1 AND business_id = $2",
+      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code FROM offers WHERE id = $1 AND business_id = $2",
       [offerId, businessId]
     );
     if (offerRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
+    // Fetch promo codes for this offer
+    const promoCodesRes = await pool.query(
+      "SELECT id, code, is_active FROM promo_codes WHERE offer_id = $1 ORDER BY id",
+      [offerId]
+    );
+
     res.render("public/portal/offer-form", {
       business: bizRes.rows[0],
       offer: offerRes.rows[0],
+      promoCodes: promoCodesRes.rows,
       activePage: "portal",
       webUser: req.webUser,
     });
@@ -1619,17 +1635,36 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
+    // Backward compat: if single promo_code string sent, convert to array
+    let promoCodesArr = promo_codes;
+    if (!promoCodesArr && promo_code) {
+      promoCodesArr = [{ code: promo_code, is_active: true }];
+    }
+
     const result = await pool.query(`
-      INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id
+      INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id
     `, [businessId, sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type || 'percentage', discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active !== false,
-        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null, sanitizeString(promo_code, 100) || null]);
+        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null]);
+
+    const offerId = result.rows[0].id;
+
+    // Insert promo codes
+    if (promoCodesArr && Array.isArray(promoCodesArr)) {
+      const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+      for (const pc of validCodes) {
+        await pool.query(
+          "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
+          [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
+        );
+      }
+    }
 
     // Push notification to subscribers (fire-and-forget)
     const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
@@ -1640,12 +1675,12 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
       body: `${title}${discountText}`,
       data: {
         type: "new_offer",
-        offerId: String(result.rows[0].id),
+        offerId: String(offerId),
         businessId: String(businessId),
       },
     }).catch(err => console.error("[Push] New offer push error:", err));
 
-    res.json({ success: true, offer_id: result.rows[0].id });
+    res.json({ success: true, offer_id: offerId });
   } catch (err) {
     console.error("[Web API] Portal create offer error:", err);
     res.status(500).json({ message: "Eroare server" });
@@ -1656,7 +1691,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
 router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
 
     await pool.query(`
       UPDATE offers SET
@@ -1669,13 +1704,35 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         end_date = $7,
         is_active = COALESCE($8, is_active),
         booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13, promo_code = $14
-      WHERE id = $15 AND business_id = $16
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13
+      WHERE id = $14 AND business_id = $15
     `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active,
-        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null, sanitizeString(promo_code, 100) || null,
+        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
         offerId, businessId]);
+
+    // Backward compat: if single promo_code string sent, convert to array
+    let promoCodesArr = promo_codes;
+    if (promoCodesArr === undefined && promo_code !== undefined) {
+      promoCodesArr = promo_code ? [{ code: promo_code, is_active: true }] : [];
+    }
+
+    // Handle promo codes update if provided
+    if (promoCodesArr !== undefined) {
+      // Delete existing codes and re-insert
+      await pool.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
+
+      if (Array.isArray(promoCodesArr)) {
+        const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+        for (const pc of validCodes) {
+          await pool.query(
+            "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
+            [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
+          );
+        }
+      }
+    }
 
     res.json({ success: true });
   } catch (err) {

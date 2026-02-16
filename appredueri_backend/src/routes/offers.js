@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
         o.id, o.title, o.description, o.discount_type, o.discount_value,
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
-        (o.promo_code IS NOT NULL) as has_promo_code,
+        EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
 
         b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
@@ -211,7 +211,7 @@ router.get("/feed", auth, async (req, res) => {
         o.id, o.title, o.description, o.discount_type, o.discount_value,
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
-        (o.promo_code IS NOT NULL) as has_promo_code,
+        EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
         b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
         b.cover_image_url as business_cover,
@@ -288,7 +288,8 @@ router.get("/:id", async (req, res) => {
         o.id, o.business_id, o.title, o.description,
         o.discount_type, o.discount_value, o.conditions,
         o.start_date, o.end_date, o.is_active,
-        o.logo_url as offer_logo, o.promo_code,
+        o.logo_url as offer_logo,
+        EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
         -- Booking ofertă
         o.booking_type as offer_booking_type,
         o.booking_phone as offer_booking_phone,
@@ -422,7 +423,7 @@ router.get("/:id", async (req, res) => {
       start_date: row.start_date,
       end_date: row.end_date,
       is_active: row.is_active,
-      has_promo_code: !!row.promo_code,
+      has_promo_code: !!row.has_promo_code,
 
       image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
 
@@ -478,24 +479,32 @@ router.get("/:id", async (req, res) => {
 router.post("/:id/reveal-code", auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query("SELECT promo_code FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
 
-    if (result.rows.length === 0) {
+    // First check if offer exists and is active
+    const offerCheck = await pool.query("SELECT id FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
+    if (offerCheck.rows.length === 0) {
       return res.status(404).json({ message: "Oferta nu există" });
     }
 
-    const promoCode = result.rows[0].promo_code;
-    if (!promoCode) {
-      return res.status(404).json({ message: "Această ofertă nu are cod promoțional" });
+    // Get a random active promo code for this offer
+    const result = await pool.query(
+      "SELECT id, code FROM promo_codes WHERE offer_id = $1 AND is_active = TRUE ORDER BY RANDOM() LIMIT 1",
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Această ofertă nu are cod promoțional activ" });
     }
 
-    // Log reveal (fire-and-forget)
+    const promoRow = result.rows[0];
+
+    // Log reveal with promo_code_id (fire-and-forget)
     pool.query(
-      "INSERT INTO code_reveals (offer_id, user_id, viewer_ip) VALUES ($1, $2, $3)",
-      [id, req.user.id, req.ip || null]
+      "INSERT INTO code_reveals (offer_id, user_id, viewer_ip, promo_code_id) VALUES ($1, $2, $3, $4)",
+      [id, req.user.id, req.ip || null, promoRow.id]
     ).catch(() => {});
 
-    res.json({ promo_code: promoCode });
+    res.json({ promo_code: promoRow.code });
   } catch (err) {
     console.error("[Offers] Reveal code error:", err);
     res.status(500).json({ message: "Eroare server" });

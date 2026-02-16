@@ -377,7 +377,7 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes
     } = req.body;
 
     console.log("[BusinessPortal] Creating offer:", title);
@@ -385,17 +385,23 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     let logoUrl = null;
     if (req.file) {
       // Upload pe Cloudinary cu rezoluție specifică pentru ofertă (800x600)
-      const result = await uploadToCloudinary(req.file.buffer, "offer");
-      logoUrl = result.url;
+      const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
+      logoUrl = uploadResult.url;
+    }
+
+    // Backward compat: if single promo_code string sent, convert to array
+    let promoCodesArr = promo_codes;
+    if (!promoCodesArr && promo_code) {
+      promoCodesArr = [{ code: promo_code, is_active: true }];
     }
 
     const result = await pool.query(`
       INSERT INTO offers (
         business_id, title, description, discount_type, discount_value,
         conditions, start_date, end_date, is_active, logo_url,
-        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code
+        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
     `, [
       businessId,
@@ -412,17 +418,29 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       booking_phone || null,
       booking_whatsapp || null,
       booking_url || null,
-      booking_instructions || null,
-      promo_code || null
+      booking_instructions || null
     ]);
 
-    console.log("[BusinessPortal] Offer created with ID:", result.rows[0].id);
+    const offerId = result.rows[0].id;
+
+    // Insert promo codes
+    if (promoCodesArr && Array.isArray(promoCodesArr)) {
+      const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+      for (const pc of validCodes) {
+        await pool.query(
+          "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
+          [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
+        );
+      }
+    }
+
+    console.log("[BusinessPortal] Offer created with ID:", offerId);
 
     // Trigger n8n webhook for new offer
     const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
     const bizName = bizNameRes.rows[0]?.name || "Business";
     triggerWebhook("/webhook/new-offer", {
-      offer_id: result.rows[0].id,
+      offer_id: offerId,
       business_id: parseInt(businessId),
       business_name: bizName,
       title: title,
@@ -440,12 +458,12 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       body: `${title}${discountText}`,
       data: {
         type: "new_offer",
-        offerId: String(result.rows[0].id),
+        offerId: String(offerId),
         businessId: String(businessId),
       },
     }).catch(err => console.error("[Push] New offer push error:", err));
 
-    res.json({ success: true, offer_id: result.rows[0].id });
+    res.json({ success: true, offer_id: offerId });
   } catch (err) {
     console.error("[BusinessPortal] Error creating offer:", err);
     res.status(500).json({ message: "Eroare la creare" });
@@ -468,7 +486,16 @@ router.get("/:businessId/offers/:offerId", businessAuth, async (req, res) => {
       return res.status(404).json({ message: "Oferta nu există" });
     }
 
-    res.json(result.rows[0]);
+    // Fetch promo codes for this offer
+    const promoCodesRes = await pool.query(
+      "SELECT id, code, is_active FROM promo_codes WHERE offer_id = $1 ORDER BY id",
+      [offerId]
+    );
+
+    res.json({
+      ...result.rows[0],
+      promo_codes: promoCodesRes.rows
+    });
   } catch (err) {
     console.error("[BusinessPortal] Eroare la GET offer:", err);
     res.status(500).json({ message: "Eroare server" });
@@ -496,7 +523,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes
     } = req.body;
 
     const updates = [];
@@ -556,11 +583,6 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       updates.push(`booking_instructions = $${paramIndex++}`);
       values.push(booking_instructions || null);
     }
-    if (promo_code !== undefined) {
-      updates.push(`promo_code = $${paramIndex++}`);
-      values.push(promo_code || null);
-    }
-
     // Handle image upload
     if (req.file) {
       // Șterge imaginea veche din Cloudinary
@@ -578,14 +600,34 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       values.push(uploadResult.url);
     }
 
-    if (updates.length === 0) {
-      return res.status(400).json({ message: "Nimic de actualizat" });
+    // Only update offer fields if there are any changes
+    if (updates.length > 0) {
+      values.push(offerId);
+      const query = `UPDATE offers SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
+      await pool.query(query, values);
     }
 
-    values.push(offerId);
+    // Backward compat: if single promo_code string sent, convert to array
+    let promoCodesArr = promo_codes;
+    if (promoCodesArr === undefined && promo_code !== undefined) {
+      promoCodesArr = promo_code ? [{ code: promo_code, is_active: true }] : [];
+    }
 
-    const query = `UPDATE offers SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
-    await pool.query(query, values);
+    // Handle promo codes update if provided
+    if (promoCodesArr !== undefined) {
+      // Delete existing codes and re-insert
+      await pool.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
+
+      if (Array.isArray(promoCodesArr)) {
+        const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+        for (const pc of validCodes) {
+          await pool.query(
+            "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
+            [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
+          );
+        }
+      }
+    }
 
     console.log("[BusinessPortal] Offer updated successfully");
     res.json({ success: true });
