@@ -134,7 +134,7 @@ final homeBusinessesProvider = FutureProvider<List<Business>>((ref) async {
 });
 
 // Single business detail
-final businessDetailProvider = FutureProvider.family<Business, int>((ref, id) async {
+final businessDetailProvider = FutureProvider.autoDispose.family<Business, int>((ref, id) async {
   final response = await ApiClient().dio.get(ApiEndpoints.businessDetail(id));
   return Business.fromJson(response.data);
 });

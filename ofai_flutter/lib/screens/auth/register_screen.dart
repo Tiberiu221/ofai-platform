@@ -58,8 +58,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
       if (mounted) context.go('/');
     } on ApiException catch (e) {
+      if (!mounted) return;
       setState(() => _error = e.message);
     } catch (_) {
+      if (!mounted) return;
       setState(() => _error = 'Eroare la înregistrare');
     } finally {
       if (mounted) setState(() => _isLoading = false);

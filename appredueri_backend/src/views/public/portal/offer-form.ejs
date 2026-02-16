@@ -728,7 +728,7 @@
   const isEdit = !!offerId;
 
   // ─── Promo codes dynamic list ────────────────────────────────
-  var promoCodes = <%- JSON.stringify(typeof promoCodes !== 'undefined' && promoCodes ? promoCodes : []) %>;
+  var promoCodes = <%- JSON.stringify(typeof promoCodes !== 'undefined' && promoCodes ? promoCodes : []).replace(/</g, '\\u003c') %>;
   var pcListEl = document.getElementById('pc-list');
   var pcAddBtn = document.getElementById('pc-add-btn');
 

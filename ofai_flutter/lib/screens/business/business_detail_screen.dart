@@ -617,7 +617,7 @@ class BusinessDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ).then((_) => commentController.dispose());
   }
 }
 

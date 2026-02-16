@@ -336,7 +336,7 @@ router.get("/:id", async (req, res) => {
     pool.query(
       "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent) VALUES ($1, $2, $3, $4)",
       [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
-    ).catch(() => {});
+    ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     // 2. Determină Booking-ul efectiv (inherit logic)
     let effectiveBooking = {
@@ -502,7 +502,7 @@ router.post("/:id/reveal-code", auth, async (req, res) => {
     pool.query(
       "INSERT INTO code_reveals (offer_id, user_id, viewer_ip, promo_code_id) VALUES ($1, $2, $3, $4)",
       [id, req.user.id, req.ip || null, promoRow.id]
-    ).catch(() => {});
+    ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     res.json({ promo_code: promoRow.code });
   } catch (err) {
@@ -521,7 +521,7 @@ router.post("/clicks", async (req, res) => {
   pool.query(
     "INSERT INTO business_clicks (business_id, offer_id, action_type) VALUES ($1, $2, $3)",
     [parseInt(business_id), offer_id ? parseInt(offer_id) : null, action_type]
-  ).catch(() => {});
+  ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
   res.json({ ok: true });
 });
 

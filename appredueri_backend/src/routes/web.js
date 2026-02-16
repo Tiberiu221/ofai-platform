@@ -496,7 +496,7 @@ router.get("/oferta/:id", async (req, res) => {
     pool.query(
       "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent) VALUES ($1, $2, $3, $4)",
       [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
-    ).catch(() => {});
+    ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     // Effective booking (inherit logic)
     let booking = { type: 'none', phone: null, whatsapp: null, url: null, instructions: null };
@@ -594,7 +594,7 @@ router.post("/api/web/clicks", async (req, res) => {
   pool.query(
     "INSERT INTO business_clicks (business_id, offer_id, action_type) VALUES ($1, $2, $3)",
     [parseInt(business_id), offer_id ? parseInt(offer_id) : null, action_type]
-  ).catch(() => {});
+  ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
   res.json({ ok: true });
 });
 
@@ -627,7 +627,7 @@ router.post("/api/web/offers/:id/reveal-code", requireWebAuth, async (req, res) 
     pool.query(
       "INSERT INTO code_reveals (offer_id, user_id, viewer_ip, promo_code_id) VALUES ($1, $2, $3, $4)",
       [id, req.webUser.id, req.ip || null, promoRow.id]
-    ).catch(() => {});
+    ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     res.json({ promo_code: promoRow.code });
   } catch (err) {
@@ -669,7 +669,7 @@ router.get("/business/:id", async (req, res) => {
     pool.query(
       "INSERT INTO business_views (business_id, viewer_ip, user_agent) VALUES ($1, $2, $3)",
       [id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
-    ).catch(() => {});
+    ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     // Images
     const imagesRes = await pool.query(
@@ -871,7 +871,10 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email și parolă sunt obligatorii" });
     }
 
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email.toLowerCase().trim()]);
+    const result = await pool.query(
+      "SELECT id, email, password_hash, role, first_name, last_name, banned_at FROM users WHERE email = $1",
+      [email.toLowerCase().trim()]
+    );
     if (result.rowCount === 0) {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
     }

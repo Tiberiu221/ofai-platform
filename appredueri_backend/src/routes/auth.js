@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const pool = require("../db");
 const authenticateToken = require("../middleware/auth");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
@@ -122,7 +123,11 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email și parolă sunt obligatorii" });
     }
 
-    const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email]);
+    const result = await pool.query(
+      `SELECT id, email, password_hash, role, first_name, last_name, banned_at, created_at, preferred_city_id, preferred_category_ids
+       FROM users WHERE email = $1`,
+      [email]
+    );
 
     if (result.rowCount === 0) {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
@@ -239,7 +244,7 @@ router.post("/logout", async (req, res) => {
 
 // Generează un cod de 6 cifre
 function generateResetCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 }
 
 // POST /auth/forgot-password
@@ -452,7 +457,8 @@ router.post("/change-password", authenticateToken, async (req, res) => {
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const userRes = await pool.query(
-      `SELECT * FROM users WHERE id = $1`,
+      `SELECT id, email, role, first_name, last_name, created_at, preferred_city_id, preferred_category_ids
+       FROM users WHERE id = $1`,
       [req.user.id]
     );
 

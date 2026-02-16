@@ -41,7 +41,9 @@ function adminAuth(req, res, next) {
     return res.status(401).send("Credentiale invalide");
   }
 
-  if (timingSafeCompare(user, adminUser) && timingSafeCompare(password, adminPassword)) {
+  const userMatch = timingSafeCompare(user, adminUser);
+  const passMatch = timingSafeCompare(password, adminPassword);
+  if (userMatch && passMatch) {
     return next();
   }
 

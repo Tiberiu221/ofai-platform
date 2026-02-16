@@ -163,7 +163,7 @@ final feedProvider = FutureProvider<List<Offer>>((ref) async {
 });
 
 // Single offer detail
-final offerDetailProvider = FutureProvider.family<Offer, int>((ref, id) async {
+final offerDetailProvider = FutureProvider.autoDispose.family<Offer, int>((ref, id) async {
   final response = await ApiClient().dio.get(ApiEndpoints.offerDetail(id));
   return Offer.fromJson(response.data);
 });

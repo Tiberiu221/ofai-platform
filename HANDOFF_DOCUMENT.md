@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 12 Februarie 2026 (Actualizat v13 — Flutter App Faza 0-3 Complete)
+## Data: 16 Februarie 2026 (Actualizat v14 — Web Refresh Tokens + FCM Push + Dashboard Stats + Click Tracking)
 
 ---
 
@@ -122,7 +122,7 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │       ├── 404.ejs
 │   │   │       ├── portal/
 │   │   │       │   ├── dashboard.ejs    # ★ NOU — lista business-uri owner
-│   │   │       │   ├── manage.ejs       # ★ NOU — manage business (4 tabs)
+│   │   │       │   ├── manage.ejs       # ★ NOU — manage business (4 tabs) + Chart.js analytics (~1700 linii)
 │   │   │       │   └── offer-form.ejs   # ★ NOU — creare/editare oferta
 │   │   │       └── partials/
 │   │   │           ├── head.ejs         # HTML head, meta, favicon, CSS
@@ -144,7 +144,7 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │       ├── 03-verify.js       # Verificare calitate date scrapate
 │   │       ├── 04-cleanup.js      # Ștergere date scrapate (source='scraped')
 │   │       └── data/              # (gitignored) raw JSON + state + costs
-│   └── migrations/                # SQL migrations (latest: 017_fix_pixabay_logos)
+│   └── migrations/                # SQL migrations (latest: 022_click_tracking)
 │
 └── n8n-workflows/                 # Exportabile .json pentru n8n
     └── WF1_New_Review_Notify_Owner.json
@@ -208,7 +208,9 @@ Exista **3 sisteme de auth** separate. Trebuie intelese bine:
 - **Mecanism:** Cookie `ofai_token` (httpOnly, Secure in prod, SameSite: lax, **24h** — schimbat de la 30d)
 - **Folosit de:** Toate rutele din `web.js` (pagini EJS + AJAX endpoints `/api/web/*`)
 - **IMPORTANT:** `requireWebAuth` detecteaza daca ruta e `/api/*` si returneaza 401 JSON (nu redirect HTML). Fara asta, `fetch()` urmareste 302 transparent → primeste HTML → `resp.json()` fail.
-- **NOTA:** Web-ul NU are refresh token cookie implementat. La expirare (24h), user-ul trebuie sa se re-logheze.
+- **Refresh token:** 30d cookie `ofai_refresh_token` (httpOnly, Secure in prod, SameSite: lax)
+- **Auto-refresh:** `webAuth.js` — transparent refresh on expired access token (no user action needed)
+- **`businessWebAuth.js`:** same refresh pattern for business portal
 
 ### 2. Business Portal Web Auth — cookie + ownership check
 - **Middleware:** `src/middleware/businessWebAuth.js`
@@ -271,7 +273,7 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 - [x] Deep Linking: Android intent filters for `https://ofai.ro` URLs
 - [x] Onboarding: 3-page PageView with SharedPreferences persistence
 - [x] Page Transitions: slideUp for details, fade for auth (CustomTransitionPage)
-- [ ] Push Notifications: SKIPPED — backend uses Expo tokens, NOT FCM (requires backend change)
+- [x] Push Notifications: FCM (Firebase Cloud Messaging) — dual Expo + FCM support
 
 **Flutter Dependencies:**
 ```yaml
@@ -412,7 +414,10 @@ adb shell am start -a android.intent.action.VIEW -d "https://ofai.ro/offer/1" ro
   - Edit business info (name, address, phone, website, city, category, booking)
   - Offer CRUD (create, edit, toggle active/inactive)
   - Review response management (create, edit, delete)
-  - Analytics: views, subscribers, reviews, rating distribution, offer views
+  - Analytics: views, subscribers, reviews, rating distribution, offer views, click tracking breakdown
+  - Chart.js v4 charts (views, subscribers, clicks) with period selector (7/30/90 days) + daily/weekly grouping
+  - Stat cards: views (trend arrow), subscribers, rating, active offers, offer requests, code reveals, click breakdown per action
+  - Click tracking: anonymous GDPR-compliant (business_clicks table, no user_id)
   - Performance score (10 criteria, 100 points total)
 - [x] **Mobile API** (`business-portal.js`) — REST API cu Bearer token auth
 
@@ -436,20 +441,9 @@ adb shell am start -a android.intent.action.VIEW -d "https://ofai.ro/offer/1" ro
 
 ### ⚠️ GDPR — CE LIPSESTE INCA (v12)
 - [ ] **Mobile RegisterScreen** — checkboxe GDPR consent (accept_terms, accept_privacy) NU sunt adaugate pe mobile. Doar web register.ejs le are.
-- [ ] **Web refresh token cookie** — web-ul NU are `ofai_refresh` cookie. Access token 24h, la expirare user-ul se re-logheaza. Opțional de implementat.
+- [x] **Web refresh token cookie** — `ofai_refresh_token` cookie (30d), transparent auto-refresh in webAuth.js
 - [ ] **Cron job cleanup refresh_tokens** — tokens expirate/revocate trebuie sterse periodic: `DELETE FROM refresh_tokens WHERE expires_at < NOW() - INTERVAL '60 days'`
 - [ ] **Cron job cleanup push_notifications_log** — `DELETE FROM push_notifications_log WHERE created_at < NOW() - INTERVAL '90 days'`
-
-### ⚠️ VERIFICARI PENDINTE (Add Business Feature — v10)
-Feature-ul "Add Business" a fost implementat recent si necesita verificari end-to-end:
-- [ ] Verify "Reia procesul" button works (prefill + scroll + submit + old request deleted)
-- [ ] Verify email notifications arrive correctly (approve + reject scenarios)
-- [ ] Verify `/cont` status indicator shows correct state for each status
-- [ ] Verify form disables when pending or approved request exists
-- [ ] Verify scroll position after clicking "Reia procesul" (should target section header)
-- [ ] Test edge cases: multiple requests history, retry after approve/reject
-- [ ] Verify admin approve flow creates business + assigns ownership + upgrades role
-- [ ] Verify admin panel `/admin/business-requests` sorts and filters correctly
 
 ### 1. Scraping Pipeline (NOU — gata de rulat)
 Pipeline complet Playwright + OpenRouter pentru business-uri reale din Google Maps:
@@ -491,16 +485,7 @@ DATABASE_URL="..." NODE_ENV=production node scripts/cleanup-seed.js
 # Scraping real (vezi pas 1 mai sus)
 ```
 
-### 8. Mobile Performance Fix (auditat, neimplementat — Faza 5)
-Audit complet făcut. Probleme principale pe Android:
-- **FlatList** → înlocuiește cu `@shopify/flash-list` v2 (54% FPS boost)
-- **Image din RN** → înlocuiește cu `expo-image` (cache nativ Glide pe Android)
-- **Animated API** → înlocuiește cu `react-native-reanimated` v4 (deja instalat!)
-- **React.memo** lipsește pe OfferCard, BusinessCard, CategoryChip
-- Contrast slab: textMuted (#52525b) pe card bg (#0d0d12) — trebuie mai deschis
-- Opțional: Unistyles 3.0 pentru C++ style computation (off JS thread)
-
-### 9. Pricing Model (researched, neimplementat)
+### 8. Pricing Model (researched, neimplementat)
 Recomandare: Freemium + 3 tiers subscripție:
 - **Gratuit:** 0 RON — profil + 1 ofertă/lună
 - **Start:** 49 RON/lună — 5 oferte, analytics, priority
@@ -510,9 +495,9 @@ Recomandare: Freemium + 3 tiers subscripție:
 
 ---
 
-## ARHITECTURA web.js (FISIERUL PRINCIPAL — ~1300+ linii)
+## ARHITECTURA web.js (FISIERUL PRINCIPAL — ~1950+ linii)
 
-`src/routes/web.js` contine TOTUL pentru site-ul public:
+`src/routes/web.js` contine TOTUL pentru site-ul public + portal + analytics:
 
 ### Imports & Config
 ```
@@ -589,7 +574,10 @@ PATCH  /api/web/portal/:bId/offers/:oId/toggle → toggle activ/inactiv
 POST   /api/web/portal/:bId/reviews/:rId/response   → raspuns recenzie
 PUT    /api/web/portal/:bId/reviews/:rId/response    → edit raspuns
 DELETE /api/web/portal/:bId/reviews/:rId/response    → sterge raspuns
-GET    /api/web/portal/:bId/analytics    → date analytics (views, subs)
+GET    /api/web/portal/:bId/analytics/views        → timeline vizualizari (7/30/90 zile)
+GET    /api/web/portal/:bId/analytics/subscribers   → timeline abonati noi
+GET    /api/web/portal/:bId/analytics/clicks        → timeline click-uri
+POST   /api/web/clicks                              → track click (anonymous, fire-and-forget)
 ```
 
 ---
@@ -829,6 +817,20 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Migration 016: refresh_tokens, GDPR columns, audit_log
 - [x] Migration 017: Pixabay→DiceBear logo replacement
 
+### Faza P0 — Web Refresh Tokens + FCM Push + Features (COMPLETA - v14)
+- [x] Web refresh tokens: `ofai_refresh_token` cookie (30d), transparent auto-refresh in webAuth.js + businessWebAuth.js
+- [x] FCM Push Notifications: dual Expo + FCM backend, firebase_messaging in Flutter, triggers on new offer
+- [x] Migration 018: push_tokens.token_type column ('expo' / 'fcm')
+- [x] Migration 020: code_reveals table (promo code reveal tracking)
+- [x] Migration 021: promo_codes table (multi promo codes per offer, is_active toggle)
+- [x] Migration 022: business_clicks table (anonymous click tracking, GDPR-compliant)
+- [x] Cod de reducere reveal: reveal flow cu animatie, multiple promo codes per offer
+- [x] Cerere de oferta (Pinch): offer request system (web + mobile)
+- [x] Dashboard statistici: Chart.js v4, click tracking breakdown, trend arrows, stat cards per action
+- [x] Click tracking: POST /api/web/clicks, trackClick() helper in footer.ejs, tracking on all action buttons
+- [x] Chart.js charts: views, subscribers, clicks (period 7/30/90 days, daily/weekly grouping)
+- [x] Stat cards breakdown: individual cards per action (Apeluri, WhatsApp, Vizite site, Directii, etc.)
+
 ### Faza 3.5 - Feature Parity & Visual Polish (COMPLETA - v6)
 - [x] Ratings (avg + count) pe offer cards (home + oferte)
 - [x] Business logo inline pe offer cards (40px, flex row layout)
@@ -838,54 +840,6 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Geolocation + Haversine distance pe offer cards
 - [x] SQL fix: removed non-existent o.created_at column
 - [x] Visual polish: sort bar, filter bar, collection tabs, offer card layout
-
-### Faza 4 - Mobile UX Redesign (COMPLETA - v7)
-- [x] Home screen: scroll redus de la 1047px la ~286px pana la prima oferta
-- [x] CategoryChip (pill-shaped 34px) in loc de CategoryCard (140px)
-- [x] Inline dismissible banners (48px) in loc de full-height cards (200px)
-- [x] NeonSearchBar: animated border glow (pulse idle + focus glow)
-- [x] OfferCard compactat: 280→200px featured, 16/9 aspect ratio
-- [x] Removed: stats row, redundant SectionHeaders, floating CTA
-- [x] Fix: useNativeDriver conflict (dual Animated.View wrapper)
-
-### Faza 4.5 - Seed Rewrite + Scraping Pipeline (COMPLETA - v8)
-- [x] Seed rewrite: 450 business-uri complete (15 orașe × 15 categorii × 2)
-- [x] Toate câmpurile completate: description, booking_instructions, offer descriptions
-- [x] Cleanup + verify scripts
-- [x] DB migration: `source` column pe businesses (manual/seed/scraped)
-- [x] Scraping pipeline Playwright + OpenRouter (7 fișiere)
-  - Phase 1: Playwright headless → Google Maps → JSON local (resumable)
-  - Phase 2: DeepSeek LLM enrichment → PostgreSQL insert
-  - Phase 3: Verify + Cleanup scripts
-- [x] Cost estimat scraping: ~$0.10 (doar OpenRouter tokens)
-
-### Faza 5 - Mobile Performance & Visual Polish (TODO — v9, recomandat ca următoare)
-**Audit complet făcut. Recomandare aprobată. Abordare în 2 faze:**
-
-**Faza 5A — Quick Performance Wins (1-2 zile):**
-- [ ] `FlatList` → `@shopify/flash-list` v2 (54% FPS improvement pe Android)
-- [ ] `Image` din RN → `expo-image` peste tot (cache nativ, progressive loading)
-- [ ] `Animated` API → `react-native-reanimated` v4 (animații pe UI thread, nu bridge)
-- [ ] `React.memo` pe OfferCard, BusinessCard, CategoryChip (prevent re-renders)
-- [ ] Fix contrast: textMuted mai deschis, opacity disabled 0.35→0.5
-- [ ] Skeleton loaders pe ecranele de detaliu (business, offer)
-- [ ] Consistență spacing/typography (totul din theme.ts, nu hardcoded)
-- [ ] Consistență search bar styling între ecrane
-- [ ] Image placeholders (expo-image placeholder prop)
-- [ ] Fix: card/cardHover identice `rgba(255,255,255,0.03)` — diferențiere hover
-
-**Faza 5B — Unistyles 3.0 (opțional, 2-3 zile):**
-- [ ] Install `react-native-unistyles`
-- [ ] Creare Unistyles theme din `theme.ts` tokens (mapare aproape 1:1)
-- [ ] Migrare graduală `StyleSheet.create()` → `createStyleSheet()` per component
-- [ ] Câștig: computare stiluri în C++ (off JS thread), zero re-renders la theme switch
-
-**Librării evaluate și RESPINSE:**
-- NativeWind v4/v5 — bug-uri cu Expo SDK 54 + React 19 + Reanimated v4
-- Tamagui — rewrite complet UI, cost prea mare vs beneficiu
-- Gluestack v3 — depinde de NativeWind (aceleași probleme)
-- RN Paper (MD3) — impune Material Design, conflictă cu designul glassmorphic
-- react-native-reusables (shadcn) — depinde de NativeWind
 
 ### Flutter Faza 0 — Setup & Auth (COMPLETA - v13)
 - [x] Flutter project (Dart 3.11, package ro.ofai.ofai_flutter)
@@ -912,7 +866,7 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Deep Linking (Android intent filters for https://ofai.ro)
 - [x] Onboarding (3-page PageView + SharedPreferences)
 - [x] Page Transitions (slideUp details, fade auth — CustomTransitionPage)
-- [ ] Push Notifications — SKIPPED (backend uses Expo tokens, requires backend FCM support)
+- [x] Push Notifications — FCM (firebase_messaging), dual Expo+FCM backend, triggers on new offer
 
 ### Faza 6 - Monetizare (TODO)
 - [ ] Pricing: Freemium + 3 tiers (49/99/199 RON/lună) + pay-per-offer (29 RON)
@@ -929,24 +883,174 @@ Workflows active: WF1 (new-review → email owner)
 
 ---
 
-## PRIORITATI URMATOARE
+## ROADMAP CONSOLIDAT
 
-1. **📱 Flutter Testing & Bugfix** — testing manual al app-ului Flutter, fix bugs gasite
-2. **📱 Flutter Push Notifications** — backend trebuie updatat sa accepte FCM tokens (nu doar Expo). Apoi firebase_messaging in Flutter.
-3. **📱 Flutter GDPR consent** — adauga checkboxe accept_terms/accept_privacy pe RegisterScreen Flutter
-4. **📱 Play Store publicare** — `flutter build appbundle`, Google Play Developer ($25), signing key
-5. **🖼️ Cover images business-uri** — toate scraped businesses au cover NULL. User-ul decide abordarea.
-6. **🔍 Verificari Add Business (v10)** — test end-to-end: retry button, emails, /cont indicator, admin flow
-7. **Monetizare** — implementează Stripe + pricing tiers (49/99/199 RON)
-8. **Galerie imagini** — upload/delete gallery images in portal
-9. **Cron jobs** — cleanup refresh_tokens (60d) + push_notifications_log (90d)
-10. **n8n WF2-WF6** — workflow-uri suplimentare
-11. **iOS Build** — necesita Mac sau cont Apple Developer ($99/an)
-13. **Web polish** — verificare vizuala pe toate paginile, responsive testing, edge cases
+### WEB
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Cod de reducere reveal (animatie + multi promo codes) | ✅ Complet |
+| 2 | Cerere de oferta (Pinch) | ✅ Complet |
+| 3 | Imbunatatire dashboard statistici (Chart.js + click tracking + stat cards) | ✅ Complet |
+| 4 | SEO improvements (structured data, sitemap.xml, meta tags) | ❌ De facut |
+| 5 | Admin panel avansat (manage businesses, moderate content) | ❌ De facut |
+| 6 | Footer links — actualizare de la `#` la paginile EJS existente | ❌ De facut |
+
+### MOBILE (Flutter)
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Cod reducere reveal | ✅ Complet |
+| 2 | Cerere de oferta (Pinch) | ✅ Complet |
+| 3 | Push notifications FCM | ✅ Complet |
+| 4 | GDPR consent pe RegisterScreen | ❌ De facut (blocker Play Store) |
+| 5 | Puncte + badge vizual (gamification) | ❌ De facut |
+| 6 | Notificari personalizate (per-category, per-location prefs) | ❌ De facut |
+| 7 | iOS build | ❌ De facut (necesita Mac + Apple Developer $99/an) |
+
+### PORTAL (Business Dashboard)
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Imbunatatire dashboard (Chart.js, click tracking, stat cards) | ✅ Complet |
+| 2 | Cereri oferta view (lista + detalii, nu doar stat card) | ❌ De facut |
+| 3 | Raspuns la recenzii (business replies) | ✅ Complet |
+| 4 | Galerie imagini business — upload/delete in portal | ❌ De facut |
+| 5 | Calendar programari | ❌ De facut |
+| 6 | Export date CSV/PDF | ❌ De facut |
+| 7 | Campanii promotionale (scheduled offers) | ❌ De facut |
+
+### INFRASTRUCTURA
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | Cron jobs cleanup — refresh_tokens (60d) + push_notifications_log (90d) | ❌ De facut |
+| 2 | n8n WF2-WF6 — daily digest, review reminder, welcome series, admin alerts | ❌ De facut |
+| 3 | Cover images — toate scraped businesses au cover NULL | ❌ De facut |
+| 4 | Logo-uri reale — toate sunt DiceBear placeholder | ❌ De facut |
+
+### STRATEGIE
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | SEO + footer links (low effort, high impact) | ❌ De facut |
+| 2 | GDPR Flutter (blocker Play Store) | ❌ De facut |
+| 3 | Play Store publicare — AAB build, Google Play Developer ($25), signing key | ❌ De facut |
+| 4 | Monetizare subscription — Stripe + pricing tiers (49/99/199 RON) | ❌ De facut |
+| 5 | Lansare Bucuresti/Ilfov (focus geographic) | ❌ De facut |
+| 6 | Scraping + email outreach (pipeline gata, outreach nu) | ⚡ Partial |
+| 7 | Parteneriate locale | ❌ De facut |
+
+---
+
+## AUDIT COMPLET PROIECT — 16 Februarie 2026
+
+### CRITICAL (De rezolvat imediat)
+
+| # | Issue | Zona | Detalii |
+|---|-------|------|---------|
+| 1 | **google-services.json in git history** | Config | API key `AIza_REDACTED` expusa in repo. Trebuie rotata in Firebase Console + stearsa din git history |
+| 2 | **SELECT * in auth routes** | Backend | `auth.js`, `web.js`, `admin.js` — expune `password_hash` inutil, risipa bandwidth |
+| 3 | **Math.random() pentru reset codes** | Backend | `auth.js:241` — nu e cryptographic secure. Fix: `crypto.randomInt(100000, 999999)` |
+| 4 | **XSS in head.ejs** | Frontend | `<%- JSON.stringify(structuredData) %>` — unescaped output, potential script injection |
+| 5 | **setState() fara mounted check** | Flutter | `register_screen.dart:61`, `login_screen.dart:47` — crash pe widget unmounted |
+| 6 | **Race condition search suggest** | Flutter | `search_suggest_provider.dart` — fara debounce/cancel, rezultate stale overwrite |
+| 7 | **TextEditingController memory leak** | Flutter | `business_detail_screen.dart` review sheet — controller nedisposed |
+| 8 | **Release signing missing** | Config | `build.gradle.kts` — uses debug keys for release. Blocker Play Store |
+
+### HIGH (De rezolvat curand)
+
+| # | Issue | Zona | Detalii |
+|---|-------|------|---------|
+| 1 | Duplicate offer creation logic | Backend | `web.js` + `business-portal.js` — acelasi cod in 2 locuri, risc inconsistenta |
+| 2 | Fire-and-forget analytics fara logging | Backend | `.catch(() => {})` pe view/click tracking — erori silentioase |
+| 3 | Admin auth timing attack | Backend | `adminAuth.js` — sequential username/password check leaks timing info |
+| 4 | Missing CSRF tokens in forms | Frontend | Login, register, review — vulnerable la CSRF |
+| 5 | Missing FIREBASE_ADMINSDK_JSON in .env.example | Config | Devs noi nu stiu sa configureze FCM push |
+| 6 | Table naming mismatch in migration 009 | Database | Indexes pe `subscriptions`/`favorites` dar codul foloseste `followed_businesses`/`favorite_offers` |
+| 7 | Missing base table migrations | Database | 12+ core tables fara CREATE TABLE migration (users, businesses, offers, etc.) |
+| 8 | Detail providers fara autoDispose | Flutter | `businessDetailProvider`, `offerDetailProvider` — memory leak pe navigare |
+| 9 | Filter change nu curata date vechi | Flutter | `businesses_provider.dart`, `offers_provider.dart` — date stale vizibile moment |
+| 10 | npm audit — qs vulnerability (low) | Config | `npm audit fix` — DoS via arrayLimit bypass |
+
+### MEDIUM (De rezolvat in timp)
+
+| # | Issue | Zona | Detalii |
+|---|-------|------|---------|
+| 1 | Inconsistent error messages (EN vs RO) | Backend | Mix de "Server Error" si "Eroare server" |
+| 2 | Missing parseInt validation | Backend | `offers.js`, `businesses.js` — NaN trimis la SQL |
+| 3 | Global namespace pollution main.js | Frontend | `toggleFavorite`, `toggleFollow` etc. — toate globale |
+| 4 | Duplicate login/register JS logic | Frontend | Cod identic in login.ejs si register.ejs |
+| 5 | Missing aria-labels pe butoane icon-only | Frontend | Share, bookmark, gallery — lipsesc labels accessibility |
+| 6 | Missing image width/height | Frontend | Layout shift (CLS) pe incarcare |
+| 7 | Hardcoded Pexels URLs pt city images | Frontend | External dependency, risc link rot |
+| 8 | Category icons hardcoded in home.ejs | Frontend | Mismatch daca categorii se schimba in DB |
+| 9 | Push token registration fara retry | Flutter | Network down → token neinregistrat → fara notificari |
+| 10 | No Firebase Analytics/Crashlytics | Flutter | Zero monitoring in productie |
+| 11 | Hardcoded Romanian strings | Flutter | Nicio localizare, dificil i18n viitor |
+| 12 | Statement timeout 10s prea scurt pt analytics | Database | Queries complexe pot timeout |
+| 13 | code_reveals.id SERIAL nu BIGSERIAL | Database | Integer overflow risk pe volum mare |
+| 14 | Root dir junk files | Config | `nul`, `a`, `railway_backup.dump` — de curatat |
+| 15 | Legacy React Native node_modules | Config | `appredueri_mobile_old_ignore/node_modules` — spatiu irosit |
+| 16 | Android label "ofai_flutter" | Config | Trebuie schimbat in "OFAI" inainte de publicare |
+
+### POSITIVE FINDINGS
+
+- Toate SQL queries sunt parametrizate (zero SQL injection risk)
+- bcrypt cu salt rounds = 10 pentru parole
+- JWT refresh token rotation implementat corect
+- GDPR compliance complet (data export, account deletion, consent)
+- Rate limiting pe auth, admin, password reset
+- Helmet.js security headers configurate
+- Separation of concerns buna (routes, middleware, services, helpers)
+- Riverpod patterns consistente in Flutter
+- GoRouter + deep linking functional
+- Firebase push dual Expo/FCM functional
+- Toate dependintele npm sunt utilizate (zero bloat)
 
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 16 Februarie 2026 (v14 — Web Refresh Tokens + FCM Push + Dashboard Stats + Click Tracking)
+
+**Sesiune focusata pe features web avansate si dashboard business portal.**
+
+**Web Auth Refresh Tokens:**
+- `ofai_refresh_token` cookie (30d, httpOnly, Secure, SameSite: lax)
+- webAuth.js + businessWebAuth.js: transparent refresh pe expired access token
+- Login + Register: emit both access + refresh token cookies
+- Logout: revoke refresh token in DB + clear both cookies
+
+**FCM Push Notifications (Dual Expo + FCM):**
+- Backend `pushNotifications.js`: auto-detect token type, routes to Expo API or Firebase Admin
+- `firebase.js`: reads FIREBASE_ADMINSDK_JSON env var, auto-fixes common formatting
+- `push_notification_service.dart` (Flutter): FCM singleton, register on login/register, cleanup on logout
+- Triggers: offer creation in BOTH web.js AND business-portal.js fires push to subscribers
+- Migration 018: push_tokens.token_type ('expo' / 'fcm')
+
+**Cod de Reducere Reveal:**
+- Migration 020: code_reveals table
+- Migration 021: promo_codes table (multi codes per offer, is_active toggle)
+- Reveal flow with animation on web + Flutter
+
+**Cerere de Oferta (Pinch):**
+- Offer request system — users can request deals from businesses
+- businessRequests.js API + offer-detail.ejs UI + Flutter OfferDetailScreen
+
+**Dashboard Statistics Enhancement:**
+- Chart.js v4 (CDN, conditional load via head.ejs `loadChartJs` flag)
+- 3 charts: Vizualizari, Abonati noi, Click-uri
+- Period selector: 7/30/90 days + daily/weekly grouping toggle
+- Stat cards breakdown: individual per action type (phone, whatsapp, website, navigate, etc.)
+- Click tracking: POST /api/web/clicks (anonymous, GDPR-compliant)
+- trackClick() global helper in footer.ejs
+- Tracking calls on: business-detail.ejs, offer-detail.ejs, main.js (follow/favorite)
+- Migration 022: business_clicks table + indexes
+- Timeline API endpoints: /analytics/views, /analytics/subscribers, /analytics/clicks
+
+**Bug Fixes:**
+- Critical: offers disappearing after edit
+- Promo code reveal bugs
+- Chart overflow issues (multiple iterations → Chart.js migration)
+- Grouping toggle integrated into period selector
+
+---
 
 ### 12 Februarie 2026 (v13 — Flutter App Faza 0-3 Complete)
 
@@ -982,7 +1086,7 @@ Workflows active: WF1 (new-review → email owner)
 - Deep linking: AndroidManifest intent-filter `https://ofai.ro`, GoRouter handles /offer/:id + /business/:id
 - Onboarding: 3-page PageView (Descoperă oferte / Urmărește business-uri / Economisește mai mult), SharedPreferences persistence, `onboardingDoneProvider` FutureProvider + invalidate on complete
 - Page transitions: `slideUpTransition()` (Offset 0→0.15, fade, 250ms) for details, `fadeTransition()` (200ms) for auth
-- Push Notifications: SKIPPED — backend `isValidExpoPushToken()` accepta doar format Expo, nu FCM
+- Push Notifications: IMPLEMENTAT (v14) — FCM via firebase_messaging, dual backend Expo+FCM, triggers pe new offer
 
 **Bugfixes descoperite in testing:**
 - Onboarding buttons nu funcționau: `onboardingDoneProvider` (FutureProvider) era cached cu `false` → `context.go('/')` redirecta inapoi la /onboarding. Fix: `ref.invalidate(onboardingDoneProvider)` inainte de navigate.

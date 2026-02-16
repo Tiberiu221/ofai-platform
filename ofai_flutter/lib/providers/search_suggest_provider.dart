@@ -91,13 +91,16 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
   SearchSuggestNotifier() : super(const SearchSuggestState());
 
   final _api = ApiClient();
+  String? _activeQuery;
 
   Future<void> search(String query) async {
     if (query.length < 2) {
       state = const SearchSuggestState();
+      _activeQuery = null;
       return;
     }
 
+    _activeQuery = query;
     state = state.copyWith(isLoading: true, query: query);
 
     try {
@@ -107,6 +110,7 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
       );
 
       if (!mounted) return;
+      if (_activeQuery != query) return; // Stale response, discard
 
       final data = resp.data as Map<String, dynamic>;
       final offers = (data['offers'] as List?)
@@ -125,7 +129,7 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
         query: query,
       );
     } catch (_) {
-      if (mounted) {
+      if (mounted && _activeQuery == query) {
         state = state.copyWith(isLoading: false);
       }
     }
@@ -133,6 +137,7 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
 
   void clear() {
     state = const SearchSuggestState();
+    _activeQuery = null;
   }
 }
 
