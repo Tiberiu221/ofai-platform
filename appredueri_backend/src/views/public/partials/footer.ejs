@@ -67,6 +67,16 @@ function acceptCookies() {
   var b = document.getElementById('cookie-banner');
   if (b) b.style.display = 'none';
 }
+
+// Click tracking helper
+window.trackClick = function(businessId, actionType, offerId) {
+  fetch('/api/web/clicks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ business_id: businessId, offer_id: offerId || null, action_type: actionType })
+  }).catch(function() {});
+};
 </script>
 
 <!-- JavaScript -->

@@ -583,6 +583,22 @@ router.get("/oferta/:id", async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════
+// CLICK TRACKING (anonymous, GDPR-friendly)
+// ═══════════════════════════════════════════════════════
+router.post("/api/web/clicks", async (req, res) => {
+  const { business_id, offer_id, action_type } = req.body || {};
+  const validActions = ['phone','whatsapp','booking_url','website','navigate','share','follow','unfollow','favorite','unfavorite','gallery','copy_code'];
+  if (!business_id || !action_type || !validActions.includes(action_type)) {
+    return res.status(400).json({ message: "Invalid" });
+  }
+  pool.query(
+    "INSERT INTO business_clicks (business_id, offer_id, action_type) VALUES ($1, $2, $3)",
+    [parseInt(business_id), offer_id ? parseInt(offer_id) : null, action_type]
+  ).catch(() => {});
+  res.json({ ok: true });
+});
+
+// ═══════════════════════════════════════════════════════
 // OFFER PROMO CODE REVEAL (Web, auth required)
 // ═══════════════════════════════════════════════════════
 router.post("/api/web/offers/:id/reveal-code", requireWebAuth, async (req, res) => {
@@ -1308,10 +1324,11 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
     const reviewCount = parseInt(reviewCountRes.rows[0].total);
 
     // Analytics
-    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes, offerRequestsRes, codeRevealsRes] = await Promise.all([
+    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes, offerRequestsRes, codeRevealsRes, clicksRes] = await Promise.all([
       pool.query(`SELECT COUNT(*) as total_views,
                   COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
-                  COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '30 days') as views_30d
+                  COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '30 days') as views_30d,
+                  COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '14 days' AND viewed_at < NOW() - INTERVAL '7 days') as views_prev_7d
                   FROM business_views WHERE business_id = $1`, [businessId]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1", [businessId]),
       pool.query("SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating FROM reviews WHERE business_id = $1", [businessId]),
@@ -1329,6 +1346,10 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       pool.query(`SELECT COUNT(*) as total,
                   COUNT(*) FILTER (WHERE revealed_at >= NOW() - INTERVAL '30 days') as last_30d
                   FROM code_reveals cr JOIN offers o ON cr.offer_id = o.id WHERE o.business_id = $1`, [businessId]),
+      pool.query(`SELECT action_type, COUNT(*) as total,
+                  COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as last_30d
+                  FROM business_clicks WHERE business_id = $1
+                  GROUP BY action_type ORDER BY total DESC`, [businessId]),
     ]);
 
     const distribution = [5, 4, 3, 2, 1].map(star => {
@@ -1339,11 +1360,20 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
     const offerRequestStats = offerRequestsRes.rows[0];
     const codeRevealStats = codeRevealsRes.rows[0];
 
+    const clicksBreakdown = clicksRes.rows.map(r => ({
+      action: r.action_type,
+      total: parseInt(r.total) || 0,
+      last30d: parseInt(r.last_30d) || 0,
+    }));
+    const clicksTotal = clicksBreakdown.reduce((sum, c) => sum + c.total, 0);
+    const clicksLast30d = clicksBreakdown.reduce((sum, c) => sum + c.last30d, 0);
+
     const analytics = {
       views: {
         total: parseInt(viewsRes.rows[0].total_views) || 0,
         last_7d: parseInt(viewsRes.rows[0].views_7d) || 0,
         last_30d: parseInt(viewsRes.rows[0].views_30d) || 0,
+        prev_7d: parseInt(viewsRes.rows[0].views_prev_7d) || 0,
       },
       subscribers: parseInt(subscribersRes.rows[0].total) || 0,
       reviews: {
@@ -1365,6 +1395,11 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       codeReveals: {
         total: parseInt(codeRevealStats.total) || 0,
         last30d: parseInt(codeRevealStats.last_30d) || 0,
+      },
+      clicks: {
+        total: clicksTotal,
+        last30d: clicksLast30d,
+        breakdown: clicksBreakdown,
       },
     };
 
@@ -1830,8 +1865,7 @@ router.delete("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBu
 router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const period = req.query.period || "30d";
-    const days = { "7d": 7, "30d": 30, "90d": 90 }[period] || 30;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
     const result = await pool.query(
       `SELECT DATE(viewed_at) as date, COUNT(*) as views
@@ -1852,7 +1886,7 @@ router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, 
       filledData.push({ date: dateStr, views: parseInt(found?.views || 0) });
     }
 
-    res.json({ period, data: filledData });
+    res.json({ days, data: filledData });
   } catch (err) {
     console.error("[Web API] Portal views error:", err);
     res.status(500).json({ message: "Eroare" });
@@ -1863,8 +1897,7 @@ router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, 
 router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const period = req.query.period || "30d";
-    const days = { "7d": 7, "30d": 30, "90d": 90 }[period] || 30;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
     const [trendRes, totalRes] = await Promise.all([
       pool.query(
@@ -1881,9 +1914,41 @@ router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessO
       new_subscribers: parseInt(r.new_subscribers),
     }));
 
-    res.json({ period, total: parseInt(totalRes.rows[0].total) || 0, data });
+    res.json({ days, total: parseInt(totalRes.rows[0].total) || 0, data });
   } catch (err) {
     console.error("[Web API] Portal subscribers error:", err);
+    res.status(500).json({ message: "Eroare" });
+  }
+});
+
+// Analytics clicks timeline
+router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+
+    const result = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*) as clicks
+       FROM business_clicks WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
+       GROUP BY DATE(created_at) ORDER BY date ASC`,
+      [businessId, days]
+    );
+
+    const filledData = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      const found = result.rows.find(r => {
+        const rDate = r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date);
+        return rDate === dateStr;
+      });
+      filledData.push({ date: dateStr, clicks: parseInt(found?.clicks || 0) });
+    }
+
+    res.json({ days, data: filledData });
+  } catch (err) {
+    console.error("[Web API] Portal clicks error:", err);
     res.status(500).json({ message: "Eroare" });
   }
 });

@@ -194,6 +194,11 @@ window.toggleFavorite = async function(offerId) {
       btn.dataset.favorited = 'false';
       btn.classList.remove('is-favorited');
       showToast('Eliminat din favorite', 'info');
+      // Track unfavorite (extract business_id from page context)
+      const businessId = extractBusinessIdFromContext();
+      if (businessId && window.trackClick) {
+        window.trackClick(businessId, 'unfavorite', offerId);
+      }
     } else {
       const resp = await fetch('/api/web/favorites', {
         method: 'POST',
@@ -208,6 +213,11 @@ window.toggleFavorite = async function(offerId) {
       btn.dataset.favorited = 'true';
       btn.classList.add('is-favorited');
       showToast('Adăugat la favorite!', 'success');
+      // Track favorite (extract business_id from page context)
+      const businessId = extractBusinessIdFromContext();
+      if (businessId && window.trackClick) {
+        window.trackClick(businessId, 'favorite', offerId);
+      }
     }
   } catch (err) {
     showToast(err.message || 'Eroare la favorite', 'error');
@@ -233,6 +243,10 @@ window.toggleFollow = async function(businessId) {
       btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Urmărește';
       btn.classList.remove('following');
       showToast('Nu mai urmărești acest business', 'info');
+      // Track unfollow
+      if (window.trackClick) {
+        window.trackClick(businessId, 'unfollow');
+      }
     } else {
       const resp = await fetch('/api/web/subscriptions', {
         method: 'POST',
@@ -248,6 +262,10 @@ window.toggleFollow = async function(businessId) {
       btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Urmărești';
       btn.classList.add('following');
       showToast('Urmărești acest business!', 'success');
+      // Track follow
+      if (window.trackClick) {
+        window.trackClick(businessId, 'follow');
+      }
     }
   } catch (err) {
     showToast(err.message || 'Eroare', 'error');
@@ -767,3 +785,23 @@ function initScrollArrows() {
     }
   });
 })();
+
+/* ─── HELPER: Extract business ID from page context ───── */
+function extractBusinessIdFromContext() {
+  // Try to find business ID from data attributes on the page
+  const followBtn = document.querySelector('[data-business-id]');
+  if (followBtn) {
+    return parseInt(followBtn.getAttribute('data-business-id'), 10);
+  }
+  // Fallback: parse from URL pattern /business/:id or /oferta/:id
+  const match = window.location.pathname.match(/\/(business|oferta)\/(\d+)/);
+  if (match) {
+    // For offer pages, we need to extract business_id from the sidebar link
+    const bizLink = document.querySelector('a[href^="/business/"]');
+    if (bizLink) {
+      const bizMatch = bizLink.getAttribute('href').match(/\/business\/(\d+)/);
+      if (bizMatch) return parseInt(bizMatch[1], 10);
+    }
+  }
+  return null;
+}

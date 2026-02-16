@@ -511,4 +511,18 @@ router.post("/:id/reveal-code", auth, async (req, res) => {
   }
 });
 
+// Click tracking (anonymous, mobile)
+router.post("/clicks", async (req, res) => {
+  const { business_id, offer_id, action_type } = req.body || {};
+  const validActions = ['phone','whatsapp','booking_url','website','navigate','share','follow','unfollow','favorite','unfavorite','gallery','copy_code'];
+  if (!business_id || !action_type || !validActions.includes(action_type)) {
+    return res.status(400).json({ message: "Invalid" });
+  }
+  pool.query(
+    "INSERT INTO business_clicks (business_id, offer_id, action_type) VALUES ($1, $2, $3)",
+    [parseInt(business_id), offer_id ? parseInt(offer_id) : null, action_type]
+  ).catch(() => {});
+  res.json({ ok: true });
+});
+
 module.exports = router;
