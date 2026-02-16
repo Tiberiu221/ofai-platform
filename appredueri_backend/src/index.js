@@ -31,6 +31,7 @@ const adminRouter = require("./routes/admin");
 const businessPortalRouter = require("./routes/business-portal");
 const reviewsRoutes = require("./routes/reviews");
 const pushTokensRouter = require("./routes/push-tokens");
+const offerRequestsRouter = require("./routes/offer-requests");
 const webRouter = require("./routes/web");
 
 const app = express();
@@ -192,6 +193,7 @@ app.use("/offers", offersRouter);
 app.use("/businesses", businessesRouter);
 app.use("/reviews", reviewsRoutes);
 app.use("/push-tokens", pushTokensRouter);
+app.use("/offer-requests", offerRequestsRouter);
 
 // Rute Admin (Securizat cu Basic Auth + Rate Limiting)
 app.use("/admin", adminLimiter, adminAuth, adminRouter);

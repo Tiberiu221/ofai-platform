@@ -20,6 +20,10 @@ class Business {
   final List<BusinessLocation>? locations;
   final Booking? booking;
   final ReviewSummary? reviewSummary;
+  // Offer request (pinch) fields — returned from detail API
+  final List<ActiveOffer>? activeOffers;
+  final int? offerRequestCount;
+  final bool? showPinchFlag;
 
   Business({
     required this.id,
@@ -40,6 +44,9 @@ class Business {
     this.locations,
     this.booking,
     this.reviewSummary,
+    this.activeOffers,
+    this.offerRequestCount,
+    this.showPinchFlag,
   });
 
   String get cityName => city?.name ?? '';
@@ -77,8 +84,19 @@ class Business {
       reviewSummary: json['review_summary'] != null
           ? ReviewSummary.fromJson(json['review_summary'] as Map<String, dynamic>)
           : null,
+      activeOffers: (json['activeOffers'] as List<dynamic>?)
+          ?.map((e) => ActiveOffer.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      offerRequestCount: json['offerRequestCount'] is Map
+          ? (json['offerRequestCount'] as Map)['total'] as int? ?? 0
+          : json['offerRequestCount'] as int?,
+      showPinchFlag: json['showPinch'] as bool?,
     );
   }
+
+  /// Whether the pinch card should be shown
+  /// Uses server-side flag if available, otherwise falls back to no active offers
+  bool get showPinch => showPinchFlag ?? (activeOffers == null || activeOffers!.isEmpty);
 }
 
 class IdName {
@@ -169,6 +187,44 @@ class ReviewSummary {
       text: json['text'] as String? ?? json['summary'] as String? ?? '',
       reviewCount: json['review_count'] as int? ?? 0,
       generatedAt: json['generated_at'] as String?,
+    );
+  }
+}
+
+class ActiveOffer {
+  final int id;
+  final String title;
+  final String? discountType;
+  final num? discountValue;
+  final String? startDate;
+  final String? endDate;
+  final bool isActive;
+
+  ActiveOffer({
+    required this.id,
+    required this.title,
+    this.discountType,
+    this.discountValue,
+    this.startDate,
+    this.endDate,
+    this.isActive = true,
+  });
+
+  String get discountLabel {
+    if (discountValue == null) return '';
+    if (discountType == 'percentage') return '-${discountValue!.toStringAsFixed(0)}%';
+    return '-${discountValue!.toStringAsFixed(0)} RON';
+  }
+
+  factory ActiveOffer.fromJson(Map<String, dynamic> json) {
+    return ActiveOffer(
+      id: json['id'] as int,
+      title: json['title'] as String,
+      discountType: json['discount_type'] as String?,
+      discountValue: json['discount_value'] as num?,
+      startDate: json['start_date'] as String?,
+      endDate: json['end_date'] as String?,
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 }

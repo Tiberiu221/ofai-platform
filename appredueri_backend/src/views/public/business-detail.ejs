@@ -237,6 +237,33 @@
       <span class="bd-count-badge"><%= offers.length %></span>
     </div>
 
+    <!-- Pinch button (stale offers) -->
+    <% if (showPinch) { %>
+      <div class="pinch-request-section" style="margin-bottom: 24px;">
+        <div class="pinch-card" style="background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.15); border-radius: 12px; padding: 16px 20px; text-align: center;">
+          <% if (requestCount > 0) { %>
+            <p class="pinch-count" style="margin: 0 0 12px; font-size: 13px; color: var(--text-secondary);"><%= requestCount %> <%= requestCount === 1 ? 'persoană a cerut' : 'persoane au cerut' %> deja o ofertă</p>
+          <% } %>
+
+          <% if (typeof webUser !== 'undefined' && webUser) { %>
+            <% if (userRequested) { %>
+              <button class="pinch-btn pinch-btn-done" disabled style="padding: 10px 20px; background: rgba(82, 82, 91, 0.3); color: var(--text-secondary); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: not-allowed;">
+                ✓ Cerere trimisă
+              </button>
+            <% } else { %>
+              <button class="pinch-btn" onclick="requestOffer(<%= business.id %>)" style="padding: 10px 20px; background: var(--accent); color: #09090b; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                🔔 Cere mai multe oferte
+              </button>
+            <% } %>
+          <% } else { %>
+            <a href="/login?returnTo=/business/<%= business.id %>" class="pinch-btn pinch-btn-login" style="display: inline-block; padding: 10px 20px; background: var(--accent); color: #09090b; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.2s;">
+              Conectează-te pentru a cere o ofertă
+            </a>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+
     <div class="offers-grid">
       <% offers.forEach((offer, i) => { %>
         <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
@@ -284,6 +311,43 @@
           </div>
         </a>
       <% }); %>
+    </div>
+  </div>
+</section>
+<% } else if (showPinch) { %>
+<!-- No offers section with pinch button -->
+<section class="section">
+  <div class="container">
+    <div class="bd-section-header">
+      <h2 class="bd-section-title">Oferte</h2>
+    </div>
+
+    <div class="pinch-request-section">
+      <div class="pinch-card pinch-card-empty" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 2px solid rgba(251, 146, 60, 0.2); border-radius: 16px; padding: 40px 24px; text-align: center; max-width: 500px; margin: 0 auto;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.6;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <h3 style="margin: 0 0 8px; font-size: 18px; color: var(--text-primary);">Momentan nu există oferte active</h3>
+        <p style="margin: 0 0 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.5;">Cere o ofertă nouă și te vom notifica când business-ul adaugă una!</p>
+
+        <% if (requestCount > 0) { %>
+          <p class="pinch-count" style="margin: 0 0 16px; font-size: 13px; color: var(--accent); font-weight: 600;"><%= requestCount %> <%= requestCount === 1 ? 'persoană a cerut' : 'persoane au cerut' %> deja o ofertă</p>
+        <% } %>
+
+        <% if (typeof webUser !== 'undefined' && webUser) { %>
+          <% if (userRequested) { %>
+            <button class="pinch-btn pinch-btn-done" disabled style="padding: 12px 28px; background: rgba(82, 82, 91, 0.3); color: var(--text-secondary); border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: not-allowed;">
+              ✓ Cerere trimisă
+            </button>
+          <% } else { %>
+            <button class="pinch-btn" onclick="requestOffer(<%= business.id %>)" style="padding: 12px 28px; background: var(--accent); color: #09090b; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);">
+              🔔 Vreau o ofertă!
+            </button>
+          <% } %>
+        <% } else { %>
+          <a href="/login?returnTo=/business/<%= business.id %>" class="pinch-btn pinch-btn-login" style="display: inline-block; padding: 12px 28px; background: var(--accent); color: #09090b; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);">
+            Conectează-te pentru a cere o ofertă
+          </a>
+        <% } %>
+      </div>
     </div>
   </div>
 </section>
@@ -555,8 +619,94 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  /* ─── Request Offer (Pinch) ───────────────────────────── */
+  window.requestOffer = async function(businessId) {
+    const btn = document.querySelector('.pinch-btn:not(.pinch-btn-done)');
+    if (!btn) return;
+
+    const originalText = btn.textContent;
+    btn.textContent = 'Se trimite...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/offer-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ business_id: businessId })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Update button to done state
+        btn.textContent = '✓ Cerere trimisă';
+        btn.classList.add('pinch-btn-done');
+        btn.style.background = 'rgba(82, 82, 91, 0.3)';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.cursor = 'not-allowed';
+        btn.style.boxShadow = 'none';
+
+        // Update count
+        const countEl = document.querySelector('.pinch-count');
+        if (countEl) {
+          const total = data.total || 1;
+          countEl.textContent = total + (total === 1 ? ' persoană a cerut' : ' persoane au cerut') + ' deja o ofertă';
+        } else if (data.total) {
+          // Create count element if it doesn't exist
+          const card = document.querySelector('.pinch-card');
+          const count = document.createElement('p');
+          count.className = 'pinch-count';
+          count.style.cssText = 'margin: 0 0 16px; font-size: 13px; color: var(--accent); font-weight: 600;';
+          count.textContent = data.total + (data.total === 1 ? ' persoană a cerut' : ' persoane au cerut') + ' deja o ofertă';
+          btn.parentElement.insertBefore(count, btn);
+        }
+
+        if (window.showToast) {
+          window.showToast('Cerere trimisă! Te vom notifica când apar oferte noi.', 'success');
+        }
+      } else if (res.status === 429) {
+        btn.textContent = originalText;
+        btn.disabled = false;
+        if (window.showToast) {
+          window.showToast(data.message || 'Ai trimis deja o cerere recentă. Încearcă din nou mai târziu.', 'error');
+        } else {
+          alert(data.message || 'Ai trimis deja o cerere recentă.');
+        }
+      } else {
+        throw new Error(data.message || 'Eroare la trimiterea cererii');
+      }
+    } catch (err) {
+      console.error('Pinch error:', err);
+      btn.textContent = originalText;
+      btn.disabled = false;
+      if (window.showToast) {
+        window.showToast(err.message || 'A apărut o eroare. Încearcă din nou.', 'error');
+      } else {
+        alert('A apărut o eroare. Încearcă din nou.');
+      }
+    }
+  };
+
   /* Follow button — handled by window.toggleFollow() in main.js */
 });
 </script>
+
+<style>
+/* Pinch button hover effects */
+.pinch-btn:not(.pinch-btn-done):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(251, 146, 60, 0.4) !important;
+}
+
+.pinch-btn:not(.pinch-btn-done):active {
+  transform: translateY(0);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .pinch-card-empty {
+    padding: 32px 20px !important;
+  }
+}
+</style>
 
 <%- include('partials/footer') %>

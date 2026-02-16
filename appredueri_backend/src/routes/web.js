@@ -678,16 +678,59 @@ router.get("/business/:id", async (req, res) => {
       LIMIT 20
     `, [id]);
 
-    // Check follow status + user review
+    // Check follow status + user review + offer request status
     let isFollowing = false;
     let userReview = null;
+    let userRequested = false;
     if (req.webUser) {
-      const [followRes, userRevRes] = await Promise.all([
+      const [followRes, userRevRes, userReqRes] = await Promise.all([
         pool.query("SELECT 1 FROM followed_businesses WHERE user_id = $1 AND business_id = $2", [req.webUser.id, id]),
         pool.query("SELECT id, rating, comment FROM reviews WHERE user_id = $1 AND business_id = $2", [req.webUser.id, id]),
+        pool.query(
+          `SELECT created_at FROM offer_requests
+           WHERE user_id = $1 AND business_id = $2
+           ORDER BY created_at DESC LIMIT 1`,
+          [req.webUser.id, id]
+        ),
       ]);
       isFollowing = followRes.rowCount > 0;
       userReview = userRevRes.rows[0] || null;
+
+      // Check if user has an active request (within last 7 days)
+      if (userReqRes.rows.length > 0) {
+        const lastRequest = new Date(userReqRes.rows[0].created_at);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        userRequested = lastRequest > sevenDaysAgo;
+      }
+    }
+
+    // Offer request count (all users)
+    const requestCountRes = await pool.query(
+      `SELECT COUNT(*) as total
+       FROM offer_requests
+       WHERE business_id = $1`,
+      [id]
+    );
+    const requestCount = parseInt(requestCountRes.rows[0].total || 0);
+
+    // Determine showPinch flag
+    let showPinch = false;
+    const activeOffers = offersRes.rows;
+    if (activeOffers.length === 0) {
+      // No active offers
+      showPinch = true;
+    } else {
+      // Check if newest offer is older than 30 days
+      // offersRes is already ordered by discount_value DESC, so we need to find the max ID
+      const newestOffer = activeOffers.reduce((max, offer) => offer.id > max.id ? offer : max, activeOffers[0]);
+      const startDate = new Date(newestOffer.start_date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      if (startDate < thirtyDaysAgo) {
+        showPinch = true;
+      }
     }
 
     // Review summary
@@ -735,6 +778,9 @@ router.get("/business/:id", async (req, res) => {
       userReview,
       isFollowing,
       reviewSummary,
+      showPinch,
+      requestCount,
+      userRequested,
       activePage: null,
       webUser: req.webUser,
     });
@@ -1222,7 +1268,7 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
     const reviewCount = parseInt(reviewCountRes.rows[0].total);
 
     // Analytics
-    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes] = await Promise.all([
+    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes, offerRequestsRes] = await Promise.all([
       pool.query(`SELECT COUNT(*) as total_views,
                   COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
                   COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '30 days') as views_30d
@@ -1235,12 +1281,19 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       pool.query("SELECT rating, COUNT(*) as count FROM reviews WHERE business_id = $1 GROUP BY rating ORDER BY rating DESC", [businessId]),
       pool.query(`SELECT COALESCE(COUNT(*), 0) as total FROM offer_views
                   WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '30 days'`, [businessId]),
+      pool.query(`SELECT COUNT(*) as total_requests,
+                  COUNT(DISTINCT user_id) as unique_requesters,
+                  COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as requests_7d,
+                  COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as requests_30d
+                  FROM offer_requests WHERE business_id = $1`, [businessId]),
     ]);
 
     const distribution = [5, 4, 3, 2, 1].map(star => {
       const found = ratingRes.rows.find(r => parseInt(r.rating) === star);
       return { rating: star, count: parseInt(found?.count || 0) };
     });
+
+    const offerRequestStats = offerRequestsRes.rows[0];
 
     const analytics = {
       views: {
@@ -1258,6 +1311,12 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
         total: parseInt(offerStatsRes.rows[0].total) || 0,
         active: parseInt(offerStatsRes.rows[0].active) || 0,
         total_views_30d: parseInt(offerViewsRes.rows[0].total) || 0,
+      },
+      offerRequests: {
+        total: parseInt(offerRequestStats.total_requests) || 0,
+        uniqueRequesters: parseInt(offerRequestStats.unique_requesters) || 0,
+        last7d: parseInt(offerRequestStats.requests_7d) || 0,
+        last30d: parseInt(offerRequestStats.requests_30d) || 0,
       },
     };
 

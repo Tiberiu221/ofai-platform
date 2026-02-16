@@ -48,6 +48,11 @@ class ApiEndpoints {
   static const String pushTokens = '/push-tokens';
   static const String pushTokensMyDevices = '/push-tokens/my-devices';
 
+  // Offer Requests (Pinch)
+  static const String offerRequests = '/offer-requests';
+  static String offerRequestCount(int businessId) => '/offer-requests/$businessId/count';
+  static String offerRequestDelete(int businessId) => '/offer-requests/$businessId';
+
   // Search
   static const String searchSuggest = '/api/web/search/suggest';
 

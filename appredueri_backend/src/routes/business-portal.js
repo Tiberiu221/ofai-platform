@@ -654,7 +654,7 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
   try {
     const { businessId } = req.params;
 
-    const [viewsRes, subscribersRes, reviewsRes, offersRes, ratingRes] = await Promise.all([
+    const [viewsRes, subscribersRes, reviewsRes, offersRes, ratingRes, offerRequestsRes] = await Promise.all([
       pool.query(
         `SELECT COUNT(*) as total_views,
                 COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
@@ -684,6 +684,14 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
          GROUP BY rating ORDER BY rating DESC`,
         [businessId]
       ),
+      pool.query(
+        `SELECT COUNT(*) as total_requests,
+                COUNT(DISTINCT user_id) as unique_requesters,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as requests_7d,
+                COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as requests_30d
+         FROM offer_requests WHERE business_id = $1`,
+        [businessId]
+      ),
     ]);
 
     // Offer views (separate query to avoid complex join)
@@ -699,6 +707,7 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
     const subscribers = parseInt(subscribersRes.rows[0].total) || 0;
     const reviewStats = reviewsRes.rows[0];
     const offerStats = offersRes.rows[0];
+    const offerRequestStats = offerRequestsRes.rows[0];
 
     const ratingDistribution = [5, 4, 3, 2, 1].map(star => {
       const found = ratingRes.rows.find(r => parseInt(r.rating) === star);
@@ -721,6 +730,12 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
         total: parseInt(offerStats.total_offers) || 0,
         active: parseInt(offerStats.active_offers) || 0,
         total_views_30d: parseInt(offerViewsRes.rows[0].total) || 0,
+      },
+      offerRequests: {
+        total: parseInt(offerRequestStats.total_requests) || 0,
+        uniqueRequesters: parseInt(offerRequestStats.unique_requesters) || 0,
+        last7d: parseInt(offerRequestStats.requests_7d) || 0,
+        last30d: parseInt(offerRequestStats.requests_30d) || 0,
       },
     });
   } catch (err) {

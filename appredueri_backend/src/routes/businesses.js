@@ -294,6 +294,54 @@ router.get("/:id", async (req, res) => {
       // reviewSummary stays null
     }
 
+    // 5. Active offers for this business
+    const activeOffersRes = await pool.query(
+      `SELECT id, title, discount_type, discount_value, start_date, end_date
+       FROM offers
+       WHERE business_id = $1 AND is_active = TRUE
+       ORDER BY id DESC`,
+      [id]
+    );
+
+    const activeOffers = activeOffersRes.rows.map(o => ({
+      id: o.id,
+      title: o.title,
+      discount_type: o.discount_type,
+      discount_value: o.discount_value,
+      start_date: o.start_date,
+      end_date: o.end_date
+    }));
+
+    // 6. Offer request count
+    const requestCountRes = await pool.query(
+      `SELECT COUNT(*) as total, COUNT(DISTINCT user_id) as unique_users
+       FROM offer_requests
+       WHERE business_id = $1`,
+      [id]
+    );
+
+    const offerRequestCount = {
+      total: parseInt(requestCountRes.rows[0].total || 0),
+      uniqueUsers: parseInt(requestCountRes.rows[0].unique_users || 0)
+    };
+
+    // 7. Determine showPinch flag
+    let showPinch = false;
+    if (activeOffers.length === 0) {
+      // No active offers at all
+      showPinch = true;
+    } else {
+      // Check if newest offer (highest id) is older than 30 days
+      const newestOffer = activeOffers[0]; // already sorted by id DESC
+      const startDate = new Date(newestOffer.start_date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      if (startDate < thirtyDaysAgo) {
+        showPinch = true;
+      }
+    }
+
     return res.json({
       id: b.id,
       name: b.name,
@@ -325,7 +373,13 @@ router.get("/:id", async (req, res) => {
         instructions: b.booking_instructions,
       },
       // AI-generated review summary
-      review_summary: reviewSummary
+      review_summary: reviewSummary,
+      // Active offers
+      activeOffers,
+      // Offer request stats
+      offerRequestCount,
+      // Show pinch button flag
+      showPinch
     });
   } catch (err) {
     console.error(err);

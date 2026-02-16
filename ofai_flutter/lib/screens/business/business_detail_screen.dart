@@ -10,6 +10,7 @@ import '../../providers/businesses_provider.dart';
 import '../../providers/subscriptions_provider.dart';
 import '../../providers/reviews_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/offer_requests_provider.dart';
 import '../../widgets/review_card.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
@@ -295,6 +296,57 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   ),
                               ],
                             ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+
+                          // Pinch card — "Vreau o ofertă!" (shows when no active offers)
+                          if (business.showPinch)
+                            _PinchRequestCard(
+                              businessId: business.id,
+                              isLoggedIn: isLoggedIn,
+                            ),
+
+                          // Active offers section
+                          if (business.activeOffers != null && business.activeOffers!.isNotEmpty) ...[
+                            Text('Oferte active', style: AppTypography.headlineSmall),
+                            const SizedBox(height: AppSpacing.sm),
+                            ...business.activeOffers!.map((offer) => Padding(
+                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                              child: Container(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                decoration: BoxDecoration(
+                                  color: AppColors.bgCard,
+                                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (offer.discountLabel.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accent,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          offer.discountLabel,
+                                          style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                                        ),
+                                      ),
+                                    if (offer.discountLabel.isNotEmpty)
+                                      const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        offer.title,
+                                        style: AppTypography.bodyMedium,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
@@ -706,6 +758,214 @@ class _SuccessOverlayState extends State<_SuccessOverlay> with SingleTickerProvi
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PinchRequestCard extends ConsumerStatefulWidget {
+  final int businessId;
+  final bool isLoggedIn;
+
+  const _PinchRequestCard({
+    required this.businessId,
+    required this.isLoggedIn,
+  });
+
+  @override
+  ConsumerState<_PinchRequestCard> createState() => _PinchRequestCardState();
+}
+
+class _PinchRequestCardState extends ConsumerState<_PinchRequestCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseCtrl;
+  bool _showSuccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit() async {
+    final success = await ref
+        .read(offerRequestProvider(widget.businessId).notifier)
+        .submitRequest();
+    if (success && mounted) {
+      setState(() => _showSuccess = true);
+      _pulseCtrl.forward(from: 0).then((_) {
+        if (mounted) {
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) setState(() => _showSuccess = false);
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pinchState = ref.watch(offerRequestProvider(widget.businessId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.accent.withValues(alpha: 0.12),
+                AppColors.accent.withValues(alpha: 0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            children: [
+              // Icon + title
+              Icon(
+                Icons.campaign_outlined,
+                size: 36,
+                color: AppColors.accent,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Nicio ofertă activă',
+                style: AppTypography.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Cere business-ului să publice o ofertă!',
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Request count badge
+              if (pinchState.total > 0)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSecondary,
+                      borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                    ),
+                    child: Text(
+                      '${pinchState.total} ${pinchState.total == 1 ? 'persoană a cerut' : 'persoane au cerut'} deja',
+                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ),
+
+              // CTA Button
+              if (!widget.isLoggedIn)
+                // Not logged in — show info text
+                Text(
+                  'Conectează-te pentru a cere o ofertă',
+                  style: AppTypography.labelSmall.copyWith(color: AppColors.textTertiary),
+                  textAlign: TextAlign.center,
+                )
+              else if (_showSuccess)
+                // Success state
+                AnimatedBuilder(
+                  animation: _pulseCtrl,
+                  builder: (_, __) => Transform.scale(
+                    scale: 1.0 + (_pulseCtrl.value * 0.05),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.success,
+                        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle, size: 20, color: Colors.white),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Cerere trimisă!',
+                            style: AppTypography.labelLarge.copyWith(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else if (pinchState.userRequested && pinchState.daysRemaining != null && pinchState.daysRemaining! > 0)
+                // Already requested this week
+                Column(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.bgSecondary,
+                        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline, size: 20, color: AppColors.textTertiary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Cerere trimisă',
+                            style: AppTypography.labelLarge.copyWith(color: AppColors.textTertiary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Poți cere din nou peste ${pinchState.daysRemaining} ${pinchState.daysRemaining == 1 ? 'zi' : 'zile'}',
+                      style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                    ),
+                  ],
+                )
+              else
+                // Can request
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: pinchState.isSubmitting ? null : _handleSubmit,
+                    icon: pinchState.isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary),
+                          )
+                        : const Icon(Icons.notifications_active, size: 20),
+                    label: Text(pinchState.isSubmitting ? 'Se trimite...' : 'Vreau o ofertă!'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: AppColors.bgPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+      ],
     );
   }
 }
