@@ -19,13 +19,28 @@ function initializeFirebase() {
     admin = require("firebase-admin");
 
     if (process.env.FIREBASE_ADMINSDK_JSON) {
-      console.log(`[Firebase] FIREBASE_ADMINSDK_JSON env var found (${process.env.FIREBASE_ADMINSDK_JSON.length} chars)`);
+      let raw = process.env.FIREBASE_ADMINSDK_JSON;
+      console.log(`[Firebase] FIREBASE_ADMINSDK_JSON env var found (${raw.length} chars)`);
+
+      // Auto-fix: strip surrounding quotes if double-encoded
+      if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+        raw = raw.slice(1, -1);
+        console.log("[Firebase] Stripped surrounding quotes from env var");
+      }
+
+      // Auto-fix: unescape double-escaped sequences (e.g., \\" → \")
+      if (raw.includes('\\"')) {
+        raw = raw.replace(/\\"/g, '"');
+        console.log("[Firebase] Unescaped double-escaped quotes in env var");
+      }
+
       let serviceAccount;
       try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_ADMINSDK_JSON);
+        serviceAccount = JSON.parse(raw);
       } catch (parseErr) {
         console.error("[Firebase] Failed to parse FIREBASE_ADMINSDK_JSON:", parseErr.message);
-        console.error("[Firebase] First 50 chars:", process.env.FIREBASE_ADMINSDK_JSON.substring(0, 50));
+        console.error("[Firebase] First 80 chars:", raw.substring(0, 80));
+        console.error("[Firebase] Last 30 chars:", raw.substring(raw.length - 30));
         return;
       }
       // Validate required fields
@@ -33,8 +48,16 @@ function initializeFirebase() {
       const missingFields = requiredFields.filter(f => !serviceAccount[f]);
       if (missingFields.length > 0) {
         console.error("[Firebase] Missing required fields:", missingFields.join(", "));
+        console.error("[Firebase] Available fields:", Object.keys(serviceAccount).join(", "));
         return;
       }
+
+      // Auto-fix: ensure private_key has proper \n (sometimes gets mangled by env var UIs)
+      if (serviceAccount.private_key && !serviceAccount.private_key.includes("\n")) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
+        console.log("[Firebase] Fixed escaped newlines in private_key");
+      }
+
       console.log(`[Firebase] Service account: project=${serviceAccount.project_id}, email=${serviceAccount.client_email}`);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
