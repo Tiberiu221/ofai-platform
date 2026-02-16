@@ -28,24 +28,6 @@ router.get('/health', (req, res) => {
   });
 });
 
-/**
- * GET /push-tokens/test-send
- * TEMPORARY: Send a test push to user 9 to debug FCM delivery
- * TODO: Remove after testing
- */
-router.get('/test-send', async (req, res) => {
-  try {
-    const result = await pushService.sendToUser(pool, 9, {
-      title: 'Test notificare OFAI',
-      body: 'Dacă vezi asta, push funcționează! 🎉',
-      data: { type: 'test' },
-    });
-    res.json({ result, firebaseAvailable: isFirebaseAvailable() });
-  } catch (err) {
-    res.status(500).json({ error: err.message, stack: err.stack });
-  }
-});
-
 // ============================================
 // USER ENDPOINTS
 // ============================================
