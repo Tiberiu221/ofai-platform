@@ -800,6 +800,12 @@ class _PinchRequestCardState extends ConsumerState<_PinchRequestCard>
         .read(offerRequestProvider(widget.businessId).notifier)
         .submitRequest();
     if (success && mounted) {
+      // Auto-follow: subscribe if not already following
+      final subsState = ref.read(subscriptionsProvider);
+      if (!subsState.subscribedIds.contains(widget.businessId)) {
+        ref.read(subscriptionsProvider.notifier).toggleSubscription(widget.businessId);
+      }
+
       setState(() => _showSuccess = true);
       _pulseCtrl.forward(from: 0).then((_) {
         if (mounted) {

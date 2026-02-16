@@ -78,6 +78,12 @@ router.post("/", authenticateToken, async (req, res) => {
       [userId, business_id]
     );
 
+    // Auto-follow: add to followed_businesses if not already following
+    const { rowCount: followInserted } = await pool.query(
+      "INSERT INTO followed_businesses (user_id, business_id) VALUES ($1, $2) ON CONFLICT (user_id, business_id) DO NOTHING",
+      [userId, parseInt(business_id)]
+    );
+
     // Get updated counts
     const { rows: stats } = await pool.query(
       `SELECT
@@ -95,6 +101,7 @@ router.post("/", authenticateToken, async (req, res) => {
       message: "Cerere trimisă!",
       total: parseInt(stats[0].total),
       uniqueUsers: parseInt(stats[0].unique_users),
+      autoFollowed: followInserted > 0,
     });
   } catch (err) {
     console.error("[Pinch] Error creating request:", err);
