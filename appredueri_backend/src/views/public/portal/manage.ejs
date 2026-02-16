@@ -375,35 +375,10 @@
   .period-btn:hover { border-color: var(--border-hover); }
   .period-btn.active { background: var(--accent); color: #09090b; border-color: var(--accent); font-weight: 600; }
 
-  /* ── Bar Charts ── */
+  /* ── Bar Charts (Chart.js) ── */
   .chart-section { margin-top: 24px; }
   .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
-  .chart-container { display: flex; align-items: flex-end; gap: 1px; height: 160px; padding: 0; }
-  .chart-bar-wrap {
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    height: 100%; justify-content: flex-end;
-    min-width: 0;
-  }
-  .chart-bar {
-    width: 100%; background: var(--accent);
-    border-radius: 3px 3px 0 0; min-height: 2px;
-    transition: height 0.3s ease;
-    position: relative;
-  }
-  .chart-bar:hover { opacity: 0.85; }
-  .chart-bar-tooltip {
-    display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-    background: #27272a; color: var(--text-primary); font-size: 0.7rem; padding: 4px 8px;
-    border-radius: 4px; white-space: nowrap; margin-bottom: 4px;
-    pointer-events: none; z-index: 10;
-  }
-  .chart-bar:hover .chart-bar-tooltip { display: block; }
-  .chart-bar-label {
-    font-size: 0.6rem; color: var(--text-tertiary); margin-top: 4px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 100%; text-align: center;
-  }
-  .chart-bar-label.hidden-label { visibility: hidden; }
+  .chart-container { position: relative; height: 200px; }
   .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
   @media (max-width: 800px) { .charts-row { grid-template-columns: 1fr; } }
 
@@ -1148,20 +1123,20 @@
         <div class="charts-row">
           <div class="chart-section">
             <div class="chart-title">Vizualizări</div>
-            <div id="views-chart" class="chart-container">
-              <div class="chart-loading">Se încarcă...</div>
+            <div class="chart-container">
+              <canvas id="views-chart"></canvas>
             </div>
           </div>
           <div class="chart-section">
             <div class="chart-title">Abonați noi</div>
-            <div id="subscribers-chart" class="chart-container">
-              <div class="chart-loading">Se încarcă...</div>
+            <div class="chart-container">
+              <canvas id="subscribers-chart"></canvas>
             </div>
           </div>
           <div class="chart-section">
             <div class="chart-title">Click-uri</div>
-            <div id="clicks-chart" class="chart-container">
-              <div class="chart-loading">Se încarcă...</div>
+            <div class="chart-container">
+              <canvas id="clicks-chart"></canvas>
             </div>
           </div>
         </div>
@@ -1673,40 +1648,126 @@
     return weeks;
   }
 
-  function rerenderCharts() {
-    var viewsContainer = document.getElementById('views-chart');
-    var subsContainer = document.getElementById('subscribers-chart');
-    var clicksContainer = document.getElementById('clicks-chart');
+  /* ── Chart.js instances ── */
+  var chartInstances = {};
 
+  function renderChart(canvasId, dataArr, label, valueKey) {
+    // Destroy existing chart instance
+    if (chartInstances[canvasId]) {
+      chartInstances[canvasId].destroy();
+      chartInstances[canvasId] = null;
+    }
+
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    if (!dataArr || dataArr.length === 0) {
+      var parent = canvas.parentNode;
+      parent.innerHTML = '<div class="chart-loading">Nu sunt date disponibile</div>';
+      return;
+    }
+
+    // Build labels and values
+    var labels = [];
+    var values = [];
+    dataArr.forEach(function(item) {
+      var dateLabel = item.date || item.label || '';
+      // Format short date: "2025-02-14" → "14/02"
+      if (dateLabel && dateLabel.indexOf('-') !== -1 && dateLabel.length === 10) {
+        var parts = dateLabel.split('-');
+        dateLabel = parts[2] + '/' + parts[1];
+      }
+      labels.push(dateLabel);
+      values.push((valueKey && item[valueKey] !== undefined) ? item[valueKey] : (item.count || item.value || 0));
+    });
+
+    var ctx = canvas.getContext('2d');
+    chartInstances[canvasId] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: label,
+          data: values,
+          backgroundColor: 'rgba(251, 146, 60, 0.7)',
+          borderColor: '#fb923c',
+          borderWidth: 1,
+          borderRadius: 4,
+          borderSkipped: 'bottom',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#27272a',
+            titleColor: '#f4f4f5',
+            bodyColor: '#f4f4f5',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            cornerRadius: 6,
+            padding: 8,
+            displayColors: false,
+            callbacks: {
+              title: function(items) { return items[0].label || ''; },
+              label: function(item) { return item.raw + ' ' + label; }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#71717a',
+              font: { size: 10 },
+              maxRotation: 45,
+              minRotation: 0,
+              maxTicksLimit: 8,
+              autoSkip: true,
+            },
+            border: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: {
+              color: '#71717a',
+              font: { size: 10 },
+              precision: 0,
+            },
+            border: { display: false }
+          }
+        },
+        animation: {
+          duration: 400,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  function rerenderCharts() {
     var vData = isWeekly ? groupByWeek(rawChartData.views, 'views') : rawChartData.views;
     var sData = isWeekly ? groupByWeek(rawChartData.subscribers, 'new_subscribers') : rawChartData.subscribers;
     var cData = isWeekly ? groupByWeek(rawChartData.clicks, 'clicks') : rawChartData.clicks;
 
-    renderBarChart(viewsContainer, vData, 'vizualizări', 'views');
-    renderBarChart(subsContainer, sData, 'abonați', 'new_subscribers');
-    renderBarChart(clicksContainer, cData, 'click-uri', 'clicks');
+    renderChart('views-chart', vData, 'vizualizări', 'views');
+    renderChart('subscribers-chart', sData, 'abonați', 'new_subscribers');
+    renderChart('clicks-chart', cData, 'click-uri', 'clicks');
   }
 
   function loadCharts(days) {
-    var viewsContainer = document.getElementById('views-chart');
-    var subsContainer = document.getElementById('subscribers-chart');
-    var clicksContainer = document.getElementById('clicks-chart');
-
-    viewsContainer.innerHTML = '<div class="chart-loading">Se încarcă...</div>';
-    subsContainer.innerHTML = '<div class="chart-loading">Se încarcă...</div>';
-    clicksContainer.innerHTML = '<div class="chart-loading">Se încarcă...</div>';
-
     // Load views chart
     apiFetch('/api/web/portal/' + businessId + '/analytics/views?days=' + days)
       .then(function(res) { return res.json(); })
       .then(function(data) {
         rawChartData.views = data.data || data || [];
         var displayData = isWeekly ? groupByWeek(rawChartData.views, 'views') : rawChartData.views;
-        renderBarChart(viewsContainer, displayData, 'vizualizări', 'views');
+        renderChart('views-chart', displayData, 'vizualizări', 'views');
       })
-      .catch(function() {
-        viewsContainer.innerHTML = '<div class="chart-loading">Eroare la încărcare</div>';
-      });
+      .catch(function() {});
 
     // Load subscribers chart
     apiFetch('/api/web/portal/' + businessId + '/analytics/subscribers?days=' + days)
@@ -1714,11 +1775,9 @@
       .then(function(data) {
         rawChartData.subscribers = data.data || data || [];
         var displayData = isWeekly ? groupByWeek(rawChartData.subscribers, 'new_subscribers') : rawChartData.subscribers;
-        renderBarChart(subsContainer, displayData, 'abonați', 'new_subscribers');
+        renderChart('subscribers-chart', displayData, 'abonați', 'new_subscribers');
       })
-      .catch(function() {
-        subsContainer.innerHTML = '<div class="chart-loading">Eroare la încărcare</div>';
-      });
+      .catch(function() {});
 
     // Load clicks chart
     apiFetch('/api/web/portal/' + businessId + '/analytics/clicks?days=' + days)
@@ -1726,68 +1785,9 @@
       .then(function(data) {
         rawChartData.clicks = data.data || data || [];
         var displayData = isWeekly ? groupByWeek(rawChartData.clicks, 'clicks') : rawChartData.clicks;
-        renderBarChart(clicksContainer, displayData, 'click-uri', 'clicks');
+        renderChart('clicks-chart', displayData, 'click-uri', 'clicks');
       })
-      .catch(function() {
-        clicksContainer.innerHTML = '<div class="chart-loading">Eroare la încărcare</div>';
-      });
-  }
-
-  function renderBarChart(container, dataArr, label, valueKey) {
-    container.innerHTML = '';
-
-    if (!dataArr || dataArr.length === 0) {
-      container.innerHTML = '<div class="chart-loading">Nu sunt date disponibile</div>';
-      return;
-    }
-
-    var total = dataArr.length;
-    // Decide how often to show a label: aim for ~6-8 visible labels max
-    var labelEvery = total <= 10 ? 1 : total <= 20 ? 3 : total <= 40 ? 5 : 7;
-
-    var maxVal = 0;
-    dataArr.forEach(function(item) {
-      var val = (valueKey && item[valueKey] !== undefined) ? item[valueKey] : (item.count || item.value || 0);
-      if (val > maxVal) maxVal = val;
-    });
-
-    dataArr.forEach(function(item, idx) {
-      var val = (valueKey && item[valueKey] !== undefined) ? item[valueKey] : (item.count || item.value || 0);
-      var heightPct = maxVal > 0 ? (val / maxVal) * 100 : 0;
-      var dateLabel = item.date || item.label || '';
-
-      // Format short date label
-      var shortLabel = dateLabel;
-      if (dateLabel && dateLabel.indexOf('-') !== -1 && dateLabel.length === 10) {
-        var parts = dateLabel.split('-');
-        shortLabel = parts[2] + '/' + parts[1];
-      }
-
-      var wrap = document.createElement('div');
-      wrap.className = 'chart-bar-wrap';
-
-      var bar = document.createElement('div');
-      bar.className = 'chart-bar';
-      bar.style.height = Math.max(heightPct, 1) + '%';
-
-      var tooltip = document.createElement('div');
-      tooltip.className = 'chart-bar-tooltip';
-      tooltip.textContent = val + ' ' + label + (dateLabel ? ' — ' + shortLabel : '');
-      bar.appendChild(tooltip);
-
-      var lbl = document.createElement('div');
-      lbl.className = 'chart-bar-label';
-      // Show label only every Nth bar + always first and last
-      var showLabel = (idx % labelEvery === 0) || (idx === total - 1);
-      if (!showLabel) {
-        lbl.className = 'chart-bar-label hidden-label';
-      }
-      lbl.textContent = shortLabel;
-
-      wrap.appendChild(bar);
-      wrap.appendChild(lbl);
-      container.appendChild(wrap);
-    });
+      .catch(function() {});
   }
 
   /* ── Spin animation for loading button ── */

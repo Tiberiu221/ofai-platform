@@ -23,5 +23,8 @@
   <% if (typeof structuredData !== 'undefined' && structuredData) { %>
   <script type="application/ld+json"><%- JSON.stringify(structuredData) %></script>
   <% } %>
+  <% if (typeof loadChartJs !== 'undefined' && loadChartJs) { %>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <% } %>
 </head>
 <body>

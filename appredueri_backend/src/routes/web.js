@@ -1453,6 +1453,7 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       categories: categoriesRes.rows,
       activePage: "portal",
       webUser: req.webUser,
+      loadChartJs: true,
     });
   } catch (err) {
     console.error("[Web] Portal manage error:", err);
