@@ -378,11 +378,15 @@
   /* ── Bar Charts ── */
   .chart-section { margin-top: 24px; }
   .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
-  .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 160px; padding: 0; }
-  .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+  .chart-container { display: flex; align-items: flex-end; gap: 1px; height: 160px; padding: 0; }
+  .chart-bar-wrap {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    height: 100%; justify-content: flex-end;
+    min-width: 0;
+  }
   .chart-bar {
-    width: 100%; max-width: 32px; background: var(--accent);
-    border-radius: 4px 4px 0 0; min-height: 2px;
+    width: 100%; background: var(--accent);
+    border-radius: 3px 3px 0 0; min-height: 2px;
     transition: height 0.3s ease;
     position: relative;
   }
@@ -391,17 +395,17 @@
     display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
     background: #27272a; color: var(--text-primary); font-size: 0.7rem; padding: 4px 8px;
     border-radius: 4px; white-space: nowrap; margin-bottom: 4px;
-    pointer-events: none;
+    pointer-events: none; z-index: 10;
   }
   .chart-bar:hover .chart-bar-tooltip { display: block; }
   .chart-bar-label {
-    font-size: 0.6rem; color: var(--text-tertiary); margin-top: 6px;
-    writing-mode: vertical-lr; transform: rotate(180deg); max-height: 50px;
-    overflow: hidden; text-overflow: ellipsis;
+    font-size: 0.6rem; color: var(--text-tertiary); margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 100%; text-align: center;
   }
-  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-  @media (max-width: 900px) { .charts-row { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 600px) { .charts-row { grid-template-columns: 1fr; } }
+  .chart-bar-label.hidden-label { visibility: hidden; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .charts-row { grid-template-columns: 1fr; } }
 
   /* ── Trend Arrows ── */
   .stat-trend {
@@ -1737,13 +1741,17 @@
       return;
     }
 
+    var total = dataArr.length;
+    // Decide how often to show a label: aim for ~6-8 visible labels max
+    var labelEvery = total <= 10 ? 1 : total <= 20 ? 3 : total <= 40 ? 5 : 7;
+
     var maxVal = 0;
     dataArr.forEach(function(item) {
       var val = (valueKey && item[valueKey] !== undefined) ? item[valueKey] : (item.count || item.value || 0);
       if (val > maxVal) maxVal = val;
     });
 
-    dataArr.forEach(function(item) {
+    dataArr.forEach(function(item, idx) {
       var val = (valueKey && item[valueKey] !== undefined) ? item[valueKey] : (item.count || item.value || 0);
       var heightPct = maxVal > 0 ? (val / maxVal) * 100 : 0;
       var dateLabel = item.date || item.label || '';
@@ -1769,6 +1777,11 @@
 
       var lbl = document.createElement('div');
       lbl.className = 'chart-bar-label';
+      // Show label only every Nth bar + always first and last
+      var showLabel = (idx % labelEvery === 0) || (idx === total - 1);
+      if (!showLabel) {
+        lbl.className = 'chart-bar-label hidden-label';
+      }
       lbl.textContent = shortLabel;
 
       wrap.appendChild(bar);
