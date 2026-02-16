@@ -459,7 +459,7 @@ router.get("/oferta/:id", async (req, res) => {
         o.id, o.business_id, o.title, o.description,
         o.discount_type, o.discount_value, o.conditions,
         o.start_date, o.end_date, o.is_active,
-        o.logo_url as offer_logo,
+        o.logo_url as offer_logo, o.promo_code,
         o.booking_type as offer_booking_type,
         o.booking_phone as offer_booking_phone,
         o.booking_whatsapp as offer_booking_whatsapp,
@@ -547,6 +547,7 @@ router.get("/oferta/:id", async (req, res) => {
       start_date: row.start_date,
       end_date: row.end_date,
       is_active: row.is_active,
+      has_promo_code: !!row.promo_code,
       image_url: row.business_cover || row.offer_logo || row.business_logo,
       booking,
       business: {
@@ -577,6 +578,36 @@ router.get("/oferta/:id", async (req, res) => {
   } catch (err) {
     console.error("[Web] Offer detail error:", err);
     res.status(500).send("Eroare la încărcarea ofertei");
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// OFFER PROMO CODE REVEAL (Web, auth required)
+// ═══════════════════════════════════════════════════════
+router.post("/api/web/offers/:id/reveal-code", requireWebAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT promo_code FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Oferta nu există" });
+    }
+
+    const promoCode = result.rows[0].promo_code;
+    if (!promoCode) {
+      return res.status(404).json({ message: "Această ofertă nu are cod promoțional" });
+    }
+
+    // Log reveal (fire-and-forget)
+    pool.query(
+      "INSERT INTO code_reveals (offer_id, user_id, viewer_ip) VALUES ($1, $2, $3)",
+      [id, req.webUser.id, req.ip || null]
+    ).catch(() => {});
+
+    res.json({ promo_code: promoCode });
+  } catch (err) {
+    console.error("[Web] Reveal code error:", err);
+    res.status(500).json({ message: "Eroare server" });
   }
 });
 
@@ -1268,7 +1299,7 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
     const reviewCount = parseInt(reviewCountRes.rows[0].total);
 
     // Analytics
-    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes, offerRequestsRes] = await Promise.all([
+    const [viewsRes, subscribersRes, reviewStatsRes, offerStatsRes, ratingRes, offerViewsRes, offerRequestsRes, codeRevealsRes] = await Promise.all([
       pool.query(`SELECT COUNT(*) as total_views,
                   COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
                   COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '30 days') as views_30d
@@ -1286,6 +1317,9 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
                   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') as requests_7d,
                   COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') as requests_30d
                   FROM offer_requests WHERE business_id = $1`, [businessId]),
+      pool.query(`SELECT COUNT(*) as total,
+                  COUNT(*) FILTER (WHERE revealed_at >= NOW() - INTERVAL '30 days') as last_30d
+                  FROM code_reveals cr JOIN offers o ON cr.offer_id = o.id WHERE o.business_id = $1`, [businessId]),
     ]);
 
     const distribution = [5, 4, 3, 2, 1].map(star => {
@@ -1294,6 +1328,7 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
     });
 
     const offerRequestStats = offerRequestsRes.rows[0];
+    const codeRevealStats = codeRevealsRes.rows[0];
 
     const analytics = {
       views: {
@@ -1317,6 +1352,10 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
         uniqueRequesters: parseInt(offerRequestStats.unique_requesters) || 0,
         last7d: parseInt(offerRequestStats.requests_7d) || 0,
         last30d: parseInt(offerRequestStats.requests_30d) || 0,
+      },
+      codeReveals: {
+        total: parseInt(codeRevealStats.total) || 0,
+        last30d: parseInt(codeRevealStats.last_30d) || 0,
       },
     };
 
@@ -1580,17 +1619,17 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
     const result = await pool.query(`
-      INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id
+      INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id
     `, [businessId, sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type || 'percentage', discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active !== false,
-        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null]);
+        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null, sanitizeString(promo_code, 100) || null]);
 
     // Push notification to subscribers (fire-and-forget)
     const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
@@ -1617,7 +1656,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
 router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code } = req.body || {};
 
     await pool.query(`
       UPDATE offers SET
@@ -1630,12 +1669,12 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         end_date = $7,
         is_active = COALESCE($8, is_active),
         booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13
-      WHERE id = $14 AND business_id = $15
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13, promo_code = $14
+      WHERE id = $15 AND business_id = $16
     `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active,
-        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
+        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null, sanitizeString(promo_code, 100) || null,
         offerId, businessId]);
 
     res.json({ success: true });

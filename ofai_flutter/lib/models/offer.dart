@@ -14,6 +14,7 @@ class Offer {
   // Detail-only fields
   final Booking? booking;
   final List<GalleryImage>? gallery;
+  final bool hasPromoCode;
 
   Offer({
     required this.id,
@@ -30,6 +31,7 @@ class Offer {
     this.locations,
     this.booking,
     this.gallery,
+    this.hasPromoCode = false,
   });
 
   String get discountLabel {
@@ -65,6 +67,7 @@ class Offer {
       gallery: (json['gallery'] as List<dynamic>?)
           ?.map((e) => GalleryImage.fromJson(e as Map<String, dynamic>))
           .toList(),
+      hasPromoCode: json['has_promo_code'] as bool? ?? false,
     );
   }
 }

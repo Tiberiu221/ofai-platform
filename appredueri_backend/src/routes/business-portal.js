@@ -377,7 +377,7 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code
     } = req.body;
 
     console.log("[BusinessPortal] Creating offer:", title);
@@ -391,11 +391,11 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
 
     const result = await pool.query(`
       INSERT INTO offers (
-        business_id, title, description, discount_type, discount_value, 
+        business_id, title, description, discount_type, discount_value,
         conditions, start_date, end_date, is_active, logo_url,
-        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
+        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING id
     `, [
       businessId,
@@ -412,7 +412,8 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       booking_phone || null,
       booking_whatsapp || null,
       booking_url || null,
-      booking_instructions || null
+      booking_instructions || null,
+      promo_code || null
     ]);
 
     console.log("[BusinessPortal] Offer created with ID:", result.rows[0].id);
@@ -495,7 +496,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code
     } = req.body;
 
     const updates = [];
@@ -554,6 +555,10 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     if (booking_instructions !== undefined) {
       updates.push(`booking_instructions = $${paramIndex++}`);
       values.push(booking_instructions || null);
+    }
+    if (promo_code !== undefined) {
+      updates.push(`promo_code = $${paramIndex++}`);
+      values.push(promo_code || null);
     }
 
     // Handle image upload
@@ -654,7 +659,7 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
   try {
     const { businessId } = req.params;
 
-    const [viewsRes, subscribersRes, reviewsRes, offersRes, ratingRes, offerRequestsRes] = await Promise.all([
+    const [viewsRes, subscribersRes, reviewsRes, offersRes, ratingRes, offerRequestsRes, codeRevealsRes] = await Promise.all([
       pool.query(
         `SELECT COUNT(*) as total_views,
                 COUNT(*) FILTER (WHERE viewed_at >= NOW() - INTERVAL '7 days') as views_7d,
@@ -692,6 +697,12 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
          FROM offer_requests WHERE business_id = $1`,
         [businessId]
       ),
+      pool.query(
+        `SELECT COUNT(*) as total,
+                COUNT(*) FILTER (WHERE revealed_at >= NOW() - INTERVAL '30 days') as last_30d
+         FROM code_reveals cr JOIN offers o ON cr.offer_id = o.id WHERE o.business_id = $1`,
+        [businessId]
+      ),
     ]);
 
     // Offer views (separate query to avoid complex join)
@@ -708,6 +719,7 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
     const reviewStats = reviewsRes.rows[0];
     const offerStats = offersRes.rows[0];
     const offerRequestStats = offerRequestsRes.rows[0];
+    const codeRevealStats = codeRevealsRes.rows[0];
 
     const ratingDistribution = [5, 4, 3, 2, 1].map(star => {
       const found = ratingRes.rows.find(r => parseInt(r.rating) === star);
@@ -736,6 +748,10 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
         uniqueRequesters: parseInt(offerRequestStats.unique_requesters) || 0,
         last7d: parseInt(offerRequestStats.requests_7d) || 0,
         last30d: parseInt(offerRequestStats.requests_30d) || 0,
+      },
+      codeReveals: {
+        total: parseInt(codeRevealStats.total) || 0,
+        last30d: parseInt(codeRevealStats.last_30d) || 0,
       },
     });
   } catch (err) {

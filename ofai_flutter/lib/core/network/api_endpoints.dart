@@ -20,6 +20,7 @@ class ApiEndpoints {
   static const String offers = '/offers';
   static const String offersFeed = '/offers/feed';
   static String offerDetail(int id) => '/offers/$id';
+  static String revealCode(int id) => '/offers/$id/reveal-code';
 
   // Businesses
   static const String businesses = '/businesses';

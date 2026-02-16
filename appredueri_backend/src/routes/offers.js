@@ -52,10 +52,11 @@ router.get("/", async (req, res) => {
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
     const query = `
-      SELECT 
-        o.id, o.title, o.description, o.discount_type, o.discount_value, 
+      SELECT
+        o.id, o.title, o.description, o.discount_type, o.discount_value,
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
+        (o.promo_code IS NOT NULL) as has_promo_code,
 
         b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
@@ -132,6 +133,7 @@ router.get("/", async (req, res) => {
         discount_value: row.discount_value,
         start_date: row.start_date,
         end_date: row.end_date,
+        has_promo_code: !!row.has_promo_code,
         image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
         locations: Array.isArray(row.locations) ? row.locations : [],
         business: {
@@ -205,10 +207,11 @@ router.get("/feed", auth, async (req, res) => {
 
     // Query similar cu cel principal, dar filtrat
     const query = `
-      SELECT 
-        o.id, o.title, o.description, o.discount_type, o.discount_value, 
+      SELECT
+        o.id, o.title, o.description, o.discount_type, o.discount_value,
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
+        (o.promo_code IS NOT NULL) as has_promo_code,
         b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
         b.cover_image_url as business_cover,
@@ -222,7 +225,7 @@ router.get("/feed", auth, async (req, res) => {
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN LATERAL (
         SELECT COALESCE(
-          json_agg(json_build_object('id', bl.id, 'address', bl.address, 'lat', bl.lat, 'lng', bl.lng, 'city_name', c2.name) ORDER BY bl.id) 
+          json_agg(json_build_object('id', bl.id, 'address', bl.address, 'lat', bl.lat, 'lng', bl.lng, 'city_name', c2.name) ORDER BY bl.id)
           FILTER (WHERE bl.id IS NOT NULL), '[]'::json
         ) AS locations
         FROM business_locations bl
@@ -246,6 +249,7 @@ router.get("/feed", auth, async (req, res) => {
       discount_value: row.discount_value,
       start_date: row.start_date,
       end_date: row.end_date,
+      has_promo_code: !!row.has_promo_code,
       image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
       locations: Array.isArray(row.locations) ? row.locations : [],
       business: {
@@ -284,7 +288,7 @@ router.get("/:id", async (req, res) => {
         o.id, o.business_id, o.title, o.description,
         o.discount_type, o.discount_value, o.conditions,
         o.start_date, o.end_date, o.is_active,
-        o.logo_url as offer_logo,
+        o.logo_url as offer_logo, o.promo_code,
         -- Booking ofertă
         o.booking_type as offer_booking_type,
         o.booking_phone as offer_booking_phone,
@@ -418,6 +422,7 @@ router.get("/:id", async (req, res) => {
       start_date: row.start_date,
       end_date: row.end_date,
       is_active: row.is_active,
+      has_promo_code: !!row.promo_code,
 
       image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
 
@@ -464,6 +469,36 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send("Server Error");
+  }
+});
+
+// =======================================
+// POST /:id/reveal-code - Reveal promo code (Mobile, auth required)
+// =======================================
+router.post("/:id/reveal-code", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT promo_code FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Oferta nu există" });
+    }
+
+    const promoCode = result.rows[0].promo_code;
+    if (!promoCode) {
+      return res.status(404).json({ message: "Această ofertă nu are cod promoțional" });
+    }
+
+    // Log reveal (fire-and-forget)
+    pool.query(
+      "INSERT INTO code_reveals (offer_id, user_id, viewer_ip) VALUES ($1, $2, $3)",
+      [id, req.user.id, req.ip || null]
+    ).catch(() => {});
+
+    res.json({ promo_code: promoCode });
+  } catch (err) {
+    console.error("[Offers] Reveal code error:", err);
+    res.status(500).json({ message: "Eroare server" });
   }
 });
 

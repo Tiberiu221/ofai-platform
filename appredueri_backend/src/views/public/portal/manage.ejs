@@ -942,7 +942,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="stats-grid" style="margin-top: 20px; grid-template-columns: repeat(5, 1fr);">
+      <div class="stats-grid" style="margin-top: 20px; grid-template-columns: repeat(6, 1fr);">
         <div class="stat-card">
           <div class="stat-value"><%= analytics.views ? analytics.views.last_30d : 0 %></div>
           <div class="stat-label">Vizualizări (30 zile)</div>
@@ -964,6 +964,13 @@
           <div class="stat-label">Cereri de ofertă</div>
           <% if (analytics.offerRequests && analytics.offerRequests.uniqueRequesters > 0) { %>
             <div class="stat-subtext"><%= analytics.offerRequests.uniqueRequesters %> utilizator<%= analytics.offerRequests.uniqueRequesters === 1 ? '' : 'i' %> unic<%= analytics.offerRequests.uniqueRequesters === 1 ? '' : 'i' %></div>
+          <% } %>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.codeReveals ? analytics.codeReveals.last30d : 0 %></div>
+          <div class="stat-label">Coduri dezvăluite (30 zile)</div>
+          <% if (analytics.codeReveals && analytics.codeReveals.total > 0) { %>
+            <div class="stat-subtext"><%= analytics.codeReveals.total %> total</div>
           <% } %>
         </div>
       </div>

@@ -16,6 +16,8 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/animated_toggle_fab.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -201,6 +203,12 @@ class OfferDetailScreen extends ConsumerWidget {
                                 style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
                               ),
                             ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+
+                          // Promo Code
+                          if (offer.hasPromoCode) ...[
+                            _PromoCodeCard(offerId: offer.id, isLoggedIn: isLoggedIn),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
@@ -613,6 +621,242 @@ class _ExpiryProgressBar extends StatelessWidget {
           backgroundColor: AppColors.bgSecondary,
           valueColor: AlwaysStoppedAnimation<Color>(barColor),
         ),
+      ),
+    );
+  }
+}
+
+class _PromoCodeCard extends ConsumerStatefulWidget {
+  final int offerId;
+  final bool isLoggedIn;
+
+  const _PromoCodeCard({
+    required this.offerId,
+    required this.isLoggedIn,
+  });
+
+  @override
+  ConsumerState<_PromoCodeCard> createState() => _PromoCodeCardState();
+}
+
+class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
+  bool _revealed = false;
+  bool _loading = false;
+  String? _code;
+  String? _error;
+
+  Future<void> _revealCode() async {
+    if (!widget.isLoggedIn) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiClient().dio.post(
+        ApiEndpoints.revealCode(widget.offerId),
+      );
+      final code = response.data['promo_code'] as String?;
+
+      if (code != null && mounted) {
+        setState(() {
+          _code = code;
+          _revealed = true;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Nu s-a putut încărca codul';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _copyCode() async {
+    if (_code == null) return;
+
+    await Clipboard.setData(ClipboardData(text: _code!));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Cod copiat în clipboard'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.accent.withValues(alpha: 0.12),
+            AppColors.accent.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          // Icon + title
+          Icon(
+            Icons.confirmation_number_outlined,
+            size: 36,
+            color: AppColors.accent,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Cod Promoțional',
+            style: AppTypography.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+
+          if (!widget.isLoggedIn) ...[
+            // Not logged in state
+            Text(
+              'Conectează-te pentru a vedea codul',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+          ] else if (_error != null) ...[
+            // Error state
+            Text(
+              _error!,
+              style: AppTypography.bodySmall.copyWith(color: AppColors.danger),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            GestureDetector(
+              onTap: _revealCode,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.refresh, size: 20, color: AppColors.bgPrimary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Încearcă din nou',
+                      style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ] else if (!_revealed) ...[
+            // Not revealed state (blurred placeholder)
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.bgSecondary,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+              ),
+              child: Text(
+                '* * * * * *',
+                style: AppTypography.labelLarge.copyWith(
+                  color: AppColors.textTertiary,
+                  letterSpacing: 4,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            GestureDetector(
+              onTap: _loading ? null : _revealCode,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: _loading ? AppColors.accent.withValues(alpha: 0.5) : AppColors.accent,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                ),
+                child: _loading
+                    ? const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.bgPrimary),
+                          ),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.visibility, size: 20, color: AppColors.bgPrimary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Dezvăluie codul',
+                            style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ] else if (_code != null) ...[
+            // Revealed state
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.bgSecondary,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+              ),
+              child: Text(
+                _code!,
+                style: AppTypography.labelLarge.copyWith(
+                  color: AppColors.accent,
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            GestureDetector(
+              onTap: _copyCode,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.copy, size: 20, color: AppColors.bgPrimary),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Copiază codul',
+                      style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

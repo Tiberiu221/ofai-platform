@@ -583,6 +583,166 @@
       justify-content: center;
     }
   }
+
+  /* ─── PROMO CODE REVEAL ─────────────────────────────── */
+  .promo-code-section {
+    margin: 24px 0;
+    padding: 24px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, rgba(251,146,60,0.08) 0%, rgba(251,146,60,0.02) 100%);
+    border: 1px solid rgba(251,146,60,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .promo-code-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #f59e0b);
+  }
+
+  .promo-code-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .promo-code-header svg {
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .promo-code-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.1);
+    min-height: 56px;
+  }
+
+  .promo-code-blur {
+    font-family: 'Courier New', monospace;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--text-tertiary);
+    filter: blur(6px);
+    user-select: none;
+    transition: filter 0.4s ease;
+  }
+
+  .promo-code-blur.revealed {
+    filter: blur(0);
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+
+  .promo-reveal-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-smooth);
+    white-space: nowrap;
+  }
+
+  .promo-reveal-btn:hover {
+    background: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(251,146,60,0.3);
+  }
+
+  .promo-reveal-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .promo-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .promo-copy-btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: var(--border-hover);
+  }
+
+  .promo-copy-btn.copied {
+    background: rgba(34,197,94,0.15);
+    border-color: rgba(34,197,94,0.3);
+    color: #22c55e;
+  }
+
+  .promo-login-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+  }
+
+  .promo-login-hint a {
+    color: var(--accent);
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .promo-login-hint a:hover {
+    color: #f59e0b;
+  }
+
+  .promo-code-revealed-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 480px) {
+    .promo-code-placeholder {
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .promo-code-revealed-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .promo-copy-btn {
+      justify-content: center;
+    }
+  }
 </style>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -685,6 +845,35 @@
           Conditii & Termeni
         </h3>
         <p><%= offer.conditions %></p>
+      </div>
+    <% } %>
+
+    <% if (offer.has_promo_code) { %>
+      <div class="promo-code-section" id="promo-code-section">
+        <div class="promo-code-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          Cod promotional
+        </div>
+
+        <% if (!webUser) { %>
+          <!-- Not logged in -->
+          <div class="promo-code-placeholder">
+            <span class="promo-code-blur">XXXXXXXX</span>
+            <div class="promo-login-hint">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <a href="/login?returnTo=/oferta/<%= offer.id %>">Conecteaza-te</a> pentru a vedea codul
+            </div>
+          </div>
+        <% } else { %>
+          <!-- Logged in — reveal UI -->
+          <div class="promo-code-placeholder" id="promo-code-container">
+            <span class="promo-code-blur" id="promo-code-text">XXXXXXXX</span>
+            <button class="promo-reveal-btn" id="promo-reveal-btn" onclick="revealPromoCode(<%= offer.id %>)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Dezvaluie codul
+            </button>
+          </div>
+        <% } %>
       </div>
     <% } %>
 
@@ -837,5 +1026,105 @@
     </div>
   </aside>
 </div>
+
+<% if (offer.has_promo_code && webUser) { %>
+<script>
+  async function revealPromoCode(offerId) {
+    const btn = document.getElementById('promo-reveal-btn');
+    const codeText = document.getElementById('promo-code-text');
+    const container = document.getElementById('promo-code-container');
+
+    if (!btn || !codeText) return;
+
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Se incarca...';
+
+    try {
+      const resp = await fetch('/api/web/offers/' + offerId + '/reveal-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+      });
+
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data.message || 'Eroare la dezvaluirea codului');
+      }
+
+      const data = await resp.json();
+
+      if (data.promo_code) {
+        // Show revealed code
+        codeText.textContent = data.promo_code;
+        codeText.classList.add('revealed');
+
+        // Replace button with copy button
+        container.innerHTML = '';
+        container.innerHTML =
+          '<div class="promo-code-revealed-row">' +
+            '<span class="promo-code-blur revealed" id="promo-code-value">' + data.promo_code + '</span>' +
+            '<button class="promo-copy-btn" id="promo-copy-btn" onclick="copyPromoCode()">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+              'Copiaza codul' +
+            '</button>' +
+          '</div>';
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+        ' Dezvaluie codul';
+      alert(err.message || 'Eroare la dezvaluirea codului');
+    }
+  }
+
+  function copyPromoCode() {
+    var codeEl = document.getElementById('promo-code-value');
+    var copyBtn = document.getElementById('promo-copy-btn');
+    if (!codeEl || !copyBtn) return;
+
+    var code = codeEl.textContent;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function() {
+        showCopied(copyBtn);
+      }).catch(function() {
+        fallbackCopy(code, copyBtn);
+      });
+    } else {
+      fallbackCopy(code, copyBtn);
+    }
+  }
+
+  function fallbackCopy(text, btn) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showCopied(btn); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  function showCopied(btn) {
+    btn.classList.add('copied');
+    btn.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+      ' Copiat!';
+    setTimeout(function() {
+      btn.classList.remove('copied');
+      btn.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+        ' Copiaza codul';
+    }, 2000);
+  }
+</script>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 1s linear infinite; }
+</style>
+<% } %>
 
 <%- include('partials/footer') %>
