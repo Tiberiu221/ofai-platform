@@ -387,37 +387,6 @@
   .stat-trend.down { color: var(--danger); }
   .stat-trend.neutral { color: var(--text-tertiary); }
 
-  /* ── Clicks Breakdown ── */
-  .clicks-breakdown { margin-top: 16px; }
-  .clicks-breakdown-title {
-    font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
-    margin-bottom: 14px;
-  }
-  .clicks-grid { display: flex; flex-direction: column; gap: 8px; }
-  .click-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 6px 0;
-  }
-  .click-icon {
-    width: 28px; height: 28px; border-radius: 6px;
-    background: rgba(255,255,255,0.04);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: 0.85rem;
-  }
-  .click-label { flex: 1; font-size: 0.8125rem; color: var(--text-secondary); min-width: 0; }
-  .click-count { font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); min-width: 36px; text-align: right; }
-  .click-bar-bg {
-    width: 80px; height: 6px; background: rgba(255,255,255,0.06);
-    border-radius: 3px; overflow: hidden; flex-shrink: 0;
-  }
-  .click-bar-fill {
-    height: 100%; border-radius: 3px; background: var(--accent);
-    transition: width 0.4s ease;
-  }
-  @media (max-width: 500px) {
-    .click-bar-bg { width: 50px; }
-  }
-
   /* ── Period Separator & Grouping ── */
   .period-separator {
     width: 1px; height: 20px; background: var(--border); flex-shrink: 0; align-self: center;
@@ -1015,7 +984,7 @@
         </div>
         <div class="stat-card">
           <div class="stat-value"><%= analytics.codeReveals ? analytics.codeReveals.last30d : 0 %></div>
-          <div class="stat-label">Coduri dezv.</div>
+          <div class="stat-label">Coduri revelate</div>
         </div>
         <%
           var actionCards = {
@@ -1026,7 +995,6 @@
             booking_url: { label: 'Rezervări link', icon: '🔗' },
             share: { label: 'Distribuiri', icon: '📤' },
             copy_code: { label: 'Coduri copiate', icon: '📋' },
-            gallery: { label: 'Galerie', icon: '🖼️' },
             follow: { label: 'Urmăriri noi', icon: '❤️' },
             favorite: { label: 'Favorite', icon: '⭐' }
           };
@@ -1073,58 +1041,6 @@
         <% } %>
       </div>
 
-      <!-- Clicks Breakdown -->
-      <% if (analytics.clicks && analytics.clicks.breakdown && analytics.clicks.breakdown.length > 0) { %>
-      <div class="glass-card" style="margin-top: 16px;">
-        <div class="clicks-breakdown">
-          <div class="clicks-breakdown-title">Acțiuni utilizatori (30 zile)</div>
-          <%
-            var clickLabels = {
-              phone: 'Apeluri telefonice',
-              whatsapp: 'Mesaje WhatsApp',
-              booking_url: 'Click-uri link rezervare',
-              website: 'Vizite website',
-              navigate: 'Direcții Google Maps',
-              share: 'Distribuiri',
-              follow: 'Urmăriri noi',
-              unfollow: 'Dezabonări',
-              gallery: 'Vizualizări galerie',
-              copy_code: 'Coduri copiate',
-              favorite: 'Favorite adăugate',
-              unfavorite: 'Favorite eliminate'
-            };
-            var clickIcons = {
-              phone: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
-              whatsapp: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
-              booking_url: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
-              website: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-              navigate: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-              share: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
-              follow: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
-              unfollow: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
-              gallery: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
-              copy_code: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
-              favorite: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
-              unfavorite: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
-            };
-            var clickMaxVal = 0;
-            analytics.clicks.breakdown.forEach(function(c) { if (c.last30d > clickMaxVal) clickMaxVal = c.last30d; });
-          %>
-          <div class="clicks-grid">
-            <% analytics.clicks.breakdown.forEach(function(c) { %>
-              <div class="click-row">
-                <div class="click-icon" style="color: var(--accent);"><%- clickIcons[c.action] || clickIcons.website %></div>
-                <div class="click-label"><%= clickLabels[c.action] || c.action %></div>
-                <div class="click-count"><%= c.last30d %></div>
-                <div class="click-bar-bg">
-                  <div class="click-bar-fill" style="width: <%= clickMaxVal > 0 ? Math.round((c.last30d / clickMaxVal) * 100) : 0 %>%"></div>
-                </div>
-              </div>
-            <% }); %>
-          </div>
-        </div>
-      </div>
-      <% } %>
 
       <!-- Charts -->
       <div class="glass-card" style="margin-top: 16px;">
