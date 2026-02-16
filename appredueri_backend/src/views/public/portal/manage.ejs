@@ -376,11 +376,10 @@
   .period-btn.active { background: var(--accent); color: #09090b; border-color: var(--accent); font-weight: 600; }
 
   /* ── Bar Charts (Chart.js) ── */
-  .chart-section { margin-top: 24px; }
-  .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
-  .chart-container { position: relative; height: 200px; overflow: hidden; }
-  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  @media (max-width: 800px) { .charts-row { grid-template-columns: 1fr; } }
+  .chart-section { margin-top: 0; }
+  .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
+  .chart-container { position: relative; height: 180px; }
+  .charts-row { display: flex; flex-direction: column; gap: 28px; }
 
   /* ── Trend Arrows ── */
   .stat-trend {
@@ -422,15 +421,14 @@
     .click-bar-bg { width: 50px; }
   }
 
-  /* ── Grouping Toggle ── */
-  .grouping-toggle {
-    padding: 5px 12px; border-radius: var(--radius-full);
-    border: 1px solid var(--border); background: transparent;
-    color: var(--text-secondary); font-size: 0.75rem;
-    cursor: pointer; transition: all 0.2s; font-family: inherit;
+  /* ── Period Separator & Grouping ── */
+  .period-separator {
+    width: 1px; height: 20px; background: var(--border); flex-shrink: 0; align-self: center;
   }
-  .grouping-toggle:hover { border-color: var(--border-hover); }
-  .grouping-toggle.active { background: rgba(251,146,60,0.1); color: var(--accent); border-color: var(--accent); }
+  .period-btn.grouping-btn { font-style: italic; }
+  .period-btn.grouping-btn.active {
+    background: rgba(251,146,60,0.12); color: var(--accent); border-color: var(--accent); font-weight: 500;
+  }
 
   .chart-loading {
     display: flex; align-items: center; justify-content: center;
@@ -1108,15 +1106,14 @@
 
       <!-- Charts -->
       <div class="glass-card" style="margin-top: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
           <h3 class="section-title" style="border: none; margin: 0; padding: 0;">Grafice</h3>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button class="grouping-toggle" id="grouping-toggle" onclick="toggleGrouping(this)">Săptămânal</button>
-            <div class="period-selector">
-              <button class="period-btn" onclick="changePeriod(7, this)">7 zile</button>
-              <button class="period-btn active" onclick="changePeriod(30, this)">30 zile</button>
-              <button class="period-btn" onclick="changePeriod(90, this)">90 zile</button>
-            </div>
+          <div class="period-selector">
+            <button class="period-btn grouping-btn" id="grouping-toggle" onclick="toggleGrouping(this)">Săptămânal</button>
+            <span class="period-separator"></span>
+            <button class="period-btn" onclick="changePeriod(7, this)">7 zile</button>
+            <button class="period-btn active" onclick="changePeriod(30, this)">30 zile</button>
+            <button class="period-btn" onclick="changePeriod(90, this)">90 zile</button>
           </div>
         </div>
 
