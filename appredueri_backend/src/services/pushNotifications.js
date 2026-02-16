@@ -223,7 +223,7 @@ async function sendToBusinessSubscribers(db, businessId, notification) {
   const { rows: tokens } = await db.query(`
     SELECT DISTINCT pt.token
     FROM push_tokens pt
-    JOIN subscriptions s ON s.user_id = pt.user_id
+    JOIN followed_businesses s ON s.user_id = pt.user_id
     WHERE s.business_id = $1
       AND pt.is_active = TRUE
   `, [businessId]);
