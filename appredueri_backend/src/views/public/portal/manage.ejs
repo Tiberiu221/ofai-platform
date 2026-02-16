@@ -378,7 +378,7 @@
   /* ── Bar Charts (Chart.js) ── */
   .chart-section { margin-top: 24px; }
   .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
-  .chart-container { position: relative; height: 200px; }
+  .chart-container { position: relative; height: 200px; overflow: hidden; }
   .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
   @media (max-width: 800px) { .charts-row { grid-template-columns: 1fr; } }
 
@@ -1694,11 +1694,15 @@
           borderWidth: 1,
           borderRadius: 4,
           borderSkipped: 'bottom',
+          maxBarThickness: 40,
+          barPercentage: 0.8,
+          categoryPercentage: 0.7,
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        layout: { padding: { right: 4, bottom: 4 } },
         plugins: {
           legend: { display: false },
           tooltip: {
