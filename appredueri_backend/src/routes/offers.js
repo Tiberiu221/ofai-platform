@@ -32,7 +32,7 @@ router.get("/", async (req, res) => {
     let idx = 1;
 
     filters.push("o.is_active = TRUE");
-    filters.push("o.end_date >= CURRENT_DATE"); // Nu afișa oferte expirate
+    filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"); // NULL = nu expiră
 
     if (city_id) { filters.push(`b.city_id = $${idx++}`); values.push(parseInt(city_id)); }
     if (category_id) { filters.push(`b.category_id = $${idx++}`); values.push(parseInt(category_id)); }
@@ -184,7 +184,7 @@ router.get("/feed", auth, async (req, res) => {
 
     // A. Filtre de bază (Active & Valabile)
     filters.push("o.is_active = TRUE");
-    filters.push("o.end_date >= CURRENT_DATE");
+    filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)");
 
     // B. Filtru Oraș (Dacă userul are unul setat)
     if (preferred_city_id) {
