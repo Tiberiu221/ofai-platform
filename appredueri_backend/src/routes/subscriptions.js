@@ -137,6 +137,7 @@ router.delete("/:businessId", async (req, res) => {
   try {
     const userId = req.user.id;
     const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: "ID invalid" });
 
     await pool.query(
       "DELETE FROM followed_businesses WHERE user_id = $1 AND business_id = $2",

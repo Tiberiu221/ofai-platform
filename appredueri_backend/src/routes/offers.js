@@ -154,7 +154,7 @@ router.get("/", async (req, res) => {
     res.json(paginatedResponse(offers, total, page, limit));
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.status(500).send("Eroare server");
   }
 });
 
@@ -172,7 +172,7 @@ router.get("/feed", auth, async (req, res) => {
     );
 
     if (userRes.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "Utilizatorul nu a fost găsit" });
     }
 
     const { preferred_city_id, preferred_category_ids } = userRes.rows[0];
@@ -270,7 +270,7 @@ router.get("/feed", auth, async (req, res) => {
 
   } catch (err) {
     console.error("[Feed Error]", err);
-    res.status(500).send("Server Error");
+    res.status(500).send("Eroare server");
   }
 });
 
@@ -469,7 +469,7 @@ router.get("/:id", async (req, res) => {
     res.json(offer);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.status(500).send("Eroare server");
   }
 });
 

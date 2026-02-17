@@ -12,6 +12,7 @@ const { signToken, generateRefreshToken } = require("../helpers/jwt");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
+const offerService = require("../services/offerService");
 const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const multer = require("multer");
@@ -1684,40 +1685,32 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
       promoCodesArr = [{ code: promo_code, is_active: true }];
     }
 
-    const result = await pool.query(`
-      INSERT INTO offers (business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id
-    `, [businessId, sanitizeString(title, 200), sanitizeString(description, 2000) || null,
-        discount_type || 'percentage', discount_value || 0, sanitizeString(conditions, 2000) || null,
-        start_date || null, end_date || null, is_active !== false,
-        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null]);
+    // Sanitize promo codes
+    const sanitizedPromoCodes = promoCodesArr && Array.isArray(promoCodesArr)
+      ? promoCodesArr.map(pc => ({
+          code: sanitizeString(pc.code?.trim(), 100),
+          is_active: pc.is_active !== false,
+        }))
+      : null;
 
-    const offerId = result.rows[0].id;
-
-    // Insert promo codes
-    if (promoCodesArr && Array.isArray(promoCodesArr)) {
-      const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
-      for (const pc of validCodes) {
-        await pool.query(
-          "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
-          [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
-        );
-      }
-    }
-
-    // Push notification to subscribers (fire-and-forget)
-    const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
-    const bizName = bizNameRes.rows[0]?.name || "Business";
-    const discountText = discount_value ? ` (-${discount_value}%)` : "";
-    pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
-      title: `${bizName} are o ofertă nouă!`,
-      body: `${title}${discountText}`,
-      data: {
-        type: "new_offer",
-        offerId: String(offerId),
-        businessId: String(businessId),
-      },
-    }).catch(err => console.error("[Push] New offer push error:", err));
+    const offerId = await offerService.createOffer(pool, {
+      businessId: parseInt(businessId),
+      title: sanitizeString(title, 200),
+      description: sanitizeString(description, 2000),
+      discountType: discount_type || 'percentage',
+      discountValue: discount_value || 0,
+      conditions: sanitizeString(conditions, 2000),
+      startDate: start_date,
+      endDate: end_date,
+      isActive: is_active !== false,
+      bookingType: booking_type,
+      bookingPhone: booking_phone,
+      bookingWhatsapp: booking_whatsapp,
+      bookingUrl: booking_url,
+      bookingInstructions: sanitizeString(booking_instructions, 500),
+      promoCodes: sanitizedPromoCodes,
+      sendWebhook: false, // Web portal doesn't send webhook
+    });
 
     res.json({ success: true, offer_id: offerId });
   } catch (err) {
@@ -2062,9 +2055,12 @@ router.post("/api/web/favorites", requireWebAuth, async (req, res) => {
 
 router.delete("/api/web/favorites/:offerId", requireWebAuth, async (req, res) => {
   try {
+    const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
+
     await pool.query(
       "DELETE FROM favorite_offers WHERE user_id = $1 AND offer_id = $2",
-      [req.webUser.id, parseInt(req.params.offerId)]
+      [req.webUser.id, offerId]
     );
     res.json({ success: true });
   } catch (err) {
@@ -2092,9 +2088,12 @@ router.post("/api/web/subscriptions", requireWebAuth, async (req, res) => {
 
 router.delete("/api/web/subscriptions/:businessId", requireWebAuth, async (req, res) => {
   try {
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: "ID invalid" });
+
     await pool.query(
       "DELETE FROM followed_businesses WHERE user_id = $1 AND business_id = $2",
-      [req.webUser.id, parseInt(req.params.businessId)]
+      [req.webUser.id, businessId]
     );
     res.json({ success: true });
   } catch (err) {

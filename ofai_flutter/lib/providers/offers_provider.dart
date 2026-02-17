@@ -107,6 +107,8 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
   void setFilter({int? cityId, int? categoryId, String? sort, String? query,
     bool clearCityId = false, bool clearCategoryId = false}) {
     state = state.copyWith(
+      offers: [],
+      page: 1,
       cityId: cityId, categoryId: categoryId, sort: sort, query: query,
       clearCityId: clearCityId, clearCategoryId: clearCategoryId,
     );

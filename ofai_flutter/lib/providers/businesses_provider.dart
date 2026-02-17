@@ -101,6 +101,8 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
   void setFilter({int? cityId, int? categoryId, String? query,
     bool clearCityId = false, bool clearCategoryId = false}) {
     state = state.copyWith(
+      businesses: [],
+      page: 1,
       cityId: cityId, categoryId: categoryId, query: query,
       clearCityId: clearCityId, clearCategoryId: clearCategoryId,
     );

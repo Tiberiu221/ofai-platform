@@ -46,7 +46,7 @@ router.get("/business/:id", async (req, res) => {
         res.json(paginatedResponse(reviews, total, page, limit));
     } catch (err) {
         console.error(err);
-        res.status(500).send("Server Error");
+        res.status(500).send("Eroare server");
     }
 });
 
@@ -182,7 +182,7 @@ router.post("/", authenticateToken, async (req, res) => {
     } catch (err) {
         await client.query("ROLLBACK");
         console.error("REVIEW ERROR:", err);
-        res.status(500).json({ error: "Server Error la salvarea recenziei." });
+        res.status(500).json({ error: "Eroare server la salvarea recenziei." });
     } finally {
         client.release();
     }

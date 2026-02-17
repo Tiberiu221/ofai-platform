@@ -6,6 +6,7 @@ const { businessAuth, businessUserAuth } = require("../middleware/businessAuth")
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
+const offerService = require("../services/offerService");
 const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
 
 // =====================================
@@ -395,73 +396,35 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       promoCodesArr = [{ code: promo_code, is_active: true }];
     }
 
-    const result = await pool.query(`
-      INSERT INTO offers (
-        business_id, title, description, discount_type, discount_value,
-        conditions, start_date, end_date, is_active, logo_url,
-        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-      RETURNING id
-    `, [
-      businessId,
-      title,
-      description || null,
-      discount_type || null,
-      discount_value ? Number(discount_value) : null,
-      conditions || null,
-      start_date || null,
-      end_date || null,
-      is_active === 'true' || is_active === true,
-      logoUrl,
-      booking_type || 'inherit',
-      booking_phone || null,
-      booking_whatsapp || null,
-      booking_url || null,
-      booking_instructions || null
-    ]);
+    // Sanitize promo codes
+    const sanitizedPromoCodes = promoCodesArr && Array.isArray(promoCodesArr)
+      ? promoCodesArr.map(pc => ({
+          code: sanitizeString(pc.code?.trim(), 100),
+          is_active: pc.is_active !== false,
+        }))
+      : null;
 
-    const offerId = result.rows[0].id;
-
-    // Insert promo codes
-    if (promoCodesArr && Array.isArray(promoCodesArr)) {
-      const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
-      for (const pc of validCodes) {
-        await pool.query(
-          "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
-          [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
-        );
-      }
-    }
-
-    console.log("[BusinessPortal] Offer created with ID:", offerId);
-
-    // Trigger n8n webhook for new offer
-    const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
-    const bizName = bizNameRes.rows[0]?.name || "Business";
-    triggerWebhook("/webhook/new-offer", {
-      offer_id: offerId,
-      business_id: parseInt(businessId),
-      business_name: bizName,
+    const offerId = await offerService.createOffer(pool, {
+      businessId: parseInt(businessId),
       title: title,
-      discount_type: discount_type || null,
-      discount_value: discount_value ? Number(discount_value) : null,
-      start_date: start_date || null,
-      end_date: end_date || null,
-      created_at: new Date().toISOString(),
+      description: description,
+      discountType: discount_type,
+      discountValue: discount_value ? Number(discount_value) : null,
+      conditions: conditions,
+      startDate: start_date,
+      endDate: end_date,
+      isActive: is_active === 'true' || is_active === true,
+      logoUrl: logoUrl,
+      bookingType: booking_type,
+      bookingPhone: booking_phone,
+      bookingWhatsapp: booking_whatsapp,
+      bookingUrl: booking_url,
+      bookingInstructions: booking_instructions,
+      promoCodes: sanitizedPromoCodes,
+      sendWebhook: true, // Business portal triggers n8n webhook
     });
 
-    // Push notification to subscribers (fire-and-forget)
-    const discountText = discount_value ? ` (-${discount_value}%)` : "";
-    pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
-      title: `${bizName} are o ofertă nouă!`,
-      body: `${title}${discountText}`,
-      data: {
-        type: "new_offer",
-        offerId: String(offerId),
-        businessId: String(businessId),
-      },
-    }).catch(err => console.error("[Push] New offer push error:", err));
+    console.log("[BusinessPortal] Offer created with ID:", offerId);
 
     res.json({ success: true, offer_id: offerId });
   } catch (err) {

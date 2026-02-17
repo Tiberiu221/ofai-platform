@@ -758,7 +758,7 @@
         '<span class="pc-status ' + (pc.is_active !== false ? 'active' : 'inactive') + '">' +
           (pc.is_active !== false ? 'Activ' : 'Inactiv') +
         '</span>' +
-        '<button type="button" class="pc-remove" data-field="remove" data-idx="' + idx + '" title="Elimină codul">&times;</button>';
+        '<button type="button" class="pc-remove" data-field="remove" data-idx="' + idx + '" title="Elimină codul" aria-label="Elimină codul">&times;</button>';
       pcListEl.appendChild(row);
     });
   }

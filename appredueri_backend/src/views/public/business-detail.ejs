@@ -199,10 +199,10 @@
     <div class="gallery-modal" id="gallery-modal">
       <div class="gallery-modal-backdrop" onclick="closeGallery()"></div>
       <div class="gallery-modal-content">
-        <button class="gallery-modal-close" onclick="closeGallery()">&times;</button>
-        <button class="gallery-nav gallery-prev" onclick="galleryPrev()">&lsaquo;</button>
+        <button class="gallery-modal-close" onclick="closeGallery()" aria-label="Închide">&times;</button>
+        <button class="gallery-nav gallery-prev" onclick="galleryPrev()" aria-label="Anterior">&lsaquo;</button>
         <img id="gallery-main-img" src="" alt="<%= business.name %>">
-        <button class="gallery-nav gallery-next" onclick="galleryNext()">&rsaquo;</button>
+        <button class="gallery-nav gallery-next" onclick="galleryNext()" aria-label="Următorul">&rsaquo;</button>
         <div class="gallery-counter"><span id="gallery-idx">1</span> / <%= business.images.length %></div>
         <div class="gallery-thumbs">
           <% business.images.forEach((img, i) => { %>

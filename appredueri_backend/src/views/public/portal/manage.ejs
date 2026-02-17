@@ -638,7 +638,7 @@
             <% business.images.forEach((img) => { %>
               <div class="gallery-upload-item" data-image-id="<%= img.id %>">
                 <img src="<%= img.url %>" alt="Galerie">
-                <button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(<%= img.id %>, this)" title="Șterge imaginea">&times;</button>
+                <button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(<%= img.id %>, this)" title="Șterge imaginea" aria-label="Șterge imaginea">&times;</button>
               </div>
             <% }); %>
           <% } %>
@@ -1263,7 +1263,7 @@
           placeholder.style.opacity = '1';
           placeholder.setAttribute('data-image-id', data.image.id);
           placeholder.innerHTML = '<img src="' + data.image.url + '" alt="Galerie">' +
-            '<button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(' + data.image.id + ', this)" title="Șterge imaginea">&times;</button>';
+            '<button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(' + data.image.id + ', this)" title="Șterge imaginea" aria-label="Șterge imaginea">&times;</button>';
 
           currentCount++;
           // Hide add button if at limit

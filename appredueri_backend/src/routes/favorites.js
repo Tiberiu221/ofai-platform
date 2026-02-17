@@ -131,6 +131,7 @@ router.delete("/:offerId", async (req, res) => {
   try {
     const userId = req.user.id;
     const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
 
     await pool.query(
       "DELETE FROM favorite_offers WHERE user_id = $1 AND offer_id = $2",

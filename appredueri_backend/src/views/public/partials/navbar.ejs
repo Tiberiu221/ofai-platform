@@ -18,7 +18,7 @@
     <div class="nav-actions">
       <% if (_webUser) { %>
         <div class="user-menu-wrapper">
-          <button class="user-menu-trigger" onclick="document.querySelector('.user-menu-dropdown').classList.toggle('open')">
+          <button class="user-menu-trigger" onclick="document.querySelector('.user-menu-dropdown').classList.toggle('open')" aria-label="Deschide meniul utilizator">
             <div class="user-menu-avatar"><%= _webUser.first_name ? _webUser.first_name.charAt(0).toUpperCase() : 'U' %></div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>

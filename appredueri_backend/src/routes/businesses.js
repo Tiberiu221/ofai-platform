@@ -186,7 +186,7 @@ router.get("/:id", async (req, res) => {
     );
 
     if (businessRes.rows.length === 0) {
-      return res.status(404).json({ error: "Business not found" });
+      return res.status(404).json({ error: "Business-ul nu a fost găsit" });
     }
 
     const b = businessRes.rows[0];
@@ -383,7 +383,7 @@ router.get("/:id", async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.status(500).send("Eroare server");
   }
 });
 
@@ -402,7 +402,7 @@ router.get("/:id/review-summary", async (req, res) => {
     );
 
     if (businessCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Business not found" });
+      return res.status(404).json({ error: "Business-ul nu a fost găsit" });
     }
 
     // Cache-only: return existing summary if present
@@ -451,7 +451,7 @@ router.post("/:id/review-summary/regenerate", adminAuth, async (req, res) => {
     );
     
     if (businessCheck.rows.length === 0) {
-      return res.status(404).json({ error: "Business not found" });
+      return res.status(404).json({ error: "Business-ul nu a fost găsit" });
     }
     
     // Check if can summarize
