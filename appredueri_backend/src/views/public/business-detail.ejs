@@ -26,7 +26,7 @@
      ═══════════════════════════════════════════════════════ -->
 <section class="bd-hero">
   <% if (business.cover_image) { %>
-    <img src="<%= business.cover_image %>" alt="<%= business.name %>" class="bd-hero-img">
+    <img src="<%= business.cover_image %>" alt="<%= business.name %>" class="bd-hero-img" width="800" height="280" loading="lazy">
   <% } %>
   <div class="bd-hero-gradient"></div>
 </section>
@@ -38,7 +38,7 @@
   <div class="bd-profile-top">
     <div class="bd-avatar">
       <% if (business.logo_url) { %>
-        <img src="<%= business.logo_url %>" alt="<%= business.name %>" class="bd-avatar-img">
+        <img src="<%= business.logo_url %>" alt="<%= business.name %>" class="bd-avatar-img" width="80" height="80" loading="lazy">
       <% } else { %>
         <div class="bd-avatar-fallback"><%= business.name.charAt(0).toUpperCase() %></div>
       <% } %>
@@ -188,7 +188,7 @@
       <span class="bd-count-badge"><%= business.images.length %></span>
     </div>
     <button class="bd-gallery-btn" onclick="trackClick(<%= business.id %>,'gallery'); openGallery()">
-      <img src="<%= business.images[0].url %>" class="bd-gallery-thumb" alt="Galerie <%= business.name %>">
+      <img src="<%= business.images[0].url %>" class="bd-gallery-thumb" alt="Galerie <%= business.name %>" width="400" height="300" loading="lazy">
       <span class="bd-gallery-overlay">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
         Vezi galeria (<%= business.images.length %>)
@@ -201,12 +201,12 @@
       <div class="gallery-modal-content">
         <button class="gallery-modal-close" onclick="closeGallery()" aria-label="Închide">&times;</button>
         <button class="gallery-nav gallery-prev" onclick="galleryPrev()" aria-label="Anterior">&lsaquo;</button>
-        <img id="gallery-main-img" src="" alt="<%= business.name %>">
+        <img id="gallery-main-img" src="" alt="<%= business.name %>" width="800" height="600">
         <button class="gallery-nav gallery-next" onclick="galleryNext()" aria-label="Următorul">&rsaquo;</button>
         <div class="gallery-counter"><span id="gallery-idx">1</span> / <%= business.images.length %></div>
         <div class="gallery-thumbs">
           <% business.images.forEach((img, i) => { %>
-            <img src="<%= img.url %>" onclick="galleryGoTo(<%= i %>)" class="gallery-thumb-item<%= i === 0 ? ' active' : '' %>" data-idx="<%= i %>" alt="">
+            <img src="<%= img.url %>" onclick="galleryGoTo(<%= i %>)" class="gallery-thumb-item<%= i === 0 ? ' active' : '' %>" data-idx="<%= i %>" alt="" width="120" height="80" loading="lazy">
           <% }); %>
         </div>
       </div>
@@ -269,10 +269,10 @@
         <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
           <div class="offer-image-wrapper">
             <% if (offer.image_url) { %>
-              <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy">
+              <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy" width="400" height="225">
             <% } else if (offer.business_logo || business.logo_url) { %>
               <div class="offer-image-placeholder">
-                <img src="<%= offer.business_logo || business.logo_url %>" alt="<%= business.name %>" class="offer-placeholder-logo">
+                <img src="<%= offer.business_logo || business.logo_url %>" alt="<%= business.name %>" class="offer-placeholder-logo" width="40" height="40">
               </div>
             <% } else { %>
               <div class="offer-image-placeholder">
@@ -596,9 +596,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
+      var csrfToken = document.querySelector('meta[name="csrf-token"]');
       fetch('/api/web/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
+        },
         body: JSON.stringify({
           business_id: businessId,
           rating: selectedRating,
@@ -629,9 +633,13 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.disabled = true;
 
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]');
       const res = await fetch('/api/web/offer-requests', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
+        },
         body: JSON.stringify({ business_id: businessId })
       });
       const data = await res.json();

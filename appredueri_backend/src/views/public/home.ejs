@@ -67,7 +67,7 @@
     <% const marqueeItems = featuredBusinesses.concat(featuredBusinesses); %>
     <% marqueeItems.forEach(biz => { %>
       <div class="marquee-item">
-        <img src="<%= biz.logo_url %>" alt="<%= biz.name %>" loading="lazy" onerror="this.style.display='none'">
+        <img src="<%= biz.logo_url %>" alt="<%= biz.name %>" loading="lazy" width="40" height="40" onerror="this.style.display='none'">
         <span><%= biz.name %></span>
       </div>
     <% }); %>

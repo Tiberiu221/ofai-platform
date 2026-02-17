@@ -84,23 +84,37 @@ class PushNotificationService {
     }
   }
 
-  /// Register FCM token with backend
+  /// Register FCM token with backend (with retry logic)
   Future<void> _registerTokenWithBackend(String token) async {
-    try {
-      final accessToken = await SecureStorage.getAccessToken();
-      if (accessToken == null) return;
+    final maxAttempts = 3;
 
-      await ApiClient().dio.post(
-        ApiEndpoints.pushTokens,
-        data: {
-          'token': token,
-          'platform': Platform.isAndroid ? 'android' : 'ios',
-          'deviceName': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-        },
-      );
-      print('[Push] Token registered with backend');
-    } catch (e) {
-      print('[Push] Token registration failed: $e');
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        final accessToken = await SecureStorage.getAccessToken();
+        if (accessToken == null) {
+          print('[Push] No access token, skipping registration');
+          return;
+        }
+
+        await ApiClient().dio.post(
+          ApiEndpoints.pushTokens,
+          data: {
+            'token': token,
+            'platform': Platform.isAndroid ? 'android' : 'ios',
+            'deviceName': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+          },
+        );
+        print('[Push] Token registered with backend (attempt ${attempt + 1})');
+        return; // Success, exit early
+      } catch (e) {
+        if (attempt < maxAttempts - 1) {
+          final delaySeconds = (attempt + 1) * 2; // 2s, 4s
+          print('[Push] Token registration failed (attempt ${attempt + 1}), retrying in ${delaySeconds}s: $e');
+          await Future.delayed(Duration(seconds: delaySeconds));
+        } else {
+          print('[Push] Failed to register token after $maxAttempts attempts: $e');
+        }
+      }
     }
   }
 

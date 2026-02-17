@@ -3,6 +3,12 @@
    Scroll reveal, navbar logic, counters, interactions
    ═══════════════════════════════════════════════════════════ */
 
+/* ─── CSRF TOKEN HELPER ──────────────────────────────────── */
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute('content') : '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
   initScrollReveal();
@@ -185,7 +191,10 @@ window.toggleFavorite = async function(offerId) {
 
   try {
     if (isFav) {
-      const resp = await fetch(`/api/web/favorites/${offerId}`, { method: 'DELETE' });
+      const resp = await fetch(`/api/web/favorites/${offerId}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': getCsrfToken() },
+      });
       if (!resp.ok) {
         const data = await resp.json();
         if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
@@ -202,7 +211,10 @@ window.toggleFavorite = async function(offerId) {
     } else {
       const resp = await fetch('/api/web/favorites', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
         body: JSON.stringify({ offer_id: offerId }),
       });
       if (!resp.ok) {
@@ -233,7 +245,10 @@ window.toggleFollow = async function(businessId) {
 
   try {
     if (isFollowing) {
-      const resp = await fetch(`/api/web/subscriptions/${businessId}`, { method: 'DELETE' });
+      const resp = await fetch(`/api/web/subscriptions/${businessId}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': getCsrfToken() },
+      });
       if (!resp.ok) {
         const data = await resp.json();
         if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
@@ -250,7 +265,10 @@ window.toggleFollow = async function(businessId) {
     } else {
       const resp = await fetch('/api/web/subscriptions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
         body: JSON.stringify({ business_id: businessId }),
       });
       if (!resp.ok) {
@@ -441,17 +459,19 @@ function initSearchAutosuggest() {
     form.appendChild(dropdown);
 
     let debounceTimer = null;
+    let searchAbortController = null;
 
     input.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       const q = input.value.trim();
       if (q.length < 2) {
         dropdown.classList.remove('open');
+        if (searchAbortController) searchAbortController.abort();
         return;
       }
       dropdown.innerHTML = buildSkeletonHTML();
       dropdown.classList.add('open');
-      debounceTimer = setTimeout(() => fetchSuggestions(q, dropdown), 300);
+      debounceTimer = setTimeout(() => fetchSuggestions(q, dropdown, (ctrl) => { searchAbortController = ctrl; }), 300);
     });
 
     input.addEventListener('focus', () => {
@@ -469,9 +489,14 @@ function initSearchAutosuggest() {
   });
 }
 
-async function fetchSuggestions(q, dropdown) {
+async function fetchSuggestions(q, dropdown, setController) {
   try {
-    const resp = await fetch(`/api/web/search/suggest?q=${encodeURIComponent(q)}`);
+    const controller = new AbortController();
+    if (setController) setController(controller);
+
+    const resp = await fetch(`/api/web/search/suggest?q=${encodeURIComponent(q)}`, {
+      signal: controller.signal
+    });
     if (!resp.ok) return;
     const data = await resp.json();
 
@@ -519,8 +544,9 @@ async function fetchSuggestions(q, dropdown) {
     dropdown.innerHTML = html;
     dropdown.classList.add('open');
   } catch (e) {
+    if (e.name === 'AbortError') return; // Ignore aborted requests
     console.error(e);
-    showToast('Eroare la căutare. Încearcă din nou.', 'error');
+    if (showToast) showToast('Eroare la căutare. Încearcă din nou.', 'error');
     dropdown.classList.remove('open');
   }
 }
@@ -805,3 +831,57 @@ function extractBusinessIdFromContext() {
   }
   return null;
 }
+
+/* ─── SHARED AUTH FORM HANDLER ──────────────────────────── */
+window.submitAuthForm = function(config) {
+  const { formEl, endpoint, getPayload, successRedirect, onSuccess } = config;
+  if (!formEl) return;
+
+  formEl.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = formEl.querySelector('.auth-submit, button[type="submit"]');
+    if (!btn) return;
+
+    // Remove old error messages
+    const oldErr = formEl.parentElement.querySelector('.auth-error');
+    if (oldErr) oldErr.remove();
+
+    // Get original button text and show loading
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = btn.dataset.loadingText || 'Se procesează...';
+
+    try {
+      const payload = getPayload(formEl);
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.success) {
+        if (onSuccess) onSuccess(data);
+        window.location.href = data.redirect || successRedirect;
+      } else {
+        // Show error message
+        const errDiv = document.createElement('div');
+        errDiv.className = 'auth-error';
+        errDiv.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${data.message || 'Eroare'}`;
+        formEl.parentElement.insertBefore(errDiv, formEl);
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    } catch (err) {
+      const errDiv = document.createElement('div');
+      errDiv.className = 'auth-error';
+      errDiv.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Eroare de rețea. Verifică conexiunea la internet.';
+      formEl.parentElement.insertBefore(errDiv, formEl);
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  });
+};

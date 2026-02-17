@@ -3,7 +3,6 @@ class ApiEndpoints {
 
   // Base URL — change for production
   static const String baseUrl = 'https://ofai.ro'; // Production (switch to http://10.0.2.2:4000 for local dev)
-  static const String prodUrl = 'https://ofai.ro';
 
   // Auth
   static const String register = '/auth/register';

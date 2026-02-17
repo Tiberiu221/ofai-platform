@@ -94,9 +94,13 @@
     }
 
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]');
       const res = await fetch('/api/web/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
+        },
         body: JSON.stringify({ currentPassword: data.get('currentPassword'), newPassword: newPass })
       });
       const json = await res.json();
@@ -116,9 +120,13 @@
     errEl.style.display = 'none';
 
     try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]');
       const res = await fetch('/api/web/delete-account', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
+        },
         body: JSON.stringify({ password })
       });
       const json = await res.json();

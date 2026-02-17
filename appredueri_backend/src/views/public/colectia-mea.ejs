@@ -54,7 +54,7 @@
               <a href="/business/<%= b.id %>" class="collection-card-link">
                 <div class="collection-card-cover">
                   <% if (b.cover_image_url) { %>
-                    <img src="<%= b.cover_image_url %>" alt="<%= b.name %>" loading="lazy">
+                    <img src="<%= b.cover_image_url %>" alt="<%= b.name %>" loading="lazy" width="400" height="200">
                   <% } %>
                   <div class="collection-card-cover-gradient"></div>
                   <% if (b.active_offers_count > 0) { %>
@@ -64,7 +64,7 @@
                 <div class="collection-card-body">
                   <div class="collection-card-avatar">
                     <% if (b.logo_url) { %>
-                      <img src="<%= b.logo_url %>" alt="<%= b.name %>" loading="lazy">
+                      <img src="<%= b.logo_url %>" alt="<%= b.name %>" loading="lazy" width="48" height="48">
                     <% } else { %>
                       <span><%= b.name.charAt(0) %></span>
                     <% } %>
@@ -105,7 +105,7 @@
               <a href="/oferta/<%= o.id %>" class="collection-card-link">
                 <div class="collection-card-cover">
                   <% if (o.image_url) { %>
-                    <img src="<%= o.image_url %>" alt="<%= o.title %>" loading="lazy">
+                    <img src="<%= o.image_url %>" alt="<%= o.title %>" loading="lazy" width="400" height="225">
                   <% } %>
                   <div class="collection-card-cover-gradient"></div>
                   <span class="collection-discount-badge">
@@ -380,7 +380,11 @@
 
   async function unfollowBusiness(id) {
     try {
-      var res = await fetch('/api/web/subscriptions/' + id, { method: 'DELETE' });
+      var csrfToken = document.querySelector('meta[name="csrf-token"]');
+      var res = await fetch('/api/web/subscriptions/' + id, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : '' }
+      });
       if (res.status === 401) { window.location.href = '/login'; return; }
       var el = document.getElementById('biz-' + id);
       if (el) el.remove();
@@ -390,7 +394,11 @@
 
   async function removeFavorite(id) {
     try {
-      var res = await fetch('/api/web/favorites/' + id, { method: 'DELETE' });
+      var csrfToken = document.querySelector('meta[name="csrf-token"]');
+      var res = await fetch('/api/web/favorites/' + id, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : '' }
+      });
       if (res.status === 401) { window.location.href = '/login'; return; }
       var el = document.getElementById('fav-' + id);
       if (el) el.remove();

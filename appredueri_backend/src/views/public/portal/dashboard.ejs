@@ -373,7 +373,7 @@
           <!-- Cover Image -->
           <div class="portal-card-cover">
             <% if (biz.cover_image_url) { %>
-              <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>">
+              <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" width="400" height="200" loading="lazy">
             <% } else { %>
               <div class="portal-card-cover-fallback"></div>
             <% } %>
@@ -382,7 +382,7 @@
             <!-- Logo -->
             <div class="portal-card-logo">
               <% if (biz.logo_url) { %>
-                <img src="<%= biz.logo_url %>" alt="<%= biz.name %>">
+                <img src="<%= biz.logo_url %>" alt="<%= biz.name %>" width="48" height="48" loading="lazy">
               <% } else { %>
                 <span class="portal-card-logo-letter"><%= biz.name.charAt(0).toUpperCase() %></span>
               <% } %>

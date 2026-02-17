@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
+const { doubleCsrf } = require("csrf-csrf");
 const path = require("path");
 
 // Sentry - MUST be initialized before anything else
@@ -99,7 +100,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
 };
 
 app.use(cors(corsOptions));
@@ -131,6 +132,57 @@ app.use(generalLimiter);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
+
+// ============================================
+// CSRF PROTECTION (Web routes only)
+// ============================================
+const { doubleCsrfProtection, generateToken } = doubleCsrf({
+  getSecret: () => process.env.JWT_SECRET, // Reuse existing secret
+  cookieName: "__csrf",
+  cookieOptions: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  },
+  getTokenFromRequest: (req) => {
+    // Check header first (AJAX), then body (forms)
+    return req.headers["x-csrf-token"] || req.body?._csrf;
+  },
+});
+
+// Make CSRF token available to all EJS templates (for GET requests only)
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    res.locals.csrfToken = generateToken(req, res);
+  }
+  next();
+});
+
+// Apply CSRF protection selectively (skip mobile API routes and anonymous endpoints)
+function csrfMiddleware(req, res, next) {
+  // Skip for mobile API routes (Bearer auth — already protected by token)
+  if (req.path.startsWith('/auth/') || req.path.startsWith('/offers') ||
+      req.path.startsWith('/businesses') || req.path.startsWith('/reviews') ||
+      req.path.startsWith('/favorites') || req.path.startsWith('/subscriptions') ||
+      req.path.startsWith('/users') || req.path.startsWith('/push-tokens') ||
+      req.path.startsWith('/my-businesses') || req.path.startsWith('/cities') ||
+      req.path.startsWith('/categories')) {
+    return next();
+  }
+  // Skip for anonymous click tracking endpoint
+  if (req.path === '/api/web/clicks' && req.method === 'POST') {
+    return next();
+  }
+  // Skip for safe HTTP methods
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+  // Apply CSRF protection for all other POST/PUT/DELETE requests
+  return doubleCsrfProtection(req, res, next);
+}
+
+app.use(csrfMiddleware);
 
 // Sentry user context (după ce avem acces la req.user)
 app.use(sentryUserMiddleware);
@@ -207,10 +259,27 @@ app.use("/my-businesses", businessPortalRouter);
 // Sentry error handler (must be before other error handlers)
 app.use(sentryErrorHandler());
 
+// CSRF error handler
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN' || err.message?.includes('csrf')) {
+    console.warn(`[CSRF] Invalid token for ${req.method} ${req.path} from ${req.ip}`);
+    if (req.path.startsWith('/api/')) {
+      return res.status(403).json({ message: 'Token CSRF invalid. Reîncarcă pagina.' });
+    }
+    return res.status(403).render('public/404', {
+      pageTitle: 'Eroare',
+      activePage: null,
+      webUser: req.webUser || null,
+      error: 'Sesiunea a expirat. Reîncarcă pagina.'
+    });
+  }
+  next(err);
+});
+
 app.use((err, req, res, next) => {
   console.error(`[Error] ${err.message}`);
   console.error(`[Error] Stack: ${err.stack}`);
-  
+
   // Pentru rutele admin, afișăm eroarea (cu escape HTML)
   if (req.path.startsWith('/admin')) {
     const safeMsg = (err.message || "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -224,7 +293,7 @@ app.use((err, req, res, next) => {
       `<h1>Eroare Admin</h1><pre>${safeMsg}\n\n${safeStack}</pre><br><a href="/admin/dashboard">Înapoi</a>`
     );
   }
-  
+
   res.status(err.status || 500).json({
     message: isProduction ? "Eroare internă server" : err.message,
     ...(isProduction ? {} : { stack: err.stack })
