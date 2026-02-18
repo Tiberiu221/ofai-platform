@@ -898,21 +898,26 @@ window.submitAuthForm = function(config) {
 
   formEl.addEventListener('submit', async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     const btn = formEl.querySelector('.auth-submit, button[type="submit"]');
     if (!btn) return;
 
-    // Remove old error messages
-    const oldErr = formEl.parentElement.querySelector('.auth-error');
-    if (oldErr) oldErr.remove();
+    // Batch all DOM changes to prevent reflow flash
+    requestAnimationFrame(function() {
+      // Fade out old error messages (if any)
+      var oldErr = formEl.parentElement.querySelector('.auth-error');
+      if (oldErr) oldErr.remove();
 
-    // Get original button text and show loading
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = btn.dataset.loadingText || 'Se procesează...';
+      // Show loading state
+      btn.disabled = true;
+      btn.textContent = btn.dataset.loadingText || 'Se procesează...';
+    });
+
+    var originalText = btn.textContent;
 
     try {
-      const payload = getPayload(formEl);
-      const resp = await fetch(endpoint, {
+      var payload = getPayload(formEl);
+      var resp = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -920,12 +925,12 @@ window.submitAuthForm = function(config) {
         },
         body: JSON.stringify(payload),
       });
-      const data = await resp.json();
+      var data = await resp.json();
 
       if (resp.ok && data.success) {
         if (onSuccess) onSuccess(data);
         // Smooth fade-out before redirect
-        const card = formEl.closest('.auth-card');
+        var card = formEl.closest('.auth-card');
         if (card) {
           card.style.transition = 'opacity 0.2s, transform 0.2s';
           card.style.opacity = '0';
@@ -936,16 +941,16 @@ window.submitAuthForm = function(config) {
         }, 200);
       } else {
         // Show error message
-        const errDiv = document.createElement('div');
-        errDiv.className = 'auth-error';
-        errDiv.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${data.message || 'Eroare'}`;
+        var errDiv = document.createElement('div');
+        errDiv.className = 'auth-error show';
+        errDiv.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + (data.message || 'Eroare');
         formEl.parentElement.insertBefore(errDiv, formEl);
         btn.disabled = false;
         btn.textContent = originalText;
       }
     } catch (err) {
-      const errDiv = document.createElement('div');
-      errDiv.className = 'auth-error';
+      var errDiv = document.createElement('div');
+      errDiv.className = 'auth-error show';
       errDiv.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Eroare de rețea. Verifică conexiunea la internet.';
       formEl.parentElement.insertBefore(errDiv, formEl);
       btn.disabled = false;
