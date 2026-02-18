@@ -77,7 +77,7 @@
                         <span><%= parseFloat(b.rating_avg).toFixed(1) %></span>
                       </div>
                     <% } %>
-                    <p class="collection-card-meta"><%= b.category_name || '' %><%= b.city_name ? ' &#183; ' + b.city_name : '' %></p>
+                    <p class="collection-card-meta"><%= b.category_name || '' %><%= b.city_name ? ' · ' + b.city_name : '' %></p>
                   </div>
                 </div>
               </a>
@@ -119,7 +119,7 @@
                 <div class="collection-card-body" style="padding-top: 14px;">
                   <div class="collection-card-info" style="padding-left: 0;">
                     <h3><%= o.title %></h3>
-                    <p class="collection-card-meta"><%= o.business_name || '' %><%= o.city_name ? ' &#183; ' + o.city_name : '' %></p>
+                    <p class="collection-card-meta"><%= o.business_name || '' %><%= o.city_name ? ' · ' + o.city_name : '' %></p>
                   </div>
                 </div>
               </a>
