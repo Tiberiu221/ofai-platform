@@ -7,13 +7,13 @@
   <canvas class="particle-canvas auth-particles"></canvas>
 
   <!-- Progress Dots -->
-  <div class="onboarding-dots">
+  <div class="onboarding-dots" style="opacity:0">
     <span class="onboarding-dot active" id="dot-1"></span>
     <span class="onboarding-dot" id="dot-2"></span>
   </div>
 
   <!-- ─── Step 1: Cities ─── -->
-  <div class="onboarding-step active" id="step-1">
+  <div class="onboarding-step active" id="step-1" style="opacity:0">
     <div class="onboarding-card">
       <h1 class="onboarding-title">Bun venit, <%= webUser.first_name || 'acolo' %>!</h1>
       <p class="onboarding-subtitle">Alege orașele tale</p>
@@ -42,7 +42,7 @@
   </div>
 
   <!-- ─── Step 2: Categories ─── -->
-  <div class="onboarding-step" id="step-2">
+  <div class="onboarding-step" id="step-2" style="opacity:0; pointer-events:none">
     <div class="onboarding-card">
       <h1 class="onboarding-title">Ce te interesează?</h1>
       <p class="onboarding-subtitle">Alege categoriile preferate</p>
@@ -109,6 +109,7 @@
 
   /* Progress dots */
   .onboarding-dots {
+    opacity: 1 !important; /* override inline FOUC hide */
     position: fixed;
     top: 32px;
     left: 50%;
@@ -156,9 +157,9 @@
   }
 
   .onboarding-step.active {
-    opacity: 1;
+    opacity: 1 !important; /* override inline FOUC hide */
     transform: translateX(0);
-    pointer-events: auto;
+    pointer-events: auto !important;
   }
 
   .onboarding-step.exit-left {
