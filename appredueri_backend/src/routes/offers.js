@@ -167,7 +167,7 @@ router.get("/feed", auth, async (req, res) => {
 
     // 1. Obține preferințele userului
     const userRes = await pool.query(
-      "SELECT preferred_city_id, preferred_category_ids FROM users WHERE id = $1",
+      "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
       [userId]
     );
 
@@ -175,7 +175,7 @@ router.get("/feed", auth, async (req, res) => {
       return res.status(404).json({ message: "Utilizatorul nu a fost găsit" });
     }
 
-    const { preferred_city_id, preferred_category_ids } = userRes.rows[0];
+    const { preferred_city_ids, preferred_category_ids } = userRes.rows[0];
 
     // 2. Construiește query-ul
     const filters = [];
@@ -187,9 +187,9 @@ router.get("/feed", auth, async (req, res) => {
     filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)");
 
     // B. Filtru Oraș (Dacă userul are unul setat)
-    if (preferred_city_id) {
-      filters.push(`b.city_id = $${idx++}`);
-      values.push(preferred_city_id);
+    if (preferred_city_ids && Array.isArray(preferred_city_ids) && preferred_city_ids.length > 0) {
+      filters.push(`b.city_id = ANY($${idx++})`);
+      values.push(preferred_city_ids);
     }
 
     // C. Filtru Categorii (Dacă userul are setate)

@@ -83,14 +83,14 @@ router.get("/", async (req, res) => {
     `);
 
     // Load user preferences for personalization
-    let userPrefs = { city_id: null, category_ids: [] };
+    let userPrefs = { city_ids: [], category_ids: [] };
     if (req.webUser) {
       const prefsRes = await pool.query(
-        "SELECT preferred_city_id, preferred_category_ids FROM users WHERE id = $1",
+        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
         [req.webUser.id]
       );
       if (prefsRes.rows[0]) {
-        userPrefs.city_id = prefsRes.rows[0].preferred_city_id || null;
+        userPrefs.city_ids = prefsRes.rows[0].preferred_city_ids || [];
         userPrefs.category_ids = prefsRes.rows[0].preferred_category_ids || [];
       }
     }
@@ -100,9 +100,9 @@ router.get("/", async (req, res) => {
     const featuredParams = [];
     let paramIdx = 1;
 
-    if (userPrefs.city_id) {
-      featuredWhere.push(`b.city_id = $${paramIdx++}`);
-      featuredParams.push(userPrefs.city_id);
+    if (userPrefs.city_ids && userPrefs.city_ids.length > 0) {
+      featuredWhere.push(`b.city_id = ANY($${paramIdx++})`);
+      featuredParams.push(userPrefs.city_ids);
     }
     if (userPrefs.category_ids.length > 0) {
       featuredWhere.push(`b.category_id = ANY($${paramIdx++})`);
@@ -1272,7 +1272,7 @@ router.get("/setari", requireWebAuth, (req, res) => {
 router.get("/preferinte", requireWebAuth, async (req, res) => {
   try {
     const userRes = await pool.query(
-      "SELECT preferred_city_id, preferred_category_ids FROM users WHERE id = $1",
+      "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
       [req.webUser.id]
     );
     const cities = await pool.query("SELECT id, name FROM cities ORDER BY name");
@@ -1285,12 +1285,30 @@ router.get("/preferinte", requireWebAuth, async (req, res) => {
       webUser: req.webUser,
       cities: cities.rows,
       categories: categories.rows,
-      preferredCityId: prefs.preferred_city_id || null,
+      preferredCityIds: prefs.preferred_city_ids || [],
       preferredCategoryIds: prefs.preferred_category_ids || [],
     });
   } catch (err) {
     console.error("[Web] Preferences error:", err);
     res.status(500).send("Eroare la încărcarea preferințelor");
+  }
+});
+
+// GET /onboarding — Post-registration preference selection
+router.get("/onboarding", requireWebAuth, async (req, res) => {
+  try {
+    const cities = await pool.query("SELECT id, name FROM cities ORDER BY name");
+    const categories = await pool.query("SELECT id, name FROM categories ORDER BY name");
+
+    res.render("public/onboarding", {
+      activePage: null,
+      webUser: req.webUser,
+      cities: cities.rows,
+      categories: categories.rows,
+    });
+  } catch (err) {
+    console.error("[Web] Onboarding error:", err);
+    res.redirect("/cont");
   }
 });
 
@@ -2489,11 +2507,11 @@ router.delete("/api/web/delete-account", requireWebAuth, async (req, res) => {
 // --- Update Preferences ---
 router.put("/api/web/preferences", requireWebAuth, async (req, res) => {
   try {
-    const { preferred_city_id, preferred_category_ids } = req.body || {};
+    const { preferred_city_ids, preferred_category_ids } = req.body || {};
 
     await pool.query(
-      "UPDATE users SET preferred_city_id = $1, preferred_category_ids = $2 WHERE id = $3",
-      [preferred_city_id || null, preferred_category_ids || [], req.webUser.id]
+      "UPDATE users SET preferred_city_ids = $1, preferred_category_ids = $2 WHERE id = $3",
+      [preferred_city_ids || [], preferred_category_ids || [], req.webUser.id]
     );
 
     res.json({ success: true, message: "Preferințele au fost salvate!" });

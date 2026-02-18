@@ -16,7 +16,7 @@ class PreferencesScreen extends ConsumerStatefulWidget {
 }
 
 class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
-  int? _selectedCityId;
+  Set<int> _selectedCityIds = {};
   Set<int> _selectedCategoryIds = {};
   bool _isSubmitting = false;
   bool _didInit = false;
@@ -25,7 +25,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     if (_didInit) return;
     _didInit = true;
     final user = ref.read(authProvider).user;
-    _selectedCityId = user?.preferredCityId;
+    _selectedCityIds = Set<int>.from(user?.preferredCityIds ?? []);
     _selectedCategoryIds = Set<int>.from(user?.preferredCategoryIds ?? []);
   }
 
@@ -33,7 +33,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     setState(() => _isSubmitting = true);
     try {
       await ApiClient().dio.put(ApiEndpoints.userPreferences, data: {
-        'preferred_city_id': _selectedCityId,
+        'preferred_city_ids': _selectedCityIds.toList(),
         'preferred_category_ids': _selectedCategoryIds.toList(),
       });
       await ref.read(authProvider.notifier).refreshUser();
@@ -78,43 +78,44 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           children: [
             const SizedBox(height: AppSpacing.lg),
 
-            // City selector
-            Text('Orașul preferat', style: AppTypography.headlineSmall),
+            // City selector (multi-select)
+            Text('Orașele preferate', style: AppTypography.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Vom prioritiza ofertele din acest oraș',
+              'Poți selecta mai multe orașe',
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
 
             citiesAsync.when(
-              data: (cities) => Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int?>(
-                    value: _selectedCityId,
-                    isExpanded: true,
-                    dropdownColor: AppColors.bgSecondary,
-                    hint: Text('Selectează un oraș', style: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary)),
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('Fără preferință'),
-                      ),
-                      ...cities.map((c) => DropdownMenuItem<int?>(
-                        value: c.id,
-                        child: Text(c.name),
-                      )),
-                    ],
-                    onChanged: (v) => setState(() => _selectedCityId = v),
-                  ),
-                ),
+              data: (cities) => Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: cities.map((city) {
+                  final selected = _selectedCityIds.contains(city.id);
+                  return FilterChip(
+                    selected: selected,
+                    label: Text(city.name),
+                    labelStyle: AppTypography.labelMedium.copyWith(
+                      color: selected ? AppColors.bgPrimary : AppColors.textSecondary,
+                    ),
+                    backgroundColor: AppColors.bgSecondary,
+                    selectedColor: AppColors.accent,
+                    checkmarkColor: AppColors.bgPrimary,
+                    side: BorderSide(
+                      color: selected ? AppColors.accent : AppColors.border,
+                    ),
+                    onSelected: (v) {
+                      setState(() {
+                        if (v) {
+                          _selectedCityIds.add(city.id);
+                        } else {
+                          _selectedCityIds.remove(city.id);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
               ),
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
               error: (_, __) => Text('Nu s-au putut încărca orașele', style: AppTypography.bodySmall.copyWith(color: AppColors.danger)),

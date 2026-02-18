@@ -4,7 +4,7 @@ class User {
   final String? firstName;
   final String? lastName;
   final String role;
-  final int? preferredCityId;
+  final List<int>? preferredCityIds;
   final List<int>? preferredCategoryIds;
   final int? points;
   final String? createdAt;
@@ -15,7 +15,7 @@ class User {
     this.firstName,
     this.lastName,
     required this.role,
-    this.preferredCityId,
+    this.preferredCityIds,
     this.preferredCategoryIds,
     this.points,
     this.createdAt,
@@ -45,7 +45,9 @@ class User {
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
       role: json['role'] as String? ?? 'user',
-      preferredCityId: json['preferred_city_id'] as int?,
+      preferredCityIds: (json['preferred_city_ids'] as List<dynamic>?)
+          ?.map((e) => e as int)
+          .toList(),
       preferredCategoryIds: (json['preferred_category_ids'] as List<dynamic>?)
           ?.map((e) => e as int)
           .toList(),

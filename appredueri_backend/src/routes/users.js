@@ -17,7 +17,7 @@ router.get("/me", auth, async (req, res) => {
         created_at,
         first_name,
         last_name,
-        preferred_city_id,
+        preferred_city_ids,
         preferred_category_ids
       FROM users
       WHERE id = $1
@@ -37,7 +37,7 @@ router.get("/me", auth, async (req, res) => {
       created_at: user.created_at,
       first_name: user.first_name,
       last_name: user.last_name,
-      preferred_city_id: user.preferred_city_id,
+      preferred_city_ids: user.preferred_city_ids || [],
       preferred_category_ids: Array.isArray(user.preferred_category_ids)
         ? user.preferred_category_ids.map(Number).filter(Number.isInteger)
         : [],
@@ -72,7 +72,7 @@ router.put("/me", auth, async (req, res) => {
         created_at,
         first_name,
         last_name,
-        preferred_city_id,
+        preferred_city_ids,
         preferred_category_ids
       `,
       [safeFirst, safeLast, userId]
@@ -90,7 +90,7 @@ router.put("/me", auth, async (req, res) => {
       created_at: user.created_at,
       first_name: user.first_name,
       last_name: user.last_name,
-      preferred_city_id: user.preferred_city_id,
+      preferred_city_ids: user.preferred_city_ids || [],
       preferred_category_ids: Array.isArray(user.preferred_category_ids)
         ? user.preferred_category_ids.map(Number).filter(Number.isInteger)
         : [],
@@ -104,13 +104,15 @@ router.put("/me", auth, async (req, res) => {
 // PUT /users/me/preferences - seteaza preferintele userului
 router.put("/me/preferences", auth, async (req, res) => {
   const userId = req.user.id;
-  let { preferred_city_id, preferred_category_ids } = req.body;
+  let { preferred_city_ids, preferred_category_ids } = req.body;
 
   try {
-    const cityId =
-      preferred_city_id === null || preferred_city_id === undefined
-        ? null
-        : Number(preferred_city_id);
+    let cityIds = [];
+    if (Array.isArray(preferred_city_ids)) {
+      cityIds = preferred_city_ids
+        .map((v) => Number(v))
+        .filter((v) => Number.isInteger(v));
+    }
 
     let categoryIds = [];
     if (Array.isArray(preferred_category_ids)) {
@@ -123,7 +125,7 @@ router.put("/me/preferences", auth, async (req, res) => {
       `
       UPDATE users
       SET
-        preferred_city_id = $1,
+        preferred_city_ids = $1,
         preferred_category_ids = $2
       WHERE id = $3
       RETURNING
@@ -132,10 +134,10 @@ router.put("/me/preferences", auth, async (req, res) => {
         created_at,
         first_name,
         last_name,
-        preferred_city_id,
+        preferred_city_ids,
         preferred_category_ids
       `,
-      [cityId, categoryIds, userId]
+      [cityIds, categoryIds, userId]
     );
 
     if (result.rows.length === 0) {
@@ -150,7 +152,7 @@ router.put("/me/preferences", auth, async (req, res) => {
       created_at: user.created_at,
       first_name: user.first_name,
       last_name: user.last_name,
-      preferred_city_id: user.preferred_city_id,
+      preferred_city_ids: user.preferred_city_ids || [],
       preferred_category_ids: Array.isArray(user.preferred_category_ids)
         ? user.preferred_category_ids.map(Number).filter(Number.isInteger)
         : [],
@@ -172,7 +174,7 @@ router.get("/me/export", auth, async (req, res) => {
   try {
     // Profile
     const profileRes = await pool.query(
-      `SELECT id, email, first_name, last_name, created_at, preferred_city_id, preferred_category_ids,
+      `SELECT id, email, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids,
               privacy_accepted_at, terms_accepted_at
        FROM users WHERE id = $1`,
       [userId]
@@ -232,7 +234,7 @@ router.get("/me/export", auth, async (req, res) => {
         first_name: profile.first_name,
         last_name: profile.last_name,
         created_at: profile.created_at,
-        preferred_city_id: profile.preferred_city_id,
+        preferred_city_ids: profile.preferred_city_ids || [],
         preferred_category_ids: profile.preferred_category_ids,
         privacy_accepted_at: profile.privacy_accepted_at,
         terms_accepted_at: profile.terms_accepted_at,

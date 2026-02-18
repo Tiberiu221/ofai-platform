@@ -110,7 +110,7 @@
 <script>
 // Read returnTo from URL once on page load
 const _qs = new URLSearchParams(window.location.search);
-const returnTo = _qs.get('returnTo') || '/cont';
+const returnTo = _qs.get('returnTo') || '/onboarding';
 
 // Propagate returnTo to login link immediately
 if (returnTo !== '/cont') {

@@ -5,7 +5,7 @@
   <div class="page-header-glow"></div>
   <div class="container">
     <h1 class="page-title text-gradient">Preferințe</h1>
-    <p class="page-subtitle">Alege orașul și categoriile tale preferate pentru oferte personalizate</p>
+    <p class="page-subtitle">Alege orașele și categoriile tale preferate pentru oferte personalizate</p>
   </div>
 </section>
 
@@ -14,25 +14,29 @@
 
     <form id="preferences-form" onsubmit="return savePreferences(event)">
 
-      <!-- City Selection -->
+      <!-- City Selection (multi-select) -->
       <div class="settings-section reveal">
-        <h2 class="settings-section-title">Orașul tău</h2>
+        <h2 class="settings-section-title">Orașele tale</h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Poți selecta mai multe orașe</p>
         <div class="preferences-pills" id="city-pills">
-          <button type="button" class="preference-pill<%= !preferredCityId ? ' active' : '' %>" data-city-id="0" onclick="selectCity(this)">
+          <%
+            const selectedCities = Array.isArray(preferredCityIds) ? preferredCityIds.map(Number) : [];
+          %>
+          <button type="button" class="preference-pill<%= selectedCities.length === 0 ? ' active' : '' %>" data-city-id="0" onclick="selectAllCities(this)">
             Toate
           </button>
           <% cities.forEach(function(city) { %>
-            <button type="button" class="preference-pill<%= preferredCityId && preferredCityId == city.id ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="selectCity(this)">
+            <button type="button" class="preference-pill<%= selectedCities.includes(city.id) ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="toggleCity(this)">
               <%= city.name %>
             </button>
           <% }); %>
         </div>
       </div>
 
-      <!-- Category Selection -->
+      <!-- Category Selection (multi-select) -->
       <div class="settings-section reveal">
         <h2 class="settings-section-title">Categorii preferate</h2>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Selectează una sau mai multe categorii</p>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Poți selecta mai multe categorii</p>
         <div class="preferences-pills" id="category-pills">
           <%
             const selectedCats = Array.isArray(preferredCategoryIds) ? preferredCategoryIds.map(Number) : [];
@@ -60,14 +64,30 @@
 </section>
 
 <script>
-  let selectedCityId = <%= preferredCityId ? preferredCityId : 'null' %>;
+  let selectedCityIds = [<%= Array.isArray(preferredCityIds) ? preferredCityIds.join(',') : '' %>];
   let selectedCategoryIds = [<%= Array.isArray(preferredCategoryIds) ? preferredCategoryIds.join(',') : '' %>];
 
-  function selectCity(el) {
+  function toggleCity(el) {
+    // Deselect "Toate" when selecting individual city
+    const toateBtn = document.querySelector('#city-pills .preference-pill[data-city-id="0"]');
+    if (toateBtn) toateBtn.classList.remove('active');
+
+    el.classList.toggle('active');
+    const id = parseInt(el.dataset.cityId);
+    if (el.classList.contains('active')) {
+      if (!selectedCityIds.includes(id)) selectedCityIds.push(id);
+    } else {
+      selectedCityIds = selectedCityIds.filter(c => c !== id);
+    }
+
+    // If nothing selected, activate "Toate"
+    if (selectedCityIds.length === 0 && toateBtn) toateBtn.classList.add('active');
+  }
+
+  function selectAllCities(el) {
     document.querySelectorAll('#city-pills .preference-pill').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
-    const cityId = parseInt(el.dataset.cityId);
-    selectedCityId = cityId === 0 ? null : cityId;
+    selectedCityIds = [];
   }
 
   function toggleCategory(el) {
@@ -88,7 +108,6 @@
   }
 
   function selectAllCategories(el) {
-    // Deselect all individual categories
     document.querySelectorAll('#category-pills .preference-pill').forEach(p => p.classList.remove('active'));
     el.classList.add('active');
     selectedCategoryIds = [];
@@ -108,7 +127,7 @@
           'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
         },
         body: JSON.stringify({
-          preferred_city_id: selectedCityId,
+          preferred_city_ids: selectedCityIds.filter(id => id),
           preferred_category_ids: selectedCategoryIds.filter(id => id)
         })
       });
