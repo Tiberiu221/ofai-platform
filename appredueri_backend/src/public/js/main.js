@@ -340,6 +340,7 @@ function initGeolocation() {
     try {
       const pos = JSON.parse(cached);
       updateDistances(pos.lat, pos.lng, cards);
+      enableDistanceSortBtn();
       if (banner) {
         banner.style.display = '';
         banner.classList.add('geo-active');
@@ -364,6 +365,7 @@ function initGeolocation() {
         const userLng = pos.coords.longitude;
         sessionStorage.setItem('ofai_user_pos', JSON.stringify({ lat: userLat, lng: userLng }));
         updateDistances(userLat, userLng, cards);
+        enableDistanceSortBtn();
 
         if (banner) {
           banner.classList.add('geo-active');
@@ -407,6 +409,63 @@ function updateDistances(userLat, userLng, cards) {
       el.style.display = '';
     }
   });
+}
+
+/* ─── SORT BY DISTANCE ─────────────────────────────────── */
+window.sortByDistance = function() {
+  const grid = document.querySelector('.offers-grid');
+  if (!grid) return;
+
+  const cached = sessionStorage.getItem('ofai_user_pos');
+  if (!cached) {
+    // No position — trigger geolocation first
+    const activateBtn = document.getElementById('geo-activate-btn');
+    if (activateBtn) activateBtn.click();
+    // After activation, retry sort
+    const checkInterval = setInterval(() => {
+      if (sessionStorage.getItem('ofai_user_pos')) {
+        clearInterval(checkInterval);
+        window.sortByDistance();
+      }
+    }, 500);
+    setTimeout(() => clearInterval(checkInterval), 15000);
+    return;
+  }
+
+  const pos = JSON.parse(cached);
+  const cards = Array.from(grid.querySelectorAll('.offer-card'));
+
+  // Calculate distance for each card
+  cards.forEach(card => {
+    const distEl = card.querySelector('.offer-distance[data-lat][data-lng]');
+    if (!distEl) { card._dist = 99999; return; }
+    const lat = parseFloat(distEl.dataset.lat);
+    const lng = parseFloat(distEl.dataset.lng);
+    if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) { card._dist = 99999; return; }
+    card._dist = haversineKm(pos.lat, pos.lng, lat, lng);
+  });
+
+  // Sort by distance ascending
+  cards.sort((a, b) => a._dist - b._dist);
+
+  // Re-append sorted
+  cards.forEach(card => grid.appendChild(card));
+
+  // Update active pill state
+  document.querySelectorAll('.sort-bar .filter-pill').forEach(p => p.classList.remove('active'));
+  const distBtn = document.getElementById('sort-distance-btn');
+  if (distBtn) distBtn.classList.add('active');
+
+  // Ensure distances are visible
+  updateDistances(pos.lat, pos.lng, document.querySelectorAll('.offer-distance[data-lat][data-lng]'));
+};
+
+function enableDistanceSortBtn() {
+  const btn = document.getElementById('sort-distance-btn');
+  if (btn) {
+    btn.style.opacity = '1';
+    btn.title = 'Sortează după distanță';
+  }
 }
 
 /* ─── SHARE OFFER ──────────────────────────────────────── */
