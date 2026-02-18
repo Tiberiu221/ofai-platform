@@ -296,7 +296,8 @@
   .response-char-count { font-size: 0.7rem; color: var(--text-tertiary); text-align: right; margin-top: 4px; }
 
   /* ── Stats Tab ── */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 24px; align-items: stretch; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; align-items: stretch; }
+  @media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 
   .stat-card {
     padding: 18px; border-radius: var(--radius-md);
