@@ -19,7 +19,13 @@
       <% if (_webUser) { %>
         <div class="user-menu-wrapper">
           <button class="user-menu-trigger" onclick="document.querySelector('.user-menu-dropdown').classList.toggle('open')" aria-label="Deschide meniul utilizator">
-            <div class="user-menu-avatar"><%= _webUser.first_name ? _webUser.first_name.charAt(0).toUpperCase() : 'U' %></div>
+            <div class="user-menu-avatar">
+              <% if (_webUser.profile_picture_url) { %>
+                <img src="<%= _webUser.profile_picture_url %>" alt="" width="32" height="32" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+              <% } else { %>
+                <%= _webUser.first_name ? _webUser.first_name.charAt(0).toUpperCase() : 'U' %>
+              <% } %>
+            </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="user-menu-dropdown">

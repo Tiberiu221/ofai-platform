@@ -924,7 +924,16 @@ window.submitAuthForm = function(config) {
 
       if (resp.ok && data.success) {
         if (onSuccess) onSuccess(data);
-        window.location.href = data.redirect || successRedirect;
+        // Smooth fade-out before redirect
+        const card = formEl.closest('.auth-card');
+        if (card) {
+          card.style.transition = 'opacity 0.2s, transform 0.2s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.98)';
+        }
+        setTimeout(function() {
+          window.location.href = data.redirect || successRedirect;
+        }, 200);
       } else {
         // Show error message
         const errDiv = document.createElement('div');

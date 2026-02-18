@@ -58,12 +58,19 @@
       %>
 
       <div class="onboarding-pills" id="category-pills">
+        <button type="button"
+          class="onboarding-pill selected"
+          id="cat-toate"
+          onclick="selectAllOnboardingCategories(this)"
+          style="animation-delay: 0ms">
+          Toate
+        </button>
         <% categories.forEach(function(cat, i) { %>
           <button type="button"
             class="onboarding-pill onboarding-pill--cat"
             data-category-id="<%= cat.id %>"
             onclick="toggleOnboardingCategory(this)"
-            style="animation-delay: <%= (i * 50) %>ms">
+            style="animation-delay: <%= ((i + 1) * 50) %>ms">
             <span class="onboarding-pill-icon"><%= catIcons[cat.name] || '📦' %></span>
             <%= cat.name %>
           </button>
@@ -324,12 +331,28 @@
     const id = parseInt(el.dataset.categoryId);
     el.classList.toggle('selected');
 
+    // Deselect "Toate" when selecting individual category
+    const toateBtn = document.getElementById('cat-toate');
+    if (toateBtn) toateBtn.classList.remove('selected');
+
     if (el.classList.contains('selected')) {
       if (!selectedCategoryIds.includes(id)) selectedCategoryIds.push(id);
     } else {
       const idx = selectedCategoryIds.indexOf(id);
       if (idx > -1) selectedCategoryIds.splice(idx, 1);
     }
+
+    // If nothing selected, re-activate "Toate"
+    if (selectedCategoryIds.length === 0 && toateBtn) toateBtn.classList.add('selected');
+  }
+
+  function selectAllOnboardingCategories(el) {
+    // Deselect all individual categories
+    document.querySelectorAll('#category-pills .onboarding-pill[data-category-id]').forEach(function(p) {
+      p.classList.remove('selected');
+    });
+    el.classList.add('selected');
+    selectedCategoryIds.length = 0;
   }
 
   function goToStep(step) {

@@ -14,7 +14,11 @@
     <!-- Profile Header -->
     <div class="account-profile-card reveal">
       <div class="account-avatar">
-        <%= webUser.first_name ? webUser.first_name.charAt(0).toUpperCase() : 'U' %>
+        <% if (webUser.profile_picture_url) { %>
+          <img src="<%= webUser.profile_picture_url %>" alt="" width="80" height="80" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        <% } else { %>
+          <%= webUser.first_name ? webUser.first_name.charAt(0).toUpperCase() : 'U' %>
+        <% } %>
       </div>
       <div class="account-info">
         <div id="profile-view">

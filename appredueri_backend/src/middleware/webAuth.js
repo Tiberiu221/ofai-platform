@@ -67,7 +67,7 @@ async function tryRefreshTokens(refreshTokenValue) {
  */
 async function fetchUser(userId) {
   const { rows } = await pool.query(
-    "SELECT id, email, first_name, last_name, role FROM users WHERE id = $1",
+    "SELECT id, email, first_name, last_name, role, profile_picture_url FROM users WHERE id = $1",
     [userId]
   );
   return rows[0] || null;

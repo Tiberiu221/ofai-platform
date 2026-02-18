@@ -8,6 +8,7 @@ class User {
   final List<int>? preferredCategoryIds;
   final int? points;
   final String? createdAt;
+  final String? profilePictureUrl;
 
   User({
     required this.id,
@@ -19,6 +20,7 @@ class User {
     this.preferredCategoryIds,
     this.points,
     this.createdAt,
+    this.profilePictureUrl,
   });
 
   String get displayName {
@@ -53,6 +55,7 @@ class User {
           .toList(),
       points: json['points'] as int?,
       createdAt: json['created_at'] as String?,
+      profilePictureUrl: json['profile_picture_url'] as String?,
     );
   }
 }

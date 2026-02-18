@@ -24,6 +24,7 @@ function mapUserResponse(user, points = 0) {
     preferred_category_ids: user.preferred_category_ids || [],
     points: points || 0,
     role: user.role || 'user',
+    profile_picture_url: user.profile_picture_url || null,
   };
 }
 
@@ -124,7 +125,7 @@ router.post("/login", async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, email, password_hash, role, first_name, last_name, banned_at, created_at, preferred_city_ids, preferred_category_ids
+      `SELECT id, email, password_hash, role, first_name, last_name, banned_at, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url
        FROM users WHERE email = $1`,
       [email]
     );
@@ -457,7 +458,7 @@ router.post("/change-password", authenticateToken, async (req, res) => {
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const userRes = await pool.query(
-      `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids
+      `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url
        FROM users WHERE id = $1`,
       [req.user.id]
     );

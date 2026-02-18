@@ -64,6 +64,27 @@
       </button>
     </form>
 
+    <!-- Google Sign-In Divider -->
+    <div class="auth-divider"><span>sau</span></div>
+
+    <!-- Google Sign-In -->
+    <div id="g_id_onload"
+      data-client_id="<%= typeof googleClientId !== 'undefined' ? googleClientId : '' %>"
+      data-callback="handleGoogleCallback"
+      data-auto_prompt="false">
+    </div>
+    <div class="google-btn-wrapper">
+      <div id="g_id_signin"
+        data-type="standard"
+        data-shape="rectangular"
+        data-theme="filled_black"
+        data-text="signin_with"
+        data-size="large"
+        data-logo_alignment="left"
+        data-width="360">
+      </div>
+    </div>
+
     <!-- Register link -->
     <div class="auth-footer-link">
       Nu ai cont? <a href="/register" class="auth-link" id="register-link">&#206;nregistreaz&#259;-te</a>
@@ -73,6 +94,7 @@
 
 <!-- Auth page styles are in main.css -->
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 // Read returnTo from URL once on page load
 const _qs = new URLSearchParams(window.location.search);
@@ -82,6 +104,35 @@ const returnTo = _qs.get('returnTo') || '/cont';
 if (returnTo !== '/cont') {
   const regLink = document.getElementById('register-link');
   if (regLink) regLink.href = '/register?returnTo=' + encodeURIComponent(returnTo);
+}
+
+// Google Sign-In callback
+function handleGoogleCallback(response) {
+  fetch('/auth/google', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+    },
+    body: JSON.stringify({ idToken: response.credential })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const card = document.querySelector('.auth-card');
+      if (card) {
+        card.style.transition = 'opacity 0.2s, transform 0.2s';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.98)';
+      }
+      setTimeout(() => { window.location.href = data.redirect || '/cont'; }, 200);
+    } else {
+      if (typeof showToast === 'function') showToast(data.message || 'Eroare la autentificarea Google', 'error');
+    }
+  })
+  .catch(() => {
+    if (typeof showToast === 'function') showToast('Eroare de rețea', 'error');
+  });
 }
 
 // Use shared auth form handler

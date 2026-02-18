@@ -67,7 +67,7 @@ async function requireBusinessOwner(req, res, next) {
     if (!userId) return deny();
 
     const { rows } = await pool.query(
-      "SELECT id, email, first_name, last_name, role FROM users WHERE id = $1",
+      "SELECT id, email, first_name, last_name, role, profile_picture_url FROM users WHERE id = $1",
       [userId]
     );
 

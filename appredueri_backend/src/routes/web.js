@@ -19,6 +19,7 @@ const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
+const { OAuth2Client } = require("google-auth-library");
 
 const portalUpload = multer({
   storage: multer.memoryStorage(),
@@ -28,6 +29,9 @@ const portalUpload = multer({
 
 const SALT_ROUNDS = 10;
 const REFRESH_TOKEN_DAYS = 30;
+
+// Google OAuth client
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
  * Helper: create and store a refresh token in DB
@@ -920,12 +924,12 @@ router.get("/business/:id", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/login", (req, res) => {
   if (req.webUser) return res.redirect("/cont");
-  res.render("public/login", { activePage: null, webUser: null });
+  res.render("public/login", { activePage: null, webUser: null, googleClientId: process.env.GOOGLE_CLIENT_ID || "" });
 });
 
 router.get("/register", (req, res) => {
   if (req.webUser) return res.redirect("/cont");
-  res.render("public/register", { activePage: null, webUser: null });
+  res.render("public/register", { activePage: null, webUser: null, googleClientId: process.env.GOOGLE_CLIENT_ID || "" });
 });
 
 router.get("/forgot-password", (req, res) => {
@@ -1020,6 +1024,90 @@ router.post("/register", async (req, res) => {
   } catch (err) {
     console.error("[Web] Register error:", err);
     return res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// POST /auth/google - Google OAuth Sign-In
+router.post("/auth/google", async (req, res) => {
+  try {
+    const { idToken } = req.body || {};
+    if (!idToken) {
+      return res.status(400).json({ message: "Token Google lipsește" });
+    }
+
+    // Verify the Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: "Token Google invalid" });
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    const firstName = payload.given_name?.trim() || "";
+    const lastName = payload.family_name?.trim() || "";
+    const profilePicture = payload.picture || null;
+    const googleId = payload.sub;
+
+    // Check if user exists
+    const existingUser = await pool.query(
+      "SELECT id, email, google_id, profile_picture_url FROM users WHERE email = $1",
+      [email]
+    );
+
+    let user;
+    let isNewUser = false;
+
+    if (existingUser.rowCount > 0) {
+      // Existing user - update google_id and profile_picture_url if not set
+      user = existingUser.rows[0];
+      await pool.query(
+        `UPDATE users SET
+          google_id = COALESCE(google_id, $1),
+          profile_picture_url = $2,
+          last_active_at = NOW()
+         WHERE id = $3`,
+        [googleId, profilePicture, user.id]
+      );
+    } else {
+      // New user - create account
+      const now = new Date();
+      const insertResult = await pool.query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, google_id, profile_picture_url, privacy_accepted_at, terms_accepted_at)
+         VALUES ($1, NULL, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [email, firstName, lastName, googleId, profilePicture, now, now]
+      );
+      user = insertResult.rows[0];
+      isNewUser = true;
+
+      // Create user_points record
+      await pool.query("INSERT INTO user_points (user_id, total_points) VALUES ($1, 0) ON CONFLICT DO NOTHING", [user.id]);
+
+      // Async email + webhook
+      sendWelcomeEmail(user.email, user.first_name).catch(() => {});
+      triggerWebhook("/webhook/new-user", {
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        source: "google_oauth"
+      });
+    }
+
+    // Issue JWT tokens
+    const token = signToken({ id: user.id }, "24h");
+    const refreshToken = await createWebRefreshToken(user.id);
+
+    res.cookie("ofai_token", token, ACCESS_COOKIE_OPTS);
+    res.cookie("ofai_refresh_token", refreshToken, REFRESH_COOKIE_OPTS);
+
+    // Redirect to onboarding for new users, account page for existing
+    const redirect = isNewUser ? "/onboarding" : "/cont";
+    return res.json({ success: true, redirect });
+  } catch (err) {
+    console.error("[Web] Google OAuth error:", err);
+    return res.status(500).json({ message: "Eroare la autentificarea cu Google" });
   }
 });
 
