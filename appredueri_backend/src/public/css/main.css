@@ -1880,6 +1880,11 @@ ul, ol { list-style: none; }
   background: var(--border);
 }
 
+.auth-submit {
+  width: 100%;
+  display: block;
+}
+
 .google-btn-wrapper {
   display: flex;
   justify-content: center;

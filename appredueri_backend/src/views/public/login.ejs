@@ -64,12 +64,13 @@
       </button>
     </form>
 
+    <% if (typeof googleClientId !== 'undefined' && googleClientId) { %>
     <!-- Google Sign-In Divider -->
     <div class="auth-divider"><span>sau</span></div>
 
     <!-- Google Sign-In -->
     <div id="g_id_onload"
-      data-client_id="<%= typeof googleClientId !== 'undefined' ? googleClientId : '' %>"
+      data-client_id="<%= googleClientId %>"
       data-callback="handleGoogleCallback"
       data-auto_prompt="false">
     </div>
@@ -84,6 +85,7 @@
         data-width="360">
       </div>
     </div>
+    <% } %>
 
     <!-- Register link -->
     <div class="auth-footer-link">
@@ -94,7 +96,9 @@
 
 <!-- Auth page styles are in main.css -->
 
+<% if (typeof googleClientId !== 'undefined' && googleClientId) { %>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<% } %>
 <script>
 // Read returnTo from URL once on page load
 const _qs = new URLSearchParams(window.location.search);
