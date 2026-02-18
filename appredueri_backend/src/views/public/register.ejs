@@ -87,12 +87,8 @@
       <!-- GDPR Consent -->
       <div class="auth-consent-group">
         <label class="auth-consent-label">
-          <input type="checkbox" id="accept_terms" name="accept_terms" required>
-          <span>Accept <a href="/termeni" target="_blank" class="auth-link">Termenii &#537;i Condi&#539;iile</a></span>
-        </label>
-        <label class="auth-consent-label">
-          <input type="checkbox" id="accept_privacy" name="accept_privacy" required>
-          <span>Accept <a href="/confidentialitate" target="_blank" class="auth-link">Politica de Confiden&#539;ialitate</a></span>
+          <input type="checkbox" id="accept_gdpr" name="accept_gdpr" required>
+          <span>Accept <a href="/termeni" target="_blank" class="auth-link">Termenii și Condițiile</a> și <a href="/confidentialitate" target="_blank" class="auth-link">Politica de Confidențialitate</a></span>
         </label>
       </div>
 
@@ -133,8 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
       first_name: form.querySelector('#first_name').value,
       last_name: form.querySelector('#last_name').value,
       returnTo,
-      accept_terms: form.querySelector('#accept_terms').checked,
-      accept_privacy: form.querySelector('#accept_privacy').checked,
+      accept_terms: form.querySelector('#accept_gdpr').checked,
+      accept_privacy: form.querySelector('#accept_gdpr').checked,
     }),
     successRedirect: returnTo
   });
