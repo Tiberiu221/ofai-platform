@@ -137,7 +137,11 @@ app.use(cookieParser());
 // CSRF PROTECTION (Web routes only)
 // ============================================
 const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
-  getSecret: () => process.env.JWT_SECRET, // Reuse existing secret
+  getSecret: () => process.env.JWT_SECRET,
+  getSessionIdentifier: (req) => {
+    // Use auth cookie or IP as session identifier (ties CSRF token to session)
+    return req.cookies?.ofai_token || req.ip || "anonymous";
+  },
   cookieName: "__csrf",
   cookieOptions: {
     httpOnly: true,
@@ -145,8 +149,7 @@ const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
     sameSite: "lax",
     path: "/",
   },
-  getTokenFromRequest: (req) => {
-    // Check header first (AJAX), then body (forms)
+  getCsrfTokenFromRequest: (req) => {
     return req.headers["x-csrf-token"] || req.body?._csrf;
   },
 });
