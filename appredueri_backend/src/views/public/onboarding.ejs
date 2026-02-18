@@ -3,7 +3,7 @@
 <!-- ═══════════════════════════════════════════════════════
      ONBOARDING — 2-Step Preference Selection
      ═══════════════════════════════════════════════════════ -->
-<div class="onboarding-page">
+<div class="onboarding-page" style="opacity:0">
   <canvas class="particle-canvas auth-particles"></canvas>
 
   <!-- Progress Dots -->
@@ -96,6 +96,7 @@
   .navbar, footer, .footer { display: none !important; }
 
   .onboarding-page {
+    opacity: 1; /* override inline opacity:0 — prevents FOUC */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
