@@ -133,7 +133,7 @@ final offersListProvider = StateNotifierProvider<OffersListNotifier, OffersListS
 });
 
 // Popular offers for home screen (limited)
-final popularOffersProvider = FutureProvider<List<Offer>>((ref) async {
+final popularOffersProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
   final response = await ApiClient().dio.get(ApiEndpoints.offers, queryParameters: {
     'sort': 'popular',
     'limit': 10,
@@ -144,7 +144,7 @@ final popularOffersProvider = FutureProvider<List<Offer>>((ref) async {
 });
 
 // Personalized feed for home screen (authenticated users)
-final feedProvider = FutureProvider<List<Offer>>((ref) async {
+final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
   try {
     final response = await ApiClient().dio.get(ApiEndpoints.offersFeed, queryParameters: {
       'limit': 10,

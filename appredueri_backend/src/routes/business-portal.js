@@ -442,7 +442,7 @@ router.get("/:businessId/offers/:offerId", businessAuth, async (req, res) => {
     console.log("[BusinessPortal] GET single offer - Business:", businessId, "Offer:", offerId);
 
     const result = await pool.query(`
-      SELECT * FROM offers WHERE id = $1 AND business_id = $2
+      SELECT id, business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url FROM offers WHERE id = $1 AND business_id = $2
     `, [offerId, businessId]);
 
     if (result.rows.length === 0) {

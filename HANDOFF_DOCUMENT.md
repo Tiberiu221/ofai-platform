@@ -883,7 +883,7 @@ Workflows active: WF1 (new-review → email owner)
 
 ---
 
-## ROADMAP CONSOLIDAT
+## ROADMAP CONSOLIDAT (actualizat 18 Feb 2026)
 
 ### WEB
 | # | Feature | Status |
@@ -891,9 +891,9 @@ Workflows active: WF1 (new-review → email owner)
 | 1 | Cod de reducere reveal (animatie + multi promo codes) | ✅ Complet |
 | 2 | Cerere de oferta (Pinch) | ✅ Complet |
 | 3 | Imbunatatire dashboard statistici (Chart.js + click tracking + stat cards) | ✅ Complet |
-| 4 | SEO improvements (structured data, sitemap.xml, meta tags) | ❌ De facut |
-| 5 | Admin panel avansat (manage businesses, moderate content) | ❌ De facut |
-| 6 | Footer links — actualizare de la `#` la paginile EJS existente | ❌ De facut |
+| 4 | SEO improvements (structured data, sitemap.xml, meta tags) | ✅ Complet (18 Feb) |
+| 5 | Admin panel avansat (manage businesses, moderate content) | ✅ Complet (verificat — 1952 linii, 11 module CRUD) |
+| 6 | Footer links — actualizare de la `#` la paginile EJS existente | ✅ Complet (verificat in audit) |
 
 ### MOBILE (Flutter)
 | # | Feature | Status |
@@ -901,7 +901,7 @@ Workflows active: WF1 (new-review → email owner)
 | 1 | Cod reducere reveal | ✅ Complet |
 | 2 | Cerere de oferta (Pinch) | ✅ Complet |
 | 3 | Push notifications FCM | ✅ Complet |
-| 4 | GDPR consent pe RegisterScreen | ❌ De facut (blocker Play Store) |
+| 4 | GDPR consent pe RegisterScreen | ✅ Complet (verificat — _acceptAll checkbox + /termeni + /confidentialitate) |
 | 5 | Puncte + badge vizual (gamification) | ❌ De facut |
 | 6 | Notificari personalizate (per-category, per-location prefs) | ❌ De facut |
 | 7 | iOS build | ❌ De facut (necesita Mac + Apple Developer $99/an) |
@@ -920,21 +920,39 @@ Workflows active: WF1 (new-review → email owner)
 ### INFRASTRUCTURA
 | # | Feature | Status |
 |---|---------|--------|
-| 1 | Cron jobs cleanup — refresh_tokens (60d) + push_notifications_log (90d) | ❌ De facut |
-| 2 | n8n WF2-WF6 — daily digest, review reminder, welcome series, admin alerts | ❌ De facut |
-| 3 | Cover images — toate scraped businesses au cover NULL | ❌ De facut |
-| 4 | Logo-uri reale — toate sunt DiceBear placeholder | ❌ De facut |
+| 1 | Cron jobs cleanup — refresh_tokens, push_log, password_reset, audit_log, clicks | ✅ Complet (18 Feb — node-cron, 5 jobs) |
+| 2 | CSRF tokens pe toate POST forms | ✅ Complet (17 Feb — csrf-csrf double-submit cookie) |
+| 3 | Migration 023 — fix indexes | ✅ Rulat pe production (18 Feb) |
+| 4 | n8n WF2-WF6 — daily digest, review reminder, welcome series, admin alerts | ❌ De facut |
+| 5 | Cover images — toate scraped businesses au cover NULL | ❌ De facut |
+| 6 | Logo-uri reale — toate sunt DiceBear placeholder | ❌ De facut |
 
 ### STRATEGIE
 | # | Feature | Status |
 |---|---------|--------|
-| 1 | SEO + footer links (low effort, high impact) | ❌ De facut |
-| 2 | GDPR Flutter (blocker Play Store) | ❌ De facut |
-| 3 | Play Store publicare — AAB build, Google Play Developer ($25), signing key | ❌ De facut |
+| 1 | SEO + footer links (low effort, high impact) | ✅ Complet (SEO 18 Feb, footer verificat 17 Feb) |
+| 2 | GDPR Flutter (blocker Play Store) | ✅ Complet (verificat — existent) |
+| 3 | Play Store publicare — AAB build, Google Play Developer ($25), signing key | ⚡ Partial (signing ✅, publicare ❌) |
 | 4 | Monetizare subscription — Stripe + pricing tiers (49/99/199 RON) | ❌ De facut |
-| 5 | Lansare Bucuresti/Ilfov (focus geographic) | ❌ De facut |
+| 5 | Lansare Bucuresti/Ilfov (focus geographic) | ✅ Complet (18 Feb — rename cod, DB manual pending) |
 | 6 | Scraping + email outreach (pipeline gata, outreach nu) | ⚡ Partial |
 | 7 | Parteneriate locale | ❌ De facut |
+
+### Audit Score (17-18 Feb 2026)
+- **Critical:** 8/8 ✅
+- **High:** 10/10 ✅
+- **Medium:** 16/16 ✅
+
+### Audit #2 — 18 Feb 2026 (post-SEO/Cron/Ilfov)
+| # | Issue | Severitate | Fix |
+|---|-------|-----------|-----|
+| 1 | `Math.random()` in web.js password reset | CRITICAL | ✅ `crypto.randomInt(100000, 1000000)` |
+| 2 | 4× `SELECT *` in admin.js | HIGH | ✅ Specific columns listed |
+| 3 | 1× `SELECT *` in business-portal.js | HIGH | ✅ Specific columns listed |
+| 4 | 3 FutureProviders fara autoDispose (popularOffers, feed, homeBusinesses) | MEDIUM | ✅ Added `.autoDispose` |
+| 5 | 4 FutureProviders fara autoDispose (cities, categories, location, onboarding) | LOW | ⏭️ Intentional — global cache, nu trebuie autoDispose |
+| 6 | Debug log reset code in web.js | LOW | ⏭️ Deja gated cu `NODE_ENV !== 'production'` |
+| 7 | google-services.json in git history | MEDIUM | ⏭️ Key rotated (17 Feb), .gitignore adaugat — cleanup history cu BFG optional |
 
 ---
 

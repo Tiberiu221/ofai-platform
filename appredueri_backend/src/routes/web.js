@@ -14,6 +14,7 @@ const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
 const offerService = require("../services/offerService");
 const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
+const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
@@ -1037,7 +1038,7 @@ router.post("/forgot-password", async (req, res) => {
     const user = userRes.rows[0];
     await pool.query("UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL", [user.id]);
 
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCode = crypto.randomInt(100000, 1000000).toString();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await pool.query("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)", [user.id, resetCode, expiresAt]);

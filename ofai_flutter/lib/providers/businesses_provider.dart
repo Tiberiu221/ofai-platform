@@ -126,7 +126,7 @@ final businessesListProvider = StateNotifierProvider<BusinessesListNotifier, Bus
 });
 
 // Home screen businesses (limited)
-final homeBusinessesProvider = FutureProvider<List<Business>>((ref) async {
+final homeBusinessesProvider = FutureProvider.autoDispose<List<Business>>((ref) async {
   final response = await ApiClient().dio.get(ApiEndpoints.businesses, queryParameters: {
     'limit': 6,
     'page': 1,

@@ -449,7 +449,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       locationsResult,
       ownersResult, // NEW
     ] = await Promise.all([
-      pool.query("SELECT * FROM businesses WHERE id = $1", [id]),
+      pool.query("SELECT id, name, city_id, category_id, address, lat, lng, phone, website, description, logo_url, cover_image_url FROM businesses WHERE id = $1", [id]),
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
       pool.query(
@@ -1110,7 +1110,7 @@ router.get("/offers/:id/edit", async (req, res) => {
 
     // 1. Luăm oferta
     const offerResult = await pool.query(
-      "SELECT *, to_char(start_date, 'YYYY-MM-DD') as start_date_value, to_char(end_date, 'YYYY-MM-DD') as end_date_value FROM offers WHERE id = $1",
+      "SELECT id, business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, to_char(start_date, 'YYYY-MM-DD') as start_date_value, to_char(end_date, 'YYYY-MM-DD') as end_date_value FROM offers WHERE id = $1",
       [offerId]
     );
 
@@ -1470,7 +1470,7 @@ router.post("/business-requests/:id/approve", async (req, res) => {
 
     // Get the request
     const { rows } = await client.query(
-      "SELECT * FROM business_requests WHERE id = $1 AND status = 'pending'",
+      "SELECT id, user_id, name, category_id, city_id, address, phone, website, description, ai_score, ai_flags, ai_reasoning, status FROM business_requests WHERE id = $1 AND status = 'pending'",
       [requestId]
     );
 
@@ -1633,7 +1633,7 @@ router.get("/users/:id/edit", async (req, res) => {
 
   try {
     const [userRes, businessesRes, reviewsRes] = await Promise.all([
-      pool.query("SELECT * FROM users WHERE id = $1", [id]),
+      pool.query("SELECT id, email, first_name, last_name, role, created_at, banned_at FROM users WHERE id = $1", [id]),
       pool.query(`
         SELECT b.id, b.name, c.name AS city_name
         FROM user_businesses ub
