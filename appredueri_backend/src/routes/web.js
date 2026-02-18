@@ -1393,6 +1393,7 @@ router.get("/onboarding", requireWebAuth, async (req, res) => {
       webUser: req.webUser,
       cities: cities.rows,
       categories: categories.rows,
+      loadOnboardingCss: true,
     });
   } catch (err) {
     console.error("[Web] Onboarding error:", err);

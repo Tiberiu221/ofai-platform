@@ -52,5 +52,8 @@
   <% if (typeof loadChartJs !== 'undefined' && loadChartJs) { %>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <% } %>
+  <% if (typeof loadOnboardingCss !== 'undefined' && loadOnboardingCss) { %>
+  <link rel="stylesheet" href="/css/onboarding.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
+  <% } %>
 </head>
 <body>

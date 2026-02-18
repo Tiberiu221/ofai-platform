@@ -1,0 +1,292 @@
+/* ═══════════════════════════════════════════════════════════
+   OFAI — Onboarding Page Styles
+
+   Zero-FOUC architecture: this file is loaded in <head> via
+   loadOnboardingCss flag, so all styles are parsed before
+   the body renders. No inline style hacks needed.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Hide navbar/footer on onboarding ──────────────────── */
+.onboarding-page ~ .navbar-wrapper,
+.onboarding-page ~ .nav-mobile-overlay,
+.onboarding-page ~ .footer,
+.onboarding-page ~ footer {
+  display: none;
+}
+
+/* ─── Page container ────────────────────────────────────── */
+.onboarding-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary, #06060a);
+}
+
+/* ─── Progress dots ─────────────────────────────────────── */
+.onboarding-dots {
+  position: fixed;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.onboarding-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-dot.active {
+  background: var(--accent, #fb923c);
+  border-color: var(--accent, #fb923c);
+  transform: scale(1.3);
+  box-shadow: 0 0 12px rgba(251, 146, 60, 0.4);
+}
+
+.onboarding-dot.done {
+  background: var(--accent, #fb923c);
+  border-color: var(--accent, #fb923c);
+  opacity: 0.5;
+}
+
+/* ─── Step container ──────────────────────────────────────
+   CRITICAL: display:none hides inactive steps completely.
+   The browser never renders them → zero FOUC. */
+.onboarding-step {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Active step — visible with entrance animation */
+.onboarding-step.active {
+  display: flex;
+  animation: ob-stepIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Exiting step — slides out left */
+.onboarding-step.exit-left {
+  display: flex;
+  animation: ob-stepOut 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Card content ──────────────────────────────────────── */
+.onboarding-card {
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.onboarding-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: var(--text-primary, #fafafa);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.onboarding-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary, #a1a1aa);
+  margin-bottom: 4px;
+}
+
+.onboarding-hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 32px;
+  font-style: italic;
+}
+
+/* ─── Pills ─────────────────────────────────────────────── */
+.onboarding-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.onboarding-pill {
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--bg-surface, #131318);
+  border: 1.5px solid var(--border, rgba(255, 255, 255, 0.08));
+  color: var(--text-secondary, #a1a1aa);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  /* Start hidden — entrance animation will reveal */
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+/* Pill entrance: staggered fade-up (only in active step) */
+.onboarding-step.active .onboarding-pill {
+  animation: ob-pillIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* animation-delay set per pill via inline style for stagger */
+}
+
+/* Inactive steps: pills stay hidden, no wasted animations */
+.onboarding-step:not(.active):not(.exit-left) .onboarding-pill {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: none;
+}
+
+.onboarding-pill:hover {
+  border-color: var(--accent, #fb923c);
+  color: var(--text-primary, #fafafa);
+  background: rgba(251, 146, 60, 0.06);
+}
+
+.onboarding-pill.selected {
+  background: var(--accent, #fb923c);
+  border-color: var(--accent, #fb923c);
+  color: var(--bg-primary, #06060a);
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(251, 146, 60, 0.25);
+  animation: ob-pillBounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Category pill with emoji */
+.onboarding-pill--cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.onboarding-pill-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* ─── Action buttons ────────────────────────────────────── */
+.onboarding-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboarding-next {
+  min-width: 200px;
+}
+
+.onboarding-skip {
+  font-size: 0.85rem;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.onboarding-skip:hover {
+  opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   KEYFRAME ANIMATIONS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Step entrance: slide in from right */
+@keyframes ob-stepIn {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Step exit: slide out to left */
+@keyframes ob-stepOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+}
+
+/* Pill entrance: fade up */
+@keyframes ob-pillIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pill selection bounce */
+@keyframes ob-pillBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.93); }
+  70% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+  .onboarding-dots { top: 20px; }
+  .onboarding-title { font-size: 1.6rem; }
+  .onboarding-subtitle { font-size: 1rem; }
+  .onboarding-pill { padding: 8px 16px; font-size: 0.85rem; }
+  .onboarding-card { padding: 0 8px; }
+  .onboarding-next { min-width: 160px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACCESSIBILITY: Reduced Motion
+   ═══════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-step.active {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .onboarding-step.exit-left {
+    animation: none;
+    opacity: 0;
+  }
+
+  .onboarding-step.active .onboarding-pill {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .onboarding-pill.selected {
+    animation: none;
+  }
+
+  .onboarding-dot {
+    transition: none;
+  }
+}
