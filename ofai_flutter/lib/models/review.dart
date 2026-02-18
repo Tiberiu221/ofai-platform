@@ -24,10 +24,10 @@ class Review {
   }
 
   String get reviewerInitials {
-    if (firstName != null && lastName != null) {
+    if (firstName != null && firstName!.isNotEmpty && lastName != null && lastName!.isNotEmpty) {
       return '${firstName![0]}${lastName![0]}'.toUpperCase();
     }
-    if (firstName != null) return firstName![0].toUpperCase();
+    if (firstName != null && firstName!.isNotEmpty) return firstName![0].toUpperCase();
     return 'A';
   }
 

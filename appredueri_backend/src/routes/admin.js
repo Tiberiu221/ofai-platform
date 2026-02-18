@@ -889,10 +889,9 @@ router.post("/businesses/:id/owners", async (req, res) => {
 
   } catch (err) {
     console.error("[Owners] Add owner error:", err.message, err.stack);
-    // Escape HTML to prevent XSS
-    const safeMsg = (err.message || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-    const safeStack = (err.stack || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-    return res.status(500).send(`<h1>Eroare la adăugare administrator</h1><pre>${safeMsg}\n\n${safeStack}</pre><br><a href="/admin/businesses/${businessId}/edit">Înapoi</a>`);
+    const safeMsg = (err.message || "Eroare internă").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    const detail = process.env.NODE_ENV === "production" ? "" : `<pre>${(err.stack || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c])}</pre>`;
+    return res.status(500).send(`<h1>Eroare la adăugare administrator</h1><p>${safeMsg}</p>${detail}<br><a href="/admin/businesses/${businessId}/edit">Înapoi</a>`);
   }
 });
 
@@ -997,7 +996,7 @@ router.get("/offers", async (req, res) => {
         pool.query("SELECT id, name FROM cities ORDER BY name"),
         pool.query("SELECT id, name FROM categories ORDER BY name"),
         pool.query(
-          `SELECT b.id, b.name, c.name AS city_name FROM businesses b LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name`
+          `SELECT b.id, b.name, c.name AS city_name FROM businesses b LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name LIMIT 5000`
         ),
       ]);
 
@@ -1026,7 +1025,7 @@ router.get("/offers/new", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT b.id, b.name, c.name AS city_name FROM businesses b
-      LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name
+      LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name LIMIT 5000
     `);
     res.render("admin/offers-new", { businesses: result.rows });
   } catch (err) {
@@ -1120,7 +1119,7 @@ router.get("/offers/:id/edit", async (req, res) => {
 
     // 2. Luăm listele necesare
     const businessesRes = await pool.query(
-      "SELECT id, name, city_id FROM businesses ORDER BY name"
+      "SELECT id, name, city_id FROM businesses ORDER BY name LIMIT 5000"
     );
     const categoriesRes = await pool.query(
       "SELECT id, name FROM categories ORDER BY name"

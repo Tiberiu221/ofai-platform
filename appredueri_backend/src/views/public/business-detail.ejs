@@ -208,7 +208,7 @@
         <div class="gallery-counter"><span id="gallery-idx">1</span> / <%= business.images.length %></div>
         <div class="gallery-thumbs">
           <% business.images.forEach((img, i) => { %>
-            <img src="<%= img.url %>" onclick="galleryGoTo(<%= i %>)" class="gallery-thumb-item<%= i === 0 ? ' active' : '' %>" data-idx="<%= i %>" alt="" width="120" height="80" loading="lazy">
+            <img src="<%= img.url %>" onclick="galleryGoTo(<%= i %>)" class="gallery-thumb-item<%= i === 0 ? ' active' : '' %>" data-idx="<%= i %>" alt="<%= business.name %> - imagine <%= i + 1 %>" width="120" height="80" loading="lazy">
           <% }); %>
         </div>
       </div>

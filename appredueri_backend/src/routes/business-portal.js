@@ -563,33 +563,45 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       values.push(uploadResult.url);
     }
 
-    // Only update offer fields if there are any changes
-    if (updates.length > 0) {
-      values.push(offerId);
-      const query = `UPDATE offers SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
-      await pool.query(query, values);
-    }
+    // Use transaction for offer update + promo codes
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    // Backward compat: if single promo_code string sent, convert to array
-    let promoCodesArr = promo_codes;
-    if (promoCodesArr === undefined && promo_code !== undefined) {
-      promoCodesArr = promo_code ? [{ code: promo_code, is_active: true }] : [];
-    }
+      // Update offer fields if there are any changes
+      if (updates.length > 0) {
+        values.push(offerId);
+        const query = `UPDATE offers SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
+        await client.query(query, values);
+      }
 
-    // Handle promo codes update if provided
-    if (promoCodesArr !== undefined) {
-      // Delete existing codes and re-insert
-      await pool.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
+      // Backward compat: if single promo_code string sent, convert to array
+      let promoCodesArr = promo_codes;
+      if (promoCodesArr === undefined && promo_code !== undefined) {
+        promoCodesArr = promo_code ? [{ code: promo_code, is_active: true }] : [];
+      }
 
-      if (Array.isArray(promoCodesArr)) {
-        const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
-        for (const pc of validCodes) {
-          await pool.query(
-            "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
-            [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
-          );
+      // Handle promo codes update if provided
+      if (promoCodesArr !== undefined) {
+        await client.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
+
+        if (Array.isArray(promoCodesArr)) {
+          const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+          for (const pc of validCodes) {
+            await client.query(
+              "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
+              [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
+            );
+          }
         }
       }
+
+      await client.query("COMMIT");
+    } catch (txErr) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
     }
 
     console.log("[BusinessPortal] Offer updated successfully");

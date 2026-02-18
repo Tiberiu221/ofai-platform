@@ -106,6 +106,6 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
 }
 
 final businessReviewsProvider =
-    StateNotifierProvider.family<ReviewsNotifier, ReviewsState, int>((ref, businessId) {
+    StateNotifierProvider.autoDispose.family<ReviewsNotifier, ReviewsState, int>((ref, businessId) {
   return ReviewsNotifier(ApiClient(), businessId);
 });

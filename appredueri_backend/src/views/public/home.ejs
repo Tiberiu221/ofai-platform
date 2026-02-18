@@ -118,7 +118,7 @@
         <a href="/oferta/<%= fo.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 4) %>">
           <div class="offer-image-wrapper">
             <% if (fo.image_url) { %>
-              <img src="<%= fo.image_url %>" alt="<%= fo.title %>" class="offer-image" loading="lazy">
+              <img src="<%= fo.image_url %>" alt="<%= fo.title %>" class="offer-image" loading="lazy" width="400" height="240">
             <% } else { %>
               <div class="offer-image-placeholder">
                 <span class="offer-placeholder-letter"><%= fo.business_name.charAt(0) %></span>
@@ -188,7 +188,7 @@
         <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 5) %><%= i === 0 ? ' featured' : '' %>">
           <div class="offer-image-wrapper">
             <% if (offer.image_url) { %>
-              <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy">
+              <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy" width="400" height="240">
             <% } else if (offer.business_logo) { %>
               <div class="offer-image-placeholder">
                 <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" class="offer-placeholder-logo">
@@ -279,7 +279,7 @@
         <a href="/business/<%= biz.id %>" class="biz-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
           <div class="biz-card-cover">
             <% if (biz.cover_image_url) { %>
-              <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" loading="lazy">
+              <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" loading="lazy" width="320" height="160">
             <% } %>
           </div>
           <div class="biz-card-avatar">

@@ -125,7 +125,7 @@ class OfferRequestNotifier extends StateNotifier<OfferRequestState> {
 
 /// Family provider — one notifier per businessId
 final offerRequestProvider =
-    StateNotifierProvider.family<OfferRequestNotifier, OfferRequestState, int>(
+    StateNotifierProvider.autoDispose.family<OfferRequestNotifier, OfferRequestState, int>(
   (ref, businessId) {
     final notifier = OfferRequestNotifier(ApiClient(), businessId);
     notifier.fetch();

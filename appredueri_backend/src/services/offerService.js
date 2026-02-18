@@ -51,47 +51,60 @@ async function createOffer(pool, params) {
     sendWebhook = false, // Only business portal triggers webhook by default
   } = params;
 
-  // Insert offer
-  const result = await pool.query(`
-    INSERT INTO offers (
-      business_id, title, description, discount_type, discount_value,
-      conditions, start_date, end_date, is_active, logo_url,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-    RETURNING id
-  `, [
-    businessId,
-    title,
-    description || null,
-    discountType || null,
-    discountValue || null,
-    conditions || null,
-    startDate || null,
-    endDate || null,
-    isActive !== false,
-    logoUrl || null,
-    bookingType || 'inherit',
-    bookingPhone || null,
-    bookingWhatsapp || null,
-    bookingUrl || null,
-    bookingInstructions || null,
-  ]);
+  // Use transaction for offer + promo codes
+  const client = await pool.connect();
+  let offerId;
 
-  const offerId = result.rows[0].id;
+  try {
+    await client.query("BEGIN");
 
-  // Insert promo codes
-  if (promoCodes && Array.isArray(promoCodes)) {
-    const validCodes = promoCodes.filter(pc => pc.code && pc.code.trim());
-    for (const pc of validCodes) {
-      await pool.query(
-        "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
-        [offerId, pc.code.trim(), pc.is_active !== false]
-      );
+    const result = await client.query(`
+      INSERT INTO offers (
+        business_id, title, description, discount_type, discount_value,
+        conditions, start_date, end_date, is_active, logo_url,
+        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING id
+    `, [
+      businessId,
+      title,
+      description || null,
+      discountType || null,
+      discountValue || null,
+      conditions || null,
+      startDate || null,
+      endDate || null,
+      isActive !== false,
+      logoUrl || null,
+      bookingType || 'inherit',
+      bookingPhone || null,
+      bookingWhatsapp || null,
+      bookingUrl || null,
+      bookingInstructions || null,
+    ]);
+
+    offerId = result.rows[0].id;
+
+    if (promoCodes && Array.isArray(promoCodes)) {
+      const validCodes = promoCodes.filter(pc => pc.code && pc.code.trim());
+      for (const pc of validCodes) {
+        await client.query(
+          "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
+          [offerId, pc.code.trim(), pc.is_active !== false]
+        );
+      }
     }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw err;
+  } finally {
+    client.release();
   }
 
-  // Fetch business name for notifications
+  // Notifications outside transaction (fire-and-forget)
   const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
   const bizName = bizNameRes.rows[0]?.name || "Business";
 

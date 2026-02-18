@@ -89,6 +89,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   void _onSearchChanged(String query) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
       // Update autosuggest
       ref.read(searchSuggestProvider.notifier).search(query);
       setState(() => _showSuggest = query.length >= 2);

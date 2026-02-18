@@ -16,6 +16,7 @@ const offerService = require("../services/offerService");
 const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
+const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 
@@ -625,7 +626,7 @@ router.get("/oferta/:id", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 // CLICK TRACKING (anonymous, GDPR-friendly)
 // ═══════════════════════════════════════════════════════
-router.post("/api/web/clicks", async (req, res) => {
+router.post("/api/web/clicks", clickLimiter, async (req, res) => {
   const { business_id, offer_id, action_type } = req.body || {};
   const validActions = ['phone','whatsapp','booking_url','website','navigate','share','follow','unfollow','favorite','unfavorite','gallery','copy_code'];
   if (!business_id || !action_type || !validActions.includes(action_type)) {
@@ -641,7 +642,7 @@ router.post("/api/web/clicks", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 // OFFER PROMO CODE REVEAL (Web, auth required)
 // ═══════════════════════════════════════════════════════
-router.post("/api/web/offers/:id/reveal-code", requireWebAuth, async (req, res) => {
+router.post("/api/web/offers/:id/reveal-code", revealLimiter, requireWebAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -1063,8 +1064,9 @@ router.post("/reset-password", async (req, res) => {
     if (!email || !code || !newPassword) {
       return res.status(400).json({ message: "Toate câmpurile sunt obligatorii" });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "Parola trebuie să aibă minim 6 caractere" });
+    const pwdCheck = validatePassword(newPassword);
+    if (!pwdCheck.valid) {
+      return res.status(400).json({ message: pwdCheck.message });
     }
 
     const tokenRes = await pool.query(
@@ -2020,7 +2022,7 @@ router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner,
 // ═══════════════════════════════════════════════════════
 // SEARCH AUTOSUGGEST
 // ═══════════════════════════════════════════════════════
-router.get("/api/web/search/suggest", async (req, res) => {
+router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
     if (q.length < 2) return res.json({ offers: [], businesses: [] });
@@ -2377,8 +2379,9 @@ router.post("/api/web/change-password", requireWebAuth, async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: "Ambele câmpuri sunt obligatorii" });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "Parola nouă trebuie să aibă minim 6 caractere" });
+    const pwdCheck = validatePassword(newPassword);
+    if (!pwdCheck.valid) {
+      return res.status(400).json({ message: pwdCheck.message });
     }
 
     const userRes = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.webUser.id]);
@@ -2397,32 +2400,89 @@ router.post("/api/web/change-password", requireWebAuth, async (req, res) => {
   }
 });
 
-// --- Delete Account ---
+// --- Delete Account (full cascade, mirrors users.js /me) ---
 router.delete("/api/web/delete-account", requireWebAuth, async (req, res) => {
+  const userId = req.webUser.id;
+  const { password } = req.body || {};
+
+  if (!password) {
+    return res.status(400).json({ message: "Parola este obligatorie" });
+  }
+
+  const client = await pool.connect();
+
   try {
-    const { password } = req.body || {};
-    if (!password) {
-      return res.status(400).json({ message: "Parola este obligatorie" });
+    const userRes = await client.query("SELECT password_hash FROM users WHERE id = $1", [userId]);
+    if (userRes.rowCount === 0) {
+      client.release();
+      return res.status(404).json({ message: "Utilizator negăsit" });
     }
 
-    const userRes = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.webUser.id]);
     const isValid = await bcrypt.compare(password, userRes.rows[0].password_hash);
     if (!isValid) {
+      client.release();
       return res.status(401).json({ message: "Parola este incorectă" });
     }
 
-    await pool.query("DELETE FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
-    await pool.query("DELETE FROM followed_businesses WHERE user_id = $1", [req.webUser.id]);
-    await pool.query("DELETE FROM points_history WHERE user_id = $1", [req.webUser.id]);
-    await pool.query("DELETE FROM user_points WHERE user_id = $1", [req.webUser.id]);
-    await pool.query("DELETE FROM users WHERE id = $1", [req.webUser.id]);
+    await client.query("BEGIN");
+
+    // 1. Revoke all refresh tokens
+    await client.query("DELETE FROM refresh_tokens WHERE user_id = $1", [userId]);
+    // 2. Delete password reset tokens
+    await client.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [userId]);
+    // 3. Delete push tokens
+    await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
+    // 4. Delete points
+    await client.query("DELETE FROM user_points WHERE user_id = $1", [userId]);
+    // 5. Delete favorites
+    await client.query("DELETE FROM favorite_offers WHERE user_id = $1", [userId]);
+    // 6. Delete followed businesses
+    await client.query("DELETE FROM followed_businesses WHERE user_id = $1", [userId]);
+    // 7. Anonymize review responses
+    await client.query(
+      `UPDATE review_responses SET review_id = NULL
+       WHERE review_id IN (SELECT id FROM reviews WHERE user_id = $1)`,
+      [userId]
+    );
+    // 8. Anonymize reviews
+    await client.query(
+      "UPDATE reviews SET user_id = NULL, user_name = 'Utilizator sters' WHERE user_id = $1",
+      [userId]
+    );
+    // 9. Anonymize business requests
+    await client.query("UPDATE business_requests SET user_id = NULL WHERE user_id = $1", [userId]);
+    // 10. Remove user-business ownership links
+    await client.query("DELETE FROM user_businesses WHERE user_id = $1", [userId]);
+    // 11. Delete points history
+    await client.query("DELETE FROM points_history WHERE user_id = $1", [userId]);
+    // 12. Delete code reveals
+    await client.query("DELETE FROM code_reveals WHERE user_id = $1", [userId]);
+    // 13. Log deletion in audit log
+    try {
+      await client.query(
+        `INSERT INTO audit_log (action, entity_type, entity_id, user_id, ip_address, details)
+         VALUES ('account_delete', 'user', $1, $1, $2, '{"source":"web_request"}')`,
+        [userId, req.ip]
+      );
+    } catch (auditErr) {
+      console.error("[Audit] Failed to log account deletion:", auditErr.message);
+    }
+    // 14. Finally, delete the user
+    await client.query("DELETE FROM users WHERE id = $1", [userId]);
+
+    await client.query("COMMIT");
+
+    console.log(`[Web] Account deleted: user ID ${userId}`);
 
     res.clearCookie("ofai_token", { path: "/" });
     res.clearCookie("ofai_refresh_token", { path: "/" });
     res.json({ success: true, redirect: "/" });
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[Web API] Delete account error:", err);
     res.status(500).json({ message: "Eroare server" });
+  } finally {
+    client.release();
   }
 });
 

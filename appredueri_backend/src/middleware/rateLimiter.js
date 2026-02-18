@@ -102,6 +102,45 @@ const createContentLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/**
+ * Rate limiter for click tracking
+ * 100 requests per minute per IP
+ */
+const clickLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: { message: "Prea multe cereri." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: true },
+});
+
+/**
+ * Rate limiter for search/suggest
+ * 30 requests per minute per IP
+ */
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { message: "Prea multe căutări. Te rugăm să aștepți." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: true },
+});
+
+/**
+ * Rate limiter for promo code reveals
+ * 20 requests per minute per IP
+ */
+const revealLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { message: "Prea multe cereri. Te rugăm să aștepți." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: true },
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
@@ -109,4 +148,7 @@ module.exports = {
   verifyResetCodeLimiter,
   adminLimiter,
   createContentLimiter,
+  clickLimiter,
+  searchLimiter,
+  revealLimiter,
 };
