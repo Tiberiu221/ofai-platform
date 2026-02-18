@@ -4,7 +4,9 @@
   ogTitle: business.name + ' \— OFAI',
   ogDesc: 'Oferte și reduceri de la ' + business.name + (business.city ? ' în ' + business.city.name : ''),
   ogImage: business.cover_image || null,
-  ogType: 'business.business'
+  ogType: 'business.business',
+  canonicalUrl: 'https://ofai.ro/business/' + business.id,
+  ogUrl: 'https://ofai.ro/business/' + business.id
 }) %>
 <%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 

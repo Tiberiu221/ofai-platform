@@ -38,7 +38,7 @@ const CATEGORIES = [
 
 // ─── ORASE CU COORDONATE ────────────────────────────────────
 const CITIES = [
-  { name: "Bucuresti",     lat: 44.4268, lng: 26.1025, radius: 0.06 },
+  { name: "Bucuresti/Ilfov",     lat: 44.4268, lng: 26.1025, radius: 0.06 },
   { name: "Cluj-Napoca",   lat: 46.7712, lng: 23.6236, radius: 0.04 },
   { name: "Timisoara",     lat: 45.7489, lng: 21.2087, radius: 0.04 },
   { name: "Iasi",          lat: 47.1585, lng: 27.6014, radius: 0.04 },

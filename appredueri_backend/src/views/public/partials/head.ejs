@@ -22,9 +22,32 @@
   <meta property="og:url" content="<%= typeof ogUrl !== 'undefined' && ogUrl ? ogUrl : 'https://ofai.ro' %>">
   <% if (typeof ogImage !== 'undefined' && ogImage) { %>
   <meta property="og:image" content="<%= ogImage %>">
+  <% } else { %>
+  <meta property="og:image" content="https://ofai.ro/images/og-default.svg">
   <% } %>
+  <meta property="og:locale" content="ro_RO">
+  <meta property="og:site_name" content="OFAI">
+
+  <!-- Canonical URL -->
+  <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
+  <link rel="canonical" href="<%= canonicalUrl %>">
+  <% } %>
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= typeof ogTitle !== 'undefined' && ogTitle ? ogTitle : 'OFAI — Reduceri & Oferte din România' %>">
+  <meta name="twitter:description" content="<%= typeof ogDesc !== 'undefined' && ogDesc ? ogDesc : 'Descoperă cele mai bune reduceri de la business-urile din orașul tău.' %>">
+  <meta name="twitter:image" content="<%= typeof ogImage !== 'undefined' && ogImage ? ogImage : 'https://ofai.ro/images/og-default.svg' %>">
+
+  <!-- Structured Data (JSON-LD) -->
   <% if (typeof structuredData !== 'undefined' && structuredData) { %>
+    <% if (Array.isArray(structuredData)) { %>
+      <% structuredData.forEach(function(sd) { %>
+  <script type="application/ld+json"><%- JSON.stringify(sd).replace(/</g, '\\u003c') %></script>
+      <% }); %>
+    <% } else { %>
   <script type="application/ld+json"><%- JSON.stringify(structuredData).replace(/</g, '\\u003c') %></script>
+    <% } %>
   <% } %>
   <% if (typeof loadChartJs !== 'undefined' && loadChartJs) { %>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>

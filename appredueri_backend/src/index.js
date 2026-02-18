@@ -16,6 +16,9 @@ const adminAuth = require("./middleware/adminAuth");
 const { initializeFirebase } = require("./config/firebase");
 initializeFirebase();
 
+// Cron jobs (scheduled cleanup tasks)
+const { initCronJobs } = require("./services/cronJobs");
+
 // Rate Limiting
 const { generalLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
 
@@ -225,6 +228,72 @@ app.get("/health", (req, res) => {
 });
 
 // ============================================
+// SEO: robots.txt + sitemap.xml
+// ============================================
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cont
+Disallow: /colectia-mea
+Disallow: /setari
+Disallow: /preferinte
+Disallow: /my-businesses
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /api/
+
+Sitemap: https://ofai.ro/sitemap.xml`);
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const BASE = 'https://ofai.ro';
+
+    const staticPages = [
+      { loc: '/', priority: '1.0', changefreq: 'daily' },
+      { loc: '/oferte', priority: '0.9', changefreq: 'daily' },
+      { loc: '/business-uri', priority: '0.8', changefreq: 'daily' },
+      { loc: '/categorii', priority: '0.7', changefreq: 'weekly' },
+      { loc: '/orase', priority: '0.7', changefreq: 'weekly' },
+      { loc: '/pentru-business', priority: '0.6', changefreq: 'monthly' },
+      { loc: '/termeni', priority: '0.3', changefreq: 'yearly' },
+      { loc: '/confidentialitate', priority: '0.3', changefreq: 'yearly' },
+    ];
+
+    const offers = await pool.query(
+      "SELECT id FROM offers WHERE is_active = true AND end_date >= CURRENT_DATE ORDER BY id DESC LIMIT 5000"
+    );
+    const businesses = await pool.query(
+      "SELECT id FROM businesses ORDER BY id DESC LIMIT 5000"
+    );
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+    for (const page of staticPages) {
+      xml += `\n  <url>\n    <loc>${BASE}${page.loc}</loc>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`;
+    }
+    for (const row of offers.rows) {
+      xml += `\n  <url>\n    <loc>${BASE}/oferta/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
+    }
+    for (const row of businesses.rows) {
+      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+    }
+
+    xml += '\n</urlset>';
+
+    res.set('Content-Type', 'application/xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (err) {
+    console.error('[SEO] Sitemap error:', err.message);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// ============================================
 // WEB PAGES (Public — Landing, Oferte, etc.)
 // ============================================
 app.use(webRouter);
@@ -331,4 +400,7 @@ app.listen(PORT, () => {
     console.log(`   Local: http://localhost:${PORT}`);
   }
   console.log("");
+
+  // Initialize scheduled cleanup jobs
+  initCronJobs();
 });

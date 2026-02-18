@@ -209,6 +209,19 @@ router.get("/", async (req, res) => {
       hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),
       activePage: "home",
       webUser: req.webUser,
+      structuredData: {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "OFAI",
+        "url": "https://ofai.ro",
+        "logo": "https://ofai.ro/images/og-default.svg",
+        "description": "Descoperă cele mai bune reduceri și oferte de la business-urile din orașul tău.",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "customer service",
+          "url": "https://ofai.ro/ajutor"
+        }
+      },
     });
   } catch (err) {
     console.error("[Web] Home page error:", err.message);
@@ -576,6 +589,31 @@ router.get("/oferta/:id", async (req, res) => {
       isFavorite,
       activePage: null,
       webUser: req.webUser,
+      structuredData: [
+        {
+          "@context": "https://schema.org",
+          "@type": "Offer",
+          "name": offer.title,
+          "description": (offer.description || '').substring(0, 300),
+          "url": `https://ofai.ro/oferta/${offer.id}`,
+          ...(offer.image_url ? { "image": offer.image_url } : {}),
+          ...(offer.start_date ? { "validFrom": offer.start_date } : {}),
+          ...(offer.end_date ? { "validThrough": offer.end_date } : {}),
+          "offeredBy": {
+            "@type": "LocalBusiness",
+            "name": offer.business?.name || ''
+          }
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
+            { "@type": "ListItem", "position": 2, "name": "Oferte", "item": "https://ofai.ro/oferte" },
+            { "@type": "ListItem", "position": 3, "name": offer.title }
+          ]
+        }
+      ],
     });
   } catch (err) {
     console.error("[Web] Offer detail error:", err);
@@ -840,6 +878,34 @@ router.get("/business/:id", async (req, res) => {
       userRequested,
       activePage: null,
       webUser: req.webUser,
+      structuredData: [
+        {
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          "name": business.name,
+          "description": (business.description || '').substring(0, 300),
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": business.address || '',
+            "addressLocality": business.city?.name || '',
+            "addressCountry": "RO"
+          },
+          ...(business.lat && business.lng ? { "geo": { "@type": "GeoCoordinates", "latitude": business.lat, "longitude": business.lng } } : {}),
+          ...(business.phone ? { "telephone": business.phone } : {}),
+          ...(business.website ? { "url": business.website } : {}),
+          ...(business.cover_image ? { "image": business.cover_image } : {}),
+          ...(business.rating > 0 ? { "aggregateRating": { "@type": "AggregateRating", "ratingValue": business.rating, "reviewCount": business.rating_count || 0 } } : {})
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
+            { "@type": "ListItem", "position": 2, "name": "Business-uri", "item": "https://ofai.ro/business-uri" },
+            { "@type": "ListItem", "position": 3, "name": business.name }
+          ]
+        }
+      ],
     });
   } catch (err) {
     console.error("[Web] Business detail error:", err);

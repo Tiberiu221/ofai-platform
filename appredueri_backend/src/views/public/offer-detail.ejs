@@ -4,7 +4,9 @@
   ogTitle: offer.title,
   ogDesc: offer.description ? offer.description.substring(0, 160) : '',
   ogImage: offer.image_url,
-  ogType: 'article'
+  ogType: 'article',
+  canonicalUrl: 'https://ofai.ro/oferta/' + offer.id,
+  ogUrl: 'https://ofai.ro/oferta/' + offer.id
 }) %>
 <%- include('partials/navbar', { activePage: activePage, webUser: webUser }) %>
 
