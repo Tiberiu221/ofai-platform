@@ -136,7 +136,7 @@ app.use(cookieParser());
 // ============================================
 // CSRF PROTECTION (Web routes only)
 // ============================================
-const { doubleCsrfProtection, generateToken } = doubleCsrf({
+const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
   getSecret: () => process.env.JWT_SECRET, // Reuse existing secret
   cookieName: "__csrf",
   cookieOptions: {
@@ -154,7 +154,7 @@ const { doubleCsrfProtection, generateToken } = doubleCsrf({
 // Make CSRF token available to all EJS templates (for GET requests only)
 app.use((req, res, next) => {
   if (req.method === 'GET') {
-    res.locals.csrfToken = generateToken(req, res);
+    res.locals.csrfToken = generateCsrfToken(req, res);
   }
   next();
 });
