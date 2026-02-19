@@ -1117,7 +1117,8 @@ router.post("/auth/google", async (req, res) => {
     return res.json({ success: true, redirect });
   } catch (err) {
     console.error("[Web] Google OAuth error:", err);
-    return res.status(500).json({ message: "Eroare la autentificarea cu Google" });
+    // TODO: remove debug message after fixing Google OAuth
+    return res.status(500).json({ message: "Google OAuth: " + (err.message || "unknown error") });
   }
 });
 
