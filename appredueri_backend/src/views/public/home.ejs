@@ -88,9 +88,9 @@
     <div class="categories-grid">
       <% const catIcons = {
         'Clinica': '🏥', 'Frizerie': '💈', 'Beauty': '💄', 'Auto': '🚗',
-        'Restaurant': '🍽️', 'Cafenea': '☕', 'Fitness': '💪', 'Spa & Wellness': '🧖',
+        'Cafenea': '☕', 'Fitness': '💪', 'Spa & Wellness': '🧖',
         'Optica': '👓', 'Farmacie': '💊', 'Veterinar': '🐾', 'Stomatologie': '🦷',
-        'Florarie': '🌸', 'Curatatorie': '👔', 'Foto & Video': '📸'
+        'Florarie': '🌸', 'Curatatorie': '👔', 'Foto & Video': '📸', 'Magazine Online': '🛒'
       }; %>
       <% categories.forEach((cat, i) => { %>
         <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= Math.min(i % 5 + 1, 5) %>">
