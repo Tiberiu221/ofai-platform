@@ -231,7 +231,7 @@ router.get("/", async (req, res) => {
     });
   } catch (err) {
     console.error("[Web] Home page error:", err.message);
-    res.status(500).send("Eroare: " + err.message);
+    res.status(500).send("A apărut o eroare. Vă rugăm încercați din nou.");
   }
 });
 
@@ -284,7 +284,9 @@ router.get("/oferte", async (req, res) => {
       popular: "rating_avg DESC, rating_count DESC",
       discount: "o.discount_value DESC",
     };
-    const orderBy = sortOptions[sort] || sortOptions.newest;
+    const validSorts = ["newest", "popular", "discount"];
+    const sortKey = validSorts.includes(sort) ? sort : "newest";
+    const orderBy = sortOptions[sortKey];
 
     const offersResult = await pool.query(
       `SELECT o.id, o.title, o.description, o.discount_type, o.discount_value, o.end_date,
@@ -763,6 +765,7 @@ router.get("/business/:id", async (req, res) => {
       JOIN businesses b2 ON o.business_id = b2.id
       WHERE o.business_id = $1 AND o.is_active = true AND o.end_date >= CURRENT_DATE
       ORDER BY o.discount_value DESC
+      LIMIT 50
     `, [id]);
 
     // Reviews
@@ -958,6 +961,10 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
     }
 
+    if (user.banned_at) {
+      return res.status(403).json({ message: "Contul tău a fost suspendat." });
+    }
+
     await pool.query("UPDATE users SET last_active_at = NOW() WHERE id = $1", [user.id]);
 
     const token = signToken({ id: user.id }, "24h");
@@ -1119,12 +1126,18 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(400).json({ message: "Email-ul este obligatoriu" });
     }
 
-    const userRes = await pool.query("SELECT id, email, first_name FROM users WHERE email = $1", [email.toLowerCase().trim()]);
+    const userRes = await pool.query("SELECT id, email, first_name, google_id, password_hash FROM users WHERE email = $1", [email.toLowerCase().trim()]);
     if (userRes.rowCount === 0) {
       return res.json({ message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare." });
     }
 
     const user = userRes.rows[0];
+
+    // Block password reset for Google-only accounts (no password set)
+    if (user.google_id && !user.password_hash) {
+      return res.json({ message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare." });
+    }
+
     await pool.query("UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL", [user.id]);
 
     const resetCode = crypto.randomInt(100000, 1000000).toString();

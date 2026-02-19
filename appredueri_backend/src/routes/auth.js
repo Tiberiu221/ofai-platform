@@ -257,7 +257,7 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(400).json({ message: "Email-ul este obligatoriu" });
     }
 
-    const userRes = await pool.query("SELECT id, email, first_name FROM users WHERE email = $1", [email.toLowerCase().trim()]);
+    const userRes = await pool.query("SELECT id, email, first_name, google_id, password_hash FROM users WHERE email = $1", [email.toLowerCase().trim()]);
 
     if (userRes.rowCount === 0) {
       return res.json({
@@ -266,6 +266,13 @@ router.post("/forgot-password", async (req, res) => {
     }
 
     const user = userRes.rows[0];
+
+    // Block password reset for Google-only accounts (no password set)
+    if (user.google_id && !user.password_hash) {
+      return res.json({
+        message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare."
+      });
+    }
 
     // Invalidăm toate token-urile vechi pentru acest user
     await pool.query(
@@ -295,8 +302,7 @@ router.post("/forgot-password", async (req, res) => {
     }
 
     return res.json({
-      message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare.",
-      ...(process.env.NODE_ENV !== 'production' && { _devCode: resetCode })
+      message: "Dacă există un cont cu acest email, vei primi instrucțiuni de resetare."
     });
 
   } catch (err) {
@@ -314,20 +320,30 @@ router.post("/verify-reset-code", async (req, res) => {
       return res.status(400).json({ message: "Email și cod sunt obligatorii" });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     const result = await pool.query(
       `SELECT prt.*, u.email
        FROM password_reset_tokens prt
        JOIN users u ON u.id = prt.user_id
        WHERE u.email = $1
-         AND prt.token = $2
          AND prt.used_at IS NULL
          AND prt.expires_at > NOW()
+         AND prt.attempts < 5
        ORDER BY prt.created_at DESC
        LIMIT 1`,
-      [email.toLowerCase().trim(), code]
+      [normalizedEmail]
     );
 
     if (result.rowCount === 0) {
+      return res.status(400).json({ message: "Cod invalid sau expirat" });
+    }
+
+    const token = result.rows[0];
+
+    if (token.token !== code) {
+      // Increment failed attempts
+      await pool.query("UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = $1", [token.id]);
       return res.status(400).json({ message: "Cod invalid sau expirat" });
     }
 

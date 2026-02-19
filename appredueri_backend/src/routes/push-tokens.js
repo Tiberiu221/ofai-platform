@@ -14,20 +14,6 @@ const { isAvailable: isFirebaseAvailable, getDiagnostics } = require('../config/
 // DIAGNOSTIC ENDPOINT
 // ============================================
 
-/**
- * GET /push-tokens/health
- * Quick diagnostic to check if Firebase is initialized on this server
- */
-router.get('/health', (req, res) => {
-  res.json({
-    firebaseAvailable: isFirebaseAvailable(),
-    envVarSet: !!process.env.FIREBASE_ADMINSDK_JSON,
-    envVarLength: process.env.FIREBASE_ADMINSDK_JSON?.length || 0,
-    diagnostics: getDiagnostics(),
-    timestamp: new Date().toISOString(),
-  });
-});
-
 // ============================================
 // USER ENDPOINTS
 // ============================================

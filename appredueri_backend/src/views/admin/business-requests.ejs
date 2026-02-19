@@ -75,7 +75,7 @@
               <form action="/admin/business-requests/<%= r.id %>/approve" method="POST" style="display: inline;" data-confirm="Aprobă business-ul <%= r.name.replace(/'/g, "\\'") %>?">
                 <button type="submit" class="btn-approve">Aprobă</button>
               </form>
-              <button class="btn-reject" onclick="openRejectModal(<%= r.id %>, '<%- r.name.replace(/'/g, "\\'") %>')">Respinge</button>
+              <button class="btn-reject" data-reject-id="<%= r.id %>" data-reject-name="<%= r.name %>">Respinge</button>
             <% } else if (r.status === 'approved' && r.business_id) { %>
               <a href="/admin/businesses/<%= r.business_id %>/edit" class="button button-small secondary">Vezi business</a>
             <% } else { %>
@@ -166,6 +166,14 @@
   // Close modal on overlay click
   document.getElementById('reject-modal').addEventListener('click', function(e) {
     if (e.target === this) closeRejectModal();
+  });
+
+  // Event delegation for reject buttons (safe from XSS)
+  document.querySelectorAll('.btn-reject[data-reject-id]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openRejectModal(this.dataset.rejectId, this.dataset.rejectName);
+    });
   });
 </script>
 

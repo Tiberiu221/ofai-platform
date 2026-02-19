@@ -359,6 +359,7 @@ router.get("/:businessId/offers", businessAuth, async (req, res) => {
       FROM offers
       WHERE business_id = $1
       ORDER BY id DESC
+      LIMIT 50
     `, [businessId]);
 
     console.log("[BusinessPortal] Found offers:", result.rows.length);

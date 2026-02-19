@@ -82,11 +82,6 @@ const corsOptions = {
     // Permite requests fără origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    // Permite subdomeniile OFAI de pe Vercel și Railway
-    if (origin.endsWith('.vercel.app') || origin.endsWith('.up.railway.app')) {
-      return callback(null, true);
-    }
-
     // Permite originile din lista explicită
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -112,7 +107,17 @@ app.use(cors(corsOptions));
 // SECURITY HEADERS (Helmet)
 // ============================================
 app.use(helmet({
-  contentSecurityPolicy: false, // EJS templates use inline scripts/styles
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      connectSrc: ["'self'", "https://accounts.google.com"],
+      frameSrc: ["https://accounts.google.com"],
+    },
+  },
   crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
   crossOriginResourcePolicy: false, // Allow browsers to load images from external domains (Cloudinary, Picsum, DiceBear)
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
@@ -167,13 +172,8 @@ app.use((req, res, next) => {
 
 // Apply CSRF protection selectively (skip mobile API routes and anonymous endpoints)
 function csrfMiddleware(req, res, next) {
-  // Skip for mobile API routes (Bearer auth — already protected by token)
-  if (req.path.startsWith('/auth/') || req.path.startsWith('/offers') ||
-      req.path.startsWith('/businesses') || req.path.startsWith('/reviews') ||
-      req.path.startsWith('/favorites') || req.path.startsWith('/subscriptions') ||
-      req.path.startsWith('/users') || req.path.startsWith('/push-tokens') ||
-      req.path.startsWith('/my-businesses') || req.path.startsWith('/cities') ||
-      req.path.startsWith('/categories')) {
+  // Skip for mobile API routes using Bearer token auth (already protected by token)
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     return next();
   }
   // Skip for anonymous click tracking endpoint
