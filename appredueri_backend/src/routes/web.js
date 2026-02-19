@@ -73,7 +73,7 @@ router.get("/", async (req, res) => {
     const [bizCount, offerCount, cityCount, recentOffers] = await Promise.all([
       pool.query("SELECT COUNT(*) as total FROM businesses"),
       pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND end_date >= CURRENT_DATE"),
-      pool.query("SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"),
+      pool.query("SELECT COUNT(*) as total FROM cities"),
       pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
     ]);
 
@@ -282,7 +282,7 @@ router.get("/oferte", async (req, res) => {
     const sortOptions = {
       newest: "o.id DESC",
       popular: "rating_avg DESC, rating_count DESC",
-      discount: "o.discount_value DESC",
+      discount: "CASE WHEN o.discount_type IN ('percent','percentage') THEN o.discount_value ELSE 0 END DESC, o.discount_value DESC",
     };
     const validSorts = ["newest", "popular", "discount"];
     const sortKey = validSorts.includes(sort) ? sort : "newest";
@@ -343,6 +343,8 @@ router.get("/oferte", async (req, res) => {
       "SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"
     );
 
+    const selectedCityName = selectedCity ? (citiesResult.rows.find(c => c.id == selectedCity) || {}).name : null;
+
     res.render("public/oferte", {
       offers: interleaved,
       categories: categoriesResult.rows,
@@ -354,6 +356,7 @@ router.get("/oferte", async (req, res) => {
       query,
       selectedCategory,
       selectedCity,
+      selectedCityName,
       selectedSort: sort,
       activePage: "oferte",
       webUser: req.webUser,

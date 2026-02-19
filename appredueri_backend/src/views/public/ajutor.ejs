@@ -1,158 +1,4 @@
-<%- include('partials/head', { pageTitle: 'Ajutor & Suport', activePage: null, pageDesc: 'Ai nevoie de ajutor? Contacteaza echipa OFAI sau consulta sectiunea de intrebari frecvente.' }) %>
-<%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
-
-<section class="page-header" style="padding-bottom: 24px;">
-  <div class="page-header-glow"></div>
-  <div class="container">
-    <h1 class="page-title text-gradient">Ajutor & Suport</h1>
-    <p class="page-subtitle">Suntem aici sa te ajutam</p>
-  </div>
-</section>
-
-<section class="section" style="padding-top: 0;">
-  <div class="container" style="max-width: 720px;">
-
-    <!-- Contact Card -->
-    <div class="help-contact-card reveal">
-      <div class="help-contact-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-      </div>
-      <h2>Ai nevoie de ajutor?</h2>
-      <p class="help-contact-desc">Echipa noastra de suport este disponibila sa te ajute cu orice intrebare.</p>
-      <div class="help-contact-items">
-        <a href="mailto:support@ofai.ro" class="help-contact-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span>Email</span>
-        </a>
-        <a href="tel:+40700000000" class="help-contact-item">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <span>Telefon</span>
-        </a>
-      </div>
-      <a href="mailto:support@ofai.ro?subject=Suport%20OFAI" class="btn btn-primary" style="width: 100%; margin-top: 20px; justify-content: center;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Trimite un mesaj
-      </a>
-    </div>
-
-    <!-- FAQ -->
-    <h2 style="margin-bottom: 20px; font-size: 1.25rem; font-weight: 700;">Intrebari frecvente</h2>
-
-    <div class="help-faq reveal">
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Cum functioneaza OFAI?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>OFAI iti arata cele mai bune oferte si reduceri de la business-urile locale din orasul tau. Poti cauta, filtra si salva ofertele preferate.</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Cum acumulez puncte?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>Primesti 10 puncte automat pentru fiecare recenzie validata pe care o lasi unei afaceri. Punctele pot fi folosite pentru reduceri exclusive.</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Ce fac cu punctele?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>In curand vei putea transforma punctele in vouchere de reducere direct din sectiunea "Voucherele Mele". Stay tuned!</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Cum schimb orasul?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>Poti schimba orasul preferat din pagina de <a href="/preferinte" style="color: var(--accent);">Preferinte</a>, folosind selectorul de oras disponibil.</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Cum urmaresc un business?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>Apasa pe butonul cu inima de pe pagina unui business. Vei primi notificari cand apar oferte noi.</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Cum las o recenzie?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>Intra pe pagina unui business si deruleaza pana la sectiunea de recenzii. Apasa pe "Scrie o recenzie" si completeaza formularul.</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Cum imi sterg contul?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>Mergi la <a href="/setari" style="color: var(--accent);">Setari</a> si apasa pe "Sterge contul" in sectiunea "Zona periculoasa". Va trebui sa confirmi cu parola ta. Stergerea este permanenta.</p>
-        </div>
-      </div>
-
-      <div class="faq-item" onclick="this.classList.toggle('open')">
-        <div class="faq-question">
-          <span>Sunt proprietar de business. Cum ma inscriu?</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="faq-answer">
-          <p>Viziteaza pagina <a href="/pentru-business" style="color: var(--accent);">Pentru Business</a> pentru a afla cum poti adauga afacerea ta pe OFAI si a atrage clienti noi cu oferte si reduceri.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Links -->
-    <h2 style="margin-top: 40px; margin-bottom: 16px; font-size: 1.25rem; font-weight: 700;">Link-uri utile</h2>
-
-    <div class="help-links reveal">
-      <a href="/termeni" class="help-link-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span>Termeni si Conditii</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-      <a href="/confidentialitate" class="help-link-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>Politica de Confidentialitate</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-      <a href="/setari" class="help-link-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Setari cont</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-      <a href="/pentru-business" class="help-link-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-        <span>Pentru business-uri</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-    </div>
-
-    <!-- Footer note -->
-    <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
-      <p style="color: var(--text-muted); font-size: 0.8125rem;">Timp mediu de raspuns: sub 24 de ore</p>
-    </div>
-
-  </div>
-</section>
+<%- include('partials/head', { pageTitle: 'Ajutor & Suport', activePage: null, pageDesc: 'Ai nevoie de ajutor? Contactează echipa OFAI sau consultă secțiunea de întrebări frecvente.' }) %>
 
 <style>
   .help-contact-card {
@@ -211,7 +57,6 @@
     background: rgba(251, 146, 60, 0.12);
     border-color: rgba(251, 146, 60, 0.35);
   }
-
   .help-links {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -242,5 +87,156 @@
     flex-shrink: 0;
   }
 </style>
+
+<%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<section class="page-header" style="padding-bottom: 24px;">
+  <div class="page-header-glow"></div>
+  <div class="container">
+    <h1 class="page-title text-gradient">Ajutor & Suport</h1>
+    <p class="page-subtitle">Suntem aici să te ajutăm</p>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container" style="max-width: 720px;">
+
+    <!-- Contact Card -->
+    <div class="help-contact-card reveal">
+      <div class="help-contact-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </div>
+      <h2>Ai nevoie de ajutor?</h2>
+      <p class="help-contact-desc">Echipa noastră de suport este disponibilă să te ajute cu orice întrebare.</p>
+      <div class="help-contact-items">
+        <a href="mailto:support@ofai.ro" class="help-contact-item">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Email</span>
+        </a>
+      </div>
+      <a href="mailto:support@ofai.ro?subject=Suport%20OFAI" class="btn btn-primary" style="width: 100%; margin-top: 20px; justify-content: center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Trimite un mesaj
+      </a>
+    </div>
+
+    <!-- FAQ -->
+    <h2 style="margin-bottom: 20px; font-size: 1.25rem; font-weight: 700;">Întrebări frecvente</h2>
+
+    <div class="help-faq reveal">
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum funcționează OFAI?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>OFAI îți arată cele mai bune oferte și reduceri de la business-urile locale din orașul tău. Poți căuta, filtra și salva ofertele preferate.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum acumulez puncte?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Primești 10 puncte automat pentru fiecare recenzie validată pe care o lași unei afaceri. Punctele pot fi folosite pentru reduceri exclusive.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Ce fac cu punctele?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>În curând vei putea transforma punctele în vouchere de reducere direct din secțiunea "Voucherele Mele". Stay tuned!</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum schimb orașul?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Poți schimba orașul preferat din pagina de <a href="/preferinte" style="color: var(--accent);">Preferințe</a>, folosind selectorul de oraș disponibil.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum urmăresc un business?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Apasă pe butonul cu inimă de pe pagina unui business. Vei primi notificări când apar oferte noi.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum las o recenzie?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Intră pe pagina unui business și derulează până la secțiunea de recenzii. Apasă pe "Scrie o recenzie" și completează formularul.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Cum îmi șterg contul?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Mergi la <a href="/setari" style="color: var(--accent);">Setări</a> și apasă pe "Șterge contul" în secțiunea "Zona periculoasă". Va trebui să confirmi cu parola ta. Ștergerea este permanentă.</p>
+        </div>
+      </div>
+
+      <div class="faq-item" onclick="this.classList.toggle('open')">
+        <div class="faq-question">
+          <span>Sunt proprietar de business. Cum mă înscriu?</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="faq-answer">
+          <p>Vizitează pagina <a href="/pentru-business" style="color: var(--accent);">Pentru Business</a> pentru a afla cum poți adăuga afacerea ta pe OFAI și a atrage clienți noi cu oferte și reduceri.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <h2 style="margin-top: 40px; margin-bottom: 16px; font-size: 1.25rem; font-weight: 700;">Link-uri utile</h2>
+
+    <div class="help-links reveal">
+      <a href="/termeni" class="help-link-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Termeni și Condiții</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="/confidentialitate" class="help-link-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Politica de Confidențialitate</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="/setari" class="help-link-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Setări cont</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <a href="/pentru-business" class="help-link-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>Pentru business-uri</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+
+    <!-- Footer note -->
+    <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border);">
+      <p style="color: var(--text-muted); font-size: 0.8125rem;">Timp mediu de răspuns: sub 24 de ore</p>
+    </div>
+
+  </div>
+</section>
 
 <%- include('partials/footer') %>

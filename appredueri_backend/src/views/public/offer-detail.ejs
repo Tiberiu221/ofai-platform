@@ -8,7 +8,6 @@
   canonicalUrl: 'https://ofai.ro/oferta/' + offer.id,
   ogUrl: 'https://ofai.ro/oferta/' + offer.id
 }) %>
-<%- include('partials/navbar', { activePage: activePage, webUser: webUser }) %>
 
 <!-- ═══════════════════════════════════════════════════════
      OFFER DETAIL PAGE STYLES
@@ -747,6 +746,8 @@
   }
 </style>
 
+<%- include('partials/navbar', { activePage: activePage, webUser: webUser }) %>
+
 <!-- ═══════════════════════════════════════════════════════
      BREADCRUMB
      ═══════════════════════════════════════════════════════ -->
@@ -775,7 +776,7 @@
         <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
           -<%= offer.discount_value %>%
         <% } else { %>
-          -<%= offer.discount_value %> RON
+          -<%= offer.discount_value %> lei
         <% } %>
       </div>
       <button

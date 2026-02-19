@@ -8,7 +8,7 @@
   <div class="page-header-glow"></div>
   <div class="container">
     <h1 class="page-title text-gradient">Oferte & Reduceri</h1>
-    <p class="page-subtitle"><%= totalOffers.toLocaleString('ro-RO') %> oferte active în <%= totalCities %> orașe</p>
+    <p class="page-subtitle"><%= totalOffers.toLocaleString('ro-RO') %> oferte active<%= typeof selectedCityName !== 'undefined' && selectedCityName ? ' în ' + selectedCityName : ' în ' + totalCities + ' orașe' %></p>
 
     <div class="search-wrapper" style="margin-top: 32px;">
       <form action="/oferte" method="GET" id="searchForm">
@@ -62,7 +62,8 @@
       </button>
       <div class="filter-bar" style="padding-top: 0;">
         <span class="sort-bar-label">Oraș:</span>
-        <a href="/oferte?<%= selectedCategory ? 'category=' + selectedCategory + '&' : '' %><%= query ? 'q=' + encodeURIComponent(query) : '' %>"
+        <% const cityAllParams = [selectedCategory ? 'category=' + selectedCategory : '', query ? 'q=' + encodeURIComponent(query) : ''].filter(Boolean).join('&'); %>
+        <a href="/oferte<%= cityAllParams ? '?' + cityAllParams : '' %>"
            class="filter-pill<%= !selectedCity ? ' active' : '' %>">Toate</a>
         <% cities.forEach(city => { %>
           <a href="/oferte?city=<%= city.id %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
