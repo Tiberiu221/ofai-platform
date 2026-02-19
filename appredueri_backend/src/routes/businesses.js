@@ -34,7 +34,7 @@ router.get("/", async (req, res) => {
     if (city_id) {
       const cid = parseInt(city_id, 10);
       if (!Number.isNaN(cid)) {
-        filters.push(`b.city_id = $${idx}`);
+        filters.push(`(b.city_id = $${idx} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
         values.push(cid);
         idx++;
       }

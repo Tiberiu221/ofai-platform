@@ -105,7 +105,7 @@ router.get("/", async (req, res) => {
     let paramIdx = 1;
 
     if (userPrefs.city_ids && userPrefs.city_ids.length > 0) {
-      featuredWhere.push(`b.city_id = ANY($${paramIdx++})`);
+      featuredWhere.push(`(b.city_id = ANY($${paramIdx++}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       featuredParams.push(userPrefs.city_ids);
     }
     if (userPrefs.category_ids.length > 0) {
@@ -265,7 +265,7 @@ router.get("/oferte", async (req, res) => {
     }
 
     if (selectedCity) {
-      conditions.push(`b.city_id = $${paramIdx}`);
+      conditions.push(`(b.city_id = $${paramIdx} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       params.push(parseInt(selectedCity));
       paramIdx++;
     }
@@ -392,7 +392,7 @@ router.get("/business-uri", async (req, res) => {
     }
 
     if (selectedCity) {
-      conditions.push(`b.city_id = $${paramIdx}`);
+      conditions.push(`(b.city_id = $${paramIdx} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       params.push(parseInt(selectedCity));
       paramIdx++;
     }

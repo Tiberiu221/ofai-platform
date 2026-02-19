@@ -34,7 +34,7 @@ router.get("/", async (req, res) => {
     filters.push("o.is_active = TRUE");
     filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"); // NULL = nu expiră
 
-    if (city_id) { filters.push(`b.city_id = $${idx++}`); values.push(parseInt(city_id)); }
+    if (city_id) { filters.push(`(b.city_id = $${idx++} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`); values.push(parseInt(city_id)); }
     if (category_id) { filters.push(`b.category_id = $${idx++}`); values.push(parseInt(category_id)); }
     if (business_id) { filters.push(`b.id = $${idx++}`); values.push(parseInt(business_id)); }
 
@@ -186,9 +186,9 @@ router.get("/feed", auth, async (req, res) => {
     filters.push("o.is_active = TRUE");
     filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)");
 
-    // B. Filtru Oraș (Dacă userul are unul setat)
+    // B. Filtru Oraș (Dacă userul are unul setat) — Magazine Online apare în toate orașele
     if (preferred_city_ids && Array.isArray(preferred_city_ids) && preferred_city_ids.length > 0) {
-      filters.push(`b.city_id = ANY($${idx++})`);
+      filters.push(`(b.city_id = ANY($${idx++}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       values.push(preferred_city_ids);
     }
 
