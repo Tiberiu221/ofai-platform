@@ -136,15 +136,30 @@ final onboardingDoneProvider = FutureProvider<bool>((ref) async {
   return AppPreferences.isOnboardingDone();
 });
 
-// Router
+// Notifier that triggers GoRouter redirect re-evaluation on auth/onboarding changes
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+
+  RouterNotifier(this._ref) {
+    _ref.listen(authProvider, (prev, next) => notifyListeners());
+    _ref.listen(onboardingDoneProvider, (prev, next) => notifyListeners());
+  }
+
+  AuthStatus get authStatus => _ref.read(authProvider).status;
+  bool get isOnboardingDone => _ref.read(onboardingDoneProvider).valueOrNull ?? true;
+}
+
+final _routerNotifierProvider = Provider<RouterNotifier>((ref) => RouterNotifier(ref));
+
+// Router — stable instance, refreshed via RouterNotifier
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authProvider);
-  final onboardingDone = ref.watch(onboardingDoneProvider);
+  final notifier = ref.watch(_routerNotifierProvider);
 
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
-      final isAuth = auth.status == AuthStatus.authenticated;
+      final isAuth = notifier.authStatus == AuthStatus.authenticated;
       final isAuthRoute = state.uri.path == '/login' ||
           state.uri.path == '/register' ||
           state.uri.path == '/forgot-password' ||
@@ -153,8 +168,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Show onboarding if not done yet
       final isOnboardingRoute = state.uri.path == '/onboarding';
-      final isDone = onboardingDone.valueOrNull ?? true; // default true while loading
-      if (!isDone && !isOnboardingRoute) return '/onboarding';
+      if (!notifier.isOnboardingDone && !isOnboardingRoute) return '/onboarding';
 
       // If on auth routes and already authenticated, go home
       if (isAuth && isAuthRoute) return '/';

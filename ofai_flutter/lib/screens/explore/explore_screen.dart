@@ -35,6 +35,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   Timer? _debounce;
 
   String? _lastAppliedQuery;
+  int? _lastAppliedCategoryId;
+  int? _lastAppliedCityId;
 
   @override
   void initState() {
@@ -47,14 +49,43 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final q = GoRouterState.of(context).uri.queryParameters['q'];
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final q = params['q'];
+    final category = params['category'];
+    final city = params['city'];
+
     if (q != null && q.isNotEmpty && q != _lastAppliedQuery) {
       _lastAppliedQuery = q;
       _searchController.text = q;
-      // Trigger search after build completes
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _onSearchChanged(q);
       });
+    }
+
+    // Apply category filter from query params (e.g. from HomeScreen category tap)
+    if (category != null && category.isNotEmpty) {
+      final catId = int.tryParse(category);
+      if (catId != null && catId != _lastAppliedCategoryId) {
+        _lastAppliedCategoryId = catId;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(offersListProvider.notifier).setFilter(categoryId: catId);
+          ref.read(businessesListProvider.notifier).setFilter(categoryId: catId);
+          setState(() {});
+        });
+      }
+    }
+
+    // Apply city filter from query params
+    if (city != null && city.isNotEmpty) {
+      final cityId = int.tryParse(city);
+      if (cityId != null && cityId != _lastAppliedCityId) {
+        _lastAppliedCityId = cityId;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(offersListProvider.notifier).setFilter(cityId: cityId);
+          ref.read(businessesListProvider.notifier).setFilter(cityId: cityId);
+          setState(() {});
+        });
+      }
     }
   }
 
