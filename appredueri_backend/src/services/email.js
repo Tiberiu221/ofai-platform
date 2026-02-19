@@ -92,7 +92,7 @@ async function sendWelcomeEmail(to, firstName) {
                       <tr>
                         <td style="background-color: #131318; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 20px 16px;">
                           <p style="margin: 0 0 8px 0; font-size: 24px; line-height: 1;">&#128269;</p>
-                          <p style="margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 500; color: #fafafa; line-height: 1.4;">Descover&#259; oferte</p>
+                          <p style="margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 500; color: #fafafa; line-height: 1.4;">Descoper&#259; oferte</p>
                           <p style="margin: 4px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; color: #71717a; line-height: 1.4;">&#206;n ora&#537;ul t&#259;u</p>
                         </td>
                       </tr>
@@ -148,11 +148,11 @@ async function sendWelcomeEmail(to, firstName) {
                     <!--[if mso]>
                     <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://ofai.ro" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" fillcolor="#fb923c" stroke="f">
                       <w:anchorlock/>
-                      <center style="color:#06060a;font-family:sans-serif;font-size:16px;font-weight:bold;">Descover&#259; oferte</center>
+                      <center style="color:#06060a;font-family:sans-serif;font-size:16px;font-weight:bold;">Descoper&#259; oferte</center>
                     </v:roundrect>
                     <![endif]-->
                     <!--[if !mso]><!-->
-                    <a href="https://ofai.ro" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; font-weight: 700; text-decoration: none; padding: 14px 40px; border-radius: 8px; letter-spacing: -0.01em;">Descover&#259; oferte</a>
+                    <a href="https://ofai.ro" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; font-weight: 700; text-decoration: none; padding: 14px 40px; border-radius: 8px; letter-spacing: -0.01em;">Descoper&#259; oferte</a>
                     <!--<![endif]-->
                   </td>
                 </tr>
@@ -172,7 +172,7 @@ async function sendWelcomeEmail(to, firstName) {
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr><td style="border-top: 1px solid rgba(255, 255, 255, 0.06); font-size: 0; line-height: 0; height: 1px;">&nbsp;</td></tr>
               </table>
-              <p style="margin: 20px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; color: #71717a; line-height: 1.6; text-align: center;">Dac&#259; ai &#238;ntreb&#259;ri, r&#259;spunde la acest email &#537;i te ajut&#259;m cu pl&#259;cere.</p>
+              <p style="margin: 20px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; color: #71717a; line-height: 1.6; text-align: center;">Acesta este un email automat. Pentru &#238;ntreb&#259;ri, contacteaz&#259;-ne la <a href="mailto:contact@ofai.ro" style="color: #fb923c; text-decoration: none;">contact@ofai.ro</a></p>
               <p style="margin: 16px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12px; color: #52525b; text-align: center; line-height: 1.5;">&copy; ${new Date().getFullYear()} OFAI. Toate drepturile rezervate.</p>
             </td>
           </tr>
