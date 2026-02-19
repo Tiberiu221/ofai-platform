@@ -812,7 +812,7 @@ function initScrollArrows() {
     });
   }
 
-  window.openGallery = function() {
+  window.openGallery = function(startIdx) {
     const modal = document.getElementById('gallery-modal');
     if (!modal) return;
 
@@ -821,7 +821,7 @@ function initScrollArrows() {
     modal.querySelectorAll('.gallery-thumb-item').forEach(t => {
       galleryImages.push(t.src);
     });
-    galleryIdx = 0;
+    galleryIdx = (typeof startIdx === 'number' && startIdx >= 0 && startIdx < galleryImages.length) ? startIdx : 0;
     updateGallery();
 
     modal.classList.add('open');

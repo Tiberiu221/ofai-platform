@@ -442,32 +442,39 @@ adb shell am start -a android.intent.action.VIEW -d "https://ofai.ro/offer/1" ro
 ### ⚠️ GDPR — CE LIPSESTE INCA (v12)
 - [ ] **Mobile RegisterScreen** — checkboxe GDPR consent (accept_terms, accept_privacy) NU sunt adaugate pe mobile. Doar web register.ejs le are.
 - [x] **Web refresh token cookie** — `ofai_refresh_token` cookie (30d), transparent auto-refresh in webAuth.js
-- [ ] **Cron job cleanup refresh_tokens** — tokens expirate/revocate trebuie sterse periodic: `DELETE FROM refresh_tokens WHERE expires_at < NOW() - INTERVAL '60 days'`
-- [ ] **Cron job cleanup push_notifications_log** — `DELETE FROM push_notifications_log WHERE created_at < NOW() - INTERVAL '90 days'`
+- [x] **Cron job cleanup refresh_tokens** — implementat in cronJobs.js (daily 03:00, 60d)
+- [x] **Cron job cleanup push_notifications_log** — implementat in cronJobs.js (daily 03:15, 90d)
 
-### 1. Scraping Pipeline (NOU — gata de rulat)
-Pipeline complet Playwright + OpenRouter pentru business-uri reale din Google Maps:
+### 1. Scraping Pipeline (PARTIAL — Phase 1 done, Phase 2 ~70%)
+Pipeline Playwright + DeepSeek LLM pentru business-uri reale din Google Maps:
+- **Phase 1 ✅ DONE:** 225 raw JSON files (15 cities × 15 categories), ~5400 businesses scraped
+- **Phase 2 ⚠️ ~70%:** LLM enrichment + DB insert. Done: Bucuresti→Ploiesti. Pending: Arad, Pitesti, Targu Mures, Baia Mare. Cost so far: ~$0.51 DeepSeek API
+- **Phase 3-5 ❌ NOT RUN:** verify, cleanup, image assignment
+- **Resumable:** `npm run scrape:enrich` continues from where it stopped
 ```bash
 cd C:\Users\tiber\Desktop\AppReduceri\appredueri_backend
-# Adaugă OPENROUTER_KEY în .env (de pe openrouter.ai/keys)
-npm run scrape           # Faza 1: ~3-4 ore, resumable
-npm run scrape:enrich    # Faza 2: ~10-20 min, cost ~$0.10
-npm run scrape:verify    # Verificare calitate
-npm run scrape:cleanup   # Ștergere dacă e nevoie
+npm run scrape:enrich    # Resume Phase 2 (remaining 4 cities)
+npm run scrape:verify    # Phase 3: Quality check
+npm run scrape:images    # Phase 5: Assign Pixabay images
+npm run scrape:cleanup   # Phase 4: Only if rollback needed
 ```
 Business-urile scrapate au `source='scraped'` în DB. Seed-urile au `source='seed'`.
 
-### 2. n8n Workflows de implementat
-WF1 (New Review → Email Owner) este complet. Restul:
-- **WF2:** New Offer → Push notification la followers
-- **WF3:** Daily digest (oferte noi din ziua precedenta)
-- **WF4-WF6:** Review reminder, Welcome series, Admin alerts
+### 2. n8n Workflows
+- **WF1 ✅:** New Review → Email Owner (complet, activ)
+- **~~WF2~~ ✅ INLOCUIT:** Push notifications la followers se trimit direct din backend (`pushNotifications.js` → Expo + FCM), nu mai e nevoie de n8n
+- **WF3 ❌ TODO:** Daily digest (oferte noi din ziua precedenta) — nice-to-have
+- **WF4-WF6 ❌ TODO:** Review reminder, Welcome series, Admin alerts — nice-to-have
+- **Webhook-uri active dar neconsumate:** `/webhook/new-user`, `/webhook/new-offer`, `/webhook/new-subscriber`
 
 ### 3. Footer link-uri
-Link-urile din footer sunt pe `#` — trebuie actualizate la paginile EJS existente.
+~~Link-urile din footer sunt pe `#`~~ ✅ Rezolvat — toate link-urile din footer pointeaza la pagini reale.
 
-### 4. Galerie imagini business
-`business_images` (galerie) NU este inca in portal manage page. Doar logo si cover au upload/delete.
+### 4. ~~Galerie imagini business~~
+✅ **IMPLEMENTAT** — Gallery management complet in portal manage.ejs:
+- Upload/delete galerie (max 8 imagini), Cloudinary integration
+- Routes: POST/DELETE `/api/web/portal/:businessId/gallery` + business-portal.js
+- UI: 4-col responsive grid, aspect-ratio 4:3, hover delete
 
 ### 5. Oferte Nu Apar
 Ofertele trebuie sa aiba `is_active = TRUE` si `end_date >= CURRENT_DATE`:
@@ -953,6 +960,92 @@ Workflows active: WF1 (new-review → email owner)
 | 5 | 4 FutureProviders fara autoDispose (cities, categories, location, onboarding) | LOW | ⏭️ Intentional — global cache, nu trebuie autoDispose |
 | 6 | Debug log reset code in web.js | LOW | ⏭️ Deja gated cu `NODE_ENV !== 'production'` |
 | 7 | google-services.json in git history | MEDIUM | ⏭️ Key rotated (17 Feb), .gitignore adaugat — cleanup history cu BFG optional |
+
+### Audit #3 — 18 Feb 2026 (Full Project Audit — 5 agents)
+
+**Summary: 16 CRITICAL, 26 HIGH, 37 MEDIUM, 26 LOW = 105 total findings**
+
+#### CRITICAL (16 issues — fix immediately)
+
+| # | Issue | Agent | Fix |
+|---|-------|-------|-----|
+| 1 | **`.env` with production credentials in git** | Config | ❌ Remove from git, purge history, rotate ALL 7 API keys |
+| 2 | **Weak JWT secret** (`esic_mic_mic_doarme_mult_mult`) | Config | ❌ Generate 64-byte crypto secret, update Railway |
+| 3 | **google-services.json still tracked + old key in history** | Config | ❌ git rm, purge history, rotate Firebase key again |
+| 4 | **Account deletion missing cascade** (6+ orphaned tables) | Backend | ❌ Add refresh_tokens, push_tokens, business_requests, code_reveals, reviews cleanup |
+| 5 | **Missing initial schema migration** (12+ tables) | Database | ❌ Create 001_initial_schema.sql |
+| 6 | **Missing transaction in offer creation** (offerService.js) | Database | ❌ Wrap INSERT offer + promo_codes in transaction |
+| 7 | **Missing transaction in business deletion** (admin.js) | Database | ❌ Wrap DELETE business_images + businesses in transaction |
+| 8 | **Unbounded SELECT all businesses** (admin.js — 3 places) | Database | ❌ Add LIMIT 500 or autocomplete search |
+| 9 | **Missing CSS: .auth-hint** (register.ejs) | Frontend | ❌ Add CSS rule |
+| 10 | **Missing CSS: .auth-form-row** (register.ejs) | Frontend | ❌ Add CSS rule + responsive |
+| 11 | **Missing CSS: .auth-consent-group/.auth-consent-label** | Frontend | ❌ Add CSS rules for GDPR checkboxes |
+| 12 | **Missing CSS: .auth-link-inline** (login.ejs) | Frontend | ❌ Add CSS rule |
+| 13 | **Missing CSS: .auth-footer-link** (login/register) | Frontend | ❌ Add CSS rule |
+| 14 | **Missing CSS: .auth-logo-text** (login/register) | Frontend | ❌ Add CSS rule |
+| 15 | **Flutter: review sheet controller leak** (barrier dismiss) | Flutter | ❌ Use `.whenComplete()` instead of `.then()` |
+| 16 | **Flutter: Timer debounce no mounted check** (explore) | Flutter | ❌ Add `if (!mounted) return;` in Timer callback |
+
+#### HIGH (26 issues — fix this week)
+
+| # | Issue | Agent |
+|---|-------|-------|
+| 1 | Missing rate limiting on click tracking | Backend |
+| 2 | Missing rate limiting on search autocomplete | Backend |
+| 3 | Missing rate limiting on promo code reveals | Backend |
+| 4 | Missing transaction for offer update (business-portal.js) | Backend |
+| 5 | Error stack trace exposure in admin panel | Backend |
+| 6 | Vercel config present but unused | Config |
+| 7 | Test script targets production database | Config |
+| 8 | Legacy React Native node_modules not cleaned | Config |
+| 9 | Uncommitted git deletions (junk files) | Config |
+| 10 | Duplicate DATABASE_URL in .env | Config |
+| 11 | Missing NOT NULL constraints on critical columns | Database |
+| 12 | Missing offers.created_at column | Database |
+| 13 | Missing index on reviews.created_at | Database |
+| 14 | Missing index on business_requests.created_at | Database |
+| 15 | Missing UNIQUE constraint on followed_businesses | Database |
+| 16 | Missing UNIQUE constraint on favorite_offers | Database |
+| 17 | Missing FK constraints on base tables | Database |
+| 18 | N+1 query in admin review summaries | Database |
+| 19 | Missing index on code_reveals.revealed_at | Database |
+| 20 | Auth error display logic bug (.auth-error CSS) | Frontend |
+| 21 | console.error in production JS | Frontend |
+| 22 | Empty alt on gallery thumbnails | Frontend |
+| 23 | Broken anchor links (href="#") in colectia-mea | Frontend |
+| 24 | Missing width/height on most images (CLS) | Frontend |
+| 25 | Flutter: offerRequestProvider missing autoDispose | Flutter |
+| 26 | Flutter: businessReviewsProvider missing autoDispose | Flutter |
+
+#### MEDIUM (37 issues — fix this month)
+
+**Backend (5):** Password validation inconsistency, no gallery image LIMIT, missing discount validation, unbounded location array, fire-and-forget analytics no Sentry
+**Flutter (10):** StateNotifier invalid mounted checks (2), missing loading on re-fetch (2), missing const constructors, no accessibility/Semantics, hardcoded strings, large build methods (2), magic numbers
+**Frontend (5):** Missing focus-visible styles, potential color contrast issues, unused CSS classes, hardcoded city images, hardcoded category icons
+**Database (12):** SERIAL vs BIGSERIAL, missing composite index reviews, VARCHAR(255) for URLs, missing push_log composite index, suboptimal partial index offers, missing offer_requests index, missing partial index refresh_tokens, TEXT vs VARCHAR inconsistency, unbounded cities/categories SELECT, missing business_clicks cleanup index, duplicate migration directories, missing composite promo_codes index
+**Config (3):** Excessive console.log (needs logger), .env.example missing vars, hardcoded API base URL in Flutter
+
+#### LOW (26 issues)
+
+**Backend (5):** Inconsistent error languages, no review pagination, complex featured query perf, no Cloudinary timeout, offer interleave memory
+**Flutter (5):** Success overlay not shared, inconsistent provider naming, missing class docs, duplicate filter chip logic, ValueListenableBuilder rebuild
+**Frontend (8):** will-change on marquee, global namespace pollution, semantic HTML gallery, nav dropdown not `<nav>`, missing loading states on buttons, smooth scroll edge case, particle tab visibility, gallery Home/End keys
+**Database (5):** Missing table COMMENT, inconsistent timestamp types, missing DEFAULT NOW(), missing updated_at triggers, connection pool settings
+**Config (8):** Cannot audit Flutter deps, admin creds in .env, Cloudflare not auditable, no backup verification, no uptime monitoring, no error budget, PowerShell scripts, SSL rejectUnauthorized
+
+#### Positive Findings
+- All SQL queries parameterized (zero SQL injection)
+- bcrypt salt 10 for passwords
+- JWT refresh token rotation correct
+- CSRF double-submit cookie working
+- Rate limiting on auth/admin/reset
+- Helmet.js configured
+- Good separation of concerns
+- Riverpod patterns consistent
+- Firebase push dual Expo/FCM functional
+- Zero npm vulnerabilities (304 deps clean)
+- SEO + JSON-LD + sitemap + robots.txt complete
+- Cron jobs for data cleanup running
 
 ---
 
