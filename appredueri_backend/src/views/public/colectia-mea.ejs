@@ -29,8 +29,8 @@
     <div class="sort-bar">
       <span class="sort-bar-label">Sortare:</span>
       <button type="button" class="filter-pill<%= sort === 'recent' ? ' active' : '' %>" data-sort="recent" onclick="changeSort('recent')">Recent adăugate</button>
-      <button type="button" class="filter-pill<%= sort === 'rating' ? ' active' : '' %>" data-sort="rating" onclick="changeSort('rating')">Rating</button>
-      <button type="button" class="filter-pill<%= sort === 'distance' ? ' active' : '' %>" data-sort="distance" onclick="changeSort('distance')">Distanță</button>
+      <button type="button" class="filter-pill<%= sort === 'rating' ? ' active' : '' %>" data-sort="rating" data-tab-sort="businesses" onclick="changeSort('rating')">Rating</button>
+      <button type="button" class="filter-pill<%= sort === 'distance' ? ' active' : '' %>" data-sort="distance" data-tab-sort="businesses" onclick="changeSort('distance')">Distanță</button>
     </div>
 
     <!-- Search bar -->
@@ -351,6 +351,10 @@
     document.getElementById('panel-offers').style.display = tab === 'offers' ? '' : 'none';
     document.getElementById('collection-search-input').value = '';
     filterCollection('');
+    // Hide sort buttons not relevant to current tab
+    document.querySelectorAll('[data-tab-sort]').forEach(function(btn) {
+      btn.style.display = btn.getAttribute('data-tab-sort') === tab ? '' : 'none';
+    });
   }
 
   function changeSort(sortValue) {

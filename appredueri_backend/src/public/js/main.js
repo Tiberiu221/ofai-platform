@@ -86,6 +86,17 @@ function initCounters() {
   const counters = document.querySelectorAll('[data-count]');
   if (counters.length === 0) return;
 
+  // Skip animation if already shown this session
+  if (sessionStorage.getItem('countersAnimated')) {
+    counters.forEach(el => {
+      const target = parseInt(el.getAttribute('data-count'), 10);
+      const suffix = el.getAttribute('data-suffix') || '';
+      const prefix = el.getAttribute('data-prefix') || '';
+      el.textContent = prefix + target.toLocaleString('ro-RO') + suffix;
+    });
+    return;
+  }
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -116,6 +127,8 @@ function animateCounter(el) {
 
     if (progress < 1) {
       requestAnimationFrame(update);
+    } else {
+      sessionStorage.setItem('countersAnimated', '1');
     }
   }
 
@@ -476,8 +489,11 @@ window.shareOffer = async function(title, businessName) {
   if (navigator.share) {
     try {
       await navigator.share({ title: text, url });
+      showToast('Partajat cu succes!', 'success');
     } catch (e) {
-      // User cancelled share
+      if (e.name !== 'AbortError') {
+        showToast('Nu s-a putut partaja.', 'error');
+      }
     }
   } else {
     try {
@@ -560,7 +576,8 @@ async function fetchSuggestions(q, dropdown, setController) {
     const data = await resp.json();
 
     if (data.offers.length === 0 && data.businesses.length === 0) {
-      dropdown.classList.remove('open');
+      dropdown.innerHTML = '<div class="search-suggest-empty" style="padding: 16px 20px; color: var(--text-muted); font-size: 0.875rem;">Niciun rezultat pentru \u201E' + escapeHtml(q) + '\u201D</div>';
+      dropdown.classList.add('open');
       return;
     }
 
