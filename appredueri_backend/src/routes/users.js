@@ -18,7 +18,10 @@ router.get("/me", auth, async (req, res) => {
         first_name,
         last_name,
         preferred_city_ids,
-        preferred_category_ids
+        preferred_category_ids,
+        role,
+        profile_picture_url,
+        password_hash
       FROM users
       WHERE id = $1
       `,
@@ -41,6 +44,9 @@ router.get("/me", auth, async (req, res) => {
       preferred_category_ids: Array.isArray(user.preferred_category_ids)
         ? user.preferred_category_ids.map(Number).filter(Number.isInteger)
         : [],
+      role: user.role || 'user',
+      profile_picture_url: user.profile_picture_url || null,
+      has_password: !!user.password_hash,
     });
   } catch (err) {
     console.error("Eroare la GET /users/me:", err);

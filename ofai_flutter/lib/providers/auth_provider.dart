@@ -138,7 +138,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> loginWithGoogle() async {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      final googleUser = await GoogleSignIn(
+        serverClientId: '528878938929-6adc8diuadocsf9bh3f12mvekirb93aj.apps.googleusercontent.com',
+      ).signIn();
       if (googleUser == null) {
         // User cancelled the sign-in
         state = state.copyWith(status: AuthStatus.unauthenticated);

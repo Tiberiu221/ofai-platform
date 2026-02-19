@@ -181,6 +181,10 @@ function csrfMiddleware(req, res, next) {
   if (req.path === '/api/web/clicks' && req.method === 'POST') {
     return next();
   }
+  // Skip for Google OAuth (protected by Google ID token verification, stronger than CSRF)
+  if (req.path === '/auth/google' && req.method === 'POST') {
+    return next();
+  }
   // Skip for safe HTTP methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
     return next();

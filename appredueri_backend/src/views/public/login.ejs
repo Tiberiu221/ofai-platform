@@ -129,22 +129,36 @@ function handleGoogleCallback(response) {
     },
     body: JSON.stringify({ idToken: response.credential })
   })
-  .then(r => r.json())
-  .then(data => {
+  .then(function(r) {
+    if (!r.ok) {
+      return r.json().catch(function() {
+        throw new Error('Eroare server (' + r.status + ')');
+      }).then(function(data) {
+        throw new Error(data.message || 'Eroare server (' + r.status + ')');
+      });
+    }
+    return r.json();
+  })
+  .then(function(data) {
     if (data.success) {
-      const card = document.querySelector('.auth-card');
+      var card = document.querySelector('.auth-card');
       if (card) {
         card.style.transition = 'opacity 0.2s, transform 0.2s';
         card.style.opacity = '0';
         card.style.transform = 'scale(0.98)';
       }
-      setTimeout(() => { window.location.href = data.redirect || '/cont'; }, 200);
+      setTimeout(function() { window.location.href = data.redirect || '/cont'; }, 200);
     } else {
-      if (typeof showToast === 'function') showToast(data.message || 'Eroare la autentificarea Google', 'error');
+      var msg = data.message || 'Eroare la autentificarea Google';
+      if (typeof showToast === 'function') showToast(msg, 'error');
+      else alert(msg);
     }
   })
-  .catch(() => {
-    if (typeof showToast === 'function') showToast('Eroare de rețea', 'error');
+  .catch(function(err) {
+    console.error('[Google] Auth error:', err);
+    var msg = err.message || 'Eroare de rețea';
+    if (typeof showToast === 'function') showToast(msg, 'error');
+    else alert(msg);
   });
 }
 
