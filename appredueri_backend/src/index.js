@@ -119,6 +119,7 @@ app.use(helmet({
       frameSrc: ["https://accounts.google.com"],
     },
   },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Required for Google Identity Services popup to postMessage back
   crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
   crossOriginResourcePolicy: false, // Allow browsers to load images from external domains (Cloudinary, Picsum, DiceBear)
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
