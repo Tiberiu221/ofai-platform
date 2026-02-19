@@ -1889,6 +1889,13 @@ ul, ol { list-style: none; }
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.google-btn-wrapper iframe {
+  border-radius: 8px !important;
+  color-scheme: dark;
 }
 
 .auth-logo-icon {
