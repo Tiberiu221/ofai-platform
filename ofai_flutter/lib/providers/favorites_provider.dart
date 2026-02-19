@@ -95,6 +95,10 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
     }
   }
 
+  void clear() {
+    state = const FavoritesState();
+  }
+
   bool isFavorite(int offerId) => state.favoriteIds.contains(offerId);
 
   Future<void> toggleFavorite(int offerId) async {

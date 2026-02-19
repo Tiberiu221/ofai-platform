@@ -9,6 +9,7 @@ class User {
   final int? points;
   final String? createdAt;
   final String? profilePictureUrl;
+  final bool hasPassword;
 
   User({
     required this.id,
@@ -21,6 +22,7 @@ class User {
     this.points,
     this.createdAt,
     this.profilePictureUrl,
+    this.hasPassword = true,
   });
 
   String get displayName {
@@ -56,6 +58,7 @@ class User {
       points: json['points'] as int?,
       createdAt: json['created_at'] as String?,
       profilePictureUrl: json['profile_picture_url'] as String?,
+      hasPassword: json['has_password'] as bool? ?? true,
     );
   }
 }

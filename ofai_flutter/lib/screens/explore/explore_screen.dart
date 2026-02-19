@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -27,7 +28,10 @@ class ExploreScreen extends ConsumerStatefulWidget {
   ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTickerProviderStateMixin {
+class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late TabController _tabController;
   final _searchController = TextEditingController();
   final _offersScrollController = ScrollController();
@@ -140,6 +144,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final offersState = ref.watch(offersListProvider);
     final businessesState = ref.watch(businessesListProvider);
     final citiesAsync = ref.watch(citiesProvider);
@@ -214,7 +219,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
 
             // Filter chips row
             SizedBox(
-              height: 40,
+              height: 48,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
@@ -263,7 +268,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
             Padding(
               padding: AppSpacing.pageH,
               child: Container(
-                height: 40,
+                height: 44,
                 decoration: BoxDecoration(
                   color: AppColors.bgSecondary,
                   borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
@@ -559,9 +564,12 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isActive ? AppColors.accentMuted : AppColors.bgCard,
           borderRadius: BorderRadius.circular(AppSpacing.pillRadius),

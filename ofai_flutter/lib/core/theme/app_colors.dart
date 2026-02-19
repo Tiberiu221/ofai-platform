@@ -4,7 +4,7 @@ class AppColors {
   AppColors._();
 
   // Backgrounds
-  static const bgPrimary = Color(0xFF080808);
+  static const bgPrimary = Color(0xFF06060A);
   static const bgSecondary = Color(0xFF111111);
   static const bgCard = Color(0x0AFFFFFF); // rgba(255,255,255,0.04)
   static const bgCardHover = Color(0x14FFFFFF); // rgba(255,255,255,0.08)

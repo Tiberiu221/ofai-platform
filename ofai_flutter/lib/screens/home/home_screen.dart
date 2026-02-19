@@ -14,6 +14,7 @@ import '../../widgets/category_chip.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
+import '../../widgets/section_header.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -22,7 +23,10 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
 
@@ -45,6 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final offersAsync = ref.watch(isLoggedIn ? feedProvider : popularOffersProvider);
@@ -201,7 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionHeader(
+                      SectionHeader(
                         title: 'Categorii',
                         onViewAll: () => context.push('/categories'),
                       ),
@@ -240,7 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionHeader(
+                      SectionHeader(
                         title: 'Descopera orase',
                         onViewAll: () => context.push('/cities'),
                       ),
@@ -297,7 +302,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionHeader(
+                      SectionHeader(
                         title: isLoggedIn ? 'Pentru tine' : 'Oferte populare',
                         onViewAll: () => context.go('/explore'),
                       ),
@@ -349,7 +354,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverToBoxAdapter(
                 child: FadeInItem(
                   index: 6,
-                  child: _SectionHeader(
+                  child: SectionHeader(
                     title: 'Business-uri',
                     onViewAll: () => context.go('/explore'),
                   ),
@@ -410,33 +415,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback? onViewAll;
-
-  const _SectionHeader({required this.title, this.onViewAll});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: AppTypography.headlineMedium),
-          if (onViewAll != null)
-            GestureDetector(
-              onTap: onViewAll,
-              child: Text(
-                'Vezi toate',
-                style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
 
 class _StatPill extends StatelessWidget {
   final String value;

@@ -81,7 +81,8 @@ class _AuthInterceptor extends Interceptor {
         options.path == ApiEndpoints.refresh ||
         options.path == ApiEndpoints.forgotPassword ||
         options.path == ApiEndpoints.verifyResetCode ||
-        options.path == ApiEndpoints.resetPassword;
+        options.path == ApiEndpoints.resetPassword ||
+        options.path == ApiEndpoints.googleAuth;
 
     if (!isAuthEndpoint) {
       final token = await SecureStorage.getAccessToken();

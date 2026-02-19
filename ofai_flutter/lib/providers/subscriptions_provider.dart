@@ -95,6 +95,10 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
     }
   }
 
+  void clear() {
+    state = const SubscriptionsState();
+  }
+
   bool isSubscribed(int businessId) => state.subscribedIds.contains(businessId);
 
   Future<void> toggleSubscription(int businessId) async {

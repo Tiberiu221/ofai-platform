@@ -25,6 +25,7 @@ function mapUserResponse(user, points = 0) {
     points: points || 0,
     role: user.role || 'user',
     profile_picture_url: user.profile_picture_url || null,
+    has_password: !!user.password_hash,
   };
 }
 
@@ -217,6 +218,105 @@ router.post("/refresh", async (req, res) => {
   } catch (err) {
     console.error("Eroare la /auth/refresh:", err);
     return res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// POST /auth/google — Google OAuth Sign-In (mobile)
+router.post("/google", async (req, res) => {
+  try {
+    const { idToken } = req.body || {};
+    if (!idToken) {
+      return res.status(400).json({ message: "Token Google lipsește" });
+    }
+
+    const { OAuth2Client } = require("google-auth-library");
+    const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: "Token Google invalid" });
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    const firstName = payload.given_name?.trim() || "";
+    const lastName = payload.family_name?.trim() || "";
+    const profilePicture = payload.picture || null;
+    const googleId = payload.sub;
+
+    const existingUser = await pool.query(
+      "SELECT id, email, google_id, profile_picture_url, banned_at FROM users WHERE email = $1",
+      [email]
+    );
+
+    let user;
+    let isNewUser = false;
+
+    if (existingUser.rowCount > 0) {
+      user = existingUser.rows[0];
+
+      if (user.banned_at) {
+        return res.status(403).json({ message: "Contul tău a fost suspendat" });
+      }
+
+      await pool.query(
+        `UPDATE users SET
+          google_id = COALESCE(google_id, $1),
+          profile_picture_url = $2,
+          last_active_at = NOW()
+         WHERE id = $3`,
+        [googleId, profilePicture, user.id]
+      );
+
+      // Re-fetch for full user data
+      const fullUser = await pool.query(
+        `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, password_hash
+         FROM users WHERE id = $1`,
+        [user.id]
+      );
+      user = fullUser.rows[0];
+    } else {
+      const now = new Date();
+      const insertResult = await pool.query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, google_id, profile_picture_url, privacy_accepted_at, terms_accepted_at)
+         VALUES ($1, NULL, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [email, firstName, lastName, googleId, profilePicture, now, now]
+      );
+      user = insertResult.rows[0];
+      isNewUser = true;
+
+      await pool.query("INSERT INTO user_points (user_id, total_points) VALUES ($1, 0) ON CONFLICT DO NOTHING", [user.id]);
+
+      sendWelcomeEmail(user.email, user.first_name).catch(() => {});
+      triggerWebhook("/webhook/new-user", {
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        source: "google_oauth_mobile",
+      });
+    }
+
+    const pointsRes = await pool.query(
+      "SELECT total_points FROM user_points WHERE user_id = $1",
+      [user.id]
+    );
+    const points = pointsRes.rows[0]?.total_points || 0;
+
+    const token = signToken({ id: user.id });
+    const refreshToken = await createRefreshToken(user.id);
+
+    return res.json({
+      user: mapUserResponse(user, points),
+      token,
+      refreshToken,
+      isNewUser,
+    });
+  } catch (err) {
+    console.error("Eroare la /auth/google:", err);
+    return res.status(500).json({ message: "Eroare la autentificarea cu Google" });
   }
 });
 
@@ -474,7 +574,7 @@ router.post("/change-password", authenticateToken, async (req, res) => {
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const userRes = await pool.query(
-      `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url
+      `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, password_hash
        FROM users WHERE id = $1`,
       [req.user.id]
     );

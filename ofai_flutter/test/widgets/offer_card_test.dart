@@ -14,7 +14,7 @@ Widget _buildTestApp(Widget child) {
     overrides: [
       // Override auth — use real notifier but it starts as initial/unauthenticated
       authProvider.overrideWith(
-        (ref) => AuthNotifier(ApiClient()),
+        (ref) => AuthNotifier(ApiClient(), ref),
       ),
       // Override favorites — use real notifier with empty state
       favoritesProvider.overrideWith(

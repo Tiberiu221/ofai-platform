@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../core/network/api_exceptions.dart';
 import '../core/storage/secure_storage.dart';
 import '../models/user.dart';
 import '../services/push_notification_service.dart';
+import 'favorites_provider.dart';
+import 'subscriptions_provider.dart';
 
 // Auth state
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
@@ -31,8 +34,9 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _api;
+  final Ref _ref;
 
-  AuthNotifier(this._api) : super(const AuthState()) {
+  AuthNotifier(this._api, this._ref) : super(const AuthState()) {
     _api.onAuthFailure = _onAuthFailure;
     _checkAuth();
   }
@@ -131,6 +135,46 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> loginWithGoogle() async {
+    state = state.copyWith(status: AuthStatus.loading, error: null);
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) {
+        state = state.copyWith(status: AuthStatus.unauthenticated, error: 'Nu s-a putut obține token-ul Google');
+        return;
+      }
+
+      final response = await _api.dio.post(ApiEndpoints.googleAuth, data: {
+        'idToken': idToken,
+      });
+
+      final data = response.data;
+      await SecureStorage.setAccessToken(data['token']);
+      if (data['refreshToken'] != null) {
+        await SecureStorage.setRefreshToken(data['refreshToken']);
+      }
+
+      final user = User.fromJson(data['user']);
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+
+      PushNotificationService().initialize().catchError((e) {
+        print('[Push] Init failed: $e');
+      });
+    } catch (e) {
+      final msg = e is ApiException ? e.message : 'Eroare la autentificarea cu Google';
+      state = state.copyWith(status: AuthStatus.unauthenticated, error: msg);
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     // Unregister push token before clearing auth
     await PushNotificationService().onLogout();
@@ -147,6 +191,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
 
     await SecureStorage.clearAll();
+
+    // Clear cached data from other providers
+    _ref.read(favoritesProvider.notifier).clear();
+    _ref.read(subscriptionsProvider.notifier).clear();
+
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -163,5 +212,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 // Provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ApiClient());
+  return AuthNotifier(ApiClient(), ref);
 });

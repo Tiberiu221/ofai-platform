@@ -20,7 +20,10 @@ class CollectionScreen extends ConsumerStatefulWidget {
 }
 
 class _CollectionScreenState extends ConsumerState<CollectionScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late TabController _tabController;
   final _favScrollController = ScrollController();
   final _subScrollController = ScrollController();
@@ -67,13 +70,16 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
 
-    // Listen for auth changes to trigger fetch
+    // Listen for auth changes to trigger fetch or reset
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.status == AuthStatus.authenticated && !_didFetch) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _tryFetch());
+      } else if (next.status == AuthStatus.unauthenticated) {
+        _didFetch = false;
       }
     });
 

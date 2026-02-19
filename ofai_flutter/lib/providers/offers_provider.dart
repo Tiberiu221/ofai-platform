@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -65,15 +66,23 @@ class OffersListState {
 
 class OffersListNotifier extends StateNotifier<OffersListState> {
   final ApiClient _api;
+  CancelToken? _cancelToken;
+  static const _maxItems = 500;
 
   OffersListNotifier(this._api) : super(const OffersListState()) {
     fetch();
   }
 
   Future<void> fetch() async {
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final response = await _api.dio.get(ApiEndpoints.offers, queryParameters: _params(1));
+      final response = await _api.dio.get(
+        ApiEndpoints.offers,
+        queryParameters: _params(1),
+        cancelToken: _cancelToken,
+      );
       final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
       state = state.copyWith(
         offers: paginated.data,
@@ -81,6 +90,9 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
         page: 1,
         hasMore: paginated.hasMore,
       );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) return;
+      state = state.copyWith(isLoading: false, error: e.toString());
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -88,10 +100,15 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore) return;
+    if (state.offers.length >= _maxItems) return;
     state = state.copyWith(isLoadingMore: true);
     try {
       final nextPage = state.page + 1;
-      final response = await _api.dio.get(ApiEndpoints.offers, queryParameters: _params(nextPage));
+      final response = await _api.dio.get(
+        ApiEndpoints.offers,
+        queryParameters: _params(nextPage),
+        cancelToken: _cancelToken,
+      );
       final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
       state = state.copyWith(
         offers: [...state.offers, ...paginated.data],
@@ -106,6 +123,7 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
 
   void setFilter({int? cityId, int? categoryId, String? sort, String? query,
     bool clearCityId = false, bool clearCategoryId = false}) {
+    _cancelToken?.cancel();
     state = state.copyWith(
       offers: [],
       page: 1,

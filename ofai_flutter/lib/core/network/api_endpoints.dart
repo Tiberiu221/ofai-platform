@@ -14,6 +14,7 @@ class ApiEndpoints {
   static const String resetPassword = '/auth/reset-password';
   static const String changePassword = '/auth/change-password';
   static const String me = '/auth/me';
+  static const String googleAuth = '/auth/google';
 
   // Offers
   static const String offers = '/offers';

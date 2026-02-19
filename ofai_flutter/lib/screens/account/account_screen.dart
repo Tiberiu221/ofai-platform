@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/subscriptions_provider.dart';
 import '../../providers/business_requests_provider.dart';
+import '../../widgets/initial_avatar.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -17,7 +18,10 @@ class AccountScreen extends ConsumerStatefulWidget {
   ConsumerState<AccountScreen> createState() => _AccountScreenState();
 }
 
-class _AccountScreenState extends ConsumerState<AccountScreen> {
+class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   bool _didFetch = false;
 
   void _tryFetch() {
@@ -32,14 +36,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final user = auth.user;
 
-    // Listen for auth changes to trigger fetch
+    // Listen for auth changes to trigger fetch or reset
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.status == AuthStatus.authenticated && !_didFetch) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _tryFetch());
+      } else if (next.status == AuthStatus.unauthenticated) {
+        _didFetch = false;
       }
     });
 
@@ -110,14 +117,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               const SizedBox(height: AppSpacing.xxl),
 
               // Avatar + name
-              CircleAvatar(
+              InitialAvatar(
+                initials: user?.initials ?? 'U',
                 radius: 40,
                 backgroundColor: AppColors.accent,
-                child: Text(
-                  user?.initials ?? 'U',
-                  style: AppTypography.displaySmall.copyWith(
-                    color: AppColors.bgPrimary,
-                  ),
+                textStyle: AppTypography.displaySmall.copyWith(
+                  color: AppColors.bgPrimary,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -183,11 +188,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 label: 'Preferinte',
                 onTap: () => context.push('/account/preferences'),
               ),
-              _MenuItem(
-                icon: Icons.lock_outline,
-                label: 'Schimba parola',
-                onTap: () => context.push('/account/change-password'),
-              ),
+              if (user?.hasPassword ?? true)
+                _MenuItem(
+                  icon: Icons.lock_outline,
+                  label: 'Schimba parola',
+                  onTap: () => context.push('/account/change-password'),
+                ),
               _MenuItem(
                 icon: Icons.help_outline,
                 label: 'Ajutor',

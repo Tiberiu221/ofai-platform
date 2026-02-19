@@ -4,6 +4,7 @@ import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/utils/formatters.dart';
 import '../models/review.dart';
+import 'initial_avatar.dart';
 
 class ReviewCard extends StatelessWidget {
   final Review review;
@@ -27,14 +28,7 @@ class ReviewCard extends StatelessWidget {
           // Header: avatar + name + date
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.bgSecondary,
-                child: Text(
-                  review.reviewerInitials,
-                  style: AppTypography.labelMedium.copyWith(color: AppColors.textSecondary),
-                ),
-              ),
+              InitialAvatar(initials: review.reviewerInitials),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -59,15 +60,23 @@ class BusinessesListState {
 
 class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
   final ApiClient _api;
+  CancelToken? _cancelToken;
+  static const _maxItems = 500;
 
   BusinessesListNotifier(this._api) : super(const BusinessesListState()) {
     fetch();
   }
 
   Future<void> fetch() async {
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final response = await _api.dio.get(ApiEndpoints.businesses, queryParameters: _params(1));
+      final response = await _api.dio.get(
+        ApiEndpoints.businesses,
+        queryParameters: _params(1),
+        cancelToken: _cancelToken,
+      );
       final paginated = PaginatedResponse.fromJson(response.data, Business.fromJson);
       state = state.copyWith(
         businesses: paginated.data,
@@ -75,6 +84,9 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
         page: 1,
         hasMore: paginated.hasMore,
       );
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) return;
+      state = state.copyWith(isLoading: false, error: e.toString());
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -82,10 +94,15 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore) return;
+    if (state.businesses.length >= _maxItems) return;
     state = state.copyWith(isLoadingMore: true);
     try {
       final nextPage = state.page + 1;
-      final response = await _api.dio.get(ApiEndpoints.businesses, queryParameters: _params(nextPage));
+      final response = await _api.dio.get(
+        ApiEndpoints.businesses,
+        queryParameters: _params(nextPage),
+        cancelToken: _cancelToken,
+      );
       final paginated = PaginatedResponse.fromJson(response.data, Business.fromJson);
       state = state.copyWith(
         businesses: [...state.businesses, ...paginated.data],
@@ -100,6 +117,7 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
 
   void setFilter({int? cityId, int? categoryId, String? query,
     bool clearCityId = false, bool clearCategoryId = false}) {
+    _cancelToken?.cancel();
     state = state.copyWith(
       businesses: [],
       page: 1,

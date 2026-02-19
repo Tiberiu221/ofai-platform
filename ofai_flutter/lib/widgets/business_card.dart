@@ -16,7 +16,10 @@ class BusinessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasCover = business.coverImage != null && business.coverImage!.isNotEmpty;
 
-    return TapScale(
+    return Semantics(
+      label: 'Business: ${business.name}, ${business.categoryName}',
+      button: true,
+      child: TapScale(
       onTap: () => context.push('/business/${business.id}'),
       child: Container(
         clipBehavior: Clip.antiAlias,
@@ -112,6 +115,7 @@ class BusinessCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

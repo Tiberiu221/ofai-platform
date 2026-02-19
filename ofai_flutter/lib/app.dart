@@ -73,10 +73,14 @@ class _ShellScreen extends StatelessWidget {
                 final item = _items[i];
                 final isActive = i == currentIndex;
                 return Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => context.go(_routes[i]),
-                    child: Column(
+                  child: Semantics(
+                    label: item.label,
+                    selected: isActive,
+                    button: true,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => context.go(_routes[i]),
+                      child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
@@ -104,6 +108,7 @@ class _ShellScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
                   ),
                 );
               }),

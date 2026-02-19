@@ -56,7 +56,10 @@ class OfferCard extends ConsumerWidget {
   }
 
   Widget _buildVertical(BuildContext context, WidgetRef ref) {
-    return TapScale(
+    return Semantics(
+      label: 'Oferta: ${offer.title}${offer.business != null ? ', ${offer.business!.name}' : ''}',
+      button: true,
+      child: TapScale(
       onTap: () => context.push('/offer/${offer.id}'),
       child: Container(
         decoration: BoxDecoration(
@@ -168,6 +171,7 @@ class OfferCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -355,14 +359,18 @@ class OfferCard extends ConsumerWidget {
     return Positioned(
       top: 8,
       left: 8,
-      child: GestureDetector(
+      child: Semantics(
+        label: isFav ? 'Elimina din favorite' : 'Adauga la favorite',
+        button: true,
+        child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           HapticFeedback.lightImpact();
           ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
         },
         child: Container(
-          width: 32,
-          height: 32,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: AppColors.overlay,
             shape: BoxShape.circle,
@@ -373,6 +381,7 @@ class OfferCard extends ConsumerWidget {
             color: isFav ? AppColors.accent : AppColors.textPrimary,
           ),
         ),
+      ),
       ),
     );
   }
