@@ -68,23 +68,8 @@
     <!-- Google Sign-In Divider -->
     <div class="auth-divider"><span>sau</span></div>
 
-    <!-- Google Sign-In -->
-    <div id="g_id_onload"
-      data-client_id="<%= googleClientId %>"
-      data-callback="handleGoogleCallback"
-      data-auto_prompt="false">
-    </div>
-    <div class="google-btn-wrapper">
-      <div id="g_id_signin"
-        data-type="standard"
-        data-shape="rectangular"
-        data-theme="outline"
-        data-text="signin_with"
-        data-size="large"
-        data-logo_alignment="left"
-        data-width="360">
-      </div>
-    </div>
+    <!-- Google button rendered here by GIS library -->
+    <div class="google-btn-wrapper" id="google-btn-target"></div>
     <% } %>
 
     <!-- Register link -->
@@ -109,6 +94,30 @@ if (returnTo !== '/cont') {
   const regLink = document.getElementById('register-link');
   if (regLink) regLink.href = '/register?returnTo=' + encodeURIComponent(returnTo);
 }
+
+<% if (typeof googleClientId !== 'undefined' && googleClientId) { %>
+// Initialize Google Sign-In and render button when library loads
+(function waitForGoogle() {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    google.accounts.id.initialize({
+      client_id: '<%= googleClientId %>',
+      callback: handleGoogleCallback
+    });
+    const target = document.getElementById('google-btn-target');
+    if (target) {
+      google.accounts.id.renderButton(target, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: 360
+      });
+    }
+  } else {
+    setTimeout(waitForGoogle, 100);
+  }
+})();
+<% } %>
 
 // Google Sign-In callback
 function handleGoogleCallback(response) {
