@@ -1769,7 +1769,7 @@
         var displayData = isWeekly ? groupByWeek(rawChartData.views, 'views') : rawChartData.views;
         renderChart('views-chart', displayData, 'vizualizări', 'views');
       })
-      .catch(function() {});
+      .catch(function(err) { console.error('[Charts] Views error:', err); });
   }
 
   function loadSubscribersChart(days) {
@@ -1780,7 +1780,7 @@
         var displayData = isWeekly ? groupByWeek(rawChartData.subscribers, 'new_subscribers') : rawChartData.subscribers;
         renderChart('subscribers-chart', displayData, 'abonați', 'new_subscribers');
       })
-      .catch(function() {});
+      .catch(function(err) { console.error('[Charts] Subscribers error:', err); });
   }
 
   function loadClicksChart(days) {
@@ -1791,7 +1791,7 @@
         var displayData = isWeekly ? groupByWeek(rawChartData.clicks, 'clicks') : rawChartData.clicks;
         renderChart('clicks-chart', displayData, 'click-uri', 'clicks');
       })
-      .catch(function() {});
+      .catch(function(err) { console.error('[Charts] Clicks error:', err); });
   }
 
   function loadCharts(days) {
