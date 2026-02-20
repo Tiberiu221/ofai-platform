@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 16 Februarie 2026 (Actualizat v14 — Web Refresh Tokens + FCM Push + Dashboard Stats + Click Tracking)
+## Data: 21 Februarie 2026 (Actualizat v15 — Google Sign-In iOS + Click Tracking Mobile + Bug Fixes)
 
 ---
 
@@ -240,7 +240,7 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 
 ## CE ESTE COMPLET
 
-### Flutter App — OFAI Mobile (Faza 0-3 — COMPLETA, v13)
+### Flutter App — OFAI Mobile (Faza 0-3 + Sprints — COMPLETA, v15)
 
 **App nativ Flutter care inlocuieste React Native/Expo. Package: `ro.ofai.ofai_flutter`**
 
@@ -274,6 +274,17 @@ Cookie-ul se trimite automat cu fetch (same-origin). NU se trimite Bearer token.
 - [x] Onboarding: 3-page PageView with SharedPreferences persistence
 - [x] Page Transitions: slideUp for details, fade for auth (CustomTransitionPage)
 - [x] Push Notifications: FCM (Firebase Cloud Messaging) — dual Expo + FCM support
+
+**Sprint 20-21 Feb 2026 (v15):**
+- [x] Google Sign-In: iOS (CLIENT_ID + REVERSED_CLIENT_ID in GoogleService-Info.plist + URL scheme)
+- [x] X-Client: mobile header — bypasses web.js /auth/google route, uses auth.js JWT endpoint
+- [x] Click Tracking: AnalyticsService fire-and-forget (POST /offers/clicks)
+  - Tracked actions: phone, whatsapp, booking_url, website, navigate, share, gallery, follow/unfollow, favorite/unfavorite, copy_code
+  - Integrated in: offer_detail_screen, business_detail_screen, favorites_provider, subscriptions_provider
+- [x] Bug fix: PinchCard + Active Offers mutual exclusivity (if...else if, offers have priority)
+- [x] Verified badge (isVerified) on business detail + business cards
+- [x] Profile pictures: upload/display in AccountScreen
+- [x] Preferences screen: category/city preferences for personalized feed
 
 **Flutter Dependencies:**
 ```yaml
@@ -669,6 +680,16 @@ CSS targeteaza `.bd-hero` cu `height: 280px; overflow: hidden`.
 HTML-ul TREBUIE sa aiba `class="bd-hero"` (NU `.business-detail-hero`).
 Mismatch = imaginea cover apare fullscreen pentru o fractiune de secunda.
 
+### 10. X-Client: mobile header — route conflict /auth/google
+web.js monteaza INAINTEA authRouter in index.js. Ambele au handler `/auth/google`.
+Flutter trimite `X-Client: mobile` pe TOATE requesturile Dio.
+web.js verifica headerul si face `next()` pentru mobile → requestul ajunge la authRouter (JWT).
+IMPORTANT: NU reordona routerele in index.js — ar strica TOATE paginile web (~20+ rute).
+
+### 11. iOS Info.plist — REVERSED_CLIENT_ID trebuie literal
+`$(REVERSED_CLIENT_ID)` NU este un Xcode build setting — NU se expandeaza.
+Trebuie pus valoarea reala: `com.googleusercontent.apps.528878938929-3l9ol27hcijvd14p895mu32gb7o4206g`.
+
 ---
 
 ## COMENZI UTILE
@@ -875,6 +896,14 @@ Workflows active: WF1 (new-review → email owner)
 - [x] Page Transitions (slideUp details, fade auth — CustomTransitionPage)
 - [x] Push Notifications — FCM (firebase_messaging), dual Expo+FCM backend, triggers on new offer
 
+### Flutter Sprint 20-21 Feb — iOS + Analytics + Bugfixes (COMPLETA - v15)
+- [x] Google Sign-In iOS (CLIENT_ID, REVERSED_CLIENT_ID, URL scheme in Info.plist)
+- [x] X-Client: mobile header on all Dio requests (bypass web.js /auth/google)
+- [x] AnalyticsService: fire-and-forget click tracking (POST /offers/clicks)
+- [x] Click tracking integrated in: offer detail, business detail, favorites, subscriptions
+- [x] Bug fix: PinchCard + Active Offers mutual exclusivity (if...else if)
+- [x] Backend fix: web.js skips /auth/google for mobile clients (checks X-Client header)
+
 ### Faza 6 - Monetizare (TODO)
 - [ ] Pricing: Freemium + 3 tiers (49/99/199 RON/lună) + pay-per-offer (29 RON)
 - [ ] Stripe integration
@@ -885,7 +914,7 @@ Workflows active: WF1 (new-review → email owner)
 - [ ] Self-service onboarding
 - [ ] Referral system
 - [ ] n8n WF2-WF6
-- [ ] iOS Build (necesita Mac/Apple Developer $99/an)
+- [ ] iOS Build (Google Sign-In configurat, necesita Apple Developer $99/an)
 - [ ] Play Store publicare
 
 ---
@@ -909,9 +938,12 @@ Workflows active: WF1 (new-review → email owner)
 | 2 | Cerere de oferta (Pinch) | ✅ Complet |
 | 3 | Push notifications FCM | ✅ Complet |
 | 4 | GDPR consent pe RegisterScreen | ✅ Complet (verificat — _acceptAll checkbox + /termeni + /confidentialitate) |
-| 5 | Puncte + badge vizual (gamification) | ❌ De facut |
-| 6 | Notificari personalizate (per-category, per-location prefs) | ❌ De facut |
-| 7 | iOS build | ❌ De facut (necesita Mac + Apple Developer $99/an) |
+| 5 | Google Sign-In iOS | ✅ Complet (v15 — CLIENT_ID + URL scheme + X-Client header) |
+| 6 | Click tracking analytics | ✅ Complet (v15 — AnalyticsService, 12 action types) |
+| 7 | Pinch/Offers bug fix | ✅ Complet (v15 — mutual exclusivity) |
+| 8 | Puncte + badge vizual (gamification) | ❌ De facut |
+| 9 | Notificari personalizate (per-category, per-location prefs) | ❌ De facut |
+| 10 | iOS build | ❌ De facut (necesita Apple Developer $99/an — Mac disponibil) |
 
 ### PORTAL (Business Dashboard)
 | # | Feature | Status |
@@ -1117,6 +1149,50 @@ Workflows active: WF1 (new-review → email owner)
 ---
 
 ## ISTORIC ACTUALIZARI
+
+### 20-21 Februarie 2026 (v15 — Google Sign-In iOS + Click Tracking Mobile + Bug Fixes)
+
+**Sesiune focusata pe iOS Google Sign-In, analytics mobile si audit web vs mobile.**
+
+**Google Sign-In iOS:**
+- Adaugat CLIENT_ID si REVERSED_CLIENT_ID in GoogleService-Info.plist
+- CFBundleURLTypes cu REVERSED_CLIENT_ID literal in Info.plist (nu variabila — nu se expandeaza)
+- Fix backend route conflict: web.js `/auth/google` intercepta requesturile mobile
+- Solutie: header `X-Client: mobile` pe toate requesturile Dio, web.js face `next()` pentru mobile
+- Adaugat `X-Client: mobile` in api_client.dart default headers
+
+**Click Tracking Mobile (AnalyticsService):**
+- NOU: `lib/services/analytics_service.dart` — fire-and-forget, POST /offers/clicks
+- NOU: `ApiEndpoints.clicks` = '/offers/clicks'
+- Actiuni tracked: phone, whatsapp, booking_url, website, navigate, share, gallery, follow, unfollow, favorite, unfavorite, copy_code
+- Integrat in: offer_detail_screen (share, phone, whatsapp, booking_url, navigate, gallery, copy_code)
+- Integrat in: business_detail_screen (share, phone, website, navigate, booking phone/whatsapp/url, gallery)
+- Integrat in: favorites_provider (favorite/unfavorite cu businessId din offer.business)
+- Integrat in: subscriptions_provider (follow/unfollow)
+
+**Bug Fix — PinchCard + Active Offers:**
+- Problema: "Nicio oferta activa" (PinchRequestCard) aparea SIMULTAN cu lista "Oferte active"
+- Cauza: doua `if`-uri independente in business_detail_screen.dart
+- Fix: transformat in `if...else if` mutual exclusiv — ofertele active au prioritate
+
+**Audit Web vs Mobile (20 Feb):**
+- Analizat 36 commits din 20 Feb pe backend/web
+- Comparat features web vs mobile — majoritatea deja implementate (badges, verified, preferences, profile pictures, pinch)
+- Identificat 1 bug critic (pinch/offers) si 1 feature lipsa (click tracking) — ambele rezolvate
+
+**Fisiere modificate:**
+- `lib/services/analytics_service.dart` (NOU)
+- `lib/core/network/api_endpoints.dart` (+clicks endpoint)
+- `lib/core/network/api_client.dart` (+X-Client: mobile header)
+- `lib/screens/offer/offer_detail_screen.dart` (+click tracking)
+- `lib/screens/business/business_detail_screen.dart` (+click tracking + pinch/offers fix)
+- `lib/providers/favorites_provider.dart` (+click tracking)
+- `lib/providers/subscriptions_provider.dart` (+click tracking)
+- `ios/Runner/GoogleService-Info.plist` (+CLIENT_ID, REVERSED_CLIENT_ID)
+- `ios/Runner/Info.plist` (+CFBundleURLTypes URL scheme)
+- `appredueri_backend/src/routes/web.js` (+X-Client mobile check for /auth/google)
+
+---
 
 ### 16 Februarie 2026 (v14 — Web Refresh Tokens + FCM Push + Dashboard Stats + Click Tracking)
 
