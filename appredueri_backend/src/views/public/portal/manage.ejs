@@ -379,6 +379,34 @@
   .chart-container { position: relative; height: 180px; }
   .charts-row { display: flex; flex-direction: column; gap: 28px; }
 
+  /* ── Chart Dropdowns ── */
+  .chart-dropdown {
+    background: var(--bg-card, #1a1a2e);
+    color: var(--text-primary, #e0e0e0);
+    border: 1px solid var(--border, #2d2d4a);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    cursor: pointer;
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 10px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .chart-dropdown:focus {
+    border-color: var(--accent, #fb923c);
+    outline: none;
+  }
+  .chart-dropdown option {
+    background: #18181b;
+    color: var(--text-primary, #e0e0e0);
+  }
+
   /* ── Trend Arrows ── */
   .stat-trend {
     display: inline-flex; align-items: center; gap: 3px;
@@ -1058,7 +1086,12 @@
 
         <div class="charts-row">
           <div class="chart-section">
-            <div class="chart-title">Vizualizări</div>
+            <select id="views-selector" class="chart-dropdown" onchange="onViewsDropdownChange(this)">
+              <option value="business">Vizualizări Pagină Business</option>
+              <% offers.forEach(function(o) { %>
+                <option value="offer-<%= o.id %>"><%= o.title.length > 40 ? o.title.substring(0, 40) + '...' : o.title %></option>
+              <% }); %>
+            </select>
             <div class="chart-container">
               <canvas id="views-chart"></canvas>
             </div>
@@ -1070,7 +1103,12 @@
             </div>
           </div>
           <div class="chart-section">
-            <div class="chart-title">Click-uri</div>
+            <select id="clicks-selector" class="chart-dropdown" onchange="onClicksDropdownChange(this)">
+              <option value="phone">Apeluri</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="navigate">Direcții</option>
+              <option value="booking_url">Rezervări Link</option>
+            </select>
             <div class="chart-container">
               <canvas id="clicks-chart"></canvas>
             </div>
@@ -1551,6 +1589,8 @@
      ════════════════════════════════ */
   var isWeekly = false;
   var rawChartData = { views: [], subscribers: [], clicks: [] };
+  var currentViewsMode = 'business';
+  var currentClicksAction = 'phone';
 
   window.changePeriod = function(days, btn) {
     currentPeriod = days;
@@ -1714,9 +1754,15 @@
     renderChart('clicks-chart', cData, 'click-uri', 'clicks');
   }
 
-  function loadCharts(days) {
-    // Load views chart
-    apiFetch('/api/web/portal/' + businessId + '/analytics/views?days=' + days)
+  function loadViewsChart(days) {
+    var url;
+    if (currentViewsMode === 'business') {
+      url = '/api/web/portal/' + businessId + '/analytics/views?days=' + days;
+    } else {
+      var offerId = currentViewsMode.replace('offer-', '');
+      url = '/api/web/portal/' + businessId + '/analytics/offer-views?days=' + days + '&offer_id=' + offerId;
+    }
+    apiFetch(url)
       .then(function(res) { return res.json(); })
       .then(function(data) {
         rawChartData.views = data.data || data || [];
@@ -1724,8 +1770,9 @@
         renderChart('views-chart', displayData, 'vizualizări', 'views');
       })
       .catch(function() {});
+  }
 
-    // Load subscribers chart
+  function loadSubscribersChart(days) {
     apiFetch('/api/web/portal/' + businessId + '/analytics/subscribers?days=' + days)
       .then(function(res) { return res.json(); })
       .then(function(data) {
@@ -1734,9 +1781,10 @@
         renderChart('subscribers-chart', displayData, 'abonați', 'new_subscribers');
       })
       .catch(function() {});
+  }
 
-    // Load clicks chart
-    apiFetch('/api/web/portal/' + businessId + '/analytics/clicks?days=' + days)
+  function loadClicksChart(days) {
+    apiFetch('/api/web/portal/' + businessId + '/analytics/clicks?days=' + days + '&action_type=' + currentClicksAction)
       .then(function(res) { return res.json(); })
       .then(function(data) {
         rawChartData.clicks = data.data || data || [];
@@ -1745,6 +1793,23 @@
       })
       .catch(function() {});
   }
+
+  function loadCharts(days) {
+    currentPeriod = days;
+    loadViewsChart(days);
+    loadSubscribersChart(days);
+    loadClicksChart(days);
+  }
+
+  window.onViewsDropdownChange = function(sel) {
+    currentViewsMode = sel.value;
+    loadViewsChart(currentPeriod);
+  };
+
+  window.onClicksDropdownChange = function(sel) {
+    currentClicksAction = sel.value;
+    loadClicksChart(currentPeriod);
+  };
 
   /* ── Spin animation for loading button ── */
   var styleEl = document.createElement('style');

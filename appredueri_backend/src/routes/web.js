@@ -2196,6 +2196,51 @@ router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, 
   }
 });
 
+// Analytics offer-views timeline
+router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+    const offerId = parseInt(req.query.offer_id);
+
+    if (!offerId || isNaN(offerId)) {
+      return res.status(400).json({ message: "offer_id este obligatoriu" });
+    }
+
+    const ownerCheck = await pool.query(
+      "SELECT id FROM offers WHERE id = $1 AND business_id = $2",
+      [offerId, businessId]
+    );
+    if (ownerCheck.rows.length === 0) {
+      return res.status(404).json({ message: "Oferta nu a fost găsită" });
+    }
+
+    const result = await pool.query(
+      `SELECT DATE(viewed_at) as date, COUNT(*) as views
+       FROM offer_views WHERE offer_id = $1 AND viewed_at >= NOW() - INTERVAL '1 day' * $2
+       GROUP BY DATE(viewed_at) ORDER BY date ASC`,
+      [offerId, days]
+    );
+
+    const filledData = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      const found = result.rows.find(r => {
+        const rDate = r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date);
+        return rDate === dateStr;
+      });
+      filledData.push({ date: dateStr, views: parseInt(found?.views || 0) });
+    }
+
+    res.json({ days, data: filledData });
+  } catch (err) {
+    console.error("[Web API] Portal offer-views error:", err);
+    res.status(500).json({ message: "Eroare" });
+  }
+});
+
 // Analytics subscribers timeline
 router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, async (req, res) => {
   try {
@@ -2230,11 +2275,17 @@ router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner,
     const { businessId } = req.params;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
+    const validActionTypes = ['phone', 'whatsapp', 'navigate', 'booking_url'];
+    const actionType = validActionTypes.includes(req.query.action_type) ? req.query.action_type : null;
+
+    const params = actionType ? [businessId, days, actionType] : [businessId, days];
+    const actionFilter = actionType ? " AND action_type = $3" : "";
+
     const result = await pool.query(
       `SELECT DATE(created_at) as date, COUNT(*) as clicks
-       FROM business_clicks WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
+       FROM business_clicks WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2${actionFilter}
        GROUP BY DATE(created_at) ORDER BY date ASC`,
-      [businessId, days]
+      params
     );
 
     const filledData = [];
