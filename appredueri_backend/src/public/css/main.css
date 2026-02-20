@@ -4353,6 +4353,7 @@ ul, ol { list-style: none; }
   /* Business detail */
   .bd-hero {
     height: 120px;
+    border-radius: 0;
   }
 
   .bd-avatar {
