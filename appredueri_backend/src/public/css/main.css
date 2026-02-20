@@ -3814,6 +3814,7 @@ ul, ol { list-style: none; }
   .bd-hero {
     height: 180px;
     margin-bottom: -36px;
+    border-radius: 0;
   }
 
   .bd-avatar {
