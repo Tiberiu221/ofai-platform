@@ -2541,7 +2541,7 @@ ul, ol { list-style: none; }
 .bd-header-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 40px;
+  gap: 24px;
   align-items: start;
   padding-bottom: 16px;
 }
@@ -2575,11 +2575,11 @@ ul, ol { list-style: none; }
 .bd-gallery-compact-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 6px;
 }
 .bd-gallery-compact-item {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 4/3;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border);
