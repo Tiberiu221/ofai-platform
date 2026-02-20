@@ -151,7 +151,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         serverClientId: AppConfig.googleClientId,
       ).signIn();
       if (googleUser == null) {
-        // User cancelled the sign-in
         state = state.copyWith(status: AuthStatus.unauthenticated);
         return;
       }
