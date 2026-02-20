@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../models/business.dart';
 import '../models/pagination.dart';
+import '../services/analytics_service.dart';
 
 class SubscriptionsState {
   final List<Business> businesses;
@@ -123,6 +124,12 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
       } else {
         await _api.dio.post(ApiEndpoints.subscriptions, data: {'business_id': businessId});
       }
+
+      // Track follow/unfollow action
+      AnalyticsService.trackClick(
+        businessId: businessId,
+        actionType: wasSubscribed ? 'unfollow' : 'follow',
+      );
     } catch (e) {
       // Revert on failure
       if (wasSubscribed) {

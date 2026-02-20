@@ -15,6 +15,7 @@ import '../../widgets/review_card.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/animated_toggle_fab.dart';
+import '../../services/analytics_service.dart';
 
 class BusinessDetailScreen extends ConsumerWidget {
   final int businessId;
@@ -50,7 +51,10 @@ class BusinessDetailScreen extends ConsumerWidget {
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.share_outlined),
-                        onPressed: () => Launchers.shareBusiness(business.name, business.id),
+                        onPressed: () {
+                          Launchers.shareBusiness(business.name, business.id);
+                          AnalyticsService.trackClick(businessId: business.id, actionType: 'share');
+                        },
                       ),
                     ],
                     flexibleSpace: LayoutBuilder(
@@ -220,20 +224,29 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 icon: Icons.location_on_outlined,
                                 label: business.address!,
                                 onTap: business.lat != null && business.lng != null
-                                    ? () => Launchers.maps(business.lat!, business.lng!, address: business.address)
+                                    ? () {
+                                        Launchers.maps(business.lat!, business.lng!, address: business.address);
+                                        AnalyticsService.trackClick(businessId: business.id, actionType: 'navigate');
+                                      }
                                     : null,
                               ),
                             if (business.phone != null)
                               _InfoTile(
                                 icon: Icons.phone_outlined,
                                 label: business.phone!,
-                                onTap: () => Launchers.call(business.phone!),
+                                onTap: () {
+                                  Launchers.call(business.phone!);
+                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
+                                },
                               ),
                             if (business.website != null)
                               _InfoTile(
                                 icon: Icons.language,
                                 label: business.website!,
-                                onTap: () => Launchers.website(business.website!),
+                                onTap: () {
+                                  Launchers.website(business.website!);
+                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'website');
+                                },
                                 accent: true,
                               ),
                             const SizedBox(height: AppSpacing.xxl),
@@ -291,33 +304,35 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   _BookingChip(
                                     icon: Icons.phone,
                                     label: 'Telefon',
-                                    onTap: () => Launchers.call(business.booking!.phone!),
+                                    onTap: () {
+                                      Launchers.call(business.booking!.phone!);
+                                      AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
+                                    },
                                   ),
                                 if (business.booking!.whatsapp != null)
                                   _BookingChip(
                                     icon: Icons.message,
                                     label: 'WhatsApp',
-                                    onTap: () => Launchers.whatsApp(business.booking!.whatsapp!),
+                                    onTap: () {
+                                      Launchers.whatsApp(business.booking!.whatsapp!);
+                                      AnalyticsService.trackClick(businessId: business.id, actionType: 'whatsapp');
+                                    },
                                   ),
                                 if (business.booking!.url != null)
                                   _BookingChip(
                                     icon: Icons.language,
                                     label: 'Online',
-                                    onTap: () => Launchers.website(business.booking!.url!),
+                                    onTap: () {
+                                      Launchers.website(business.booking!.url!);
+                                      AnalyticsService.trackClick(businessId: business.id, actionType: 'booking_url');
+                                    },
                                   ),
                               ],
                             ),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
-                          // Pinch card — "Vreau o ofertă!" (shows when no active offers)
-                          if (business.showPinch)
-                            _PinchRequestCard(
-                              businessId: business.id,
-                              isLoggedIn: isLoggedIn,
-                            ),
-
-                          // Active offers section
+                          // Active offers have priority over pinch card — mutually exclusive
                           if (business.activeOffers != null && business.activeOffers!.isNotEmpty) ...[
                             Text('Oferte active', style: AppTypography.headlineSmall),
                             const SizedBox(height: AppSpacing.sm),
@@ -359,6 +374,12 @@ class BusinessDetailScreen extends ConsumerWidget {
                               ),
                             )),
                             const SizedBox(height: AppSpacing.xxl),
+                          ] else if (business.showPinch) ...[
+                            // Pinch card — "Vreau o ofertă!" (only when NO active offers)
+                            _PinchRequestCard(
+                              businessId: business.id,
+                              isLoggedIn: isLoggedIn,
+                            ),
                           ],
 
                           // Images gallery
@@ -385,11 +406,14 @@ class BusinessDetailScreen extends ConsumerWidget {
                           itemCount: business.images!.length,
                           separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
                           itemBuilder: (_, i) => GestureDetector(
-                            onTap: () => FullscreenGallery.open(
-                              context,
-                              business.images!.map((img) => img.url).toList(),
-                              initialIndex: i,
-                            ),
+                            onTap: () {
+                              FullscreenGallery.open(
+                                context,
+                                business.images!.map((img) => img.url).toList(),
+                                initialIndex: i,
+                              );
+                              AnalyticsService.trackClick(businessId: business.id, actionType: 'gallery');
+                            },
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
                               child: CachedNetworkImage(

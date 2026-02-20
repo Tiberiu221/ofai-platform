@@ -65,6 +65,9 @@ class ApiEndpoints {
   static String offerRequestCount(int businessId) => '/offer-requests/$businessId/count';
   static String offerRequestDelete(int businessId) => '/offer-requests/$businessId';
 
+  // Analytics (click tracking)
+  static const String clicks = '/offers/clicks';
+
   // Search
   static const String searchSuggest = '/api/web/search/suggest';
 

@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../models/offer.dart';
 import '../models/pagination.dart';
+import '../services/analytics_service.dart';
 
 class FavoritesState {
   final List<Offer> offers;
@@ -122,6 +123,16 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
         await _api.dio.delete(ApiEndpoints.deleteFavorite(offerId));
       } else {
         await _api.dio.post(ApiEndpoints.favorites, data: {'offer_id': offerId});
+      }
+
+      // Track favorite/unfavorite action
+      final offer = state.offers.where((o) => o.id == offerId).firstOrNull;
+      if (offer?.business != null) {
+        AnalyticsService.trackClick(
+          businessId: offer!.business!.id,
+          offerId: offerId,
+          actionType: wasFavorite ? 'unfavorite' : 'favorite',
+        );
       }
     } catch (e) {
       // Revert on failure

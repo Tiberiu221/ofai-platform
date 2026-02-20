@@ -18,6 +18,7 @@ import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/animated_toggle_fab.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../services/analytics_service.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -53,7 +54,10 @@ class OfferDetailScreen extends ConsumerWidget {
                     actions: [
                       IconButton(
                         icon: const Icon(Icons.share_outlined),
-                        onPressed: () => Launchers.shareOffer(offer.title, offer.id),
+                        onPressed: () {
+                          Launchers.shareOffer(offer.title, offer.id);
+                          AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'share');
+                        },
                       ),
                     ],
                     flexibleSpace: LayoutBuilder(
@@ -282,7 +286,10 @@ class OfferDetailScreen extends ConsumerWidget {
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                               child: GestureDetector(
                                 onTap: loc.lat != null && loc.lng != null
-                                    ? () => Launchers.maps(loc.lat!, loc.lng!, address: loc.address)
+                                    ? () {
+                                        Launchers.maps(loc.lat!, loc.lng!, address: loc.address);
+                                        AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'navigate');
+                                      }
                                     : null,
                                 child: Container(
                                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -335,19 +342,28 @@ class OfferDetailScreen extends ConsumerWidget {
                                   _ActionChip(
                                     icon: Icons.phone,
                                     label: 'Telefon',
-                                    onTap: () => Launchers.call(booking.phone!),
+                                    onTap: () {
+                                      Launchers.call(booking.phone!);
+                                      AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'phone');
+                                    },
                                   ),
                                 if (booking.whatsapp != null)
                                   _ActionChip(
                                     icon: Icons.message,
                                     label: 'WhatsApp',
-                                    onTap: () => Launchers.whatsApp(booking.whatsapp!),
+                                    onTap: () {
+                                      Launchers.whatsApp(booking.whatsapp!);
+                                      AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'whatsapp');
+                                    },
                                   ),
                                 if (booking.url != null)
                                   _ActionChip(
                                     icon: Icons.language,
                                     label: 'Online',
-                                    onTap: () => Launchers.website(booking.url!),
+                                    onTap: () {
+                                      Launchers.website(booking.url!);
+                                      AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'booking_url');
+                                    },
                                   ),
                               ],
                             ),
@@ -378,11 +394,14 @@ class OfferDetailScreen extends ConsumerWidget {
                           itemCount: offer.gallery!.length,
                           separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
                           itemBuilder: (_, i) => GestureDetector(
-                            onTap: () => FullscreenGallery.open(
-                              context,
-                              offer.gallery!.map((g) => g.url).toList(),
-                              initialIndex: i,
-                            ),
+                            onTap: () {
+                              FullscreenGallery.open(
+                                context,
+                                offer.gallery!.map((g) => g.url).toList(),
+                                initialIndex: i,
+                              );
+                              AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'gallery');
+                            },
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
                               child: CachedNetworkImage(
