@@ -148,6 +148,11 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ message: "Contul tău a fost suspendat" });
     }
 
+    // Google OAuth users have no password — must use Google Sign-In
+    if (!user.password_hash) {
+      return res.status(401).json({ message: "Acest cont folosește Google Sign-In. Te rugăm să te autentifici cu Google." });
+    }
+
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
       return res.status(401).json({ message: "Email sau parolă invalidă" });

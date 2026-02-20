@@ -453,7 +453,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
       pool.query(
-        "SELECT id, image_filename, sort_order FROM business_images WHERE business_id = $1 ORDER BY sort_order NULLS LAST, id ASC",
+        "SELECT id, image_filename, image_url, sort_order FROM business_images WHERE business_id = $1 ORDER BY sort_order NULLS LAST, id ASC",
         [id]
       ),
       pool.query(

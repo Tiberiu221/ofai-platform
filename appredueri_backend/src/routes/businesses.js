@@ -222,9 +222,9 @@ router.get("/:id", async (req, res) => {
       [id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
     ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
-    // 2. Imagini (Galerie)
+    // 2. Imagini (Galerie — Cloudinary image_url takes precedence over legacy image_filename)
     const imagesRes = await pool.query(
-      `SELECT id, image_filename, sort_order
+      `SELECT id, image_filename, image_url, sort_order
       FROM business_images
       WHERE business_id = $1
       ORDER BY sort_order NULLS LAST, id ASC
@@ -234,7 +234,7 @@ router.get("/:id", async (req, res) => {
 
     const images = imagesRes.rows.map((img) => ({
       id: img.id,
-      url: makeAbsoluteUrl(
+      url: img.image_url || makeAbsoluteUrl(
         baseUrl,
         `/uploads/businesses/${img.image_filename}`
       ),

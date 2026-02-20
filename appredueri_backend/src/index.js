@@ -22,6 +22,9 @@ const { initCronJobs } = require("./services/cronJobs");
 // Rate Limiting
 const { generalLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
 
+// Database pool (for sitemap)
+const pool = require("./db");
+
 // Import Rute
 const authRouter = require("./routes/auth");
 const citiesRouter = require("./routes/cities");

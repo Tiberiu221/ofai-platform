@@ -428,13 +428,13 @@ router.get("/:id", async (req, res) => {
       locations = allLocsRes.rows;
     }
 
-    // 4. Imagini Galerie
+    // 4. Imagini Galerie (Cloudinary image_url takes precedence over legacy image_filename)
     const galleryRes = await pool.query(
-      `SELECT image_filename FROM business_images WHERE business_id = $1 ORDER BY sort_order ASC LIMIT 5`,
+      `SELECT image_filename, image_url FROM business_images WHERE business_id = $1 ORDER BY sort_order ASC LIMIT 5`,
       [row.business_id]
     );
     const gallery = galleryRes.rows.map(img => ({
-      url: makeAbsoluteUrl(req, `/uploads/businesses/${img.image_filename}`)
+      url: img.image_url || makeAbsoluteUrl(req, `/uploads/businesses/${img.image_filename}`)
     }));
 
     const avg = parseFloat(row.rating_avg || 0);

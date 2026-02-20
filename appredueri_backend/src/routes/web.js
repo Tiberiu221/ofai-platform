@@ -1056,6 +1056,12 @@ router.post("/login", async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    // Google OAuth users have no password — must use Google Sign-In
+    if (!user.password_hash) {
+      return res.status(401).json({ message: "Acest cont folosește Google Sign-In. Te rugăm să te autentifici cu Google." });
+    }
+
     const isValid = await bcrypt.compare(password, user.password_hash);
     if (!isValid) {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
@@ -2732,9 +2738,9 @@ router.delete("/api/web/delete-account", requireWebAuth, async (req, res) => {
        WHERE review_id IN (SELECT id FROM reviews WHERE user_id = $1)`,
       [userId]
     );
-    // 8. Anonymize reviews
+    // 8. Anonymize reviews (remove user link, keep content for business ratings)
     await client.query(
-      "UPDATE reviews SET user_id = NULL, user_name = 'Utilizator sters' WHERE user_id = $1",
+      "UPDATE reviews SET user_id = NULL WHERE user_id = $1",
       [userId]
     );
     // 9. Anonymize business requests

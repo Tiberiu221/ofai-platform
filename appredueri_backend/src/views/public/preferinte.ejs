@@ -134,7 +134,7 @@
       if (res.ok) {
         const urlParams = new URLSearchParams(window.location.search);
         const returnTo = urlParams.get('returnTo');
-        if (returnTo) {
+        if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
           const separator = returnTo.includes('?') ? '&' : '?';
           window.location.href = returnTo + separator + 'prefs=1';
         } else {

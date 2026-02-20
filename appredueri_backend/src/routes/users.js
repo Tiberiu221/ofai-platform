@@ -449,9 +449,9 @@ router.delete("/me", auth, async (req, res) => {
       [userId]
     );
 
-    // 8. Anonymize reviews (keep content, remove user link)
+    // 8. Anonymize reviews (remove user link, keep content for business ratings)
     await client.query(
-      "UPDATE reviews SET user_id = NULL, user_name = 'Utilizator sters' WHERE user_id = $1",
+      "UPDATE reviews SET user_id = NULL WHERE user_id = $1",
       [userId]
     );
 
