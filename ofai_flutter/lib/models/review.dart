@@ -6,6 +6,8 @@ class Review {
   final String? firstName;
   final String? lastName;
   final ReviewResponse? response;
+  final String? reviewerProfilePictureUrl;
+  final bool reviewerShowPicture;
 
   Review({
     required this.id,
@@ -15,6 +17,8 @@ class Review {
     this.firstName,
     this.lastName,
     this.response,
+    this.reviewerProfilePictureUrl,
+    this.reviewerShowPicture = true,
   });
 
   String get reviewerName {
@@ -42,6 +46,8 @@ class Review {
       response: json['response'] != null && json['response'] is Map
           ? ReviewResponse.fromJson(json['response'] as Map<String, dynamic>)
           : null,
+      reviewerProfilePictureUrl: json['reviewer_profile_picture_url'] as String?,
+      reviewerShowPicture: json['reviewer_show_picture'] as bool? ?? true,
     );
   }
 }

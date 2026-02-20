@@ -56,6 +56,7 @@
         <th>Categorie</th>
         <th>Adresă</th>
         <th>Telefon</th>
+        <th>Verificat</th>
         <th style="width: 220px;">Acțiuni</th>
       </tr>
     </thead>
@@ -68,6 +69,7 @@
           <td><%= b.category_name %></td>
           <td><%= b.address || "" %></td>
           <td><%= b.phone || "" %></td>
+          <td><%= b.is_verified ? '✅' : '' %></td>
           <td>
             <a href="/admin/businesses/<%= b.id %>/locations" class="button button-small info">
               Locații

@@ -155,7 +155,7 @@ router.get("/", async (req, res) => {
 
     const topBusinesses = await pool.query(`
       SELECT b.id, b.name, b.logo_url, b.cover_image_url,
-             b.lat, b.lng,
+             b.lat, b.lng, b.is_verified,
              ci.name as city_name, cat.name as category_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
@@ -165,7 +165,7 @@ router.get("/", async (req, res) => {
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
-      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, ci.name, cat.name
+      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, ci.name, cat.name
       HAVING COUNT(DISTINCT o.id) > 0
       ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2) DESC, COALESCE(AVG(r.rating), 0) DESC
       LIMIT 8
@@ -420,7 +420,7 @@ router.get("/business-uri", async (req, res) => {
 
     const businessesResult = await pool.query(
       `SELECT b.id, b.name, b.logo_url, b.cover_image_url,
-              b.lat, b.lng,
+              b.lat, b.lng, b.is_verified,
               ci.name as city_name, cat.name as category_name,
               COALESCE(AVG(r.rating), 0) as rating_avg,
               COUNT(DISTINCT r.id) as rating_count,
@@ -431,7 +431,7 @@ router.get("/business-uri", async (req, res) => {
        LEFT JOIN reviews r ON r.business_id = b.id
        LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
        ${whereClause}
-       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, ci.name, cat.name
+       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, ci.name, cat.name
        ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
@@ -695,7 +695,7 @@ router.get("/business/:id", async (req, res) => {
 
     const businessRes = await pool.query(`
       SELECT b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,
-             b.logo_url, b.cover_image_url,
+             b.logo_url, b.cover_image_url, b.is_verified,
              b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
              c.id as city_id, c.name as city_name,
              cat.id as cat_id, cat.name as cat_name,
@@ -776,6 +776,8 @@ router.get("/business/:id", async (req, res) => {
       SELECT r.id, r.rating, r.comment, r.created_at,
              COALESCE(u.first_name, 'Utilizator') as first_name,
              COALESCE(u.last_name, '') as last_name,
+             u.profile_picture_url,
+             COALESCE(u.show_picture_in_reviews, TRUE) as show_picture_in_reviews,
              rr.response_text, rr.created_at as response_date
       FROM reviews r
       LEFT JOIN users u ON r.user_id = u.id
@@ -865,6 +867,7 @@ router.get("/business/:id", async (req, res) => {
       lng: b.lng,
       logo_url: b.logo_url,
       cover_image: coverImage,
+      is_verified: !!b.is_verified,
       city: { id: b.city_id, name: b.city_name },
       category: { id: b.cat_id, name: b.cat_name },
       rating: parseFloat(parseFloat(b.rating_avg).toFixed(1)),
@@ -1270,22 +1273,23 @@ router.get("/orase", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
-    const pointsRes = await pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]);
+    const { getUserBadges } = require("../services/badgeService");
+
+    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges] = await Promise.all([
+      pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
+      pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
+      pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
+      pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]),
+      pool.query("SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [req.webUser.id]),
+      pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]),
+      getUserBadges(req.webUser.id).catch(err => {
+        console.error("[Web] Badges fetch error:", err.message);
+        return [];
+      }),
+    ]);
+
     const userPoints = pointsRes.rows[0]?.total_points || 0;
-
-    const favCount = await pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
-    const followCount = await pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]);
-    const reviewCount = await pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]);
-
-    // Business request status (most recent)
-    const bizReqRes = await pool.query(
-      "SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1",
-      [req.webUser.id]
-    );
     const bizRequest = bizReqRes.rows[0] || null;
-
-    // Get last_profile_edit
-    const userDetails = await pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]);
     const lastProfileEdit = userDetails.rows[0]?.last_profile_edit || null;
 
     res.render("public/account", {
@@ -1297,6 +1301,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       reviewCount: parseInt(reviewCount.rows[0].total),
       bizRequest,
       lastProfileEdit,
+      userBadges,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);
@@ -1369,8 +1374,23 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
   }
 });
 
-router.get("/setari", requireWebAuth, (req, res) => {
-  res.render("public/setari", { activePage: "setari", webUser: req.webUser });
+router.get("/setari", requireWebAuth, async (req, res) => {
+  try {
+    const userRes = await pool.query(
+      "SELECT show_picture_in_reviews FROM users WHERE id = $1",
+      [req.webUser.id]
+    );
+    const userSettings = userRes.rows[0] || {};
+
+    res.render("public/setari", {
+      activePage: "setari",
+      webUser: req.webUser,
+      showPictureInReviews: userSettings.show_picture_in_reviews !== false,
+    });
+  } catch (err) {
+    console.error("[Web] Settings error:", err);
+    res.status(500).send("Eroare la încărcarea setărilor");
+  }
 });
 
 router.get("/preferinte", requireWebAuth, async (req, res) => {
@@ -2650,6 +2670,66 @@ router.put("/api/web/profile", requireWebAuth, async (req, res) => {
     res.json({ success: true, message: "Profilul a fost actualizat!" });
   } catch (err) {
     console.error("[Web API] Profile update error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// --- Update Account Settings (show_picture_in_reviews etc.) ---
+router.put("/api/web/account", requireWebAuth, async (req, res) => {
+  try {
+    const { show_picture_in_reviews } = req.body || {};
+
+    await pool.query(
+      "UPDATE users SET show_picture_in_reviews = $1 WHERE id = $2",
+      [show_picture_in_reviews !== false, req.webUser.id]
+    );
+
+    res.json({ success: true, message: "Setările au fost salvate!" });
+  } catch (err) {
+    console.error("[Web API] Account settings update error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// --- Profile Picture Upload ---
+router.post("/api/web/account/profile-picture", requireWebAuth, portalUpload.single("profile_picture"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
+
+    // Delete old Cloudinary picture if present
+    const oldRes = await pool.query("SELECT profile_picture_url FROM users WHERE id = $1", [req.webUser.id]);
+    const oldUrl = oldRes.rows[0]?.profile_picture_url;
+    if (oldUrl && oldUrl.includes("cloudinary.com")) {
+      const oldId = getPublicIdFromUrl(oldUrl);
+      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, "profile");
+    await pool.query("UPDATE users SET profile_picture_url = $1 WHERE id = $2", [result.url, req.webUser.id]);
+
+    res.json({ success: true, profile_picture_url: result.url });
+  } catch (err) {
+    console.error("[Web API] Profile picture upload error:", err);
+    res.status(500).json({ message: "Eroare la upload" });
+  }
+});
+
+// --- Profile Picture Delete ---
+router.delete("/api/web/account/profile-picture", requireWebAuth, async (req, res) => {
+  try {
+    const oldRes = await pool.query("SELECT profile_picture_url FROM users WHERE id = $1", [req.webUser.id]);
+    const oldUrl = oldRes.rows[0]?.profile_picture_url;
+
+    if (oldUrl && oldUrl.includes("cloudinary.com")) {
+      const oldId = getPublicIdFromUrl(oldUrl);
+      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
+    }
+
+    await pool.query("UPDATE users SET profile_picture_url = NULL WHERE id = $1", [req.webUser.id]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Profile picture delete error:", err);
     res.status(500).json({ message: "Eroare server" });
   }
 });

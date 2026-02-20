@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/subscriptions_provider.dart';
@@ -117,12 +119,39 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               const SizedBox(height: AppSpacing.xxl),
 
               // Avatar + name
-              InitialAvatar(
-                initials: user?.initials ?? 'U',
-                radius: 40,
-                backgroundColor: AppColors.accent,
-                textStyle: AppTypography.displaySmall.copyWith(
-                  color: AppColors.bgPrimary,
+              GestureDetector(
+                onTap: () => _showProfilePictureOptions(context, ref),
+                child: Stack(
+                  children: [
+                    if (user?.profilePictureUrl != null)
+                      CircleAvatar(
+                        radius: 40,
+                        backgroundImage: NetworkImage(user!.profilePictureUrl!),
+                        backgroundColor: AppColors.bgSecondary,
+                      )
+                    else
+                      InitialAvatar(
+                        initials: user?.initials ?? 'U',
+                        radius: 40,
+                        backgroundColor: AppColors.accent,
+                        textStyle: AppTypography.displaySmall.copyWith(
+                          color: AppColors.bgPrimary,
+                        ),
+                      ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.bgPrimary, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -168,6 +197,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   ),
                 ],
               ),
+
+              // Badges section
+              if (user?.badges != null && user!.badges!.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+                Text('Insigne', style: AppTypography.labelLarge),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: user!.badges!.map((badge) => _BadgeChip(badge: badge)).toList(),
+                ),
+              ],
 
               // Business request status card
               if (bizReqState.latestRequest != null) ...[
@@ -264,6 +305,128 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     );
   }
 
+  void _showProfilePictureOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.accent),
+              title: const Text('Alege din galerie'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadImage(context, ref);
+              },
+            ),
+            if (ref.read(authProvider).user?.profilePictureUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Sterge poza'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _deleteProfilePicture(context, ref);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadImage(BuildContext context, WidgetRef ref) async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 600,
+        maxHeight: 600,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Se incarca poza...')),
+      );
+
+      await ref.read(authProvider.notifier).updateProfilePicture(picked.path);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Poza de profil actualizata!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Eroare: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _deleteProfilePicture(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authProvider.notifier).deleteProfilePicture();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Poza de profil stearsa')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Eroare: ${e.toString()}')),
+      );
+    }
+  }
+}
+
+class _BadgeChip extends StatelessWidget {
+  final UserBadge badge;
+  const _BadgeChip({required this.badge});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _parseColor(badge.color);
+    return Tooltip(
+      message: badge.description ?? badge.name,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.verified, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              badge.name,
+              style: AppTypography.caption.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _parseColor(String hex) {
+    hex = hex.replaceFirst('#', '');
+    if (hex.length == 6) hex = 'FF$hex';
+    return Color(int.parse(hex, radix: 16));
+  }
 }
 
 class _BusinessRequestStatusCard extends StatelessWidget {

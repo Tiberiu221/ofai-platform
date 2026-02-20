@@ -130,6 +130,20 @@
   <label for="website">Website</label>
   <input type="text" id="website" name="website" value="<%= business.website || '' %>" />
 
+  <!-- SECȚIUNE VERIFICARE -->
+  <h2 class="section-title">Verificare</h2>
+  <div style="margin-bottom: 16px;">
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+      <input type="checkbox" name="is_verified" <%= business.is_verified ? 'checked' : '' %> />
+      <strong>Business verificat</strong> (badge vizibil pe site si in app)
+    </label>
+    <% if (business.verified_at) { %>
+      <p style="color: #888; font-size: 0.85rem; margin-top: 4px;">
+        Verificat la: <%= new Date(business.verified_at).toLocaleDateString('ro-RO') %>
+      </p>
+    <% } %>
+  </div>
+
   <!-- SECȚIUNE LOCAȚII & PROGRAMĂRI -->
   <h2 class="section-title">📍 Locații &amp; programări</h2>
 

@@ -16,9 +16,10 @@ router.get("/business/:id", async (req, res) => {
           pool.query(
             `SELECT r.id, r.rating, r.comment, r.created_at,
               u.first_name, u.last_name,
+              u.profile_picture_url, u.show_picture_in_reviews,
               rr.response_text, rr.created_at as response_date
              FROM reviews r
-             JOIN users u ON r.user_id = u.id
+             LEFT JOIN users u ON r.user_id = u.id
              LEFT JOIN review_responses rr ON rr.review_id = r.id
              WHERE r.business_id = $1
              ORDER BY r.created_at DESC
@@ -38,6 +39,8 @@ router.get("/business/:id", async (req, res) => {
           created_at: r.created_at,
           first_name: r.first_name,
           last_name: r.last_name,
+          reviewer_profile_picture_url: r.show_picture_in_reviews ? r.profile_picture_url : null,
+          reviewer_show_picture: r.show_picture_in_reviews || false,
           response: r.response_text ? {
             text: r.response_text,
             date: r.response_date,
@@ -46,7 +49,7 @@ router.get("/business/:id", async (req, res) => {
         res.json(paginatedResponse(reviews, total, page, limit));
     } catch (err) {
         console.error(err);
-        res.status(500).send("Eroare server");
+        res.status(500).json({ message: "Eroare server" });
     }
 });
 
@@ -166,6 +169,14 @@ router.post("/", authenticateToken, async (req, res) => {
               created_at: new Date().toISOString(),
             });
           }
+        }
+
+        // Badge check (fire-and-forget, only for new reviews)
+        if (isNewReview) {
+          try {
+            const { checkAndAwardBadges } = require("../services/badgeService");
+            await checkAndAwardBadges(user_id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
+          } catch (e) { /* badge check should never block */ }
         }
 
         console.log("=== REVIEW POST END ===");

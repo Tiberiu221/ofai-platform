@@ -24,6 +24,7 @@ class Business {
   final List<ActiveOffer>? activeOffers;
   final int? offerRequestCount;
   final bool? showPinchFlag;
+  final bool isVerified;
 
   Business({
     required this.id,
@@ -47,6 +48,7 @@ class Business {
     this.activeOffers,
     this.offerRequestCount,
     this.showPinchFlag,
+    this.isVerified = false,
   });
 
   String get cityName => city?.name ?? '';
@@ -91,6 +93,7 @@ class Business {
           ? (json['offerRequestCount'] as Map)['total'] as int? ?? 0
           : json['offerRequestCount'] as int?,
       showPinchFlag: json['showPinch'] as bool?,
+      isVerified: json['is_verified'] as bool? ?? false,
     );
   }
 

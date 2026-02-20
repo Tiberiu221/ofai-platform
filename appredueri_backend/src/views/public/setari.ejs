@@ -42,6 +42,18 @@
       </a>
     </div>
 
+    <!-- Privacy -->
+    <div class="settings-section" style="margin-bottom: 20px;">
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px;">Confidentialitate</h3>
+      <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;">
+        <input type="checkbox" id="show-picture-toggle" <%= webUser.show_picture_in_reviews !== false ? 'checked' : '' %> onchange="togglePictureVisibility(this.checked)" style="accent-color: var(--accent); width: 18px; height: 18px;">
+        <div>
+          <span style="font-weight: 600; font-size: 0.9rem;">Afiseaza poza de profil in recenzii</span>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 2px;">Cand este activ, poza ta de profil va fi vizibila in recenziile tale</p>
+        </div>
+      </label>
+    </div>
+
     <!-- Logout -->
     <div class="settings-section reveal">
       <a href="/logout" class="btn btn-secondary" style="width: 100%;">Deconectare</a>
@@ -135,6 +147,25 @@
     } catch(err) { errEl.textContent = 'Eroare de rețea'; errEl.style.display = ''; }
     return false;
   }
+</script>
+
+<script>
+async function togglePictureVisibility(show) {
+  try {
+    const csrfToken = typeof getCsrfToken === 'function' ? getCsrfToken() : '';
+    const res = await fetch('/api/web/account', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) },
+      body: JSON.stringify({ show_picture_in_reviews: show })
+    });
+    const data = await res.json();
+    if (data.success || res.ok) {
+      if (typeof showToast === 'function') showToast(show ? 'Poza vizibila in recenzii' : 'Poza ascunsa din recenzii', 'success');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Eroare', 'error');
+  }
+}
 </script>
 
 <%- include('partials/footer') %>

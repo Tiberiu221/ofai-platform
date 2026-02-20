@@ -62,11 +62,22 @@ class BusinessCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          business.name,
-                          style: AppTypography.labelLarge,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                business.name,
+                                style: AppTypography.labelLarge,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (business.isVerified)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: Icon(Icons.verified, color: AppColors.accent, size: 16),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 2),
                         Text(

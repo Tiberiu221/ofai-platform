@@ -61,6 +61,15 @@ const IMAGE_CONFIGS = {
     gravity: "auto",
     quality: "auto:good",
     format: "webp"
+  },
+  profile: {
+    folder: "users/profiles",
+    width: 300,
+    height: 300,
+    crop: "fill",
+    gravity: "face",
+    quality: "auto:good",
+    format: "webp"
   }
 };
 

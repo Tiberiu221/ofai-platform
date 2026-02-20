@@ -61,6 +61,7 @@ router.get("/", async (req, res) => {
         b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
         b.cover_image_url as business_cover,
+        b.is_verified as business_verified,
 
         c.name as city_name, cat.name as category_name,
 
@@ -146,7 +147,8 @@ router.get("/", async (req, res) => {
           lat: row.lat,
           lng: row.lng,
           rating: parseFloat(avg.toFixed(1)),
-          rating_count: count
+          rating_count: count,
+          is_verified: row.business_verified || false
         }
       };
     });
@@ -215,6 +217,7 @@ router.get("/feed", auth, async (req, res) => {
         b.id as business_id, b.name as business_name,
         b.lat, b.lng, b.logo_url as business_logo,
         b.cover_image_url as business_cover,
+        b.is_verified as business_verified,
         c.name as city_name, cat.name as category_name,
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
         (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
@@ -262,7 +265,8 @@ router.get("/feed", auth, async (req, res) => {
         lat: row.lat,
         lng: row.lng,
         rating: parseFloat(parseFloat(row.rating_avg || 0).toFixed(1)),
-        rating_count: parseInt(row.rating_count || 0)
+        rating_count: parseInt(row.rating_count || 0),
+        is_verified: row.business_verified || false
       }
     }));
 
@@ -305,6 +309,7 @@ router.get("/:id", async (req, res) => {
         b.lng as business_lng,
         b.logo_url as business_logo,
         b.cover_image_url as business_cover,
+        b.is_verified as business_verified,
         -- Booking business
         b.booking_type as biz_booking_type,
         b.booking_phone as biz_booking_phone,
@@ -445,7 +450,8 @@ router.get("/:id", async (req, res) => {
         city: { id: row.city_id, name: row.city_name },
         category: { id: row.cat_id, name: row.cat_name },
         rating: parseFloat(avg.toFixed(1)),
-        rating_count: count
+        rating_count: count,
+        is_verified: row.business_verified || false
       },
 
       // Locațiile pot avea booking propriu (de pe business_locations)

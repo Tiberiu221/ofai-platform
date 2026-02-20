@@ -119,6 +119,12 @@ router.post("/", async (req, res) => {
       [userId, parseInt(offer_id, 10)]
     );
 
+    // Badge check (fire-and-forget)
+    try {
+      const { checkAndAwardBadges } = require("../services/badgeService");
+      await checkAndAwardBadges(userId, ['first_favorite']);
+    } catch (e) { /* badge check should never block */ }
+
     res.status(201).json({ message: "Oferta a fost adaugata la favorite" });
   } catch (err) {
     console.error("Eroare la POST /favorites:", err);

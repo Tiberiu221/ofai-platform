@@ -118,7 +118,18 @@ class BusinessDetailScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Name
-                          Text(business.name, style: AppTypography.headlineLarge),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(business.name, style: AppTypography.headlineLarge),
+                              ),
+                              if (business.isVerified)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 6),
+                                  child: Icon(Icons.verified, color: AppColors.accent, size: 24),
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             [business.categoryName, business.cityName]

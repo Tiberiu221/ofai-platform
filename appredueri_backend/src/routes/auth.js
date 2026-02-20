@@ -91,6 +91,12 @@ router.post("/register", async (req, res) => {
       [user.id]
     );
 
+    // Badge check (fire-and-forget)
+    try {
+      const { checkAndAwardBadges } = require("../services/badgeService");
+      await checkAndAwardBadges(user.id, ['early_adopter']);
+    } catch (e) { /* badge check should never block */ }
+
     const token = signToken({ id: user.id });
     const refreshToken = await createRefreshToken(user.id);
 

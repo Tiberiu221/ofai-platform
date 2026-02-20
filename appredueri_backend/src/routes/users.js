@@ -21,7 +21,8 @@ router.get("/me", auth, async (req, res) => {
         preferred_category_ids,
         role,
         profile_picture_url,
-        password_hash
+        password_hash,
+        show_picture_in_reviews
       FROM users
       WHERE id = $1
       `,
@@ -33,6 +34,16 @@ router.get("/me", auth, async (req, res) => {
     }
 
     const user = result.rows[0];
+
+    const { getUserBadges } = require("../services/badgeService");
+    const badges = await getUserBadges(userId);
+
+    // Fetch points from user_points table
+    const pointsRes = await pool.query(
+      "SELECT total_points FROM user_points WHERE user_id = $1",
+      [userId]
+    );
+    const points = pointsRes.rows[0]?.total_points ?? 0;
 
     res.json({
       id: user.id,
@@ -47,6 +58,9 @@ router.get("/me", auth, async (req, res) => {
       role: user.role || 'user',
       profile_picture_url: user.profile_picture_url || null,
       has_password: !!user.password_hash,
+      show_picture_in_reviews: user.show_picture_in_reviews !== false,
+      points,
+      badges,
     });
   } catch (err) {
     console.error("Eroare la GET /users/me:", err);
@@ -54,24 +68,27 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
-// PUT /users/me - actualizeaza first_name / last_name
+// PUT /users/me - actualizeaza first_name / last_name / show_picture_in_reviews
 router.put("/me", auth, async (req, res) => {
   const userId = req.user.id;
-  const { first_name, last_name } = req.body || {};
+  const { first_name, last_name, show_picture_in_reviews } = req.body || {};
 
   try {
     const safeFirst =
       typeof first_name === "string" ? first_name.trim().slice(0, 100) : null;
     const safeLast =
       typeof last_name === "string" ? last_name.trim().slice(0, 100) : null;
+    const showPicture =
+      typeof show_picture_in_reviews === "boolean" ? show_picture_in_reviews : null;
 
     const result = await pool.query(
       `
       UPDATE users
       SET
         first_name = $1,
-        last_name = $2
-      WHERE id = $3
+        last_name = $2,
+        show_picture_in_reviews = COALESCE($3, show_picture_in_reviews)
+      WHERE id = $4
       RETURNING
         id,
         email,
@@ -79,9 +96,10 @@ router.put("/me", auth, async (req, res) => {
         first_name,
         last_name,
         preferred_city_ids,
-        preferred_category_ids
+        preferred_category_ids,
+        show_picture_in_reviews
       `,
-      [safeFirst, safeLast, userId]
+      [safeFirst, safeLast, showPicture, userId]
     );
 
     if (result.rows.length === 0) {
@@ -100,6 +118,7 @@ router.put("/me", auth, async (req, res) => {
       preferred_category_ids: Array.isArray(user.preferred_category_ids)
         ? user.preferred_category_ids.map(Number).filter(Number.isInteger)
         : [],
+      show_picture_in_reviews: user.show_picture_in_reviews !== false,
     });
   } catch (err) {
     console.error("Eroare la PUT /users/me:", err);
@@ -166,6 +185,98 @@ router.put("/me/preferences", auth, async (req, res) => {
   } catch (err) {
     console.error("Eroare la PUT /users/me/preferences:", err);
     res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// ============================================
+// PROFILE PICTURE (Mobile upload / delete)
+// ============================================
+
+const multer = require("multer");
+const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
+const { createImageFilter } = require("../helpers/validate");
+
+const profilePictureUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: createImageFilter(),
+});
+
+// POST /users/me/profile-picture - incarca o poza de profil
+router.post("/me/profile-picture", auth, profilePictureUpload.single("profile_picture"), async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "Nicio imagine trimisa" });
+    }
+
+    // Delete old profile picture from Cloudinary if it exists
+    const currentUser = await pool.query(
+      "SELECT profile_picture_url FROM users WHERE id = $1",
+      [userId]
+    );
+    const oldUrl = currentUser.rows[0]?.profile_picture_url;
+    if (oldUrl && oldUrl.includes("cloudinary.com")) {
+      const oldPublicId = getPublicIdFromUrl(oldUrl);
+      if (oldPublicId) {
+        deleteFromCloudinary(oldPublicId).catch(err =>
+          console.error("[Users] Failed to delete old profile picture:", err.message)
+        );
+      }
+    }
+
+    // Upload new picture
+    const uploaded = await uploadToCloudinary(req.file.buffer, "profile", `user_${userId}_profile`);
+
+    await pool.query(
+      "UPDATE users SET profile_picture_url = $1 WHERE id = $2",
+      [uploaded.url, userId]
+    );
+
+    return res.json({
+      profile_picture_url: uploaded.url,
+      message: "Poza de profil actualizata cu succes",
+    });
+  } catch (err) {
+    console.error("Eroare la POST /users/me/profile-picture:", err);
+    return res.status(500).json({ message: "Eroare server la incarcarea pozei" });
+  }
+});
+
+// DELETE /users/me/profile-picture - sterge poza de profil
+router.delete("/me/profile-picture", auth, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const currentUser = await pool.query(
+      "SELECT profile_picture_url FROM users WHERE id = $1",
+      [userId]
+    );
+
+    if (currentUser.rows.length === 0) {
+      return res.status(404).json({ message: "Userul nu a fost gasit" });
+    }
+
+    const oldUrl = currentUser.rows[0].profile_picture_url;
+    if (oldUrl && oldUrl.includes("cloudinary.com")) {
+      const oldPublicId = getPublicIdFromUrl(oldUrl);
+      if (oldPublicId) {
+        deleteFromCloudinary(oldPublicId).catch(err =>
+          console.error("[Users] Failed to delete profile picture from Cloudinary:", err.message)
+        );
+      }
+    }
+
+    await pool.query(
+      "UPDATE users SET profile_picture_url = NULL WHERE id = $1",
+      [userId]
+    );
+
+    return res.json({ message: "Poza de profil stearsa cu succes" });
+  } catch (err) {
+    console.error("Eroare la DELETE /users/me/profile-picture:", err);
+    return res.status(500).json({ message: "Eroare server la stergerea pozei" });
   }
 });
 
@@ -299,11 +410,15 @@ router.delete("/me", auth, async (req, res) => {
       return res.status(404).json({ message: "Utilizator negasit" });
     }
 
-    const isValid = await bcrypt.compare(password, userRes.rows[0].password_hash);
+    const hash = userRes.rows[0].password_hash;
 
-    if (!isValid) {
-      client.release();
-      return res.status(401).json({ message: "Parola este incorecta" });
+    // Google-only users (password_hash = NULL) — skip password confirmation
+    if (hash) {
+      const isValid = await bcrypt.compare(password, hash);
+      if (!isValid) {
+        client.release();
+        return res.status(401).json({ message: "Parola este incorecta" });
+      }
     }
 
     // BEGIN TRANSACTION

@@ -118,11 +118,22 @@ class OfferCard extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xs),
                   ],
                   if (offer.business != null) ...[
-                    Text(
-                      offer.business!.name,
-                      style: AppTypography.caption,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            offer.business!.name,
+                            style: AppTypography.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (offer.business!.isVerified)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(Icons.verified, color: AppColors.accent, size: 14),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 2),
                     Builder(builder: (_) {
@@ -221,11 +232,22 @@ class OfferCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   if (offer.business != null) ...[
-                    Text(
-                      offer.business!.name,
-                      style: AppTypography.caption,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            offer.business!.name,
+                            style: AppTypography.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (offer.business!.isVerified)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(Icons.verified, color: AppColors.accent, size: 14),
+                          ),
+                      ],
                     ),
                     // Row 1: rating + category
                     Padding(

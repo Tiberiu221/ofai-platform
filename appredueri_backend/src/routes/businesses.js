@@ -73,6 +73,7 @@ router.get("/", async (req, res) => {
         b.city_id,
         b.category_id,
         b.logo_url,
+        b.is_verified,
         c.name AS city_name,
         cat.name AS category_name,
         COALESCE(o.active_offers_count, 0) AS active_offers_count,
@@ -146,6 +147,7 @@ router.get("/", async (req, res) => {
       active_offers_count: Number(row.active_offers_count || 0),
       rating: parseFloat(parseFloat(row.rating_avg || 0).toFixed(1)),
       rating_count: parseInt(row.rating_count || 0),
+      is_verified: row.is_verified || false,
     }));
 
     return res.json(paginatedResponse(businesses, total, page, limit));
@@ -171,6 +173,7 @@ router.get("/:id", async (req, res) => {
         b.id, b.name, b.address, b.phone, b.website, b.lat, b.lng,
         b.logo_url,
         b.cover_image_url,
+        b.is_verified,
         b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
         c.id as city_id, c.name as city_name,
         cat.id as cat_id, cat.name as cat_name,
@@ -378,6 +381,8 @@ router.get("/:id", async (req, res) => {
       activeOffers,
       // Offer request stats
       offerRequestCount,
+      // Verified badge
+      is_verified: b.is_verified || false,
       // Show pinch button flag
       showPinch
     });

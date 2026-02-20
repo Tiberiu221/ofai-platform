@@ -353,7 +353,7 @@ router.get("/businesses", async (req, res) => {
       SELECT
         b.id, b.name, c.id AS city_id, c.name AS city_name,
         cat.id AS category_id, cat.name AS category_name,
-        b.address, b.phone, b.website, b.lat, b.lng
+        b.address, b.phone, b.website, b.lat, b.lng, b.is_verified
       FROM businesses b
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
@@ -449,7 +449,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       locationsResult,
       ownersResult, // NEW
     ] = await Promise.all([
-      pool.query("SELECT id, name, city_id, category_id, address, lat, lng, phone, website, description, logo_url, cover_image_url FROM businesses WHERE id = $1", [id]),
+      pool.query("SELECT id, name, city_id, category_id, address, lat, lng, phone, website, description, logo_url, cover_image_url, is_verified, verified_at FROM businesses WHERE id = $1", [id]),
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
       pool.query(
@@ -513,6 +513,8 @@ router.post("/businesses/:id/edit", async (req, res) => {
       locations,
     } = req.body;
 
+    const isVerified = req.body.is_verified === 'on';
+
     // 1) Update business
     await pool.query(
       `
@@ -526,8 +528,10 @@ router.post("/businesses/:id/edit", async (req, res) => {
         lng = $6,
         phone = $7,
         website = $8,
-        description = $9
-      WHERE id = $10
+        description = $9,
+        is_verified = $10,
+        verified_at = CASE WHEN $10::boolean = true AND (is_verified IS NULL OR is_verified = false) THEN NOW() ELSE verified_at END
+      WHERE id = $11
       `,
       [
         name,
@@ -539,6 +543,7 @@ router.post("/businesses/:id/edit", async (req, res) => {
         phone || null,
         website || null,
         description || null,
+        isVerified,
         id,
       ]
     );

@@ -123,6 +123,12 @@ router.post("/", async (req, res) => {
         business_id: parseInt(business_id, 10),
         created_at: new Date().toISOString(),
       });
+
+      // Badge check (fire-and-forget)
+      try {
+        const { checkAndAwardBadges } = require("../services/badgeService");
+        await checkAndAwardBadges(userId, ['social_butterfly', 'loyal_fan']);
+      } catch (e) { /* badge check should never block */ }
     }
 
     res.status(201).json({ message: "Business-ul a fost urmarit" });

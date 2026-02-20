@@ -28,7 +28,14 @@ class ReviewCard extends StatelessWidget {
           // Header: avatar + name + date
           Row(
             children: [
-              InitialAvatar(initials: review.reviewerInitials),
+              if (review.reviewerProfilePictureUrl != null && review.reviewerShowPicture)
+                CircleAvatar(
+                  radius: 18,
+                  backgroundImage: NetworkImage(review.reviewerProfilePictureUrl!),
+                  backgroundColor: AppColors.bgSecondary,
+                )
+              else
+                InitialAvatar(initials: review.reviewerInitials),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(

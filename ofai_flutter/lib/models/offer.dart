@@ -83,6 +83,7 @@ class OfferBusiness {
   final double? lng;
   final double? rating;
   final int? ratingCount;
+  final bool isVerified;
 
   OfferBusiness({
     required this.id,
@@ -95,6 +96,7 @@ class OfferBusiness {
     this.lng,
     this.rating,
     this.ratingCount,
+    this.isVerified = false,
   });
 
   factory OfferBusiness.fromJson(Map<String, dynamic> json) {
@@ -109,6 +111,7 @@ class OfferBusiness {
       lng: (json['lng'] as num?)?.toDouble(),
       rating: (json['rating'] as num?)?.toDouble(),
       ratingCount: json['rating_count'] as int?,
+      isVerified: json['is_verified'] as bool? ?? false,
     );
   }
 }

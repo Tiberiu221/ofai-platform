@@ -13,11 +13,22 @@
 
     <!-- Profile Header -->
     <div class="account-profile-card reveal">
-      <div class="account-avatar">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <div class="profile-upload-wrapper">
+          <div class="account-avatar" id="profile-avatar">
+            <% if (webUser.profile_picture_url) { %>
+              <img src="<%= webUser.profile_picture_url %>" alt="" width="80" height="80" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+            <% } else { %>
+              <%= webUser.first_name ? webUser.first_name.charAt(0).toUpperCase() : 'U' %>
+            <% } %>
+          </div>
+          <button type="button" class="profile-upload-btn" onclick="document.getElementById('profile-pic-input').click()" title="Schimba poza de profil">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+          <input type="file" id="profile-pic-input" accept="image/jpeg,image/png,image/webp" style="display: none;" onchange="uploadProfilePicture(this)">
+        </div>
         <% if (webUser.profile_picture_url) { %>
-          <img src="<%= webUser.profile_picture_url %>" alt="" width="80" height="80" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-        <% } else { %>
-          <%= webUser.first_name ? webUser.first_name.charAt(0).toUpperCase() : 'U' %>
+          <button type="button" class="btn-text-danger" onclick="deleteProfilePicture()" style="font-size: 0.75rem; margin-top: 4px;">Sterge poza</button>
         <% } %>
       </div>
       <div class="account-info">
@@ -83,6 +94,22 @@
         <p class="gamification-next">Încă <%= pointsNeeded - points %> puncte până la <strong><%= nextLevel %></strong></p>
       <% } %>
     </div>
+
+    <% if (typeof userBadges !== 'undefined' && userBadges && userBadges.length > 0) { %>
+    <div class="badges-card reveal">
+      <h3 class="badges-title">Insigne castigate</h3>
+      <div class="badges-grid">
+        <% userBadges.forEach(function(badge) { %>
+          <div class="badge-item" title="<%= badge.description %>">
+            <div class="badge-icon" style="background: <%= badge.color %>15; border-color: <%= badge.color %>40; color: <%= badge.color %>;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="<%= badge.color %>"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            <span class="badge-name"><%= badge.name %></span>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
 
     <!-- Menu Items -->
     <% const br = typeof bizRequest !== 'undefined' ? bizRequest : null; %>
@@ -200,6 +227,54 @@
       }
     }
   });
+</script>
+
+<script>
+async function uploadProfilePicture(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    if (typeof showToast === 'function') showToast('Imaginea trebuie sa fie sub 5MB', 'error');
+    return;
+  }
+  const formData = new FormData();
+  formData.append('profile_picture', file);
+  try {
+    const csrfToken = typeof getCsrfToken === 'function' ? getCsrfToken() : '';
+    const res = await fetch('/api/web/account/profile-picture', {
+      method: 'POST',
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (typeof showToast === 'function') showToast('Poza de profil actualizata!', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      if (typeof showToast === 'function') showToast(data.message || 'Eroare la upload', 'error');
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Eroare la upload', 'error');
+  }
+}
+
+async function deleteProfilePicture() {
+  if (!confirm('Esti sigur ca vrei sa stergi poza de profil?')) return;
+  try {
+    const csrfToken = typeof getCsrfToken === 'function' ? getCsrfToken() : '';
+    const res = await fetch('/api/web/account/profile-picture', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}) }
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (typeof showToast === 'function') showToast('Poza de profil stearsa', 'success');
+      setTimeout(() => location.reload(), 800);
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('Eroare', 'error');
+  }
+}
 </script>
 
 <%- include('partials/footer') %>

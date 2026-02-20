@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/network/api_client.dart';
@@ -208,6 +209,67 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: user);
     } catch (_) {
       // Silent fail — keep existing user
+    }
+  }
+
+  Future<void> updateProfilePicture(String filePath) async {
+    try {
+      final formData = FormData.fromMap({
+        'profile_picture': await MultipartFile.fromFile(filePath, filename: 'profile.jpg'),
+      });
+      final response = await _api.dio.post(
+        ApiEndpoints.userProfilePicture,
+        data: formData,
+      );
+      final url = response.data['profile_picture_url'] as String?;
+      if (url != null && state.user != null) {
+        final u = state.user!;
+        state = state.copyWith(user: User(
+          id: u.id,
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+          preferredCityIds: u.preferredCityIds,
+          preferredCategoryIds: u.preferredCategoryIds,
+          points: u.points,
+          createdAt: u.createdAt,
+          profilePictureUrl: url,
+          hasPassword: u.hasPassword,
+          badges: u.badges,
+          showPictureInReviews: u.showPictureInReviews,
+        ));
+      }
+    } catch (e) {
+      final msg = e is ApiException ? e.message : 'Eroare la încărcarea pozei';
+      throw ApiException(msg);
+    }
+  }
+
+  Future<void> deleteProfilePicture() async {
+    try {
+      await _api.dio.delete(ApiEndpoints.userProfilePicture);
+      if (state.user != null) {
+        final u = state.user!;
+        state = state.copyWith(user: User(
+          id: u.id,
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+          preferredCityIds: u.preferredCityIds,
+          preferredCategoryIds: u.preferredCategoryIds,
+          points: u.points,
+          createdAt: u.createdAt,
+          profilePictureUrl: null,
+          hasPassword: u.hasPassword,
+          badges: u.badges,
+          showPictureInReviews: u.showPictureInReviews,
+        ));
+      }
+    } catch (e) {
+      final msg = e is ApiException ? e.message : 'Eroare la ștergerea pozei';
+      throw ApiException(msg);
     }
   }
 }
