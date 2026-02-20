@@ -15,6 +15,7 @@
 <div class="a-card" style="max-width: 500px; margin-bottom: 20px;">
   <h3 style="margin-top: 0;">Adaugă oraș nou</h3>
   <form method="post" action="/admin/cities" style="display: flex; gap: 10px; align-items: flex-end;">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <div style="flex: 1;">
       <label for="new_city_name">Nume oraș</label>
       <input type="text" id="new_city_name" name="name" placeholder="ex: București" required />
@@ -41,6 +42,7 @@
           <td><%= c.id %></td>
           <td>
             <form method="post" action="/admin/cities/<%= c.id %>" style="display: flex; gap: 8px; align-items: center; max-width: none;">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
               <input type="text" name="name" value="<%= c.name %>" required style="flex: 1;" />
               <button type="submit" class="a-btn a-btn-sm">Salvează</button>
             </form>
@@ -49,6 +51,7 @@
           <td>
             <% if (parseInt(c.businesses_count) === 0) { %>
               <form method="post" action="/admin/cities/<%= c.id %>/delete" style="display: inline; max-width: none;" data-confirm="Sigur vrei să ștergi orașul <%= c.name %>?">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
                 <button type="submit" class="a-btn a-btn-sm a-btn-danger">Șterge</button>
               </form>
             <% } else { %>

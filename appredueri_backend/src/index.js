@@ -344,6 +344,12 @@ app.use((err, req, res, next) => {
     if (req.path.startsWith('/api/')) {
       return res.status(403).json({ message: 'Token CSRF invalid. Reîncarcă pagina.' });
     }
+    if (req.path.startsWith('/admin')) {
+      return res.status(403).send(
+        '<h1>Eroare CSRF</h1><p>Sesiunea a expirat sau tokenul CSRF lipsește.</p>' +
+        '<a href="javascript:location.reload()">Reîncarcă pagina</a>'
+      );
+    }
     return res.status(403).render('public/404', {
       pageTitle: 'Eroare',
       activePage: null,

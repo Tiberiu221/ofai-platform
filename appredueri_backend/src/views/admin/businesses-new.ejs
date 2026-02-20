@@ -5,6 +5,7 @@
 <h1>Business nou</h1>
 
 <form method="post" action="/admin/businesses/new">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <label for="name">Nume business</label>
   <input type="text" id="name" name="name" required />
 

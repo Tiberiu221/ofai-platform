@@ -73,6 +73,7 @@
           <td onclick="event.stopPropagation()">
             <% if (r.status === 'pending') { %>
               <form action="/admin/business-requests/<%= r.id %>/approve" method="POST" style="display: inline;" data-confirm="Aprobă business-ul <%= r.name.replace(/'/g, "\\'") %>?">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
                 <button type="submit" class="btn-approve">Aprobă</button>
               </form>
               <button class="btn-reject" data-reject-id="<%= r.id %>" data-reject-name="<%= r.name %>">Respinge</button>
@@ -138,6 +139,7 @@
     <h3>Respinge cererea</h3>
     <p style="color: #9ca3af; font-size: 13px; margin: 0 0 12px;" id="reject-modal-name"></p>
     <form id="reject-form" method="POST">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <textarea name="reason" placeholder="Motiv respingere (opțional)..." maxlength="500"></textarea>
       <div class="modal-actions">
         <button type="button" class="button secondary" onclick="closeRejectModal()">Anulează</button>

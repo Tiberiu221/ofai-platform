@@ -5,10 +5,12 @@
 <h1>Editează ofertă</h1>
 
 <form class="delete-form" method="post" action="/admin/offers/<%= offer.id %>/delete" data-confirm="Sigur vrei să ștergi această ofertă? Această acțiune este definitivă.">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <button type="submit">Șterge oferta</button>
 </form>
 
 <form method="post" action="/admin/offers/<%= offer.id %>/edit" enctype="multipart/form-data">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
   <label for="business_id">Business</label>
   <select name="business_id" id="business_id" required>

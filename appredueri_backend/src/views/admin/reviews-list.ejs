@@ -79,6 +79,7 @@
           <td><%= r.created_at ? new Date(r.created_at).toLocaleDateString('ro-RO') : '-' %></td>
           <td>
             <form method="post" action="/admin/reviews/<%= r.id %>/delete" style="display:inline; max-width: none;" data-confirm="Sigur vrei să ștergi această recenzie? Se va șterge și răspunsul asociat.">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
               <button type="submit" class="a-btn a-btn-sm a-btn-danger">Șterge</button>
             </form>
           </td>

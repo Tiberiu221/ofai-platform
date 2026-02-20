@@ -28,10 +28,12 @@
     <div>
       <% if (user.banned_at) { %>
         <form method="post" action="/admin/users/<%= user.id %>/unban" style="display:inline;">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button type="submit" class="a-btn a-btn-sm a-btn-success">Ridică ban</button>
         </form>
       <% } else { %>
         <form method="post" action="/admin/users/<%= user.id %>/ban" style="display:inline;" data-confirm="Sigur vrei să banezi acest utilizator?">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button type="submit" class="a-btn a-btn-sm a-btn-danger">Banează</button>
         </form>
       <% } %>
@@ -42,6 +44,7 @@
 <!-- Edit form -->
 <h2 class="section-title">Date utilizator</h2>
 <form method="post" action="/admin/users/<%= user.id %>/edit">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <div class="a-form-group">
     <label>Email</label>
     <input type="text" value="<%= user.email %>" disabled style="opacity: 0.6;" />

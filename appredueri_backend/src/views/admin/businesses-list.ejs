@@ -80,6 +80,7 @@
             </a>
 
             <form method="post" action="/admin/businesses/<%= b.id %>/delete" style="display:inline;" data-confirm="Sigur vrei să ștergi acest business?">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
               <button type="submit" class="button button-small danger">
                 Șterge
               </button>

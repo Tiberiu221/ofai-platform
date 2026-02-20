@@ -7,6 +7,7 @@
 <div class="form-box">
   <h3 style="margin-top:0;">Adaugă o locație nouă</h3>
   <form action="/admin/businesses/<%= business.id %>/locations" method="POST">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
     <div class="form-group">
       <label>Oraș</label>
@@ -68,6 +69,7 @@
 
         <!-- form separat (valid HTML), apoi inputurile din row îl referă prin atributul form="" -->
         <form id="<%= formId %>" action="/admin/businesses/<%= business.id %>/locations/<%= loc.id %>" method="POST">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
         </form>
 
         <tr>
@@ -108,6 +110,7 @@
               <button type="submit" class="button button-small" form="<%= formId %>">Salvează</button>
 
               <form action="/admin/businesses/<%= business.id %>/locations/<%= loc.id %>/delete" method="POST" data-confirm="Sigur vrei să ștergi această locație?" style="margin:0;">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
                 <button type="submit" class="button button-small danger">Șterge</button>
               </form>
             </div>
