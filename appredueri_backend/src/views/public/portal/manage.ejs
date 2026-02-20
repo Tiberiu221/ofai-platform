@@ -1127,6 +1127,8 @@
 (function() {
   var businessId = '<%= business.id %>';
   var currentPeriod = 30;
+  var currentViewsMode = 'business';
+  var currentClicksAction = 'phone';
 
   /* ── Toast ── */
   function showToast(message, type) {
@@ -1589,8 +1591,6 @@
      ════════════════════════════════ */
   var isWeekly = false;
   var rawChartData = { views: [], subscribers: [], clicks: [] };
-  var currentViewsMode = 'business';
-  var currentClicksAction = 'phone';
 
   window.changePeriod = function(days, btn) {
     currentPeriod = days;
