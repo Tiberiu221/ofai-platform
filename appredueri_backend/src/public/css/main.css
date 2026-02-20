@@ -219,6 +219,12 @@ ul, ol { list-style: none; }
   display: flex;
   align-items: center;
   gap: 4px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-links::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-link {
@@ -229,6 +235,7 @@ ul, ol { list-style: none; }
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   transition: color 0.25s ease, background 0.25s ease;
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -593,6 +600,8 @@ ul, ol { list-style: none; }
   letter-spacing: -0.02em;
   line-height: 1.15;
   margin-bottom: 16px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .section-subtitle {
@@ -791,6 +800,7 @@ ul, ol { list-style: none; }
 .offer-content-text {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
 }
 
 .offer-card.featured .offer-content {
@@ -918,6 +928,8 @@ ul, ol { list-style: none; }
   background: var(--bg-surface);
   border: 1px solid var(--border);
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 .offer-logo img {
   width: 100%;
@@ -997,7 +1009,7 @@ ul, ol { list-style: none; }
   height: 48px;
   border-radius: 12px;
   overflow: hidden;
-  margin: -24px 0 0 16px;
+  margin: -20px 0 0 16px;
   border: 2px solid var(--bg-card);
   background: var(--bg-surface);
   flex-shrink: 0;
@@ -1413,6 +1425,8 @@ ul, ol { list-style: none; }
   margin-bottom: 8px;
   overflow-x: auto;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
 }
 
 .filter-bar:last-of-type {
@@ -1490,6 +1504,8 @@ ul, ol { list-style: none; }
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.25s ease;
+  scroll-snap-align: start;
+  flex-shrink: 0;
 }
 
 .filter-pill:hover {
@@ -3806,6 +3822,12 @@ ul, ol { list-style: none; }
   }
   .bd-gallery-compact-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+  .biz-card-name {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
   .bd-section-compact {
     padding: 32px 0;
