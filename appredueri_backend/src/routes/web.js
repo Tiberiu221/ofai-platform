@@ -270,6 +270,49 @@ router.get("/oferte", async (req, res) => {
       paramIdx++;
     }
 
+    // Fetch and optionally apply user preferences
+    let userHasPrefs = false;
+    let prefsActive = false;
+    let userPrefsCityNames = [];
+    let userPrefsCategoryNames = [];
+
+    if (req.webUser) {
+      const prefsRes = await pool.query(
+        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
+        [req.webUser.id]
+      );
+      if (prefsRes.rows[0]) {
+        const prefs = prefsRes.rows[0];
+        const hasCities = prefs.preferred_city_ids && prefs.preferred_city_ids.length > 0;
+        const hasCats = prefs.preferred_category_ids && prefs.preferred_category_ids.length > 0;
+        userHasPrefs = hasCities || hasCats;
+
+        if (hasCities) {
+          const cityNames = await pool.query("SELECT name FROM cities WHERE id = ANY($1)", [prefs.preferred_city_ids]);
+          userPrefsCityNames = cityNames.rows.map(r => r.name);
+        }
+        if (hasCats) {
+          const catNames = await pool.query("SELECT name FROM categories WHERE id = ANY($1)", [prefs.preferred_category_ids]);
+          userPrefsCategoryNames = catNames.rows.map(r => r.name);
+        }
+
+        // Apply preference filters only when prefs=1 and no manual city/category override
+        if (req.query.prefs === '1' && !selectedCity && !selectedCategory) {
+          prefsActive = true;
+          if (hasCities) {
+            conditions.push(`(b.city_id = ANY($${paramIdx}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
+            params.push(prefs.preferred_city_ids);
+            paramIdx++;
+          }
+          if (hasCats) {
+            conditions.push(`b.category_id = ANY($${paramIdx})`);
+            params.push(prefs.preferred_category_ids);
+            paramIdx++;
+          }
+        }
+      }
+    }
+
     const whereClause = conditions.join(" AND ");
 
     const countResult = await pool.query(
@@ -354,10 +397,14 @@ router.get("/oferte", async (req, res) => {
       currentPage: page,
       totalCities: parseInt(totalCitiesResult.rows[0].total),
       query,
-      selectedCategory,
-      selectedCity,
-      selectedCityName,
+      selectedCategory: prefsActive ? null : selectedCategory,
+      selectedCity: prefsActive ? null : selectedCity,
+      selectedCityName: prefsActive ? null : selectedCityName,
       selectedSort: sort,
+      prefsActive,
+      userHasPrefs,
+      userPrefsCityNames,
+      userPrefsCategoryNames,
       activePage: "oferte",
       webUser: req.webUser,
     });
@@ -400,6 +447,49 @@ router.get("/business-uri", async (req, res) => {
       conditions.push(`(b.city_id = $${paramIdx} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       params.push(parseInt(selectedCity));
       paramIdx++;
+    }
+
+    // Fetch and optionally apply user preferences
+    let userHasPrefs = false;
+    let prefsActive = false;
+    let userPrefsCityNames = [];
+    let userPrefsCategoryNames = [];
+
+    if (req.webUser) {
+      const prefsRes = await pool.query(
+        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
+        [req.webUser.id]
+      );
+      if (prefsRes.rows[0]) {
+        const prefs = prefsRes.rows[0];
+        const hasCities = prefs.preferred_city_ids && prefs.preferred_city_ids.length > 0;
+        const hasCats = prefs.preferred_category_ids && prefs.preferred_category_ids.length > 0;
+        userHasPrefs = hasCities || hasCats;
+
+        if (hasCities) {
+          const cityNames = await pool.query("SELECT name FROM cities WHERE id = ANY($1)", [prefs.preferred_city_ids]);
+          userPrefsCityNames = cityNames.rows.map(r => r.name);
+        }
+        if (hasCats) {
+          const catNames = await pool.query("SELECT name FROM categories WHERE id = ANY($1)", [prefs.preferred_category_ids]);
+          userPrefsCategoryNames = catNames.rows.map(r => r.name);
+        }
+
+        // Apply preference filters only when prefs=1 and no manual city/category override
+        if (req.query.prefs === '1' && !selectedCity && !selectedCategory) {
+          prefsActive = true;
+          if (hasCities) {
+            conditions.push(`(b.city_id = ANY($${paramIdx}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
+            params.push(prefs.preferred_city_ids);
+            paramIdx++;
+          }
+          if (hasCats) {
+            conditions.push(`b.category_id = ANY($${paramIdx})`);
+            params.push(prefs.preferred_category_ids);
+            paramIdx++;
+          }
+        }
+      }
     }
 
     const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
@@ -460,9 +550,13 @@ router.get("/business-uri", async (req, res) => {
       currentPage: page,
       totalCities: parseInt(totalCitiesResult.rows[0].total),
       query,
-      selectedCategory,
-      selectedCity,
+      selectedCategory: prefsActive ? null : selectedCategory,
+      selectedCity: prefsActive ? null : selectedCity,
       selectedSort: sort,
+      prefsActive,
+      userHasPrefs,
+      userPrefsCityNames,
+      userPrefsCategoryNames,
       activePage: "business-uri",
       webUser: req.webUser,
     });
@@ -2634,15 +2728,24 @@ router.put("/api/web/preferences", requireWebAuth, async (req, res) => {
   try {
     const { preferred_city_ids, preferred_category_ids } = req.body || {};
 
+    let cityIds = [];
+    if (Array.isArray(preferred_city_ids)) {
+      cityIds = preferred_city_ids.map(v => Number(v)).filter(v => Number.isInteger(v) && v > 0);
+    }
+    let categoryIds = [];
+    if (Array.isArray(preferred_category_ids)) {
+      categoryIds = preferred_category_ids.map(v => Number(v)).filter(v => Number.isInteger(v) && v > 0);
+    }
+
     await pool.query(
       "UPDATE users SET preferred_city_ids = $1, preferred_category_ids = $2 WHERE id = $3",
-      [preferred_city_ids || [], preferred_category_ids || [], req.webUser.id]
+      [cityIds, categoryIds, req.webUser.id]
     );
 
     res.json({ success: true, message: "Preferințele au fost salvate!" });
   } catch (err) {
     console.error("[Web API] Preferences error:", err);
-    res.status(500).json({ message: "Eroare server" });
+    res.status(500).json({ success: false, message: "Eroare la salvarea preferințelor" });
   }
 });
 

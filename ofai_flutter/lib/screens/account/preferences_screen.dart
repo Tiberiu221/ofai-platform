@@ -44,7 +44,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             backgroundColor: AppColors.bgSecondary,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {

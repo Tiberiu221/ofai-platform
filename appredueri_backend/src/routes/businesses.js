@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const { optionalAuth } = require("../middleware/auth");
 const { getExistingSummary, getSummary, canSummarize } = require("../services/llm/summarizationService");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
@@ -22,7 +23,7 @@ function makeAbsoluteUrl(base, maybeUrl) {
 // =======================================
 // GET /businesses - listă pentru homepage
 // =======================================
-router.get("/", async (req, res) => {
+router.get("/", optionalAuth, async (req, res) => {
   try {
     const { city_id, category_id, q } = req.query;
     const { page, limit, offset } = parsePagination(req.query);
@@ -46,6 +47,27 @@ router.get("/", async (req, res) => {
         filters.push(`b.category_id = $${idx}`);
         values.push(catId);
         idx++;
+      }
+    }
+
+    // Apply user preferences if prefs=1 and user is authenticated and no manual city/category override
+    if (req.query.prefs === '1' && req.user && !city_id && !category_id) {
+      const prefsRes = await pool.query(
+        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
+        [req.user.id]
+      );
+      if (prefsRes.rows.length > 0) {
+        const userPrefs = prefsRes.rows[0];
+        if (userPrefs.preferred_city_ids && userPrefs.preferred_city_ids.length > 0) {
+          filters.push(`(b.city_id = ANY($${idx}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
+          values.push(userPrefs.preferred_city_ids);
+          idx++;
+        }
+        if (userPrefs.preferred_category_ids && userPrefs.preferred_category_ids.length > 0) {
+          filters.push(`b.category_id = ANY($${idx})`);
+          values.push(userPrefs.preferred_category_ids);
+          idx++;
+        }
       }
     }
 

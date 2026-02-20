@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const auth = require("../middleware/auth");
+const { optionalAuth } = require("../middleware/auth");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
 
 // ==============================
@@ -22,7 +23,7 @@ function makeAbsoluteUrl(req, relativePath) {
 // ==============================
 // GET / (Listare oferte)
 // ==============================
-router.get("/", async (req, res) => {
+router.get("/", optionalAuth, async (req, res) => {
   try {
     const { city_id, category_id, business_id, q, sort } = req.query;
     const { page, limit, offset } = parsePagination(req.query);
@@ -37,6 +38,27 @@ router.get("/", async (req, res) => {
     if (city_id) { filters.push(`(b.city_id = $${idx++} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`); values.push(parseInt(city_id)); }
     if (category_id) { filters.push(`b.category_id = $${idx++}`); values.push(parseInt(category_id)); }
     if (business_id) { filters.push(`b.id = $${idx++}`); values.push(parseInt(business_id)); }
+
+    // Apply user preferences if prefs=1 and user is authenticated and no manual city/category override
+    if (req.query.prefs === '1' && req.user && !city_id && !category_id) {
+      const prefsRes = await pool.query(
+        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
+        [req.user.id]
+      );
+      if (prefsRes.rows.length > 0) {
+        const userPrefs = prefsRes.rows[0];
+        if (userPrefs.preferred_city_ids && userPrefs.preferred_city_ids.length > 0) {
+          filters.push(`(b.city_id = ANY($${idx}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
+          values.push(userPrefs.preferred_city_ids);
+          idx++;
+        }
+        if (userPrefs.preferred_category_ids && userPrefs.preferred_category_ids.length > 0) {
+          filters.push(`b.category_id = ANY($${idx})`);
+          values.push(userPrefs.preferred_category_ids);
+          idx++;
+        }
+      }
+    }
 
     if (q && q.trim()) {
       filters.push(`(o.title ILIKE $${idx} OR o.description ILIKE $${idx} OR b.name ILIKE $${idx})`);

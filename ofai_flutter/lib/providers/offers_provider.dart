@@ -18,6 +18,7 @@ class OffersListState {
   final int? categoryId;
   final String? sort;
   final String? query;
+  final bool prefsActive;
 
   const OffersListState({
     this.offers = const [],
@@ -30,6 +31,7 @@ class OffersListState {
     this.categoryId,
     this.sort,
     this.query,
+    this.prefsActive = true,
   });
 
   OffersListState copyWith({
@@ -43,6 +45,7 @@ class OffersListState {
     int? categoryId,
     String? sort,
     String? query,
+    bool? prefsActive,
     bool clearCityId = false,
     bool clearCategoryId = false,
     bool clearSort = false,
@@ -60,6 +63,7 @@ class OffersListState {
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       sort: clearSort ? null : (sort ?? this.sort),
       query: clearQuery ? null : (query ?? this.query),
+      prefsActive: prefsActive ?? this.prefsActive,
     );
   }
 }
@@ -121,12 +125,33 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
     }
   }
 
-  void setFilter({int? cityId, int? categoryId, String? sort, String? query,
-    bool clearCityId = false, bool clearCategoryId = false}) {
+  void setFilter({int? cityId, int? categoryId, String? sort, String? query, bool? prefs,
+    bool clearCityId = false, bool clearCategoryId = false, bool clearSort = false}) {
     _cancelToken?.cancel();
+
+    // If activating/deactivating prefs, update that flag (and clear manual
+    // city/category filters when prefs is turned on so they don't conflict).
+    if (prefs != null) {
+      state = state.copyWith(
+        offers: [],
+        page: 1,
+        prefsActive: prefs,
+        clearCityId: prefs ? true : clearCityId,
+        clearCategoryId: prefs ? true : clearCategoryId,
+        clearSort: prefs ? true : clearSort,
+        sort: sort,
+        query: query,
+      );
+      fetch();
+      return;
+    }
+
+    // If a manual city/category filter is being set, disable prefs.
+    final disablePrefs = cityId != null || categoryId != null;
     state = state.copyWith(
       offers: [],
       page: 1,
+      prefsActive: disablePrefs ? false : state.prefsActive,
       cityId: cityId, categoryId: categoryId, sort: sort, query: query,
       clearCityId: clearCityId, clearCategoryId: clearCategoryId,
     );
@@ -137,6 +162,7 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
     return {
       'page': page,
       'limit': 20,
+      if (state.prefsActive) 'prefs': '1',
       if (state.cityId != null) 'city_id': state.cityId,
       if (state.categoryId != null) 'category_id': state.categoryId,
       if (state.sort != null) 'sort': state.sort,

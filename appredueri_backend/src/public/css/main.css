@@ -1519,6 +1519,30 @@ ul, ol { list-style: none; }
   color: var(--accent);
 }
 
+/* Preference filter pill */
+.filter-pill-prefs {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.filter-pill-prefs.active {
+  background: var(--accent);
+  color: #09090b;
+  border-color: var(--accent);
+}
+.filter-pill-prefs svg {
+  flex-shrink: 0;
+}
+.filter-pill-disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: auto;
+}
+.filter-pill-disabled:hover {
+  border-color: var(--border);
+  color: var(--text-secondary);
+  background: var(--bg-card);
+}
+
 /* Offers grid */
 .offers-grid {
   display: grid;

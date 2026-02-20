@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/offers_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/static_data_provider.dart';
@@ -149,6 +150,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     final businessesState = ref.watch(businessesListProvider);
     final citiesAsync = ref.watch(citiesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    final hasPrefs = user != null &&
+        ((user.preferredCityIds?.isNotEmpty ?? false) ||
+            (user.preferredCategoryIds?.isNotEmpty ?? false));
+    // Chip reflects the active tab's state; both are kept in sync.
+    final prefsActive = _tabController.index == 0
+        ? offersState.prefsActive
+        : businessesState.prefsActive;
 
     return Scaffold(
       body: SafeArea(
@@ -224,6 +234,28 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                 children: [
+                  // Preferences chip (only shown when authenticated)
+                  if (authState.status == AuthStatus.authenticated) ...[
+                    _PrefsFilterChip(
+                      isActive: prefsActive,
+                      hasPrefs: hasPrefs,
+                      onToggle: (selected) {
+                        ref.read(offersListProvider.notifier).setFilter(prefs: selected);
+                        ref.read(businessesListProvider.notifier).setFilter(prefs: selected);
+                        setState(() {});
+                      },
+                      onNavigateToPrefs: () async {
+                        final result = await context.push('/account/preferences');
+                        if (result == true && mounted) {
+                          await ref.read(authProvider.notifier).refreshUser();
+                          ref.read(offersListProvider.notifier).setFilter(prefs: true);
+                          ref.read(businessesListProvider.notifier).setFilter(prefs: true);
+                          setState(() {});
+                        }
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
                   // City dropdown
                   _FilterChip(
                     label: _selectedCityName(citiesAsync, offersState.cityId ?? businessesState.cityId) ?? 'Oraș',
@@ -246,10 +278,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                       onTap: () => _showSortPicker(),
                     ),
                   ],
-                  // Clear all
+                  // Clear all — shown when any filter is active or prefs is off
                   if ((offersState.cityId ?? businessesState.cityId) != null ||
                       (offersState.categoryId ?? businessesState.categoryId) != null ||
-                      offersState.sort != null) ...[
+                      offersState.sort != null ||
+                      !offersState.prefsActive) ...[
                     const SizedBox(width: AppSpacing.sm),
                     _FilterChip(
                       label: 'Resetează',
@@ -441,10 +474,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   void _clearFilters() {
     _searchController.clear();
     ref.read(offersListProvider.notifier).setFilter(
-      clearCityId: true, clearCategoryId: true, query: '',
+      clearCityId: true, clearCategoryId: true, query: '', prefs: true,
     );
     ref.read(businessesListProvider.notifier).setFilter(
-      clearCityId: true, clearCategoryId: true, query: '',
+      clearCityId: true, clearCategoryId: true, query: '', prefs: true,
     );
     setState(() {});
   }
@@ -542,6 +575,78 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
           ref.read(offersListProvider.notifier).setFilter(sort: value);
           setState(() {});
         },
+      ),
+    );
+  }
+}
+
+// Preferences toggle chip — shown only for authenticated users
+class _PrefsFilterChip extends StatelessWidget {
+  final bool isActive;
+  final bool hasPrefs;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onNavigateToPrefs;
+
+  const _PrefsFilterChip({
+    required this.isActive,
+    required this.hasPrefs,
+    required this.onToggle,
+    required this.onNavigateToPrefs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        if (hasPrefs) {
+          onToggle(!isActive);
+        } else {
+          onNavigateToPrefs();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.accentMuted : AppColors.bgCard,
+          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+          border: Border.all(
+            color: isActive ? AppColors.accent : AppColors.border,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isActive ? Icons.tune : Icons.tune_outlined,
+              size: 14,
+              color: isActive
+                  ? AppColors.accent
+                  : hasPrefs
+                      ? AppColors.textSecondary
+                      : AppColors.textTertiary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Preferințele mele',
+              style: AppTypography.labelMedium.copyWith(
+                color: isActive
+                    ? AppColors.accent
+                    : hasPrefs
+                        ? AppColors.textSecondary
+                        : AppColors.textTertiary,
+              ),
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.check_circle,
+                size: 14,
+                color: AppColors.accent,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

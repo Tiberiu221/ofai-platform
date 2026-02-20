@@ -16,6 +16,7 @@ class BusinessesListState {
   final int? cityId;
   final int? categoryId;
   final String? query;
+  final bool prefsActive;
 
   const BusinessesListState({
     this.businesses = const [],
@@ -27,6 +28,7 @@ class BusinessesListState {
     this.cityId,
     this.categoryId,
     this.query,
+    this.prefsActive = true,
   });
 
   BusinessesListState copyWith({
@@ -39,6 +41,7 @@ class BusinessesListState {
     int? cityId,
     int? categoryId,
     String? query,
+    bool? prefsActive,
     bool clearCityId = false,
     bool clearCategoryId = false,
     bool clearQuery = false,
@@ -54,6 +57,7 @@ class BusinessesListState {
       cityId: clearCityId ? null : (cityId ?? this.cityId),
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       query: clearQuery ? null : (query ?? this.query),
+      prefsActive: prefsActive ?? this.prefsActive,
     );
   }
 }
@@ -115,12 +119,31 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
     }
   }
 
-  void setFilter({int? cityId, int? categoryId, String? query,
+  void setFilter({int? cityId, int? categoryId, String? query, bool? prefs,
     bool clearCityId = false, bool clearCategoryId = false}) {
     _cancelToken?.cancel();
+
+    // If activating/deactivating prefs, update that flag (and clear manual
+    // city/category filters when prefs is turned on so they don't conflict).
+    if (prefs != null) {
+      state = state.copyWith(
+        businesses: [],
+        page: 1,
+        prefsActive: prefs,
+        clearCityId: prefs ? true : clearCityId,
+        clearCategoryId: prefs ? true : clearCategoryId,
+        query: query,
+      );
+      fetch();
+      return;
+    }
+
+    // If a manual city/category filter is being set, disable prefs.
+    final disablePrefs = cityId != null || categoryId != null;
     state = state.copyWith(
       businesses: [],
       page: 1,
+      prefsActive: disablePrefs ? false : state.prefsActive,
       cityId: cityId, categoryId: categoryId, query: query,
       clearCityId: clearCityId, clearCategoryId: clearCategoryId,
     );
@@ -131,6 +154,7 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
     return {
       'page': page,
       'limit': 20,
+      if (state.prefsActive) 'prefs': '1',
       if (state.cityId != null) 'city_id': state.cityId,
       if (state.categoryId != null) 'category_id': state.categoryId,
       if (state.query != null && state.query!.isNotEmpty) 'q': state.query,

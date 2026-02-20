@@ -67,8 +67,34 @@ function requireBusinessOwner(req, res, next) {
   next();
 }
 
+/**
+ * Optional JWT middleware — attaches req.user if a valid Bearer token is present,
+ * sets req.user = null otherwise (does NOT reject the request).
+ */
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    req.user = null;
+    return next();
+  }
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = verifyToken(token);
+    pool.query("SELECT id, email, role FROM users WHERE id = $1", [decoded.id])
+      .then(({ rows }) => {
+        req.user = rows.length > 0 ? rows[0] : null;
+        next();
+      })
+      .catch(() => { req.user = null; next(); });
+  } catch {
+    req.user = null;
+    next();
+  }
+}
+
 // Export both as named exports and default for backwards compatibility
 module.exports = authenticateToken;
 module.exports.authenticateToken = authenticateToken;
 module.exports.requireAdmin = requireAdmin;
 module.exports.requireBusinessOwner = requireBusinessOwner;
+module.exports.optionalAuth = optionalAuth;

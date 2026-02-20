@@ -132,9 +132,16 @@
         })
       });
       if (res.ok) {
-        succEl.textContent = 'Preferințele au fost salvate!';
-        succEl.style.display = '';
-        if (typeof showToast === 'function') showToast('Preferințele au fost salvate!', 'success');
+        const urlParams = new URLSearchParams(window.location.search);
+        const returnTo = urlParams.get('returnTo');
+        if (returnTo) {
+          const separator = returnTo.includes('?') ? '&' : '?';
+          window.location.href = returnTo + separator + 'prefs=1';
+        } else {
+          succEl.textContent = 'Preferințele au fost salvate!';
+          succEl.style.display = '';
+          if (typeof showToast === 'function') showToast('Preferințele au fost salvate!', 'success');
+        }
       }
     } catch(err) { console.error(err); }
     return false;
