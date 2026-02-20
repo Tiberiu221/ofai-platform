@@ -34,5 +34,12 @@ Thumbs.db
 dist/
 build/
 
+# Firebase Admin SDK credentials (NEVER commit!)
+firebase-adminsdk*.json
+*-firebase-adminsdk-*.json
+
+# Database backups
+backups/
+
 # Scraping data (large JSON files)
 scripts/scraping/data/

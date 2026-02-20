@@ -713,50 +713,64 @@ router.post(
   }
 );
 
-// POST Delete Business
+// POST Delete Business (full FK cascade in transaction)
 router.post("/businesses/:id/delete", async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (Number.isNaN(id)) return res.status(400).send("ID invalid");
-  try {
-    const offersRes = await pool.query(
-      "SELECT COUNT(*) AS cnt FROM offers WHERE business_id = $1",
-      [id]
-    );
-    if (Number(offersRes.rows[0]?.cnt || 0) > 0)
-      return res.redirect("/admin/businesses?err=has_offers");
 
-    const imgsRes = await pool.query(
+  const client = await pool.connect();
+  try {
+    // Collect image URLs before deletion (for Cloudinary cleanup)
+    const imgsRes = await client.query(
       "SELECT image_filename, image_url FROM business_images WHERE business_id = $1",
       [id]
     );
-    // Verificăm și logo/cover
-    const bInfo = await pool.query("SELECT logo_url, cover_image_url FROM businesses WHERE id=$1", [id]);
+    const bInfo = await client.query("SELECT logo_url, cover_image_url FROM businesses WHERE id=$1", [id]);
 
-    await pool.query("DELETE FROM business_images WHERE business_id = $1", [id]);
-    await pool.query("DELETE FROM businesses WHERE id = $1", [id]);
+    await client.query("BEGIN");
 
-    // Cleanup images
+    // 1. Delete offer child tables first
+    await client.query("DELETE FROM code_reveals WHERE offer_id IN (SELECT id FROM offers WHERE business_id = $1)", [id]);
+    await client.query("DELETE FROM promo_codes WHERE offer_id IN (SELECT id FROM offers WHERE business_id = $1)", [id]);
+    await client.query("DELETE FROM offer_views WHERE offer_id IN (SELECT id FROM offers WHERE business_id = $1)", [id]);
+    await client.query("DELETE FROM offer_requests WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM offers WHERE business_id = $1", [id]);
+
+    // 2. Delete review child tables
+    await client.query("DELETE FROM review_responses WHERE review_id IN (SELECT id FROM reviews WHERE business_id = $1)", [id]);
+    await client.query("DELETE FROM reviews WHERE business_id = $1", [id]);
+
+    // 3. Delete analytics + relationships
+    await client.query("DELETE FROM business_views WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM business_clicks WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM followed_businesses WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM user_businesses WHERE business_id = $1", [id]);
+
+    // 4. Delete business data
+    await client.query("DELETE FROM business_locations WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM business_images WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM business_requests WHERE business_id = $1", [id]);
+    await client.query("DELETE FROM businesses WHERE id = $1", [id]);
+
+    await client.query("COMMIT");
+
+    // Cleanup Cloudinary images (fire-and-forget, outside transaction)
     if (bInfo.rows.length > 0) {
       await deleteImage(bInfo.rows[0].logo_url);
       await deleteImage(bInfo.rows[0].cover_image_url);
     }
-
     for (const img of imgsRes.rows) {
-      // Prioritizăm coloana image_url dacă există (pentru Cloudinary/mix), sau folosim image_filename pentru legacy
-      // în business_images s-ar putea să ai 'image_url' (din business portal) SAU 'image_filename' (din vechiul admin)
-      // Trebuie să ne asigurăm că tabela suportă ambele sau că facem fallback.
-      // Observ că în business-portal.js se folosește image_url. 
-      // În adminul vechi se folosea image_filename.
-      // Să verificăm ce coloane avem. Cel mai sigur e să încercăm both.
-
       const urlToDelete = img.image_url || (img.image_filename ? `/uploads/businesses/${img.image_filename}` : null);
       if (urlToDelete) await deleteImage(urlToDelete);
     }
 
     res.redirect("/admin/businesses");
   } catch (err) {
-    console.error(err);
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[Admin] Delete business error:", err);
     res.status(500).send("Eroare stergere");
+  } finally {
+    client.release();
   }
 });
 
@@ -1907,19 +1921,19 @@ router.get("/reviews", async (req, res) => {
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
     const countRes = await pool.query(
-      `SELECT COUNT(*) FROM reviews r JOIN users u ON u.id = r.user_id JOIN businesses b ON b.id = r.business_id ${whereClause}`,
+      `SELECT COUNT(*) FROM reviews r LEFT JOIN users u ON u.id = r.user_id LEFT JOIN businesses b ON b.id = r.business_id ${whereClause}`,
       values
     );
     const total = parseInt(countRes.rows[0].count);
 
     const result = await pool.query(`
       SELECT r.id, r.rating, r.comment, r.created_at,
-             u.id AS user_id, u.email, u.first_name, u.last_name,
-             b.id AS business_id, b.name AS business_name,
+             u.id AS user_id, COALESCE(u.email, 'Utilizator șters') AS email, u.first_name, u.last_name,
+             b.id AS business_id, COALESCE(b.name, 'Business șters') AS business_name,
              (SELECT COUNT(*) FROM review_responses rr WHERE rr.review_id = r.id) > 0 AS has_response
       FROM reviews r
-      JOIN users u ON u.id = r.user_id
-      JOIN businesses b ON b.id = r.business_id
+      LEFT JOIN users u ON u.id = r.user_id
+      LEFT JOIN businesses b ON b.id = r.business_id
       ${whereClause}
       ORDER BY r.created_at DESC
       LIMIT $${idx} OFFSET $${idx + 1}

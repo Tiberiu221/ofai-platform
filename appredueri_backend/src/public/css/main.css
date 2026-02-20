@@ -2249,6 +2249,7 @@ ul, ol { list-style: none; }
   line-height: 1.7;
   color: var(--text-secondary);
   margin-bottom: 28px;
+  white-space: pre-line;
 }
 
 .offer-conditions-box {
@@ -3115,6 +3116,7 @@ ul, ol { list-style: none; }
   font-size: 0.9375rem;
   line-height: 1.65;
   color: var(--text-secondary);
+  white-space: pre-line;
 }
 
 /* ─── REVIEW RESPONSE ─────────────────────────────────── */

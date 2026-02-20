@@ -1477,7 +1477,7 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
 router.get("/setari", requireWebAuth, async (req, res) => {
   try {
     const userRes = await pool.query(
-      "SELECT show_picture_in_reviews FROM users WHERE id = $1",
+      "SELECT show_picture_in_reviews, google_id FROM users WHERE id = $1",
       [req.webUser.id]
     );
     const userSettings = userRes.rows[0] || {};
@@ -1486,6 +1486,7 @@ router.get("/setari", requireWebAuth, async (req, res) => {
       activePage: "setari",
       webUser: req.webUser,
       showPictureInReviews: userSettings.show_picture_in_reviews !== false,
+      isGoogleUser: !!userSettings.google_id,
     });
   } catch (err) {
     console.error("[Web] Settings error:", err);
@@ -1907,28 +1908,40 @@ router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (
   }
 });
 
-// Upload gallery image
+// Upload gallery image (atomic count check to prevent race condition)
 router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, portalUpload.single("image"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { businessId } = req.params;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
 
-    // Check max 8 images
-    const countRes = await pool.query("SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1", [businessId]);
+    await client.query("BEGIN");
+
+    // Atomic count check with row lock to prevent race condition
+    const countRes = await client.query(
+      "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1 FOR UPDATE",
+      [businessId]
+    );
     if (parseInt(countRes.rows[0].cnt) >= 8) {
+      await client.query("ROLLBACK");
       return res.status(400).json({ message: "Maximum 8 imagini permise" });
     }
 
     const result = await uploadToCloudinary(req.file.buffer, "gallery");
     const sortOrder = parseInt(countRes.rows[0].cnt) + 1;
-    const insertRes = await pool.query(
+    const insertRes = await client.query(
       "INSERT INTO business_images (business_id, image_url, sort_order) VALUES ($1, $2, $3) RETURNING id",
       [businessId, result.url, sortOrder]
     );
+
+    await client.query("COMMIT");
     res.json({ success: true, image: { id: insertRes.rows[0].id, url: result.url, sort_order: sortOrder } });
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[Web API] Portal upload gallery error:", err);
     res.status(500).json({ message: "Eroare la upload" });
+  } finally {
+    client.release();
   }
 });
 
@@ -2678,7 +2691,10 @@ router.post("/api/web/change-password", requireWebAuth, async (req, res) => {
       return res.status(400).json({ message: pwdCheck.message });
     }
 
-    const userRes = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.webUser.id]);
+    const userRes = await pool.query("SELECT password_hash, google_id FROM users WHERE id = $1", [req.webUser.id]);
+    if (userRes.rows[0].google_id && !userRes.rows[0].password_hash) {
+      return res.status(400).json({ message: "Contul tău folosește Google Sign-In. Parola este gestionată de Google." });
+    }
     const isValid = await bcrypt.compare(currentPassword, userRes.rows[0].password_hash);
     if (!isValid) {
       return res.status(401).json({ message: "Parola curentă este incorectă" });
@@ -2697,25 +2713,35 @@ router.post("/api/web/change-password", requireWebAuth, async (req, res) => {
 // --- Delete Account (full cascade, mirrors users.js /me) ---
 router.delete("/api/web/delete-account", requireWebAuth, async (req, res) => {
   const userId = req.webUser.id;
-  const { password } = req.body || {};
-
-  if (!password) {
-    return res.status(400).json({ message: "Parola este obligatorie" });
-  }
+  const { password, email_confirm } = req.body || {};
 
   const client = await pool.connect();
 
   try {
-    const userRes = await client.query("SELECT password_hash FROM users WHERE id = $1", [userId]);
+    const userRes = await client.query("SELECT password_hash, google_id, email FROM users WHERE id = $1", [userId]);
     if (userRes.rowCount === 0) {
       client.release();
       return res.status(404).json({ message: "Utilizator negăsit" });
     }
 
-    const isValid = await bcrypt.compare(password, userRes.rows[0].password_hash);
-    if (!isValid) {
-      client.release();
-      return res.status(401).json({ message: "Parola este incorectă" });
+    const user = userRes.rows[0];
+
+    // Google users: confirm via email match; regular users: confirm via password
+    if (user.google_id && !user.password_hash) {
+      if (!email_confirm || email_confirm.toLowerCase() !== user.email.toLowerCase()) {
+        client.release();
+        return res.status(401).json({ message: "Email-ul nu corespunde contului tău" });
+      }
+    } else {
+      if (!password) {
+        client.release();
+        return res.status(400).json({ message: "Parola este obligatorie" });
+      }
+      const isValid = await bcrypt.compare(password, user.password_hash);
+      if (!isValid) {
+        client.release();
+        return res.status(401).json({ message: "Parola este incorectă" });
+      }
     }
 
     await client.query("BEGIN");

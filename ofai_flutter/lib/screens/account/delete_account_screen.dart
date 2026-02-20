@@ -78,8 +78,8 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       });
       await SecureStorage.clearAll();
       if (mounted) {
-        ref.read(authProvider.notifier).logout();
-        context.go('/');
+        await ref.read(authProvider.notifier).logout();
+        if (mounted) context.go('/');
       }
     } catch (e) {
       if (mounted) {

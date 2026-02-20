@@ -124,7 +124,10 @@ async function createOffer(pool, params) {
   }
 
   // Push notification to subscribers (fire-and-forget)
-  const discountText = discountValue ? ` (-${discountValue}%)` : "";
+  let discountText = "";
+  if (discountValue) {
+    discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;
+  }
   pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
     title: `${bizName} are o ofertă nouă!`,
     body: `${title}${discountText}`,

@@ -49,11 +49,14 @@ async function createRefreshToken(userId) {
 // POST /auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, first_name, last_name, accept_terms, accept_privacy } = req.body || {};
+    const { email: rawEmail, password, first_name, last_name, accept_terms, accept_privacy } = req.body || {};
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return res.status(400).json({ message: "Email și parola sunt obligatorii" });
     }
+
+    // Normalize email to prevent duplicate accounts (e.g. "User@Gmail.COM" vs "user@gmail.com")
+    const email = rawEmail.trim().toLowerCase();
 
     // Validare forță parolă
     const pwdCheck = validatePassword(password);
@@ -546,10 +549,15 @@ router.post("/change-password", authenticateToken, async (req, res) => {
       return res.status(400).json({ message: pwdCheck.errors[0] });
     }
 
-    const userRes = await pool.query("SELECT password_hash FROM users WHERE id = $1", [req.user.id]);
+    const userRes = await pool.query("SELECT password_hash, google_id FROM users WHERE id = $1", [req.user.id]);
 
     if (userRes.rowCount === 0) {
       return res.status(404).json({ message: "Utilizator negăsit" });
+    }
+
+    // Google OAuth users have no password — cannot change it here
+    if (userRes.rows[0].google_id && !userRes.rows[0].password_hash) {
+      return res.status(400).json({ message: "Contul tău folosește Google Sign-In. Parola este gestionată de Google." });
     }
 
     const isValid = await bcrypt.compare(currentPassword, userRes.rows[0].password_hash);

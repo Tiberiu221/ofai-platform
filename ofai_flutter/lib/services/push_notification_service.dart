@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -21,6 +22,7 @@ class PushNotificationService {
   FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   String? _currentToken;
   bool _initialized = false;
+  StreamSubscription<String>? _tokenRefreshSubscription;
 
   /// Called after successful login/register to set up push notifications.
   Future<void> initialize() async {
@@ -57,8 +59,8 @@ class PushNotificationService {
         print('[Push] FCM token is null!');
       }
 
-      // Listen for token refresh
-      _messaging.onTokenRefresh.listen((newToken) {
+      // Listen for token refresh — store subscription so it can be cancelled on logout
+      _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((newToken) {
         print('[Push] Token refreshed');
         _currentToken = newToken;
         _registerTokenWithBackend(newToken);
@@ -160,6 +162,8 @@ class PushNotificationService {
         }
       }
       await _messaging.deleteToken();
+      await _tokenRefreshSubscription?.cancel();
+      _tokenRefreshSubscription = null;
       _currentToken = null;
       _initialized = false;
       print('[Push] Logout cleanup done');

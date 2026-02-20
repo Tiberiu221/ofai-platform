@@ -272,22 +272,25 @@ router.post("/:businessId/cover", businessAuth, upload.single("cover"), async (r
 //   UPLOAD GALLERY IMAGE - Cloudinary
 // =====================================
 router.post("/:businessId/images", businessAuth, upload.single("image"), async (req, res) => {
+  const client = await pool.connect();
   try {
     const { businessId } = req.params;
-    console.log("[BusinessPortal] POST gallery image - Starting upload for business:", businessId);
 
     if (!req.file) {
-      console.log("[BusinessPortal] No file in request");
+      client.release();
       return res.status(400).json({ message: "Niciun fișier încărcat" });
     }
 
-    // Verifică limita de imagini
-    const countRes = await pool.query(
-      "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1",
+    await client.query("BEGIN");
+
+    // Atomic count check with row lock to prevent race condition
+    const countRes = await client.query(
+      "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1 FOR UPDATE",
       [businessId]
     );
 
     if (parseInt(countRes.rows[0].cnt) >= 8) {
+      await client.query("ROLLBACK");
       return res.status(400).json({ message: "Maximum 8 imagini permise" });
     }
 
@@ -296,16 +299,19 @@ router.post("/:businessId/images", businessAuth, upload.single("image"), async (
 
     // Salvează în DB
     const sortOrder = parseInt(countRes.rows[0].cnt) + 1;
-    await pool.query(
+    await client.query(
       "INSERT INTO business_images (business_id, image_url, sort_order) VALUES ($1, $2, $3)",
       [businessId, result.url, sortOrder]
     );
 
-    console.log("[BusinessPortal] Gallery image saved:", result.url);
+    await client.query("COMMIT");
     res.json({ success: true, image_url: result.url });
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[BusinessPortal] Error uploading gallery image:", err);
     res.status(500).json({ message: "Eroare la încărcarea imaginii" });
+  } finally {
+    client.release();
   }
 });
 

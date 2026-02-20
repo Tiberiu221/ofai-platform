@@ -11,27 +11,34 @@
 <section class="section" style="padding-top: 0;">
   <div class="container" style="max-width: 640px;">
 
-    <!-- Change Password -->
+    <!-- Change Password (hidden for Google OAuth users) -->
+    <% if (typeof isGoogleUser !== 'undefined' && isGoogleUser) { %>
+    <div class="settings-section reveal">
+      <h2 class="settings-section-title">Autentificare</h2>
+      <p style="color: var(--text-secondary); font-size: 0.875rem;">Contul tău folosește <strong style="color: var(--accent);">Google Sign-In</strong>. Parola este gestionată de Google.</p>
+    </div>
+    <% } else { %>
     <div class="settings-section reveal">
       <h2 class="settings-section-title">Schimbă parola</h2>
       <form id="change-password-form" onsubmit="return changePassword(event)">
         <div class="auth-form-group">
           <label class="auth-label">Parola curentă</label>
-          <input type="password" name="currentPassword" class="auth-input" required minlength="6">
+          <input type="password" name="currentPassword" class="auth-input" required minlength="8">
         </div>
         <div class="auth-form-group">
           <label class="auth-label">Parola nouă</label>
-          <input type="password" name="newPassword" class="auth-input" required minlength="6">
+          <input type="password" name="newPassword" class="auth-input" required minlength="8">
         </div>
         <div class="auth-form-group">
           <label class="auth-label">Confirmă parola nouă</label>
-          <input type="password" name="confirmPassword" class="auth-input" required minlength="6">
+          <input type="password" name="confirmPassword" class="auth-input" required minlength="8">
         </div>
         <div id="password-error" class="auth-error" style="display: none;"></div>
         <div id="password-success" style="display: none; color: var(--success); font-size: 0.875rem; margin-bottom: 12px;"></div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">Schimbă parola</button>
       </form>
     </div>
+    <% } %>
 
     <!-- Preferences Link -->
     <div class="settings-section reveal">
@@ -73,6 +80,19 @@
 <div class="settings-modal" id="delete-modal" style="display: none;">
   <div class="settings-modal-content">
     <h3>Ești sigur?</h3>
+    <% if (typeof isGoogleUser !== 'undefined' && isGoogleUser) { %>
+    <p style="color: var(--text-secondary); margin-bottom: 16px;">Această acțiune este ireversibilă. Introdu adresa ta de email pentru confirmare.</p>
+    <form onsubmit="return deleteAccount(event)">
+      <div class="auth-form-group">
+        <input type="email" name="deleteEmail" class="auth-input" placeholder="<%= webUser.email %>" required>
+      </div>
+      <div id="delete-error" class="auth-error" style="display: none;"></div>
+      <div style="display: flex; gap: 12px;">
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('delete-modal').style.display='none'">Anulează</button>
+        <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;">Șterge contul</button>
+      </div>
+    </form>
+    <% } else { %>
     <p style="color: var(--text-secondary); margin-bottom: 16px;">Această acțiune este ireversibilă. Introdu parola pentru confirmare.</p>
     <form onsubmit="return deleteAccount(event)">
       <div class="auth-form-group">
@@ -84,6 +104,7 @@
         <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;">Șterge contul</button>
       </div>
     </form>
+    <% } %>
   </div>
 </div>
 
@@ -127,9 +148,22 @@
   async function deleteAccount(e) {
     e.preventDefault();
     const form = e.target;
-    const password = form.deletePassword.value;
+    const isGoogle = <%= typeof isGoogleUser !== 'undefined' && isGoogleUser ? 'true' : 'false' %>;
     const errEl = document.getElementById('delete-error');
     errEl.style.display = 'none';
+
+    let bodyData;
+    if (isGoogle) {
+      const email = form.deleteEmail.value;
+      if (email !== '<%= webUser.email %>') {
+        errEl.textContent = 'Email-ul nu corespunde contului tău';
+        errEl.style.display = '';
+        return false;
+      }
+      bodyData = { email_confirm: email };
+    } else {
+      bodyData = { password: form.deletePassword.value };
+    }
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -139,7 +173,7 @@
           'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
         },
-        body: JSON.stringify({ password })
+        body: JSON.stringify(bodyData)
       });
       const json = await res.json();
       if (!res.ok) { errEl.textContent = json.message || 'Eroare'; errEl.style.display = ''; return false; }

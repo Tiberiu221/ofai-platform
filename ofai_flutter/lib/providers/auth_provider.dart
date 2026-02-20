@@ -84,6 +84,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(data['user']);
       state = AuthState(status: AuthStatus.authenticated, user: user);
 
+      // Invalidate stale favorites/subscriptions from any previous session
+      _ref.invalidate(favoritesProvider);
+      _ref.invalidate(subscriptionsProvider);
+
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
         print('[Push] Init failed: $e');
@@ -125,6 +129,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(data['user']);
       state = AuthState(status: AuthStatus.authenticated, user: user);
 
+      // Invalidate stale favorites/subscriptions from any previous session
+      _ref.invalidate(favoritesProvider);
+      _ref.invalidate(subscriptionsProvider);
+
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
         print('[Push] Init failed: $e');
@@ -140,7 +148,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
       final googleUser = await GoogleSignIn(
-        serverClientId: '528878938929-6adc8diuadocsf9bh3f12mvekirb93aj.apps.googleusercontent.com',
+        serverClientId: AppConfig.googleClientId,
       ).signIn();
       if (googleUser == null) {
         // User cancelled the sign-in
@@ -167,6 +175,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       final user = User.fromJson(data['user']);
       state = AuthState(status: AuthStatus.authenticated, user: user);
+
+      // Invalidate stale favorites/subscriptions from any previous session
+      _ref.invalidate(favoritesProvider);
+      _ref.invalidate(subscriptionsProvider);
 
       PushNotificationService().initialize().catchError((e) {
         print('[Push] Init failed: $e');

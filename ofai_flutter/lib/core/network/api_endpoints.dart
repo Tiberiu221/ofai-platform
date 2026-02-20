@@ -1,3 +1,13 @@
+class AppConfig {
+  AppConfig._();
+
+  /// Google OAuth Client ID — uses --dart-define=GOOGLE_CLIENT_ID=... at build time, falls back to default
+  static const String googleClientId = String.fromEnvironment(
+    'GOOGLE_CLIENT_ID',
+    defaultValue: '528878938929-6adc8diuadocsf9bh3f12mvekirb93aj.apps.googleusercontent.com',
+  );
+}
+
 class ApiEndpoints {
   ApiEndpoints._();
 

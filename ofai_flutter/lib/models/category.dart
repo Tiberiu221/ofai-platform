@@ -29,6 +29,8 @@ class Category {
         return Icons.spa;
       case 'auto':
         return Icons.directions_car;
+      case 'restaurant':
+        return Icons.restaurant;
       case 'magazine online':
         return Icons.shopping_cart;
       case 'cafenea':
