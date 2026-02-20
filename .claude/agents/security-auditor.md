@@ -49,24 +49,36 @@ You are an elite security auditor performing deep analysis on the OFAI platform 
 ## Key Files to Audit
 
 ```
-Backend:
-├── src/routes/web.js              # ~1950+ lines — ALL web routes + AJAX endpoints
-├── src/routes/auth.js             # Mobile auth API (login, register, refresh, logout)
-├── src/routes/admin.js            # Admin panel routes
-├── src/routes/business-portal.js  # Mobile business API (Bearer auth)
+Backend routes:
+├── src/routes/web.js              # ~2300+ lines — ALL web routes + AJAX + portal analytics
+├── src/routes/auth.js             # Mobile auth API (login, register, refresh, google, logout)
+├── src/routes/offers.js           # Mobile offers API (feed, search, prefs filtering with optionalAuth)
+├── src/routes/businesses.js       # Mobile businesses API (list, search, prefs filtering with optionalAuth)
+├── src/routes/admin.js            # Admin panel CRUD routes
+├── src/routes/business-portal.js  # Mobile business API (Bearer auth, offer CRUD)
 ├── src/routes/businessRequests.js # Business request submit + track
-├── src/middleware/webAuth.js      # Cookie JWT + transparent refresh
-├── src/middleware/businessWebAuth.js # Cookie + ownership check
-├── src/middleware/auth.js         # Bearer token auth
-├── src/middleware/adminAuth.js    # HTTP Basic auth (timing-safe)
-├── src/middleware/rateLimiter.js  # Rate limiting config
-├── src/helpers/validate.js        # Input validation + MIME whitelist
-├── src/helpers/jwt.js             # Token generation (24h access, 30d refresh)
-├── src/services/email.js          # Resend integration
-├── src/services/cloudinary.js     # Image upload/delete
+├── src/routes/reviews.js          # Review CRUD + badge triggers
+├── src/routes/favorites.js        # Favorites toggle + badge triggers
+├── src/routes/subscriptions.js    # Follow/unfollow + badge triggers
+├── src/routes/users.js            # User profile, preferences, profile picture upload
+
+Backend middleware:
+├── src/middleware/webAuth.js       # Cookie JWT + transparent refresh
+├── src/middleware/businessWebAuth.js # Cookie + ownership via user_businesses
+├── src/middleware/auth.js          # Bearer: authenticateToken, requireAdmin, requireBusinessOwner, optionalAuth
+├── src/middleware/adminAuth.js     # HTTP Basic auth (timing-safe)
+├── src/middleware/rateLimiter.js   # Rate limiting (click, search, reveal, auth)
+
+Backend services:
+├── src/helpers/validate.js         # Input validation + MIME whitelist
+├── src/helpers/jwt.js              # Token generation (24h access, 30d refresh)
+├── src/services/email.js           # Resend integration
+├── src/services/cloudinary.js      # Image upload/delete (gallery, profile pictures)
 ├── src/services/pushNotifications.js # Dual Expo + FCM
-├── src/services/cronJobs.js       # Scheduled cleanup jobs
-├── src/index.js                   # Express setup, Helmet, CORS, trust proxy
+├── src/services/cronJobs.js        # Scheduled cleanup jobs
+├── src/services/badgeService.js    # Gamification badge awards
+├── src/services/offerService.js    # Offer CRUD with transactions
+├── src/index.js                    # Express setup, Helmet, CORS, trust proxy
 
 Flutter:
 ├── lib/core/network/api_client.dart    # Dio + auth interceptor
@@ -77,6 +89,7 @@ Flutter:
 Web frontend:
 ├── src/public/js/main.js          # Client-side JS (CSRF, fetch, tracking)
 ├── src/views/public/              # All EJS templates
+├── src/views/public/portal/manage.ejs # Business dashboard + analytics
 ```
 
 ## Security Checklist
@@ -126,6 +139,10 @@ Web frontend:
 - [ ] Unbounded queries (missing LIMIT, DoS vector)
 - [ ] Click tracking abuse (spam clicks)
 - [ ] Business request manipulation (status tampering)
+- [ ] Analytics endpoint authorization (offer-views: verify offer belongs to business)
+- [ ] Preference filtering bypass (prefs=1 with manipulated user data)
+- [ ] Profile picture upload validation (MIME type, file size, Cloudinary transforms)
+- [ ] Badge service: verify fire-and-forget doesn't mask errors that affect data integrity
 
 ## Output Format
 

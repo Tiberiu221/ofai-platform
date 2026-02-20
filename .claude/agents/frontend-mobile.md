@@ -22,6 +22,7 @@ You are a senior Flutter developer specialized in the OFAI mobile app (`ofai_flu
 - **google_fonts** — DM Serif Display + Inter
 - **geolocator** — location services
 - **shimmer** — skeleton loading effects
+- **image_picker** — profile picture upload from camera/gallery
 
 ## Project Structure
 
@@ -33,11 +34,11 @@ ofai_flutter/
 │   │   ├── storage/           # SecureStorage (tokens), AppPreferences (onboarding)
 │   │   ├── theme/             # AppColors, AppTypography, AppSpacing, AppTheme, PageTransitions
 │   │   └── utils/             # Launchers (call/whatsapp/maps/share)
-│   ├── models/                # Offer, Business, User, Review, PaginatedResponse
+│   ├── models/                # Offer, Business, User, Review, UserBadge, PaginatedResponse
 │   ├── providers/             # Riverpod: auth, offers, businesses, favorites, subscriptions, static_data
 │   ├── screens/
 │   │   ├── home/              # HomeScreen (feed/popular offers, categories, businesses)
-│   │   ├── explore/           # ExploreScreen (search, filters, pagination)
+│   │   ├── explore/           # ExploreScreen (search, filters, pagination, preference pill)
 │   │   ├── collection/        # CollectionScreen (favorites + subscriptions tabs)
 │   │   ├── account/           # AccountScreen + sub-screens (edit, password, preferences, export, delete)
 │   │   ├── auth/              # Login, Register, ForgotPassword, VerifyCode, ResetPassword
@@ -69,7 +70,7 @@ ofai_flutter/
 ## State Management Patterns
 
 ### StateNotifier (mutable state)
-- `AuthNotifier` — login, register, logout, refreshUser
+- `AuthNotifier` — login, register, logout, refreshUser, updateProfilePicture
 - `FavoritesNotifier` — fetch, toggle (optimistic update)
 - `SubscriptionsNotifier` — fetch, toggle (optimistic update)
 
@@ -79,6 +80,19 @@ ofai_flutter/
 - `citiesProvider`, `categoriesProvider` — global cache (intentionally NO autoDispose)
 - `onboardingDoneProvider` — SharedPreferences, MUST `ref.invalidate()` before navigating after write
 
+### Preference Filtering (prefs pill)
+- `offersProvider` / `businessesProvider` — accept `prefsActive` param, send `?prefs=1` to API
+- `PreferenceChip` widget in ExploreScreen — toggles preference filtering
+- If user has no preferences, navigates to PreferencesScreen first
+
+## Models
+
+- **Offer** — includes `OfferBusiness` with `isVerified` field
+- **Business** — has `isVerified` field for verified badge display
+- **User** — `preferredCityIds`, `preferredCategoryIds`, `profilePictureUrl`, `showPictureInReviews`
+- **UserBadge** — `slug`, `name`, `description`, `icon`, `color`, `earnedAt`
+- **Review** — includes reviewer `profilePictureUrl` + `showPictureInReviews`
+
 ## Theme System
 
 - **Dark mode ONLY** — no light theme
@@ -86,6 +100,25 @@ ofai_flutter/
 - **AppTypography:** DM Serif Display (headings via google_fonts), Inter (body)
 - **AppSpacing:** consistent spacing tokens + `pageH`/`pagePadding` EdgeInsets
 - **AppTheme.dark:** full MaterialApp ThemeData (ElevatedButton, InputDecoration, BottomNavigationBar)
+
+## Key Features
+
+### Verified Badge
+- `Icons.verified` (accent color) on BusinessDetailScreen, BusinessCard, OfferCard
+- `isVerified` field from API on both Business and OfferBusiness models
+
+### User Badges / Gamification
+- `UserBadge` model, `_BadgeChip` widget in AccountScreen (Wrap layout)
+- Badges array returned in `GET /users/me` response
+
+### Profile Picture
+- `image_picker` → `authProvider.updateProfilePicture()` → multipart upload
+- Avatar with initials fallback in navbar, account screen
+
+### Preference Pill
+- `PreferenceChip` in ExploreScreen filter bar
+- `prefsActive` state toggled on/off, sends `?prefs=1` to API
+- Only visible when user is logged in AND has preferences saved
 
 ## Critical Rules
 
@@ -110,7 +143,7 @@ ofai_flutter/
 ## Navigation
 
 - **GoRouter** with ShellRoute for bottom nav (Home, Explore, Collection, Account)
-- **Standalone routes:** offer detail, business detail, auth screens, onboarding
+- **Standalone routes:** offer detail, business detail, auth screens, onboarding, preferences
 - **Page transitions:** `slideUpTransition()` for details (Offset 0→0.15, fade, 250ms), `fadeTransition()` for auth (200ms)
 - **Onboarding redirect:** GoRouter redirect checks `onboardingDoneProvider`, redirects to `/onboarding` if not done
 
@@ -118,8 +151,8 @@ ofai_flutter/
 
 1. Read existing code patterns before implementing new features
 2. Match the existing component structure and naming conventions
-3. Check `HANDOFF_DOCUMENT.md` for full feature status and implementation history
-4. Verify API response format matches model `fromJson` factories
-5. Test on Android emulator — iOS not yet configured
-6. Run `flutter analyze --no-pub` before committing to catch issues
-7. Emulator reinstall needed when changing AndroidManifest.xml permissions
+3. Verify API response format matches model `fromJson` factories
+4. Test on Android emulator — iOS not yet configured
+5. Run `flutter analyze --no-pub` before committing to catch issues
+6. Emulator reinstall needed when changing AndroidManifest.xml permissions
+7. Build APK: `flutter build apk --debug` from `ofai_flutter/`
