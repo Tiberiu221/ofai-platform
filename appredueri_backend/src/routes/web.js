@@ -1141,7 +1141,9 @@ router.post("/register", async (req, res) => {
 });
 
 // POST /auth/google - Google OAuth Sign-In
-router.post("/auth/google", async (req, res) => {
+router.post("/auth/google", async (req, res, next) => {
+  // Skip web handler for mobile clients — let authRouter handle it
+  if (req.headers['x-client'] === 'mobile') return next();
   try {
     const { idToken } = req.body || {};
     if (!idToken) {
