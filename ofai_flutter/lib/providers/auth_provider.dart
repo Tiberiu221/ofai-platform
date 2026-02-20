@@ -254,7 +254,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la încărcarea pozei';
-      throw ApiException(msg);
+      throw ApiException(message: msg);
     }
   }
 
@@ -281,7 +281,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       }
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la ștergerea pozei';
-      throw ApiException(msg);
+      throw ApiException(message: msg);
     }
   }
 }
