@@ -2341,92 +2341,18 @@ ul, ol { list-style: none; }
   color: var(--text-muted);
 }
 
-/* ─── MOSAIC (Cover + Gallery Combined) ──────────────── */
-.bd-mosaic {
-  margin-top: 8px;
-  margin-bottom: 12px;
-}
-.bd-mosaic-inner {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: 6px;
-  height: 190px;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-.bd-mosaic--single .bd-mosaic-inner {
-  grid-template-columns: 1fr;
-}
-.bd-mosaic--two .bd-mosaic-inner {
-  grid-template-columns: 1fr 1fr;
-}
-.bd-mosaic--empty .bd-mosaic-inner {
-  grid-template-columns: 1fr;
-}
-.bd-mosaic-cell {
-  position: relative;
-  overflow: hidden;
+/* ─── GALLERY BUTTON (in actions row) ────────────────── */
+.bd-gallery-btn {
   cursor: pointer;
-  border: none;
-  padding: 0;
-  background: var(--bg-surface);
-  transition: opacity 0.2s;
-}
-.bd-mosaic-cell:hover {
-  opacity: 0.88;
-}
-.bd-mosaic-cell img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.bd-mosaic-side {
-  display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 6px;
-}
-.bd-mosaic-cta {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 20px;
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-}
-.bd-mosaic-cta svg {
-  flex-shrink: 0;
-}
-.bd-mosaic-more-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 1.25rem;
-  font-weight: 700;
-  backdrop-filter: blur(2px);
-  pointer-events: none;
-}
-.bd-mosaic-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(251,146,60,0.12) 0%, var(--bg-surface) 100%);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  color: var(--text-muted);
-  height: 100%;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: inherit;
+}
+.bd-gallery-btn:hover {
+  border-color: var(--accent);
+  background: rgba(251, 146, 60, 0.08);
 }
 
 /* ─── PROFILE SECTION ─────────────────────────────────── */
@@ -3814,10 +3740,6 @@ ul, ol { list-style: none; }
     padding: 32px 0;
   }
 
-  .bd-mosaic-inner {
-    height: 160px;
-    border-radius: var(--radius-md);
-  }
 
   .bd-avatar {
     width: 56px;
@@ -3896,10 +3818,6 @@ ul, ol { list-style: none; }
     padding: 24px 0;
   }
 
-  .bd-mosaic-inner {
-    height: 130px;
-    border-radius: 6px;
-  }
 
   .bd-gallery-grid {
     grid-template-columns: 1fr;
@@ -4347,11 +4265,6 @@ ul, ol { list-style: none; }
 
   .bd-breadcrumb {
     font-size: 0.6875rem;
-  }
-
-  /* Business detail mosaic */
-  .bd-mosaic-inner {
-    height: 110px;
   }
 
   .bd-avatar {
