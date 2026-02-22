@@ -19,6 +19,7 @@ import '../../widgets/animated_toggle_fab.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
+import '../../widgets/offer_card.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -463,6 +464,59 @@ class OfferDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
+                      ),
+                    ),
+
+                  // Similar offers
+                  if (offer.business?.categoryId != null)
+                    SliverToBoxAdapter(
+                      child: Builder(
+                        builder: (context) {
+                          final similarAsync = ref.watch(similarOffersProvider({
+                            'categoryId': offer.business!.categoryId!,
+                            'excludeId': offer.id,
+                          }));
+
+                          return similarAsync.when(
+                            data: (offers) {
+                              if (offers.isEmpty) return const SizedBox.shrink();
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: AppSpacing.xxl),
+                                    const Text(
+                                      'Oferte similare',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SizedBox(
+                                      height: 200,
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: offers.length,
+                                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                                        itemBuilder: (context, index) {
+                                          return SizedBox(
+                                            width: 200,
+                                            child: OfferCard(offer: offers[index], horizontal: true),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                          );
+                        },
                       ),
                     ),
 

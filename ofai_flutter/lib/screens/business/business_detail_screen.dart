@@ -130,7 +130,37 @@ class BusinessDetailScreen extends ConsumerWidget {
                               if (business.isVerified)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 6),
-                                  child: Icon(Icons.verified, color: AppColors.accent, size: 24),
+                                  child: GestureDetector(
+                                    onTap: () => showModalBottomSheet(
+                                      context: context,
+                                      backgroundColor: AppColors.bgSecondary,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                      ),
+                                      builder: (_) => Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.verified, color: AppColors.accent, size: 48),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                              'Business Verificat',
+                                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            const Text(
+                                              'Acest business a fost verificat de echipa OFAI: profil complet, contact valid, oferte reale.',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                                            ),
+                                            const SizedBox(height: 24),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Icon(Icons.verified, color: AppColors.accent, size: 24),
+                                  ),
                                 ),
                             ],
                           ),
@@ -181,6 +211,33 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   ),
                               ],
                             ),
+
+                            // Follower count chip
+                            if (business.followerCount >= 3) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Row(
+                                children: [
+                                  Icon(Icons.people_outline, size: 14, color: AppColors.textTertiary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${business.followerCount} urmaritori',
+                                    style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            // Rating breakdown
+                            if (business.ratingCount != null &&
+                                business.ratingCount! >= 3 &&
+                                business.ratingDistribution.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              _RatingBreakdown(
+                                distribution: business.ratingDistribution,
+                                totalCount: business.ratingCount!,
+                              ),
+                            ],
+
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
@@ -1007,6 +1064,61 @@ class _PinchRequestCardState extends ConsumerState<_PinchRequestCard>
         ),
         const SizedBox(height: AppSpacing.xxl),
       ],
+    );
+  }
+}
+
+class _RatingBreakdown extends StatelessWidget {
+  final Map<int, int> distribution;
+  final int totalCount;
+
+  const _RatingBreakdown({required this.distribution, required this.totalCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(5, (i) {
+        final star = 5 - i; // 5 down to 1
+        final count = distribution[star] ?? 0;
+        final fraction = totalCount > 0 ? count / totalCount : 0.0;
+        final pct = (fraction * 100).round();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 32,
+                child: Text(
+                  '$star \u2605',
+                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                  child: LinearProgressIndicator(
+                    value: fraction.toDouble(),
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.06),
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              SizedBox(
+                width: 36,
+                child: Text(
+                  '$pct%',
+                  textAlign: TextAlign.right,
+                  style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

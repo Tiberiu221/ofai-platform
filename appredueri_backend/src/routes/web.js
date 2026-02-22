@@ -721,8 +721,30 @@ router.get("/oferta/:id", async (req, res) => {
       })),
     };
 
+    // Similar offers (same category, excluding current)
+    let similarOffers = [];
+    if (row.cat_id) {
+      const similarResult = await pool.query(`
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+               b.name as business_name, b.logo_url as business_logo,
+               COALESCE(o.logo_url, b.cover_image_url) as image_url,
+               c.name as city_name
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        LEFT JOIN cities c ON b.city_id = c.id
+        WHERE o.id != $1
+          AND o.is_active = TRUE
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          AND b.category_id = $2
+        ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
+        LIMIT 4
+      `, [id, row.cat_id]);
+      similarOffers = similarResult.rows;
+    }
+
     res.render("public/offer-detail", {
       offer,
+      similarOffers,
       isFavorite,
       activePage: null,
       webUser: req.webUser,
@@ -826,7 +848,11 @@ router.get("/business/:id", async (req, res) => {
              c.id as city_id, c.name as city_name,
              cat.id as cat_id, cat.name as cat_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,
-             COUNT(r.id) as rating_count
+             COUNT(r.id) as rating_count,
+             (SELECT COUNT(*) FROM followed_businesses fb WHERE fb.business_id = b.id) as follower_count,
+             (SELECT json_agg(json_build_object('rating', r_dist.rating, 'count', r_dist.cnt))
+              FROM (SELECT rating, COUNT(*) as cnt FROM reviews WHERE business_id = b.id GROUP BY rating) r_dist
+             ) as rating_distribution
       FROM businesses b
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
@@ -998,6 +1024,8 @@ router.get("/business/:id", async (req, res) => {
       category: { id: b.cat_id, name: b.cat_name },
       rating: parseFloat(parseFloat(b.rating_avg).toFixed(1)),
       rating_count: parseInt(b.rating_count),
+      follower_count: parseInt(b.follower_count) || 0,
+      rating_distribution: b.rating_distribution || [],
       images,
       locations,
       booking: {
@@ -1838,7 +1866,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
     if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
     const offerRes = await pool.query(
-      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code FROM offers WHERE id = $1 AND business_id = $2",
+      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, max_reveals FROM offers WHERE id = $1 AND business_id = $2",
       [offerId, businessId]
     );
     if (offerRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
@@ -2034,7 +2062,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
@@ -2068,6 +2096,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
       bookingUrl: booking_url,
       bookingInstructions: sanitizeString(booking_instructions, 500),
       promoCodes: sanitizedPromoCodes,
+      maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: false, // Web portal doesn't send webhook
     });
 
@@ -2082,7 +2111,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
 router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     await pool.query(`
       UPDATE offers SET
@@ -2095,12 +2124,14 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         end_date = COALESCE($7, end_date),
         is_active = COALESCE($8, is_active),
         booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13
-      WHERE id = $14 AND business_id = $15
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
+        max_reveals = $14
+      WHERE id = $15 AND business_id = $16
     `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active,
         booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
+        max_reveals ? parseInt(max_reveals) : null,
         offerId, businessId]);
 
     // Backward compat: if single promo_code string sent, convert to array

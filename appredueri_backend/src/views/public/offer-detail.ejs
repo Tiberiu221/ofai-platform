@@ -891,6 +891,20 @@
           Cod promotional
         </div>
 
+        <% if (offer.max_reveals) { %>
+          <% const remaining = offer.max_reveals - (parseInt(offer.reveal_count) || 0); %>
+          <% const pct = remaining / offer.max_reveals; %>
+          <div style="margin-bottom: 12px; font-size: 0.8125rem;">
+            <% if (remaining <= 0) { %>
+              <span style="color: var(--text-tertiary);">Coduri epuizate</span>
+            <% } else if (pct < 0.2) { %>
+              <span style="color: var(--danger); font-weight: 600;">Ultimele <%= remaining %> coduri!</span>
+            <% } else { %>
+              <span style="color: var(--text-secondary);">Mai sunt <%= remaining %> din <%= offer.max_reveals %> coduri</span>
+            <% } %>
+          </div>
+        <% } %>
+
         <% if (!webUser) { %>
           <!-- Not logged in -->
           <div class="promo-code-placeholder">
@@ -1067,6 +1081,30 @@
     </div>
   </aside>
 </div>
+
+<% if (similarOffers && similarOffers.length > 0) { %>
+  <section class="similar-offers-section" style="margin-top: 32px;">
+    <h3 style="font-size: 1.125rem; color: var(--text-primary); margin-bottom: 16px;">Oferte similare</h3>
+    <div class="similar-offers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;">
+      <% similarOffers.forEach(so => { %>
+        <a href="/oferta/<%= so.id %>" class="similar-offer-card" style="background: var(--surface-elevated); border-radius: 12px; overflow: hidden; text-decoration: none; transition: transform 0.2s;">
+          <div style="height: 140px; overflow: hidden;">
+            <img src="<%= so.image_url || '/images/placeholder.jpg' %>" alt="<%= so.title %>" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div style="padding: 12px;">
+            <% if (so.discount_value) { %>
+              <span style="background: var(--accent); color: #000; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;">
+                <%= so.discount_type === 'percentage' ? `-${so.discount_value}%` : `-${so.discount_value} RON` %>
+              </span>
+            <% } %>
+            <p style="color: var(--text-primary); font-size: 0.875rem; font-weight: 500; margin: 8px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= so.title %></p>
+            <p style="color: var(--text-tertiary); font-size: 0.75rem;"><%= so.business_name %><% if (so.city_name) { %> · <%= so.city_name %><% } %></p>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </section>
+<% } %>
 
 <% if (offer.has_promo_code && webUser) { %>
 <script>

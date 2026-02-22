@@ -691,6 +691,13 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Adaugă cod
           </button>
+          <div class="of-group" style="margin-top: 16px;">
+            <label class="of-label">Limita coduri (optional)</label>
+            <input type="number" name="max_reveals" class="of-input" min="1"
+                   placeholder="Lasa gol pentru nelimitat"
+                   value="<%= offer ? (offer.max_reveals || '') : '' %>">
+            <small style="color: var(--text-tertiary); display: block; margin-top: 4px;">Numarul maxim de utilizatori care pot dezvalui codul</small>
+          </div>
           <div class="of-hint" style="margin-top: 10px;">Opțional. Utilizatorii vor vedea un buton "Dezvăluie codul" pe pagina ofertei. Poți adăuga mai multe coduri și le poți activa/dezactiva individual.</div>
         </div>
 

@@ -48,6 +48,7 @@ async function createOffer(pool, params) {
     bookingUrl,
     bookingInstructions,
     promoCodes,
+    maxReveals,
     sendWebhook = false, // Only business portal triggers webhook by default
   } = params;
 
@@ -62,9 +63,10 @@ async function createOffer(pool, params) {
       INSERT INTO offers (
         business_id, title, description, discount_type, discount_value,
         conditions, start_date, end_date, is_active, logo_url,
-        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
+        booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions,
+        max_reveals
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING id
     `, [
       businessId,
@@ -82,6 +84,7 @@ async function createOffer(pool, params) {
       bookingWhatsapp || null,
       bookingUrl || null,
       bookingInstructions || null,
+      maxReveals || null,
     ]);
 
     offerId = result.rows[0].id;

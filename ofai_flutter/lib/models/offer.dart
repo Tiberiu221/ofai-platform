@@ -91,6 +91,7 @@ class OfferBusiness {
   final String? coverImageUrl;
   final String? city;
   final String? category;
+  final int? categoryId;
   final double? lat;
   final double? lng;
   final double? rating;
@@ -104,6 +105,7 @@ class OfferBusiness {
     this.coverImageUrl,
     this.city,
     this.category,
+    this.categoryId,
     this.lat,
     this.lng,
     this.rating,
@@ -119,6 +121,7 @@ class OfferBusiness {
       coverImageUrl: json['cover_image_url'] as String?,
       city: json['city'] is Map ? (json['city'] as Map)['name'] as String? : json['city'] as String?,
       category: json['category'] is Map ? (json['category'] as Map)['name'] as String? : json['category'] as String?,
+      categoryId: json['category'] is Map ? (json['category'] as Map)['id'] as int? : null,
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       rating: (json['rating'] as num?)?.toDouble(),

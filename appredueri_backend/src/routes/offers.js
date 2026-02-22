@@ -25,7 +25,7 @@ function makeAbsoluteUrl(req, relativePath) {
 // ==============================
 router.get("/", optionalAuth, async (req, res) => {
   try {
-    const { city_id, category_id, business_id, q, sort } = req.query;
+    const { city_id, category_id, business_id, q, sort, exclude } = req.query;
     const { page, limit, offset } = parsePagination(req.query);
 
     const filters = [];
@@ -35,6 +35,7 @@ router.get("/", optionalAuth, async (req, res) => {
     filters.push("o.is_active = TRUE");
     filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"); // NULL = nu expiră
 
+    if (exclude) { filters.push(`o.id != $${idx++}`); values.push(parseInt(exclude)); }
     if (city_id) { filters.push(`(b.city_id = $${idx++} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`); values.push(parseInt(city_id)); }
     if (category_id) { filters.push(`b.category_id = $${idx++}`); values.push(parseInt(category_id)); }
     if (business_id) { filters.push(`b.id = $${idx++}`); values.push(parseInt(business_id)); }
