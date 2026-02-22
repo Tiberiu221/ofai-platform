@@ -103,6 +103,11 @@ async function optionalWebAuth(req, res, next) {
     try {
       const decoded = verifyToken(token);
       req.webUser = await fetchUser(decoded.id);
+      // Fire-and-forget: update login streak (also awards daily login point once per day)
+      if (req.webUser) {
+        const { updateStreak } = require("../services/gamification");
+        updateStreak(req.webUser.id).catch(() => {});
+      }
       return next();
     } catch (verifyErr) {
       // Token expired or invalid — try refresh

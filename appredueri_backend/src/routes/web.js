@@ -841,6 +841,12 @@ router.post("/api/web/offers/:id/reveal-code", revealLimiter, requireWebAuth, as
       [id, req.webUser.id, req.ip || null, promoRow.id]
     ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
+    // Fire-and-forget: award points + check badges
+    const { awardPoints } = require("../services/gamification");
+    const { checkAndAwardBadges } = require("../services/badgeService");
+    awardPoints(req.webUser.id, "code_reveal").catch(() => {});
+    checkAndAwardBadges(req.webUser.id, ["code_hunter"]).catch(() => {});
+
     res.json({ promo_code: promoRow.code });
   } catch (err) {
     console.error("[Web] Reveal code error:", err);
@@ -1450,8 +1456,9 @@ router.get("/orase", async (req, res) => {
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
     const { getUserBadges } = require("../services/badgeService");
+    const { getStreak } = require("../services/gamification");
 
-    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges] = await Promise.all([
+    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges, streakData] = await Promise.all([
       pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
@@ -1462,6 +1469,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
         console.error("[Web] Badges fetch error:", err.message);
         return [];
       }),
+      getStreak(req.webUser.id),
     ]);
 
     const userPoints = pointsRes.rows[0]?.total_points || 0;
@@ -1472,6 +1480,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       activePage: "cont",
       webUser: req.webUser,
       userPoints,
+      userStreak: streakData.current_streak || 0,
       favCount: parseInt(favCount.rows[0].total),
       followCount: parseInt(followCount.rows[0].total),
       reviewCount: parseInt(reviewCount.rows[0].total),
@@ -2500,6 +2509,13 @@ router.post("/api/web/favorites", requireWebAuth, async (req, res) => {
       "INSERT INTO favorite_offers (user_id, offer_id) VALUES ($1, $2) ON CONFLICT (user_id, offer_id) DO NOTHING",
       [req.webUser.id, parseInt(offer_id)]
     );
+
+    // Fire-and-forget: award points + check badges
+    const { awardPoints } = require("../services/gamification");
+    const { checkAndAwardBadges } = require("../services/badgeService");
+    awardPoints(req.webUser.id, "favorite").catch(() => {});
+    checkAndAwardBadges(req.webUser.id, ["first_favorite"]).catch(() => {});
+
     res.json({ success: true });
   } catch (err) {
     console.error("[Web API] Add favorite error:", err);
@@ -2533,6 +2549,13 @@ router.post("/api/web/subscriptions", requireWebAuth, async (req, res) => {
       "INSERT INTO followed_businesses (user_id, business_id) VALUES ($1, $2) ON CONFLICT (user_id, business_id) DO NOTHING",
       [req.webUser.id, parseInt(business_id)]
     );
+
+    // Fire-and-forget: award points + check badges
+    const { awardPoints } = require("../services/gamification");
+    const { checkAndAwardBadges } = require("../services/badgeService");
+    awardPoints(req.webUser.id, "follow").catch(() => {});
+    checkAndAwardBadges(req.webUser.id, ["social_butterfly", "loyal_fan"]).catch(() => {});
+
     res.json({ success: true });
   } catch (err) {
     console.error("[Web API] Follow error:", err);
