@@ -20,7 +20,56 @@ document.addEventListener('DOMContentLoaded', () => {
   initTiltFx();
   initParticles();
   initScrollArrows();
+  initCountdowns();
 });
+
+/* ─── COUNTDOWN TIMERS ──────────────────────────────────── */
+function initCountdowns() {
+  function update() {
+    document.querySelectorAll('[data-end-date]').forEach(function(el) {
+      var endDate = new Date(el.getAttribute('data-end-date'));
+      var now = new Date();
+      var diff = endDate - now;
+
+      if (diff <= 0) {
+        el.textContent = 'Expirat';
+        el.classList.add('urgency-critical');
+        return;
+      }
+
+      var days = Math.floor(diff / 86400000);
+      var hours = Math.floor((diff % 86400000) / 3600000);
+      var mins = Math.floor((diff % 3600000) / 60000);
+
+      // Build display text
+      var text;
+      if (days > 0) {
+        text = days + 'z ' + hours + 'h ramase';
+      } else if (hours > 0) {
+        text = hours + 'h ' + mins + 'm ramase';
+      } else {
+        text = mins + 'm ramase';
+      }
+      el.textContent = text;
+
+      // Remove old urgency classes
+      el.classList.remove('urgency-low', 'urgency-medium', 'urgency-high', 'urgency-critical');
+
+      // Apply color class
+      if (days > 7) {
+        el.classList.add('urgency-low');
+      } else if (days >= 3) {
+        el.classList.add('urgency-medium');
+      } else if (days >= 1 || hours >= 24) {
+        el.classList.add('urgency-high');
+      } else {
+        el.classList.add('urgency-critical');
+      }
+    });
+  }
+  update();
+  setInterval(update, 60000);
+}
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
 function initNavbar() {

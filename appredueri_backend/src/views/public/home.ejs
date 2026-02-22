@@ -131,9 +131,9 @@
                 <%= fo.discount_value %> lei
               <% } %>
             </div>
-            <% if (fo.end_date) { const _dl = Math.ceil((new Date(fo.end_date) - new Date()) / 86400000); if (_dl > 0 && _dl <= 7) { %>
-              <div class="urgency-badge"><%= _dl === 1 ? 'Ultima zi!' : 'Expir\u0103 \xeen ' + _dl + ' zile' %></div>
-            <% } } %>
+            <% if (fo.end_date) { %>
+              <div class="countdown-overlay" data-end-date="<%= new Date(fo.end_date).toISOString() %>"></div>
+            <% } %>
           </div>
           <div class="offer-content">
             <div class="offer-content-row">
@@ -205,9 +205,9 @@
                 <%= offer.discount_value %> lei
               <% } %>
             </div>
-            <% if (offer.end_date) { const _dl = Math.ceil((new Date(offer.end_date) - new Date()) / 86400000); if (_dl > 0 && _dl <= 7) { %>
-              <div class="urgency-badge"><%= _dl === 1 ? 'Ultima zi!' : 'Expir\u0103 \xeen ' + _dl + ' zile' %></div>
-            <% } } %>
+            <% if (offer.end_date) { %>
+              <div class="countdown-overlay" data-end-date="<%= new Date(offer.end_date).toISOString() %>"></div>
+            <% } %>
           </div>
           <div class="offer-content">
             <div class="offer-content-row">

@@ -852,6 +852,12 @@
     </div>
     <% } %>
 
+    <% if (offer.end_date) { %>
+      <div style="margin: 12px 0;">
+        <span class="countdown-inline" data-end-date="<%= new Date(offer.end_date).toISOString() %>"></span>
+      </div>
+    <% } %>
+
     <% if (offer.description) { %>
       <div class="offer-detail-description"><%= offer.description %></div>
     <% } %>

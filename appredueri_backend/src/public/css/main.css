@@ -3999,6 +3999,38 @@ ul, ol { list-style: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════
+   COUNTDOWN TIMERS (Platform Polish)
+   ═══════════════════════════════════════════════════════════ */
+/* Overlay variant: on card images (absolute positioned) */
+.countdown-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  z-index: 2;
+  letter-spacing: 0.02em;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+}
+/* Inline variant: in content flow (NOT absolute positioned) */
+.countdown-inline {
+  display: inline-block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+}
+/* Urgency color classes */
+.urgency-low { color: var(--success, #22C55E); }
+.urgency-medium { color: var(--warning, #FBBF24); }
+.urgency-high { color: var(--danger, #EF4444); }
+.urgency-critical { color: var(--danger, #EF4444); animation: urgency-pulse 2s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════════════════════
    SOCIAL PROOF
    ═══════════════════════════════════════════════════════════ */
 .offer-social-proof {
