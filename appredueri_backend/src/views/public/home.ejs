@@ -168,6 +168,53 @@
     </div>
     <% } %>
 
+    <% if (dealOfDay) { %>
+    <div class="section-header reveal">
+      <div class="section-label">⭐ Recomandat</div>
+      <h2 class="section-title text-gradient">Oferta Zilei</h2>
+    </div>
+    <div class="offer-grid reveal" style="margin-bottom: 40px;">
+      <a href="/oferta/<%= dealOfDay.id %>" class="offer-card featured" style="grid-column: span 2; grid-row: span 2;">
+        <div class="offer-image-wrapper">
+          <% if (dealOfDay.image_url) { %>
+            <img src="<%= dealOfDay.image_url %>" alt="<%= dealOfDay.title %>" class="offer-image" loading="lazy" width="600" height="400">
+          <% } else { %>
+            <div class="offer-image-placeholder">
+              <span class="offer-placeholder-letter"><%= (dealOfDay.business_name || 'O').charAt(0) %></span>
+            </div>
+          <% } %>
+          <% if (dealOfDay.discount_value) { %>
+            <div class="offer-badge">
+              <% if (dealOfDay.discount_type === 'percent' || dealOfDay.discount_type === 'percentage') { %>
+                -<%= dealOfDay.discount_value %>%
+              <% } else { %>
+                <%= dealOfDay.discount_value %> lei
+              <% } %>
+            </div>
+          <% } %>
+          <div style="position: absolute; top: 12px; left: 12px; background: var(--accent); color: #000; font-size: 0.625rem; font-weight: 700; padding: 3px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; z-index: 2;">Oferta Zilei</div>
+          <% if (dealOfDay.end_date) { %>
+            <div class="countdown-overlay" data-end-date="<%= new Date(dealOfDay.end_date).toISOString() %>"></div>
+          <% } %>
+        </div>
+        <div class="offer-content">
+          <div class="offer-content-text">
+            <div class="offer-business"><%= dealOfDay.business_name %></div>
+            <div class="offer-title"><%= dealOfDay.title %></div>
+            <div class="offer-meta">
+              <% if (dealOfDay.city_name) { %>
+                <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <%= dealOfDay.city_name %></span>
+              <% } %>
+              <% if (parseInt(dealOfDay.save_count) >= 3) { %>
+                <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> <%= dealOfDay.save_count %> salvari</span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <% } %>
+
     <div class="section-header reveal">
       <div class="section-label">🔥 Populare</div>
       <h2 class="section-title text-gradient">Oferte de top</h2>
