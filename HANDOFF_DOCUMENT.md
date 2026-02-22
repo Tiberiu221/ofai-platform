@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 21 Februarie 2026 (Actualizat v15 — Google Sign-In iOS + Click Tracking Mobile + Bug Fixes)
+## Data: 22 Februarie 2026 (Actualizat v16 — Platform Polish: Urgency, Social Proof, Gamification)
 
 ---
 
@@ -910,7 +910,19 @@ Workflows active: WF1 (new-review → email owner)
 - [ ] Dashboard analytics avansate
 - [ ] Featured/sponsored offers
 
-### Faza 7 - Scalare (TODO)
+### Faza 7 - Platform Polish (v16 — 22 Feb 2026) ✅
+- [x] **Urgency & FOMO:** Countdown timers (4-level color: green >7d, yellow 3-7d, red <3d, pulsing <24h), limited codes indicator
+- [x] **Social Proof:** Trending badges (5+ saves in 14 days), save count display (≥3), follower count on business detail
+- [x] **Discovery:** Deal of the Day section (manual flag → fallback engagement), similar offers on offer detail
+- [x] **Trust:** Rating breakdown bars (5★→1★), verified badge with tooltip/bottom sheet explanation
+- [x] **Gamification:** Points system (review=5, favorite=2, follow=2, code_reveal=3, daily_login=1), levels (Explorer→Local Hero→Legend→God Mode), streaks, badges
+- [x] **Personalization:** "Pentru tine" subtitle when logged in (preference-based feed)
+- [x] **Backend:** save_count, is_trending queries; /offers/deal-of-day endpoint; /users/me/gamification endpoint; gamification service; migration 030+031
+- [x] **Flutter:** Updated models, OfferCard (countdown+trending+saves), FeaturedOfferCard, HomeScreen (deal of day, streak pill), OfferDetailScreen (activity pills, limited codes, similar offers), BusinessDetailScreen (rating breakdown, followers, verified badge), AccountScreen (gamification card), gamification provider
+- **Thresholds:** trending ≥5 saves in 14 days, save count shown ≥3, follower count shown ≥3, rating breakdown shown ≥3 reviews
+- **Fire-and-forget pattern:** All gamification calls use `.catch(() => {})` to prevent blocking user actions
+
+### Faza 8 - Scalare (TODO)
 - [ ] Self-service onboarding
 - [ ] Referral system
 - [ ] n8n WF2-WF6
@@ -930,6 +942,13 @@ Workflows active: WF1 (new-review → email owner)
 | 4 | SEO improvements (structured data, sitemap.xml, meta tags) | ✅ Complet (18 Feb) |
 | 5 | Admin panel avansat (manage businesses, moderate content) | ✅ Complet (verificat — 1952 linii, 11 module CRUD) |
 | 6 | Footer links — actualizare de la `#` la paginile EJS existente | ✅ Complet (verificat in audit) |
+| 7 | Platform Polish — Countdown timers (color-coded, always visible) | ✅ Complet (v16) |
+| 8 | Platform Polish — Trending badges + save count + activity pills | ✅ Complet (v16) |
+| 9 | Platform Polish — Deal of Day + similar offers sections | ✅ Complet (v16) |
+| 10 | Platform Polish — Rating breakdown bars + follower count | ✅ Complet (v16) |
+| 11 | Platform Polish — Limited codes indicator + verified badge tooltip | ✅ Complet (v16) |
+| 12 | Platform Polish — Gamification (points, levels, streaks, badges) | ✅ Complet (v16) |
+| 13 | Platform Polish — Personalization "Pentru tine" subtitle | ✅ Complet (v16) |
 
 ### MOBILE (Flutter)
 | # | Feature | Status |
@@ -941,9 +960,11 @@ Workflows active: WF1 (new-review → email owner)
 | 5 | Google Sign-In iOS | ✅ Complet (v15 — CLIENT_ID + URL scheme + X-Client header) |
 | 6 | Click tracking analytics | ✅ Complet (v15 — AnalyticsService, 12 action types) |
 | 7 | Pinch/Offers bug fix | ✅ Complet (v15 — mutual exclusivity) |
-| 8 | Puncte + badge vizual (gamification) | ❌ De facut |
-| 9 | Notificari personalizate (per-category, per-location prefs) | ❌ De facut |
-| 10 | iOS build | ❌ De facut (necesita Apple Developer $99/an — Mac disponibil) |
+| 8 | Platform Polish — models + OfferCard (countdown, trending, saves) | ✅ Complet (v16) |
+| 9 | Platform Polish — Deal of Day, similar offers, activity pills, limited codes | ✅ Complet (v16) |
+| 10 | Platform Polish — Rating breakdown, followers, verified badge, gamification card | ✅ Complet (v16) |
+| 11 | Notificari personalizate (per-category, per-location prefs) | ❌ De facut |
+| 12 | iOS build | ❌ De facut (necesita Apple Developer $99/an — Mac disponibil) |
 
 ### PORTAL (Business Dashboard)
 | # | Feature | Status |
