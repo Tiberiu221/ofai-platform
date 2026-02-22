@@ -112,16 +112,6 @@
     <div class="section-header reveal">
       <div class="section-label">🔔 Pentru tine</div>
       <h2 class="section-title" style="font-size: 1.5rem;">Noutăți de la business-urile tale</h2>
-      <% if (typeof userPreferences !== 'undefined' && userPreferences && userPreferences.length > 0) { %>
-        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin-top: 4px;">
-          Bazat pe preferintele tale: <%= userPreferences.map(function(p) { return p.name; }).join(', ') %>
-          &middot; <a href="/preferinte" style="color: var(--accent);">Modifica</a>
-        </p>
-      <% } else if (typeof webUser !== 'undefined' && webUser) { %>
-        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin-top: 4px;">
-          <a href="/preferinte" style="color: var(--accent);">Spune-ne ce te intereseaza</a> pentru oferte personalizate
-        </p>
-      <% } %>
     </div>
     <div class="offers-grid offers-grid-auto">
       <% followedOffers.forEach((fo, i) => { %>
@@ -141,12 +131,9 @@
                 <%= fo.discount_value %> lei
               <% } %>
             </div>
-            <% if (fo.is_trending) { %>
-              <div class="trending-badge">Trending</div>
-            <% } %>
-            <% if (fo.end_date) { %>
-              <div class="urgency-badge countdown-timer" data-end-date="<%= new Date(fo.end_date).toISOString() %>"></div>
-            <% } %>
+            <% if (fo.end_date) { const _dl = Math.ceil((new Date(fo.end_date) - new Date()) / 86400000); if (_dl > 0 && _dl <= 7) { %>
+              <div class="urgency-badge"><%= _dl === 1 ? 'Ultima zi!' : 'Expir\u0103 \xeen ' + _dl + ' zile' %></div>
+            <% } } %>
           </div>
           <div class="offer-content">
             <div class="offer-content-row">
@@ -178,45 +165,6 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       <span style="color: var(--text-secondary); font-size: 0.875rem;">Oferte din <strong style="color: var(--text-primary);"><%= preferredCityName %></strong></span>
       <a href="/preferinte" style="color: var(--accent); font-size: 0.875rem; margin-left: auto; text-decoration: none;">Schimbă</a>
-    </div>
-    <% } %>
-
-    <% if (dealOfDay) { %>
-    <div style="margin-bottom: 32px;" class="reveal">
-      <div class="section-label" style="margin-bottom: 8px;">Oferta Zilei</div>
-      <a href="/oferta/<%= dealOfDay.id %>" class="offer-card featured deal-of-day" style="display: block;">
-        <div class="offer-image-wrapper">
-          <% if (dealOfDay.image_url) { %>
-            <img src="<%= dealOfDay.image_url %>" alt="<%= dealOfDay.title %>" class="offer-image" loading="lazy" width="800" height="400">
-          <% } else { %>
-            <div class="offer-image-placeholder">
-              <span class="offer-placeholder-letter"><%= dealOfDay.business_name.charAt(0) %></span>
-            </div>
-          <% } %>
-          <div class="deal-of-day-label">Oferta Zilei</div>
-          <% if (dealOfDay.discount_type === 'percent' || dealOfDay.discount_type === 'percentage') { %>
-            <div class="offer-badge">-<%= dealOfDay.discount_value %>%</div>
-          <% } else if (dealOfDay.discount_value) { %>
-            <div class="offer-badge">-<%= dealOfDay.discount_value %> lei</div>
-          <% } %>
-          <% if (dealOfDay.end_date) { %>
-            <div class="urgency-badge countdown-timer" data-end-date="<%= new Date(dealOfDay.end_date).toISOString() %>"></div>
-          <% } %>
-        </div>
-        <div class="offer-content">
-          <div class="offer-business"><%= dealOfDay.business_name %></div>
-          <div class="offer-title"><%= dealOfDay.title %></div>
-          <div class="offer-meta">
-            <span class="offer-meta-item"><%= dealOfDay.city_name %></span>
-            <% if (parseInt(dealOfDay.save_count) >= 5) { %>
-              <span class="offer-meta-item offer-social-proof">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                <%= dealOfDay.save_count %> salvari
-              </span>
-            <% } %>
-          </div>
-        </div>
-      </a>
     </div>
     <% } %>
 
@@ -257,12 +205,9 @@
                 <%= offer.discount_value %> lei
               <% } %>
             </div>
-            <% if (offer.is_trending) { %>
-              <div class="trending-badge">Trending</div>
-            <% } %>
-            <% if (offer.end_date) { %>
-              <div class="urgency-badge countdown-timer" data-end-date="<%= new Date(offer.end_date).toISOString() %>"></div>
-            <% } %>
+            <% if (offer.end_date) { const _dl = Math.ceil((new Date(offer.end_date) - new Date()) / 86400000); if (_dl > 0 && _dl <= 7) { %>
+              <div class="urgency-badge"><%= _dl === 1 ? 'Ultima zi!' : 'Expir\u0103 \xeen ' + _dl + ' zile' %></div>
+            <% } } %>
           </div>
           <div class="offer-content">
             <div class="offer-content-row">

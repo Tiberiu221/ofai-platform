@@ -55,7 +55,6 @@ class ApiEndpoints {
   static const String userExport = '/users/me/export';
   static const String userDelete = '/users/me';
   static const String userProfilePicture = '/users/me/profile-picture';
-  static const String gamification = '/users/me/gamification';
 
   // Push
   static const String pushTokens = '/push-tokens';
@@ -65,9 +64,6 @@ class ApiEndpoints {
   static const String offerRequests = '/offer-requests';
   static String offerRequestCount(int businessId) => '/offer-requests/$businessId/count';
   static String offerRequestDelete(int businessId) => '/offer-requests/$businessId';
-
-  // Deal of the Day
-  static const String dealOfDay = '/offers/deal-of-day';
 
   // Analytics (click tracking)
   static const String clicks = '/offers/clicks';

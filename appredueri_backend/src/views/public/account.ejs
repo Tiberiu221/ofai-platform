@@ -71,49 +71,40 @@
     </div>
 
     <!-- Gamification Card -->
-    <% if (typeof gamification !== 'undefined' && gamification) { %>
-    <div class="account-gamification reveal" style="background: var(--surface-elevated); border-radius: 16px; padding: 20px; margin-bottom: 24px;">
-      <!-- Level + Points -->
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(251, 146, 60, 0.15); display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 1.5rem;">
-            <% if (gamification.level === 'Explorator') { %>&#x1F9ED;<% } else if (gamification.level === 'Econom') { %>&#x1F4B0;<% } else if (gamification.level === 'Expert Reduceri') { %>&#x2B50;<% } else { %>&#x1F451;<% } %>
-          </span>
-        </div>
-        <div style="flex: 1;">
-          <div style="font-weight: 600; color: var(--text-primary);"><%= gamification.level %></div>
-          <div style="font-size: 0.8125rem; color: var(--text-secondary);"><%= gamification.points %> puncte</div>
-        </div>
-        <% if (gamification.current_streak >= 2) { %>
-          <div style="background: rgba(251, 146, 60, 0.15); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: var(--accent); font-weight: 600;">
-            &#x1F525; Zi <%= gamification.current_streak %>
-          </div>
-        <% } %>
+    <%
+      const points = typeof userPoints !== 'undefined' ? userPoints : 0;
+      let level = 'Explorer';
+      let nextLevel = 'Local Hero';
+      let progress = 0;
+      let pointsNeeded = 100;
+      if (points >= 1000) { level = 'God Mode'; nextLevel = null; progress = 100; }
+      else if (points >= 500) { level = 'Legend'; nextLevel = 'God Mode'; progress = ((points - 500) / 500) * 100; pointsNeeded = 1000; }
+      else if (points >= 100) { level = 'Local Hero'; nextLevel = 'Legend'; progress = ((points - 100) / 400) * 100; pointsNeeded = 500; }
+      else { progress = (points / 100) * 100; pointsNeeded = 100; }
+    %>
+    <div class="gamification-card reveal">
+      <div class="gamification-header">
+        <span class="gamification-level"><%= level %></span>
+        <span class="gamification-points"><%= points %> puncte</span>
       </div>
-
-      <!-- Progress bar -->
-      <% if (gamification.next_level) { %>
-        <div style="margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: var(--text-tertiary); margin-bottom: 4px;">
-            <span><%= gamification.level %></span>
-            <span><%= gamification.next_level.name %> (<%= gamification.next_level.min %> pct)</span>
-          </div>
-          <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
-            <% const barProgress = Math.min(100, (gamification.points / gamification.next_level.min) * 100); %>
-            <div style="width: <%= barProgress %>%; height: 100%; background: var(--accent); border-radius: 3px;"></div>
-          </div>
-        </div>
+      <div class="level-progress">
+        <div class="level-progress-bar" style="width: <%= Math.min(progress, 100) %>%"></div>
+      </div>
+      <% if (nextLevel) { %>
+        <p class="gamification-next">Încă <%= pointsNeeded - points %> puncte până la <strong><%= nextLevel %></strong></p>
       <% } %>
+    </div>
 
-      <!-- Badges -->
-      <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 8px;">Insigne</div>
-      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-        <% gamification.all_badges.forEach(function(badge) { %>
-          <div style="width: 64px; text-align: center; opacity: <%= badge.unlocked ? 1 : 0.35 %>;" title="<%= badge.description %>">
-            <div style="width: 48px; height: 48px; margin: 0 auto; border-radius: 50%; background: <%= badge.unlocked ? 'rgba(251, 146, 60, 0.15)' : 'rgba(255,255,255,0.04)' %>; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-              <% if (badge.icon === 'bookmark') { %>&#x1F516;<% } else if (badge.icon === 'rate_review') { %>&#x1F4DD;<% } else if (badge.icon === 'share') { %>&#x1F517;<% } else if (badge.icon === 'local_fire_department') { %>&#x1F525;<% } else if (badge.icon === 'collections_bookmark') { %>&#x1F4DA;<% } else if (badge.icon === 'map') { %>&#x1F5FA;&#xFE0F;<% } else if (badge.icon === 'favorite') { %>&#x2764;&#xFE0F;<% } else { %>&#x1F3C6;<% } %>
+    <% if (typeof userBadges !== 'undefined' && userBadges && userBadges.length > 0) { %>
+    <div class="badges-card reveal">
+      <h3 class="badges-title">Insigne castigate</h3>
+      <div class="badges-grid">
+        <% userBadges.forEach(function(badge) { %>
+          <div class="badge-item" title="<%= badge.description %>">
+            <div class="badge-icon" style="background: <%= badge.color %>15; border-color: <%= badge.color %>40; color: <%= badge.color %>;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="<%= badge.color %>"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             </div>
-            <div style="font-size: 0.625rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.2;"><%= badge.label %></div>
+            <span class="badge-name"><%= badge.name %></span>
           </div>
         <% }); %>
       </div>

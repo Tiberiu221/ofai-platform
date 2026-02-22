@@ -11,7 +11,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/subscriptions_provider.dart';
 import '../../providers/business_requests_provider.dart';
-import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -110,7 +109,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     final favState = ref.watch(favoritesProvider);
     final subState = ref.watch(subscriptionsProvider);
     final bizReqState = ref.watch(businessRequestsProvider);
-    final gamificationAsync = ref.watch(gamificationProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -176,6 +174,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 children: [
                   Expanded(
                     child: _StatCard(
+                      icon: Icons.star_outline,
+                      value: '${user?.points ?? 0}',
+                      label: 'Puncte',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _StatCard(
                       icon: Icons.bookmark_outline,
                       value: '${favState.favoriteIds.length}',
                       label: 'Favorite',
@@ -192,26 +198,15 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 ],
               ),
 
-              // Gamification card
-              const SizedBox(height: AppSpacing.lg),
-              gamificationAsync.when(
-                data: (gamification) {
-                  if (gamification == null) return const SizedBox.shrink();
-                  return _GamificationCard(data: gamification);
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, _e) => const SizedBox.shrink(),
-              ),
-
-              // Legacy badges from user model (shown only when gamification is unavailable)
-              if (gamificationAsync.value == null && user?.badges != null && user?.badges?.isNotEmpty == true) ...[
+              // Badges section
+              if (user?.badges != null && user!.badges!.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
                 Text('Insigne', style: AppTypography.labelLarge),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: user?.badges?.map((badge) => _BadgeChip(badge: badge)).toList() ?? [],
+                  children: user!.badges!.map((badge) => _BadgeChip(badge: badge)).toList(),
                 ),
               ],
 
@@ -392,227 +387,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     }
   }
 }
-
-// ---------------------------------------------------------------------------
-// Gamification card — level, progress bar, streak, badge grid
-// ---------------------------------------------------------------------------
-
-class _GamificationCard extends StatelessWidget {
-  final GamificationData data;
-
-  const _GamificationCard({required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Level row
-          Row(
-            children: [
-              Icon(
-                _levelIcon(data.levelIcon),
-                color: AppColors.accent,
-                size: 22,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                data.level,
-                style: AppTypography.labelLarge.copyWith(color: AppColors.accent),
-              ),
-              if (data.currentStreak >= 2) ...[
-                const Spacer(),
-                _StreakPill(streak: data.currentStreak),
-              ],
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-
-          // Points label
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${data.points} puncte',
-                style: AppTypography.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              if (data.nextLevelName != null)
-                Text(
-                  '${data.nextLevelMinPoints} pentru ${data.nextLevelName}',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.sm),
-
-          // Progress bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-            child: LinearProgressIndicator(
-              value: data.levelProgress,
-              minHeight: 6,
-              backgroundColor: AppColors.border,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
-            ),
-          ),
-
-          // Badge grid (only when allBadges is non-empty)
-          if (data.allBadges.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Text('Insigne', style: AppTypography.labelLarge),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: data.allBadges
-                  .map((badge) => _GamificationBadgeTile(badge: badge))
-                  .toList(),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  IconData _levelIcon(String name) {
-    switch (name) {
-      case 'account_balance_wallet':
-        return Icons.account_balance_wallet_outlined;
-      case 'explore':
-        return Icons.explore_outlined;
-      case 'star':
-        return Icons.star_outline;
-      case 'emoji_events':
-        return Icons.emoji_events_outlined;
-      case 'diamond':
-        return Icons.diamond_outlined;
-      default:
-        return Icons.explore_outlined;
-    }
-  }
-}
-
-class _StreakPill extends StatelessWidget {
-  final int streak;
-
-  const _StreakPill({required this.streak});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.local_fire_department, size: 14, color: AppColors.accent),
-          const SizedBox(width: AppSpacing.xs),
-          Text(
-            'Zi $streak consecutiva',
-            style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GamificationBadgeTile extends StatelessWidget {
-  final BadgeData badge;
-
-  const _GamificationBadgeTile({required this.badge});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = badge.unlocked ? AppColors.accent : AppColors.textMuted;
-    final bgColor = badge.unlocked
-        ? AppColors.accent.withValues(alpha: 0.12)
-        : AppColors.bgCard;
-    final borderColor = badge.unlocked
-        ? AppColors.accent.withValues(alpha: 0.3)
-        : AppColors.border;
-
-    return Tooltip(
-      message: badge.description,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(_badgeIcon(badge.icon), size: 16, color: color),
-                if (!badge.unlocked)
-                  Positioned(
-                    right: -2,
-                    bottom: -2,
-                    child: Icon(Icons.lock, size: 9, color: AppColors.textMuted),
-                  ),
-              ],
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              badge.label,
-              style: AppTypography.caption.copyWith(
-                color: color,
-                fontWeight: badge.unlocked ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  IconData _badgeIcon(String iconName) {
-    switch (iconName) {
-      case 'bookmark':
-        return Icons.bookmark;
-      case 'rate_review':
-        return Icons.rate_review;
-      case 'share':
-        return Icons.share;
-      case 'local_fire_department':
-        return Icons.local_fire_department;
-      case 'collections_bookmark':
-        return Icons.collections_bookmark;
-      case 'map':
-        return Icons.map;
-      case 'favorite':
-        return Icons.favorite;
-      default:
-        return Icons.emoji_events;
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
 
 class _BadgeChip extends StatelessWidget {
   final UserBadge badge;

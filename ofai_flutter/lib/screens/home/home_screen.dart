@@ -8,7 +8,6 @@ import '../../providers/offers_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/static_data_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/gamification_provider.dart';
 import '../../widgets/offer_card.dart';
 import '../../widgets/business_card.dart';
 import '../../widgets/category_chip.dart';
@@ -16,7 +15,6 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/featured_offer_card.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -58,9 +56,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
     final businessesAsync = ref.watch(homeBusinessesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final citiesAsync = ref.watch(citiesProvider);
-    final gamification = isLoggedIn
-        ? ref.watch(gamificationProvider).valueOrNull
-        : null;
 
     return Scaffold(
       body: SafeArea(
@@ -70,11 +65,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
           onRefresh: () async {
             ref.invalidate(feedProvider);
             ref.invalidate(popularOffersProvider);
-            ref.invalidate(dealOfDayProvider);
             ref.invalidate(homeBusinessesProvider);
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
-            ref.invalidate(gamificationProvider);
           },
           child: CustomScrollView(
             slivers: [
@@ -204,48 +197,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 ),
               ),
 
-              // Streak pill — only for logged-in users with an active streak
-              if (gamification != null && gamification.currentStreak >= 2)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.pagePadding,
-                      vertical: AppSpacing.sm,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: AppSpacing.xs + 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.local_fire_department,
-                                size: 16,
-                                color: AppColors.accent,
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                'Zi ${gamification.currentStreak} pe OFAI',
-                                style: AppTypography.labelMedium.copyWith(
-                                  color: AppColors.accent,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
               // Categorii
@@ -344,48 +295,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
-              // Deal of the Day
-              SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 5,
-                  child: ref.watch(dealOfDayProvider).when(
-                    data: (deal) {
-                      if (deal == null) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Oferta Zilei',
-                              style: TextStyle(
-                                color: AppColors.accent,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            FeaturedOfferCard(
-                              offer: deal,
-                              onTap: () => context.push('/offer/${deal.id}'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-
               // Offers section
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 6,
+                  index: 5,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -440,7 +353,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               // Businesses section header
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 7,
+                  index: 6,
                   child: SectionHeader(
                     title: 'Business-uri',
                     onViewAll: () => context.go('/explore'),

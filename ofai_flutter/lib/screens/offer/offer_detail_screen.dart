@@ -19,7 +19,6 @@ import '../../widgets/animated_toggle_fab.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
-import '../../widgets/offer_card.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -143,46 +142,6 @@ class OfferDetailScreen extends ConsumerWidget {
                           // Title
                           Text(offer.title, style: AppTypography.headlineLarge),
 
-                          // Activity indicators
-                          if (offer.saveCount >= 5 || offer.isTrending)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  if (offer.isTrending)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(colors: [Color(0xFFF97316), Color(0xFFEF4444)]),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text('Trending', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                                    ),
-                                  if (offer.saveCount >= 5)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.accentMuted,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.bookmark, size: 12, color: AppColors.accent),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${offer.saveCount} persoane au salvat-o',
-                                            style: TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-
                           const SizedBox(height: AppSpacing.md),
 
                           // Date range + progress bar
@@ -253,12 +212,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Promo Code
                           if (offer.hasPromoCode) ...[
-                            _PromoCodeCard(
-                              offerId: offer.id,
-                              isLoggedIn: isLoggedIn,
-                              maxReveals: offer.maxReveals,
-                              revealCount: offer.revealCount,
-                            ),
+                            _PromoCodeCard(offerId: offer.id, isLoggedIn: isLoggedIn),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
@@ -464,59 +418,6 @@ class OfferDetailScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                      ),
-                    ),
-
-                  // Similar offers
-                  if (offer.business?.categoryId != null)
-                    SliverToBoxAdapter(
-                      child: Builder(
-                        builder: (context) {
-                          final similarAsync = ref.watch(similarOffersProvider({
-                            'categoryId': offer.business!.categoryId!,
-                            'excludeId': offer.id,
-                          }));
-
-                          return similarAsync.when(
-                            data: (offers) {
-                              if (offers.isEmpty) return const SizedBox.shrink();
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: AppSpacing.xxl),
-                                    const Text(
-                                      'Oferte similare',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    SizedBox(
-                                      height: 200,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: offers.length,
-                                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                                        itemBuilder: (context, index) {
-                                          return SizedBox(
-                                            width: 200,
-                                            child: OfferCard(offer: offers[index], horizontal: true),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            loading: () => const SizedBox.shrink(),
-                            error: (_, __) => const SizedBox.shrink(),
-                          );
-                        },
                       ),
                     ),
 
@@ -747,14 +648,10 @@ class _ExpiryProgressBar extends StatelessWidget {
 class _PromoCodeCard extends ConsumerStatefulWidget {
   final int offerId;
   final bool isLoggedIn;
-  final int? maxReveals;
-  final int? revealCount;
 
   const _PromoCodeCard({
     required this.offerId,
     required this.isLoggedIn,
-    this.maxReveals,
-    this.revealCount,
   });
 
   @override
@@ -903,48 +800,6 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-
-            // Limited codes indicator
-            if (widget.maxReveals != null) ...[
-              Builder(builder: (context) {
-                final remaining = widget.maxReveals! - (widget.revealCount ?? 0);
-                final pct = remaining / widget.maxReveals!;
-                if (remaining <= 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      'Coduri epuizate',
-                      style: TextStyle(color: AppColors.textTertiary, fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.confirmation_number_outlined,
-                        size: 14,
-                        color: pct < 0.2 ? AppColors.danger : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        pct < 0.2
-                            ? 'Ultimele $remaining coduri!'
-                            : 'Mai sunt $remaining din ${widget.maxReveals} coduri',
-                        style: TextStyle(
-                          color: pct < 0.2 ? AppColors.danger : AppColors.textSecondary,
-                          fontSize: 13,
-                          fontWeight: pct < 0.2 ? FontWeight.w700 : FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-
             GestureDetector(
               onTap: _loading ? null : _revealCode,
               child: Container(

@@ -27,10 +27,6 @@ void main() {
         'locations': [
           {'id': 1, 'address': 'Str. Exemple 10', 'lat': 46.77, 'lng': 23.59, 'city_name': 'Cluj'},
         ],
-        'save_count': 42,
-        'is_trending': true,
-        'max_reveals': 100,
-        'reveal_count': 17,
       };
 
       final offer = Offer.fromJson(json);
@@ -48,10 +44,6 @@ void main() {
       expect(offer.locations, isNotNull);
       expect(offer.locations!.length, 1);
       expect(offer.locations!.first.address, 'Str. Exemple 10');
-      expect(offer.saveCount, 42);
-      expect(offer.isTrending, true);
-      expect(offer.maxReveals, 100);
-      expect(offer.revealCount, 17);
     });
 
     test('fromJson handles minimal fields', () {
@@ -68,42 +60,6 @@ void main() {
       expect(offer.business, isNull);
       expect(offer.locations, isNull);
       expect(offer.isActive, true); // default
-      expect(offer.saveCount, 0); // default
-      expect(offer.isTrending, false); // default
-      expect(offer.maxReveals, isNull);
-      expect(offer.revealCount, isNull);
-    });
-
-    test('fromJson parses platform polish fields correctly', () {
-      final json = {
-        'id': 3,
-        'title': 'Polish Fields Offer',
-        'save_count': 99,
-        'is_trending': true,
-        'max_reveals': 200,
-        'reveal_count': 55,
-      };
-
-      final offer = Offer.fromJson(json);
-
-      expect(offer.saveCount, 99);
-      expect(offer.isTrending, true);
-      expect(offer.maxReveals, 200);
-      expect(offer.revealCount, 55);
-    });
-
-    test('fromJson defaults platform polish fields when absent', () {
-      final json = {
-        'id': 4,
-        'title': 'Defaults Offer',
-      };
-
-      final offer = Offer.fromJson(json);
-
-      expect(offer.saveCount, 0);
-      expect(offer.isTrending, false);
-      expect(offer.maxReveals, isNull);
-      expect(offer.revealCount, isNull);
     });
 
     test('discountLabel returns correct format for percentage', () {

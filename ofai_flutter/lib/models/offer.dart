@@ -15,10 +15,6 @@ class Offer {
   final Booking? booking;
   final List<GalleryImage>? gallery;
   final bool hasPromoCode;
-  final int saveCount;
-  final bool isTrending;
-  final int? maxReveals;
-  final int? revealCount;
 
   Offer({
     required this.id,
@@ -36,10 +32,6 @@ class Offer {
     this.booking,
     this.gallery,
     this.hasPromoCode = false,
-    this.saveCount = 0,
-    this.isTrending = false,
-    this.maxReveals,
-    this.revealCount,
   });
 
   String get discountLabel {
@@ -76,10 +68,6 @@ class Offer {
           ?.map((e) => GalleryImage.fromJson(e as Map<String, dynamic>))
           .toList(),
       hasPromoCode: json['has_promo_code'] as bool? ?? false,
-      saveCount: json['save_count'] as int? ?? 0,
-      isTrending: json['is_trending'] as bool? ?? false,
-      maxReveals: json['max_reveals'] as int?,
-      revealCount: json['reveal_count'] as int?,
     );
   }
 }
@@ -91,7 +79,6 @@ class OfferBusiness {
   final String? coverImageUrl;
   final String? city;
   final String? category;
-  final int? categoryId;
   final double? lat;
   final double? lng;
   final double? rating;
@@ -105,7 +92,6 @@ class OfferBusiness {
     this.coverImageUrl,
     this.city,
     this.category,
-    this.categoryId,
     this.lat,
     this.lng,
     this.rating,
@@ -121,7 +107,6 @@ class OfferBusiness {
       coverImageUrl: json['cover_image_url'] as String?,
       city: json['city'] is Map ? (json['city'] as Map)['name'] as String? : json['city'] as String?,
       category: json['category'] is Map ? (json['category'] as Map)['name'] as String? : json['category'] as String?,
-      categoryId: json['category'] is Map ? (json['category'] as Map)['id'] as int? : null,
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       rating: (json['rating'] as num?)?.toDouble(),

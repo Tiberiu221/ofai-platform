@@ -213,37 +213,3 @@ final offerDetailProvider = FutureProvider.autoDispose.family<Offer, int>((ref, 
   final response = await ApiClient().dio.get(ApiEndpoints.offerDetail(id));
   return Offer.fromJson(response.data);
 });
-
-// Similar offers (same category, excluding current offer)
-final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, Map<String, dynamic>>((ref, params) async {
-  final categoryId = params['categoryId'] as int?;
-  final excludeId = params['excludeId'] as int;
-  if (categoryId == null) return [];
-
-  final response = await ApiClient().dio.get(
-    ApiEndpoints.offers,
-    queryParameters: {
-      'category_id': categoryId,
-      'exclude': excludeId,
-      'limit': 4,
-    },
-  );
-
-  if (response.statusCode == 200) {
-    final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
-    return paginated.data;
-  }
-  return [];
-});
-
-// Deal of the Day
-final dealOfDayProvider = FutureProvider.autoDispose<Offer?>((ref) async {
-  try {
-    final response = await ApiClient().dio.get(ApiEndpoints.dealOfDay);
-    final data = response.data['deal'];
-    if (data == null) return null;
-    return Offer.fromJson(data as Map<String, dynamic>);
-  } catch (_) {
-    return null;
-  }
-});

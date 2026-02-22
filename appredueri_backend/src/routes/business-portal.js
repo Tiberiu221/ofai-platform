@@ -385,8 +385,7 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes,
-      max_reveals
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes
     } = req.body;
 
     console.log("[BusinessPortal] Creating offer:", title);
@@ -429,7 +428,6 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       bookingUrl: booking_url,
       bookingInstructions: booking_instructions,
       promoCodes: sanitizedPromoCodes,
-      maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: true, // Business portal triggers n8n webhook
     });
 
@@ -495,8 +493,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes,
-      max_reveals
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes
     } = req.body;
 
     const updates = [];
@@ -555,10 +552,6 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     if (booking_instructions !== undefined) {
       updates.push(`booking_instructions = $${paramIndex++}`);
       values.push(booking_instructions || null);
-    }
-    if (max_reveals !== undefined) {
-      updates.push(`max_reveals = $${paramIndex++}`);
-      values.push(max_reveals ? parseInt(max_reveals) : null);
     }
     // Handle image upload
     if (req.file) {

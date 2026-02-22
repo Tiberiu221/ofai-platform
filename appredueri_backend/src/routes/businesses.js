@@ -200,11 +200,7 @@ router.get("/:id", async (req, res) => {
         c.id as city_id, c.name as city_name,
         cat.id as cat_id, cat.name as cat_name,
         COALESCE(AVG(r.rating), 0) as rating_avg,
-        COUNT(r.id) as rating_count,
-        (SELECT COUNT(*) FROM followed_businesses fb WHERE fb.business_id = b.id) as follower_count,
-        (SELECT json_agg(json_build_object('rating', r_dist.rating, 'count', r_dist.cnt))
-         FROM (SELECT rating, COUNT(*) as cnt FROM reviews WHERE business_id = b.id GROUP BY rating) r_dist
-        ) as rating_distribution
+        COUNT(r.id) as rating_count
        FROM businesses b
        LEFT JOIN cities c ON b.city_id = c.id
        LEFT JOIN categories cat ON b.category_id = cat.id
@@ -387,8 +383,6 @@ router.get("/:id", async (req, res) => {
       },
       rating: parseFloat(parseFloat(b.rating_avg).toFixed(1)),
       rating_count: parseInt(b.rating_count),
-      follower_count: parseInt(b.follower_count) || 0,
-      rating_distribution: b.rating_distribution || [],
       category: {
         id: b.cat_id,
         name: b.cat_name,

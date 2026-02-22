@@ -1,5 +1,5 @@
 # OFAI - Handoff Document
-## Data: 22 Februarie 2026 (Actualizat v16 — Platform Polish: Urgency, Social Proof, Gamification)
+## Data: 21 Februarie 2026 (Actualizat v15 — Google Sign-In iOS + Click Tracking Mobile + Bug Fixes)
 
 ---
 
@@ -48,7 +48,7 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │   ├── offer/             # OfferDetailScreen (gallery, share, booking)
 │   │   │   ├── business/          # BusinessDetailScreen (gallery, share, reviews)
 │   │   │   └── onboarding/        # OnboardingScreen (3-page welcome flow)
-│   │   ├── widgets/               # OfferCard, BusinessCard, FeaturedOfferCard, CategoryChip, SkeletonLoader, EmptyState, ErrorState, FullscreenGallery
+│   │   ├── widgets/               # OfferCard, BusinessCard, CategoryChip, SkeletonLoader, EmptyState, ErrorState, FullscreenGallery
 │   │   ├── app.dart               # GoRouter (routes, shell, transitions, onboarding redirect)
 │   │   └── main.dart              # ProviderScope + OFAIApp entry point
 │   ├── android/                   # Android config (deep linking intent filters)
@@ -93,7 +93,6 @@ C:\Users\tiber\Desktop\AppReduceri\
 │   │   │   ├── n8n.js              # Webhook fire-and-forget helper
 │   │   │   ├── email.js            # Resend email (welcome + reset + biz approved/rejected)
 │   │   │   ├── pushNotifications.js
-│   │   │   ├── gamification.js    # ★ NOU — Puncte, nivele, streak, badges
 │   │   │   └── sentry.js
 │   │   ├── views/
 │   │   │   ├── admin/              # Admin panel (EJS)
@@ -1763,25 +1762,3 @@ Setup initial proiect
 37. **Flutter Deep Linking** (v13): AndroidManifest intent-filter cu `android:autoVerify="true"` pe `https://ofai.ro`. GoRouter handles `/offer/:id` si `/business/:id` automatic. iOS deep linking (Associated Domains + apple-app-site-association) NU e implementat inca.
 
 38. **share_plus v10 API** (v13): Flutter app foloseste `Share.share(text, subject: title)`. Versiunea v11+ a schimbat API-ul la `SharePlus.instance.share(...)`. NU face upgrade la v11 fara refactoring.
-
-39. **Platform Polish — Urgency & Social Proof** (v16): Migration 030 adds `is_deal_of_day`, `deal_of_day_date`, `max_reveals` to offers + `points`, `current_streak`, `last_visit_date` to users + `point_transactions` + `user_badges` tables. Offer queries (offers.js, web.js) include `save_count` (LEFT JOIN favorite_offers), `is_trending` (saves in 7 days >= 10), `max_reveals`, `reveal_count`. Countdown timers: client-side via `[data-end-date]`, JS `initCountdowns()` every 60s (web), `_buildCountdown()` in OfferCard (Flutter). Colors: green >7d, yellow 3-7d, red <3d, pulsing red <24h.
-
-40. **Deal of the Day** (v16): `GET /offers/deal-of-day` returns one offer — first checks `is_deal_of_day = TRUE AND deal_of_day_date = today`, fallback to engagement-based (saves+clicks top offer). Web: section in home.ejs before "Oferte de top" using `.offer-card.featured` style. Flutter: `FeaturedOfferCard` widget + `dealOfDayProvider` + section in HomeScreen.
-
-41. **Trending Badge + Save Count** (v16): `is_trending` = boolean calculated from saves in last 7 days >= 10 threshold. `save_count` = total favorites count. Both added to all offer list + detail queries. Web: `.trending-badge` (gradient orange-red, absolute positioned). Flutter: Positioned badge in OfferCard image Stack + save count in meta row. Minimum threshold: save count shown only if >= 5.
-
-42. **Rating Breakdown + Follower Count** (v16): Business detail queries include `rating_distribution` (JSON agg of rating→count) and `follower_count`. Web: `.rating-breakdown` CSS with 5 horizontal bar rows (5★ to 1★). Flutter: `_RatingBreakdown` widget with LinearProgressIndicator. Both only shown if >= 3 reviews. Follower count shown if >= 3. Business model updated with `followerCount` + `ratingDistribution` fields.
-
-43. **Similar Offers** (v16): Offer detail pages show "Oferte similare" — same category, excluding current, ordered by popularity (save count DESC), limit 4. Web: grid section after main layout. Flutter: horizontal ListView of OfferCard widgets via `similarOffersProvider`. Backend offers.js supports `exclude` query param.
-
-44. **Limited Codes** (v16): `max_reveals` nullable int on offers. Portal offer-form.ejs has optional "Limita coduri" input. Display: remaining count with urgency colors (<20% = red "Ultimele X coduri!", 0 = "Coduri epuizate" disabled). Both web (offer-detail.ejs) and Flutter (_PromoCodeCard). offerService.js `createOffer` + web.js/business-portal.js update routes handle `max_reveals`.
-
-45. **Verified Badge Tooltip** (v16): Business detail verified badge is now interactive. Web: tooltip on hover/click with explanation text. Flutter: `GestureDetector` wrapping verified icon → `showModalBottomSheet` with "Business Verificat" explanation.
-
-46. **Gamification Service** (v16): `src/services/gamification.js` exports: `awardPoints(userId, action, refId, refType)`, `updateStreak(userId)`, `checkBadges(userId)`, `getLevel(points)`, `getNextLevel(points)`, `BADGES`, `LEVELS`, `POINT_VALUES`. Points: favorite=5, reveal_code=10, write_review=20, share=5, streak_daily=10, streak_7=50, streak_30=200. Levels: Explorator(0), Econom(100), Expert Reduceri(500), VIP OFAI(1500). All calls fire-and-forget (`.catch(() => {})`).
-
-47. **Gamification Wiring** (v16): `awardPoints` + `checkBadges` called in: favorites.js (POST favorite), reviews.js (POST review), web.js (code reveal). `updateStreak` called in auth.js middleware after Bearer token verification (short-circuits if already visited today). `GET /users/me/gamification` returns points, level, streak, all badges with unlocked status.
-
-48. **Gamification UI** (v16): Web account.ejs: card with level icon/name, points + progress bar to next level, streak pill, badge grid (locked=35% opacity). Flutter: `gamification_provider.dart` with `GamificationData` model, `_GamificationCard` on AccountScreen (level, points progress, streak, badge grid with lock overlay), streak pill on HomeScreen (shown if streak >= 2).
-
-49. **Personalization "Pentru tine"** (v16): Home page "Pentru tine" section now shows preference subtitle: "Bazat pe preferintele tale: X, Y, Z · Modifica" if user has preferences, or CTA "Spune-ne ce te intereseaza" if no preferences. Web: reads from existing `userPrefs` city/category IDs, maps to names. Flutter: planned for future enhancement.

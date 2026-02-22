@@ -17,7 +17,6 @@ const { sanitizeString, createImageFilter, validatePassword } = require("../help
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
-const { awardPoints, checkBadges } = require("../services/gamification");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { OAuth2Client } = require("google-auth-library");
@@ -123,8 +122,7 @@ router.get("/", async (req, res) => {
              COALESCE(b.cover_image_url, o.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
-             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
-             (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '7 days') >= 5 THEN true ELSE false END) as is_trending
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities ci ON b.city_id = ci.id
@@ -137,28 +135,6 @@ router.get("/", async (req, res) => {
       ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END) DESC
       LIMIT 5
     `, featuredParams);
-
-    // Deal of the day
-    const dealResult = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-             b.name as business_name, b.logo_url as business_logo,
-             COALESCE(b.cover_image_url, o.logo_url) as image_url,
-             b.is_verified as business_verified,
-             c.name as city_name, cat.name as category_name,
-             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
-      FROM offers o
-      JOIN businesses b ON o.business_id = b.id
-      LEFT JOIN cities c ON b.city_id = c.id
-      LEFT JOIN categories cat ON b.category_id = cat.id
-      WHERE o.is_active = TRUE
-        AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-      ORDER BY
-        CASE WHEN o.is_deal_of_day = TRUE THEN 0 ELSE 1 END,
-        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id AND fo.created_at > NOW() - INTERVAL '7 days') DESC,
-        o.discount_value DESC NULLS LAST
-      LIMIT 1
-    `);
-    const dealOfDay = dealResult.rows[0] || null;
 
     const cities = await pool.query(`
       SELECT c.id, c.name, COUNT(b.id) as business_count
@@ -227,33 +203,16 @@ router.get("/", async (req, res) => {
       preferredCityName = cityName ? cityName.name : null;
     }
 
-    // Build preference label list for personalization subtitle
-    let userPreferences = null;
-    if (req.webUser && (userPrefs.city_ids.length > 0 || userPrefs.category_ids.length > 0)) {
-      const prefItems = [];
-      for (const cid of userPrefs.city_ids) {
-        const city = cities.rows.find(c => c.id === cid);
-        if (city) prefItems.push({ name: city.name });
-      }
-      for (const catId of userPrefs.category_ids) {
-        const cat = categories.rows.find(c => c.id === catId);
-        if (cat) prefItems.push({ name: cat.name });
-      }
-      if (prefItems.length > 0) userPreferences = prefItems;
-    }
-
     res.render("public/home", {
       stats,
       categories: categories.rows,
       featuredOffers: featuredOffers.rows,
-      dealOfDay,
       cities: cities.rows,
       featuredBusinesses: featuredBusinesses.rows,
       topBusinesses: topBusinesses.rows,
       followedOffers,
       preferredCityName,
       hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),
-      userPreferences,
       activePage: "home",
       webUser: req.webUser,
       structuredData: {
@@ -638,11 +597,7 @@ router.get("/oferta/:id", async (req, res) => {
         c.id as city_id, c.name as city_name,
         cat.id as cat_id, cat.name as cat_name,
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
-        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
-        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
-        (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '7 days') >= 5 THEN true ELSE false END) as is_trending,
-        o.max_reveals,
-        (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count
+        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
@@ -713,10 +668,6 @@ router.get("/oferta/:id", async (req, res) => {
       end_date: row.end_date,
       is_active: row.is_active,
       has_promo_code: !!row.has_promo_code,
-      save_count: parseInt(row.save_count || 0),
-      is_trending: row.is_trending === true,
-      max_reveals: row.max_reveals || null,
-      reveal_count: parseInt(row.reveal_count || 0),
       image_url: row.business_cover || row.offer_logo || row.business_logo,
       booking,
       business: {
@@ -738,30 +689,8 @@ router.get("/oferta/:id", async (req, res) => {
       })),
     };
 
-    // Similar offers (same category, excluding current)
-    let similarOffers = [];
-    if (row.cat_id) {
-      const similarResult = await pool.query(`
-        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-               b.name as business_name, b.logo_url as business_logo,
-               COALESCE(o.logo_url, b.cover_image_url) as image_url,
-               c.name as city_name
-        FROM offers o
-        JOIN businesses b ON o.business_id = b.id
-        LEFT JOIN cities c ON b.city_id = c.id
-        WHERE o.id != $1
-          AND o.is_active = TRUE
-          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          AND b.category_id = $2
-        ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
-        LIMIT 4
-      `, [id, row.cat_id]);
-      similarOffers = similarResult.rows;
-    }
-
     res.render("public/offer-detail", {
       offer,
-      similarOffers,
       isFavorite,
       activePage: null,
       webUser: req.webUser,
@@ -844,12 +773,6 @@ router.post("/api/web/offers/:id/reveal-code", revealLimiter, requireWebAuth, as
       [id, req.webUser.id, req.ip || null, promoRow.id]
     ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
-    // Gamification (fire-and-forget)
-    if (req.webUser?.id) {
-      awardPoints(req.webUser.id, "reveal_code", parseInt(id, 10), "offer").catch(() => {});
-      checkBadges(req.webUser.id).catch(() => {});
-    }
-
     res.json({ promo_code: promoRow.code });
   } catch (err) {
     console.error("[Web] Reveal code error:", err);
@@ -871,11 +794,7 @@ router.get("/business/:id", async (req, res) => {
              c.id as city_id, c.name as city_name,
              cat.id as cat_id, cat.name as cat_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,
-             COUNT(r.id) as rating_count,
-             (SELECT COUNT(*) FROM followed_businesses fb WHERE fb.business_id = b.id) as follower_count,
-             (SELECT json_agg(json_build_object('rating', r_dist.rating, 'count', r_dist.cnt))
-              FROM (SELECT rating, COUNT(*) as cnt FROM reviews WHERE business_id = b.id GROUP BY rating) r_dist
-             ) as rating_distribution
+             COUNT(r.id) as rating_count
       FROM businesses b
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
@@ -1047,8 +966,6 @@ router.get("/business/:id", async (req, res) => {
       category: { id: b.cat_id, name: b.cat_name },
       rating: parseFloat(parseFloat(b.rating_avg).toFixed(1)),
       rating_count: parseInt(b.rating_count),
-      follower_count: parseInt(b.follower_count) || 0,
-      rating_distribution: b.rating_distribution || [],
       images,
       locations,
       booking: {
@@ -1458,37 +1375,22 @@ router.get("/orase", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
-    const { getLevel, getNextLevel, BADGES } = require("../services/gamification");
+    const { getUserBadges } = require("../services/badgeService");
 
-    const [gamResult, badgesResult, favCount, followCount, reviewCount, bizReqRes, userDetails] = await Promise.all([
-      pool.query("SELECT points, current_streak, last_visit_date FROM users WHERE id = $1", [req.webUser.id]),
-      pool.query("SELECT badge_type, unlocked_at FROM user_badges WHERE user_id = $1 ORDER BY unlocked_at", [req.webUser.id]),
+    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges] = await Promise.all([
+      pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [req.webUser.id]),
       pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]),
+      getUserBadges(req.webUser.id).catch(err => {
+        console.error("[Web] Badges fetch error:", err.message);
+        return [];
+      }),
     ]);
 
-    const points = gamResult.rows[0]?.points || 0;
-    const level = getLevel(points);
-    const nextLevel = getNextLevel(points);
-    const streak = gamResult.rows[0]?.current_streak || 0;
-
-    const gamification = {
-      points,
-      level: level.name,
-      level_icon: level.icon,
-      next_level: nextLevel,
-      current_streak: streak,
-      all_badges: Object.entries(BADGES).map(([type, info]) => ({
-        type,
-        ...info,
-        unlocked: badgesResult.rows.some(b => b.badge_type === type),
-      })),
-    };
-
-    const userPoints = points;
+    const userPoints = pointsRes.rows[0]?.total_points || 0;
     const bizRequest = bizReqRes.rows[0] || null;
     const lastProfileEdit = userDetails.rows[0]?.last_profile_edit || null;
 
@@ -1501,7 +1403,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       reviewCount: parseInt(reviewCount.rows[0].total),
       bizRequest,
       lastProfileEdit,
-      gamification,
+      userBadges,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);
@@ -1904,7 +1806,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
     if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
     const offerRes = await pool.query(
-      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, max_reveals FROM offers WHERE id = $1 AND business_id = $2",
+      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code FROM offers WHERE id = $1 AND business_id = $2",
       [offerId, businessId]
     );
     if (offerRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
@@ -2100,7 +2002,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
@@ -2134,7 +2036,6 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
       bookingUrl: booking_url,
       bookingInstructions: sanitizeString(booking_instructions, 500),
       promoCodes: sanitizedPromoCodes,
-      maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: false, // Web portal doesn't send webhook
     });
 
@@ -2149,7 +2050,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
 router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
 
     await pool.query(`
       UPDATE offers SET
@@ -2162,14 +2063,12 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         end_date = COALESCE($7, end_date),
         is_active = COALESCE($8, is_active),
         booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
-        max_reveals = $14
-      WHERE id = $15 AND business_id = $16
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13
+      WHERE id = $14 AND business_id = $15
     `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active,
         booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
-        max_reveals ? parseInt(max_reveals) : null,
         offerId, businessId]);
 
     // Backward compat: if single promo_code string sent, convert to array

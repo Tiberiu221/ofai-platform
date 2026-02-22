@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const pool = require("../db");
 const auth = require("../middleware/auth");
-const { getLevel, getNextLevel, BADGES } = require("../services/gamification");
 
 // GET /users/me - detalii user logat: profil + preferinte
 router.get("/me", auth, async (req, res) => {
@@ -65,46 +64,6 @@ router.get("/me", auth, async (req, res) => {
     });
   } catch (err) {
     console.error("Eroare la GET /users/me:", err);
-    res.status(500).json({ message: "Eroare server" });
-  }
-});
-
-// GET /users/me/gamification - puncte, nivel, streak, badge-uri
-router.get("/me/gamification", auth, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const userResult = await pool.query(
-      `SELECT points, current_streak, last_visit_date FROM users WHERE id = $1`,
-      [userId]
-    );
-    const badgesResult = await pool.query(
-      `SELECT badge_type, unlocked_at FROM user_badges WHERE user_id = $1 ORDER BY unlocked_at`,
-      [userId]
-    );
-
-    const points = userResult.rows[0]?.points || 0;
-    const level = getLevel(points);
-    const nextLevel = getNextLevel(points);
-
-    res.json({
-      points,
-      level: level.name,
-      level_icon: level.icon,
-      next_level: nextLevel ? { name: nextLevel.name, min_points: nextLevel.min } : null,
-      current_streak: userResult.rows[0]?.current_streak || 0,
-      badges: badgesResult.rows.map(b => ({
-        type: b.badge_type,
-        ...BADGES[b.badge_type],
-        unlocked_at: b.unlocked_at,
-      })),
-      all_badges: Object.entries(BADGES).map(([type, info]) => ({
-        type,
-        ...info,
-        unlocked: badgesResult.rows.some(b => b.badge_type === type),
-      })),
-    });
-  } catch (err) {
-    console.error("Gamification error:", err.message);
     res.status(500).json({ message: "Eroare server" });
   }
 });

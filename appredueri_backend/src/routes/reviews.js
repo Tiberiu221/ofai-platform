@@ -4,7 +4,6 @@ const pool = require("../db");
 const authenticateToken = require("../middleware/auth"); // Asigură-te că calea e corectă
 const { triggerWebhook } = require("../services/n8n");
 const { parsePagination, paginatedResponse, sanitizeString } = require("../helpers/validate");
-const { awardPoints, checkBadges } = require("../services/gamification");
 
 // ==========================================
 // GET /reviews/business/:id - Vezi recenziile unui business
@@ -178,10 +177,6 @@ router.post("/", authenticateToken, async (req, res) => {
             const { checkAndAwardBadges } = require("../services/badgeService");
             await checkAndAwardBadges(user_id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
           } catch (e) { /* badge check should never block */ }
-
-          // Gamification (fire-and-forget)
-          awardPoints(user_id, "write_review", business_id, "business").catch(() => {});
-          checkBadges(user_id).catch(() => {});
         }
 
         console.log("=== REVIEW POST END ===");

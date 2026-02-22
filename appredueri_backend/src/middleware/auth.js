@@ -1,6 +1,5 @@
 const pool = require("../db");
 const { verifyToken } = require("../helpers/jwt");
-const { updateStreak } = require("../services/gamification");
 
 /**
  * Middleware pentru autentificare JWT
@@ -29,7 +28,6 @@ async function authenticateToken(req, res, next) {
     }
 
     req.user = rows[0];
-    updateStreak(req.user.id).catch(() => {});
     next();
   } catch (err) {
     console.error("Eroare token:", err);
