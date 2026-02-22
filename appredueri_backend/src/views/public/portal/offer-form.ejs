@@ -692,6 +692,12 @@
             Adaugă cod
           </button>
           <div class="of-hint" style="margin-top: 10px;">Opțional. Utilizatorii vor vedea un buton "Dezvăluie codul" pe pagina ofertei. Poți adăuga mai multe coduri și le poți activa/dezactiva individual.</div>
+
+          <div class="of-field" style="margin-top: 20px;">
+            <label class="of-label" for="of-max-reveals">Limită coduri (opțional)</label>
+            <input type="number" id="of-max-reveals" name="max_reveals" class="of-input" placeholder="Ex: 100 (gol = nelimitat)" min="1" value="<%= offer && offer.max_reveals ? offer.max_reveals : '' %>">
+            <div class="of-hint">Numărul maxim de utilizatori care pot dezvălui codul. Lasă gol pentru nelimitat.</div>
+          </div>
         </div>
 
         <!-- ═══ Actions ═══ -->
@@ -908,7 +914,8 @@
       booking_whatsapp: document.getElementById('of-booking-whatsapp-input').value.trim(),
       booking_url: document.getElementById('of-booking-url-input').value.trim(),
       booking_instructions: document.getElementById('of-booking-instructions-input').value.trim(),
-      promo_codes: promoCodes.filter(function(pc) { return pc.code && pc.code.trim(); })
+      promo_codes: promoCodes.filter(function(pc) { return pc.code && pc.code.trim(); }),
+      max_reveals: document.getElementById('of-max-reveals').value || null
     };
 
     try {

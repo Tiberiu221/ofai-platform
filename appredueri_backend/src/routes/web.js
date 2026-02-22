@@ -2076,7 +2076,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
@@ -2110,6 +2110,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
       bookingUrl: booking_url,
       bookingInstructions: sanitizeString(booking_instructions, 500),
       promoCodes: sanitizedPromoCodes,
+      maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: false, // Web portal doesn't send webhook
     });
 
@@ -2124,7 +2125,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
 router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     await pool.query(`
       UPDATE offers SET
@@ -2137,13 +2138,14 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         end_date = COALESCE($7, end_date),
         is_active = COALESCE($8, is_active),
         booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
+        max_reveals = $16
       WHERE id = $14 AND business_id = $15
     `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
         start_date || null, end_date || null, is_active,
         booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
-        offerId, businessId]);
+        offerId, businessId, max_reveals ? parseInt(max_reveals) : null]);
 
     // Backward compat: if single promo_code string sent, convert to array
     let promoCodesArr = promo_codes;

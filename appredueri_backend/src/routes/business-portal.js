@@ -385,7 +385,7 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
     } = req.body;
 
     console.log("[BusinessPortal] Creating offer:", title);
@@ -428,6 +428,7 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
       bookingUrl: booking_url,
       bookingInstructions: booking_instructions,
       promoCodes: sanitizedPromoCodes,
+      maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: true, // Business portal triggers n8n webhook
     });
 
@@ -449,7 +450,7 @@ router.get("/:businessId/offers/:offerId", businessAuth, async (req, res) => {
     console.log("[BusinessPortal] GET single offer - Business:", businessId, "Offer:", offerId);
 
     const result = await pool.query(`
-      SELECT id, business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url FROM offers WHERE id = $1 AND business_id = $2
+      SELECT id, business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, max_reveals FROM offers WHERE id = $1 AND business_id = $2
     `, [offerId, businessId]);
 
     if (result.rows.length === 0) {
@@ -493,7 +494,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
     } = req.body;
 
     const updates = [];
@@ -552,6 +553,10 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     if (booking_instructions !== undefined) {
       updates.push(`booking_instructions = $${paramIndex++}`);
       values.push(booking_instructions || null);
+    }
+    if (max_reveals !== undefined) {
+      updates.push(`max_reveals = $${paramIndex++}`);
+      values.push(max_reveals ? parseInt(max_reveals) : null);
     }
     // Handle image upload
     if (req.file) {
