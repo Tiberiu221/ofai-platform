@@ -75,6 +75,26 @@
             </span>
           </div>
 
+          <% if (parseInt(business.rating_count) >= 3 && business.rating_distribution && business.rating_distribution.length > 0) { %>
+          <div class="rating-breakdown" style="margin: 8px 0 12px;">
+            <%
+              const distMap = {};
+              business.rating_distribution.forEach(function(d) { distMap[d.rating] = parseInt(d.count); });
+              const totalR = Object.values(distMap).reduce(function(a, b) { return a + b; }, 0);
+            %>
+            <% for (let star = 5; star >= 1; star--) { %>
+              <% const cnt = distMap[star] || 0; const pct = totalR > 0 ? Math.round((cnt / totalR) * 100) : 0; %>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.75rem; line-height: 1.8;">
+                <span style="width: 16px; text-align: right; color: var(--text-tertiary);"><%= star %></span>
+                <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+                  <div style="width: <%= pct %>%; height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.6s ease;"></div>
+                </div>
+                <span style="width: 32px; color: var(--text-tertiary); font-size: 0.6875rem;"><%= pct %>%</span>
+              </div>
+            <% } %>
+          </div>
+          <% } %>
+
           <div class="bd-badges">
             <% if (business.category) { %>
               <a href="/oferte?category=<%= business.category.id %>" class="bd-badge">
@@ -96,20 +116,25 @@
         </div>
 
         <div class="bd-profile-actions">
-          <button
-            class="bd-follow-btn follow-btn btn btn-secondary"
-            data-business-id="<%= business.id %>"
-            data-following="<%= isFollowing ? 'true' : 'false' %>"
-            onclick="toggleFollow(<%= business.id %>)"
-          >
-            <% if (isFollowing) { %>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              Urmărești
-            <% } else { %>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              Urmărește
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button
+              class="bd-follow-btn follow-btn btn btn-secondary"
+              data-business-id="<%= business.id %>"
+              data-following="<%= isFollowing ? 'true' : 'false' %>"
+              onclick="toggleFollow(<%= business.id %>)"
+            >
+              <% if (isFollowing) { %>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                Urmărești
+              <% } else { %>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                Urmărește
+              <% } %>
+            </button>
+            <% if (parseInt(business.follower_count) >= 3) { %>
+              <span style="font-size: 0.8125rem; color: var(--text-secondary);"><%= business.follower_count %> urmăritori</span>
             <% } %>
-          </button>
+          </div>
           <button class="bd-share-btn btn btn-secondary" onclick="trackClick(<%= business.id %>,'share'); window.shareOffer('<%= business.name %>', '')" aria-label="Distribuie business-ul">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             Distribuie
