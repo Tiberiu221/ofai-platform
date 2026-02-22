@@ -122,7 +122,8 @@ router.get("/", async (req, res) => {
              COALESCE(b.cover_image_url, o.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
-             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
+             (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities ci ON b.city_id = ci.id
@@ -203,10 +204,46 @@ router.get("/", async (req, res) => {
       preferredCityName = cityName ? cityName.name : null;
     }
 
+    // Deal of the Day
+    let dealOfDay = null;
+    try {
+      let dodResult = await pool.query(`
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+               b.name as business_name, b.logo_url as business_logo,
+               COALESCE(b.cover_image_url, o.logo_url) as image_url,
+               ci2.name as city_name,
+               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        LEFT JOIN cities ci2 ON b.city_id = ci2.id
+        WHERE o.is_active = TRUE AND o.is_deal_of_day = TRUE AND o.deal_of_day_date = CURRENT_DATE
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        LIMIT 1
+      `);
+      if (dodResult.rows.length === 0) {
+        dodResult = await pool.query(`
+          SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+                 b.name as business_name, b.logo_url as business_logo,
+                 COALESCE(b.cover_image_url, o.logo_url) as image_url,
+                 ci2.name as city_name,
+                 (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
+          FROM offers o
+          JOIN businesses b ON o.business_id = b.id
+          LEFT JOIN cities ci2 ON b.city_id = ci2.id
+          WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
+                   (SELECT COUNT(*) FROM offer_clicks oc WHERE oc.offer_id = o.id) DESC
+          LIMIT 1
+        `);
+      }
+      if (dodResult.rows.length > 0) dealOfDay = dodResult.rows[0];
+    } catch (e) { /* silently fail — deal of day is optional */ }
+
     res.render("public/home", {
       stats,
       categories: categories.rows,
       featuredOffers: featuredOffers.rows,
+      dealOfDay,
       cities: cities.rows,
       featuredBusinesses: featuredBusinesses.rows,
       topBusinesses: topBusinesses.rows,
@@ -597,7 +634,11 @@ router.get("/oferta/:id", async (req, res) => {
         c.id as city_id, c.name as city_name,
         cat.id as cat_id, cat.name as cat_name,
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
-        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count
+        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
+        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
+        (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending,
+        o.max_reveals,
+        (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
@@ -668,6 +709,10 @@ router.get("/oferta/:id", async (req, res) => {
       end_date: row.end_date,
       is_active: row.is_active,
       has_promo_code: !!row.has_promo_code,
+      save_count: parseInt(row.save_count || 0),
+      is_trending: row.is_trending === true,
+      max_reveals: row.max_reveals || null,
+      reveal_count: parseInt(row.reveal_count || 0),
       image_url: row.business_cover || row.offer_logo || row.business_logo,
       booking,
       business: {
@@ -689,8 +734,31 @@ router.get("/oferta/:id", async (req, res) => {
       })),
     };
 
+    // Similar offers (same category)
+    let similarOffers = [];
+    if (row.cat_id) {
+      try {
+        const simResult = await pool.query(`
+          SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+                 b.name as business_name, b.logo_url as business_logo,
+                 COALESCE(o.logo_url, b.cover_image_url) as image_url,
+                 c2.name as city_name
+          FROM offers o
+          JOIN businesses b ON o.business_id = b.id
+          LEFT JOIN cities c2 ON b.city_id = c2.id
+          WHERE o.id != $1 AND o.is_active = TRUE
+            AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+            AND b.category_id = $2
+          ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
+          LIMIT 4
+        `, [id, row.cat_id]);
+        similarOffers = simResult.rows;
+      } catch (e) { /* silently fail */ }
+    }
+
     res.render("public/offer-detail", {
       offer,
+      similarOffers,
       isFavorite,
       activePage: null,
       webUser: req.webUser,
@@ -794,7 +862,11 @@ router.get("/business/:id", async (req, res) => {
              c.id as city_id, c.name as city_name,
              cat.id as cat_id, cat.name as cat_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,
-             COUNT(r.id) as rating_count
+             COUNT(r.id) as rating_count,
+             (SELECT COUNT(*) FROM followed_businesses fb WHERE fb.business_id = b.id) as follower_count,
+             (SELECT json_agg(json_build_object('rating', r_dist.rating, 'count', r_dist.cnt))
+              FROM (SELECT rating, COUNT(*) as cnt FROM reviews WHERE business_id = b.id GROUP BY rating) r_dist
+             ) as rating_distribution
       FROM businesses b
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
@@ -966,6 +1038,8 @@ router.get("/business/:id", async (req, res) => {
       category: { id: b.cat_id, name: b.cat_name },
       rating: parseFloat(parseFloat(b.rating_avg).toFixed(1)),
       rating_count: parseInt(b.rating_count),
+      follower_count: parseInt(b.follower_count || 0),
+      rating_distribution: b.rating_distribution || [],
       images,
       locations,
       booking: {
