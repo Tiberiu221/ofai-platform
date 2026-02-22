@@ -17,6 +17,7 @@ const { sanitizeString, createImageFilter, validatePassword } = require("../help
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
+const { awardPoints, checkBadges } = require("../services/gamification");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { OAuth2Client } = require("google-auth-library");
@@ -226,6 +227,21 @@ router.get("/", async (req, res) => {
       preferredCityName = cityName ? cityName.name : null;
     }
 
+    // Build preference label list for personalization subtitle
+    let userPreferences = null;
+    if (req.webUser && (userPrefs.city_ids.length > 0 || userPrefs.category_ids.length > 0)) {
+      const prefItems = [];
+      for (const cid of userPrefs.city_ids) {
+        const city = cities.rows.find(c => c.id === cid);
+        if (city) prefItems.push({ name: city.name });
+      }
+      for (const catId of userPrefs.category_ids) {
+        const cat = categories.rows.find(c => c.id === catId);
+        if (cat) prefItems.push({ name: cat.name });
+      }
+      if (prefItems.length > 0) userPreferences = prefItems;
+    }
+
     res.render("public/home", {
       stats,
       categories: categories.rows,
@@ -237,6 +253,7 @@ router.get("/", async (req, res) => {
       followedOffers,
       preferredCityName,
       hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),
+      userPreferences,
       activePage: "home",
       webUser: req.webUser,
       structuredData: {
@@ -826,6 +843,12 @@ router.post("/api/web/offers/:id/reveal-code", revealLimiter, requireWebAuth, as
       "INSERT INTO code_reveals (offer_id, user_id, viewer_ip, promo_code_id) VALUES ($1, $2, $3, $4)",
       [id, req.webUser.id, req.ip || null, promoRow.id]
     ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
+
+    // Gamification (fire-and-forget)
+    if (req.webUser?.id) {
+      awardPoints(req.webUser.id, "reveal_code", parseInt(id, 10), "offer").catch(() => {});
+      checkBadges(req.webUser.id).catch(() => {});
+    }
 
     res.json({ promo_code: promoRow.code });
   } catch (err) {
@@ -1435,22 +1458,37 @@ router.get("/orase", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
-    const { getUserBadges } = require("../services/badgeService");
+    const { getLevel, getNextLevel, BADGES } = require("../services/gamification");
 
-    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges] = await Promise.all([
-      pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
+    const [gamResult, badgesResult, favCount, followCount, reviewCount, bizReqRes, userDetails] = await Promise.all([
+      pool.query("SELECT points, current_streak, last_visit_date FROM users WHERE id = $1", [req.webUser.id]),
+      pool.query("SELECT badge_type, unlocked_at FROM user_badges WHERE user_id = $1 ORDER BY unlocked_at", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [req.webUser.id]),
       pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]),
-      getUserBadges(req.webUser.id).catch(err => {
-        console.error("[Web] Badges fetch error:", err.message);
-        return [];
-      }),
     ]);
 
-    const userPoints = pointsRes.rows[0]?.total_points || 0;
+    const points = gamResult.rows[0]?.points || 0;
+    const level = getLevel(points);
+    const nextLevel = getNextLevel(points);
+    const streak = gamResult.rows[0]?.current_streak || 0;
+
+    const gamification = {
+      points,
+      level: level.name,
+      level_icon: level.icon,
+      next_level: nextLevel,
+      current_streak: streak,
+      all_badges: Object.entries(BADGES).map(([type, info]) => ({
+        type,
+        ...info,
+        unlocked: badgesResult.rows.some(b => b.badge_type === type),
+      })),
+    };
+
+    const userPoints = points;
     const bizRequest = bizReqRes.rows[0] || null;
     const lastProfileEdit = userDetails.rows[0]?.last_profile_edit || null;
 
@@ -1463,7 +1501,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       reviewCount: parseInt(reviewCount.rows[0].total),
       bizRequest,
       lastProfileEdit,
-      userBadges,
+      gamification,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);

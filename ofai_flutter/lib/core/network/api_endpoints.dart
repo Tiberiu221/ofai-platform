@@ -55,6 +55,7 @@ class ApiEndpoints {
   static const String userExport = '/users/me/export';
   static const String userDelete = '/users/me';
   static const String userProfilePicture = '/users/me/profile-picture';
+  static const String gamification = '/users/me/gamification';
 
   // Push
   static const String pushTokens = '/push-tokens';

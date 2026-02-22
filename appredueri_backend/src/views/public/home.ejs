@@ -112,6 +112,16 @@
     <div class="section-header reveal">
       <div class="section-label">🔔 Pentru tine</div>
       <h2 class="section-title" style="font-size: 1.5rem;">Noutăți de la business-urile tale</h2>
+      <% if (typeof userPreferences !== 'undefined' && userPreferences && userPreferences.length > 0) { %>
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin-top: 4px;">
+          Bazat pe preferintele tale: <%= userPreferences.map(function(p) { return p.name; }).join(', ') %>
+          &middot; <a href="/preferinte" style="color: var(--accent);">Modifica</a>
+        </p>
+      <% } else if (typeof webUser !== 'undefined' && webUser) { %>
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin-top: 4px;">
+          <a href="/preferinte" style="color: var(--accent);">Spune-ne ce te intereseaza</a> pentru oferte personalizate
+        </p>
+      <% } %>
     </div>
     <div class="offers-grid offers-grid-auto">
       <% followedOffers.forEach((fo, i) => { %>

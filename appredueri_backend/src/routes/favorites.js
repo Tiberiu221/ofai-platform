@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require("../db");
 const auth = require("../middleware/auth");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
+const { awardPoints, checkBadges } = require("../services/gamification");
 
 // toate rutele de aici necesita autentificare
 router.use(auth);
@@ -119,11 +120,9 @@ router.post("/", async (req, res) => {
       [userId, parseInt(offer_id, 10)]
     );
 
-    // Badge check (fire-and-forget)
-    try {
-      const { checkAndAwardBadges } = require("../services/badgeService");
-      await checkAndAwardBadges(userId, ['first_favorite']);
-    } catch (e) { /* badge check should never block */ }
+    // Gamification (fire-and-forget)
+    awardPoints(userId, "favorite", parseInt(offer_id, 10), "offer").catch(() => {});
+    checkBadges(userId).catch(() => {});
 
     res.status(201).json({ message: "Oferta a fost adaugata la favorite" });
   } catch (err) {

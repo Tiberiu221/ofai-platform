@@ -8,6 +8,7 @@ import '../../providers/offers_provider.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/static_data_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../widgets/offer_card.dart';
 import '../../widgets/business_card.dart';
 import '../../widgets/category_chip.dart';
@@ -57,6 +58,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
     final businessesAsync = ref.watch(homeBusinessesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final citiesAsync = ref.watch(citiesProvider);
+    final gamification = isLoggedIn
+        ? ref.watch(gamificationProvider).valueOrNull
+        : null;
 
     return Scaffold(
       body: SafeArea(
@@ -70,6 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(homeBusinessesProvider);
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
+            ref.invalidate(gamificationProvider);
           },
           child: CustomScrollView(
             slivers: [
@@ -198,6 +203,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                   ),
                 ),
               ),
+
+              // Streak pill — only for logged-in users with an active streak
+              if (gamification != null && gamification.currentStreak >= 2)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.pagePadding,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.xs + 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.local_fire_department,
+                                size: 16,
+                                color: AppColors.accent,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                'Zi ${gamification.currentStreak} pe OFAI',
+                                style: AppTypography.labelMedium.copyWith(
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
