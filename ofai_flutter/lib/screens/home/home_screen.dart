@@ -15,6 +15,7 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/featured_offer_card.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -65,6 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
           onRefresh: () async {
             ref.invalidate(feedProvider);
             ref.invalidate(popularOffersProvider);
+            ref.invalidate(dealOfDayProvider);
             ref.invalidate(homeBusinessesProvider);
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
@@ -295,10 +297,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
-              // Offers section
+              // Deal of the Day
               SliverToBoxAdapter(
                 child: FadeInItem(
                   index: 5,
+                  child: ref.watch(dealOfDayProvider).when(
+                    data: (deal) {
+                      if (deal == null) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Oferta Zilei',
+                              style: TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            FeaturedOfferCard(
+                              offer: deal,
+                              onTap: () => context.push('/offer/${deal.id}'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+              // Offers section
+              SliverToBoxAdapter(
+                child: FadeInItem(
+                  index: 6,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -353,7 +393,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               // Businesses section header
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 6,
+                  index: 7,
                   child: SectionHeader(
                     title: 'Business-uri',
                     onViewAll: () => context.go('/explore'),

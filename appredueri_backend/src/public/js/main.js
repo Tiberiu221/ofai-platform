@@ -20,7 +20,37 @@ document.addEventListener('DOMContentLoaded', () => {
   initTiltFx();
   initParticles();
   initScrollArrows();
+  initCountdowns();
 });
+
+/* ─── COUNTDOWN TIMERS ───────────────────────────────────── */
+function initCountdowns() {
+  function update() {
+    document.querySelectorAll('[data-end-date]').forEach(function(el) {
+      var end = new Date(el.dataset.endDate);
+      var now = new Date();
+      var diff = end - now;
+      if (diff <= 0) {
+        el.textContent = 'Expirata';
+        el.className = 'urgency-badge countdown-timer urgency-high';
+        return;
+      }
+      var days = Math.floor(diff / 86400000);
+      var hours = Math.floor((diff % 86400000) / 3600000);
+      var mins = Math.floor((diff % 3600000) / 60000);
+      var text, cls;
+      if (days > 7) { el.style.display = 'none'; return; }
+      else if (days >= 3) { text = days + 'z ' + hours + 'h'; cls = 'urgency-medium'; }
+      else if (days >= 1) { text = days + 'z ' + hours + 'h'; cls = 'urgency-high'; }
+      else { text = hours + 'h ' + mins + 'm'; cls = 'urgency-critical'; }
+      el.textContent = text;
+      el.className = 'urgency-badge countdown-timer ' + cls;
+      el.style.display = '';
+    });
+  }
+  update();
+  setInterval(update, 60000);
+}
 
 /* ─── NAVBAR ─────────────────────────────────────────────── */
 function initNavbar() {

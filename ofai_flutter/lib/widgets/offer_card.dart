@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
-import '../core/utils/formatters.dart';
 import '../models/offer.dart';
 import '../providers/auth_provider.dart';
 import '../providers/favorites_provider.dart';
@@ -87,7 +86,24 @@ class OfferCard extends ConsumerWidget {
                         right: 8,
                         child: _buildBadge(),
                       ),
-                    // Favorite bookmark (top left)
+                    // Trending badge (top left) — shown when no bookmark or behind it
+                    if (offer.isTrending)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(colors: [Color(0xFFF97316), Color(0xFFEF4444)]),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Trending',
+                            style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    // Favorite bookmark (top left — overlays trending badge when logged in)
                     _buildFavoriteIcon(ref),
                     // Expiry countdown (bottom left)
                     _buildCountdown(),
@@ -159,6 +175,15 @@ class OfferCard extends ConsumerWidget {
                             ],
                             const SizedBox(width: AppSpacing.sm),
                           ],
+                          if (offer.saveCount >= 5) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.bookmark, size: 12, color: AppColors.accent),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${offer.saveCount}',
+                              style: TextStyle(fontSize: 11, color: AppColors.accent, fontWeight: FontWeight.w600),
+                            ),
+                          ],
                           if (locationPart != null && locationPart.isNotEmpty) ...[
                             Icon(Icons.location_on_outlined, size: 12, color: AppColors.textTertiary),
                             const SizedBox(width: 2),
@@ -214,6 +239,24 @@ class OfferCard extends ConsumerWidget {
                       right: 8,
                       child: _buildBadge(),
                     ),
+                  // Trending badge (top left) — shown when no bookmark or behind it
+                  if (offer.isTrending)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [Color(0xFFF97316), Color(0xFFEF4444)]),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Trending',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  // Favorite bookmark (top left — overlays trending badge when logged in)
                   _buildFavoriteIcon(ref),
                   _buildCountdown(),
                 ],
@@ -249,7 +292,7 @@ class OfferCard extends ConsumerWidget {
                           ),
                       ],
                     ),
-                    // Row 1: rating + category
+                    // Row 1: rating + save count + category
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Row(
@@ -268,6 +311,16 @@ class OfferCard extends ConsumerWidget {
                                 style: AppTypography.captionMuted,
                               ),
                             ],
+                            const SizedBox(width: AppSpacing.sm),
+                          ],
+                          if (offer.saveCount >= 5) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.bookmark, size: 12, color: AppColors.accent),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${offer.saveCount}',
+                              style: TextStyle(fontSize: 11, color: AppColors.accent, fontWeight: FontWeight.w600),
+                            ),
                             const SizedBox(width: AppSpacing.sm),
                           ],
                           if (offer.business!.category != null && offer.business!.category!.isNotEmpty)
@@ -408,14 +461,34 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
-  /// Expiry countdown pill — shows "Ultima zi!", "3 zile ramase", etc.
+  /// Expiry countdown pill — shows "Xz Xh" format within 7 days of expiry.
   Widget _buildCountdown() {
-    final text = Formatters.timeLeft(offer.endDate);
-    if (text == null) return const SizedBox.shrink();
+    if (offer.endDate == null) return const SizedBox.shrink();
+    final endDate = DateTime.tryParse(offer.endDate!);
+    if (endDate == null) return const SizedBox.shrink();
 
-    final urgency = Formatters.urgencyLevel(offer.endDate);
-    final bgColor = urgency >= 2 ? AppColors.danger : AppColors.warning;
-    final textColor = urgency >= 2 ? Colors.white : AppColors.bgPrimary;
+    final now = DateTime.now();
+    final diff = endDate.difference(now);
+    if (diff.isNegative || diff.inDays > 7) return const SizedBox.shrink();
+
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+
+    String text;
+    Color bgColor;
+    if (days == 0 && hours == 0) {
+      text = '< 1h';
+      bgColor = AppColors.danger;
+    } else if (days == 0) {
+      text = '${hours}h';
+      bgColor = AppColors.danger;
+    } else if (days <= 2) {
+      text = '${days}z ${hours}h';
+      bgColor = AppColors.danger;
+    } else {
+      text = '${days}z ${hours}h';
+      bgColor = AppColors.warning;
+    }
 
     return Positioned(
       bottom: 8,
@@ -424,16 +497,20 @@ class OfferCard extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+          borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.schedule, size: 12, color: textColor),
+            const Icon(Icons.access_time, size: 12, color: Colors.white),
             const SizedBox(width: 4),
             Text(
               text,
-              style: AppTypography.labelSmall.copyWith(color: textColor),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

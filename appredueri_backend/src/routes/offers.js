@@ -89,6 +89,8 @@ router.get("/", optionalAuth, async (req, res) => {
 
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
         (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
+        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
+        (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '7 days') >= 5 THEN true ELSE false END) as is_trending,
 
         locs.locations as locations
       FROM offers o
@@ -157,6 +159,8 @@ router.get("/", optionalAuth, async (req, res) => {
         start_date: row.start_date,
         end_date: row.end_date,
         has_promo_code: !!row.has_promo_code,
+        save_count: parseInt(row.save_count || 0),
+        is_trending: row.is_trending === true,
         image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
         locations: Array.isArray(row.locations) ? row.locations : [],
         business: {
@@ -301,6 +305,92 @@ router.get("/feed", auth, async (req, res) => {
 });
 
 // =======================================
+// GET /deal-of-day — returns the featured deal of the day
+// =======================================
+router.get("/deal-of-day", async (req, res) => {
+  try {
+    // First try: manually selected deal of day
+    let result = await pool.query(`
+      SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
+             o.start_date, o.end_date, o.logo_url as offer_logo,
+             b.id as business_id, b.name as business_name,
+             b.logo_url as business_logo, b.cover_image_url as business_cover,
+             b.is_verified as business_verified,
+             c.name as city_name, cat.name as category_name,
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
+             (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
+             (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count
+      FROM offers o
+      JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN cities c ON b.city_id = c.id
+      LEFT JOIN categories cat ON b.category_id = cat.id
+      WHERE o.is_deal_of_day = TRUE
+        AND o.is_active = TRUE
+        AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+      ORDER BY o.deal_of_day_date DESC NULLS LAST
+      LIMIT 1
+    `);
+
+    // Fallback: highest engagement offer (most saves in last 7 days)
+    if (result.rows.length === 0) {
+      result = await pool.query(`
+        SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
+               o.start_date, o.end_date, o.logo_url as offer_logo,
+               b.id as business_id, b.name as business_name,
+               b.logo_url as business_logo, b.cover_image_url as business_cover,
+               b.is_verified as business_verified,
+               c.name as city_name, cat.name as category_name,
+               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
+               (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
+               (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        LEFT JOIN cities c ON b.city_id = c.id
+        LEFT JOIN categories cat ON b.category_id = cat.id
+        WHERE o.is_active = TRUE
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id
+                  AND fo.created_at > NOW() - INTERVAL '7 days') DESC,
+                 o.discount_value DESC NULLS LAST
+        LIMIT 1
+      `);
+    }
+
+    if (result.rows.length === 0) {
+      return res.json({ deal: null });
+    }
+
+    const row = result.rows[0];
+    res.json({
+      deal: {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        discount_type: row.discount_type,
+        discount_value: row.discount_value,
+        start_date: row.start_date,
+        end_date: row.end_date,
+        image_url: row.offer_logo || row.business_cover,
+        save_count: parseInt(row.save_count) || 0,
+        business: {
+          id: row.business_id,
+          name: row.business_name,
+          logo_url: row.business_logo,
+          is_verified: row.business_verified,
+        },
+        city_name: row.city_name,
+        category_name: row.category_name,
+        rating_avg: parseFloat(row.rating_avg) || 0,
+        rating_count: parseInt(row.rating_count) || 0,
+      }
+    });
+  } catch (err) {
+    console.error("Deal of day error:", err.message);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// =======================================
 // GET /offers/:id - Detalii ofertă cu booking
 // =======================================
 router.get("/:id", async (req, res) => {
@@ -343,7 +433,11 @@ router.get("/:id", async (req, res) => {
         cat.id as cat_id, cat.name as cat_name,
         -- Rating
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
-        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count
+        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
+        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
+        (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '7 days') >= 5 THEN true ELSE false END) as is_trending,
+        o.max_reveals,
+        (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
@@ -451,6 +545,10 @@ router.get("/:id", async (req, res) => {
       end_date: row.end_date,
       is_active: row.is_active,
       has_promo_code: !!row.has_promo_code,
+      save_count: parseInt(row.save_count || 0),
+      is_trending: row.is_trending === true,
+      max_reveals: row.max_reveals || null,
+      reveal_count: parseInt(row.reveal_count || 0),
 
       image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
 

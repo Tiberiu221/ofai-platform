@@ -3999,6 +3999,74 @@ ul, ol { list-style: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════
+   COUNTDOWN TIMER
+   ═══════════════════════════════════════════════════════════ */
+.countdown-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.countdown-timer.urgency-low { color: var(--success); }
+.countdown-timer.urgency-medium { color: var(--accent); }
+.countdown-timer.urgency-high { color: var(--danger); }
+.countdown-timer.urgency-critical {
+  color: var(--danger);
+  animation: urgency-pulse 1.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TRENDING BADGE
+   ═══════════════════════════════════════════════════════════ */
+.trending-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  z-index: 2;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DEAL OF THE DAY
+   ═══════════════════════════════════════════════════════════ */
+.deal-of-day {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(251, 146, 60, 0.25);
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.06) 0%, rgba(251, 146, 60, 0.02) 100%);
+  min-height: 320px;
+}
+
+.deal-of-day-label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ═══════════════════════════════════════════════════════════
    SOCIAL PROOF
    ═══════════════════════════════════════════════════════════ */
 .offer-social-proof {
