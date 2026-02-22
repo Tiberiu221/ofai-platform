@@ -91,6 +91,8 @@ class OfferCard extends ConsumerWidget {
                     _buildFavoriteIcon(ref),
                     // Expiry countdown (bottom left)
                     _buildCountdown(),
+                    // Trending badge (bottom right)
+                    _buildTrendingBadge(),
                   ],
                 ),
               ),
@@ -135,6 +137,20 @@ class OfferCard extends ConsumerWidget {
                           ),
                       ],
                     ),
+                    // Save count row
+                    if (offer.saveCount != null && offer.saveCount! >= 3) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${offer.saveCount} salvări',
+                            style: AppTypography.captionMuted,
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 2),
                     Builder(builder: (_) {
                       final dist = _distanceText(ref);
@@ -216,6 +232,7 @@ class OfferCard extends ConsumerWidget {
                     ),
                   _buildFavoriteIcon(ref),
                   _buildCountdown(),
+                  _buildTrendingBadge(),
                 ],
               ),
             ),
@@ -249,6 +266,20 @@ class OfferCard extends ConsumerWidget {
                           ),
                       ],
                     ),
+                    // Save count row
+                    if (offer.saveCount != null && offer.saveCount! >= 3) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${offer.saveCount} salvări',
+                            style: AppTypography.captionMuted,
+                          ),
+                        ],
+                      ),
+                    ],
                     // Row 1: rating + category
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
@@ -408,14 +439,40 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
-  /// Expiry countdown pill — shows "Ultima zi!", "3 zile ramase", etc.
+  /// Expiry countdown pill — always visible when endDate exists.
+  /// Colors: success (>7d), warning (3-7d), danger (<3d / <24h).
+  /// Critical level (<24h) uses bold text for extra emphasis.
   Widget _buildCountdown() {
     final text = Formatters.timeLeft(offer.endDate);
     if (text == null) return const SizedBox.shrink();
 
     final urgency = Formatters.urgencyLevel(offer.endDate);
-    final bgColor = urgency >= 2 ? AppColors.danger : AppColors.warning;
-    final textColor = urgency >= 2 ? Colors.white : AppColors.bgPrimary;
+
+    final Color bgColor;
+    final Color textColor;
+    switch (urgency) {
+      case 0:
+        bgColor = AppColors.success;
+        textColor = Colors.white;
+      case 1:
+        bgColor = AppColors.warning;
+        textColor = AppColors.bgPrimary;
+      case 2:
+        bgColor = AppColors.danger;
+        textColor = Colors.white;
+      case 3:
+      default:
+        bgColor = AppColors.danger;
+        textColor = Colors.white;
+    }
+
+    // Critical urgency uses bold weight for extra emphasis
+    final labelStyle = urgency == 3
+        ? AppTypography.labelSmall.copyWith(
+            color: textColor,
+            fontWeight: FontWeight.w700,
+          )
+        : AppTypography.labelSmall.copyWith(color: textColor);
 
     return Positioned(
       bottom: 8,
@@ -431,9 +488,36 @@ class OfferCard extends ConsumerWidget {
           children: [
             Icon(Icons.schedule, size: 12, color: textColor),
             const SizedBox(width: 4),
+            Text(text, style: labelStyle),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Trending badge — shown at bottom right when offer.isTrending is true.
+  /// Positioned at bottom:8, right:8 to avoid conflict with the discount badge
+  /// (top right) and the favorite icon (top left).
+  Widget _buildTrendingBadge() {
+    if (!offer.isTrending) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 8,
+      right: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.accent,
+          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('\u{1F525}', style: TextStyle(fontSize: 10)),
+            const SizedBox(width: 3),
             Text(
-              text,
-              style: AppTypography.labelSmall.copyWith(color: textColor),
+              'Trending',
+              style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
             ),
           ],
         ),

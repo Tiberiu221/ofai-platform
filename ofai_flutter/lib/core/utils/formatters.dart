@@ -34,7 +34,8 @@ class Formatters {
     return count.toString();
   }
 
-  /// Returns urgency text for offers ending soon, null if > 7 days away
+  /// Returns urgency text for offers — ALWAYS returns text (never null for valid dates)
+  /// >7 days = "X zile ramase", 3-7 = "X zile ramase", <3d = "X zile ramase", <24h = "Ultima zi!"
   static String? timeLeft(String? endDateStr) {
     if (endDateStr == null) return null;
     final endDate = DateTime.tryParse(endDateStr);
@@ -45,17 +46,19 @@ class Formatters {
     if (diff.inHours < 24) return 'Ultima zi!';
     if (diff.inDays == 1) return '1 zi ramasa';
     if (diff.inDays <= 7) return '${diff.inDays} zile ramase';
-    return null;
+    if (diff.inDays <= 30) return '${diff.inDays} zile ramase';
+    return '${(diff.inDays / 7).floor()} sapt. ramase';
   }
 
-  /// Returns urgency level: 0=none, 1=warning (2-7 days), 2=danger (0-1 day)
+  /// Returns urgency level: 0=calm (>7d), 1=medium (3-7d), 2=high (<3d), 3=critical (<24h)
   static int urgencyLevel(String? endDateStr) {
     if (endDateStr == null) return 0;
     final endDate = DateTime.tryParse(endDateStr);
     if (endDate == null) return 0;
     final diff = endDate.difference(DateTime.now());
-    if (diff.isNegative) return 2;
-    if (diff.inHours < 48) return 2;
+    if (diff.isNegative) return 3;
+    if (diff.inHours < 24) return 3;
+    if (diff.inDays < 3) return 2;
     if (diff.inDays <= 7) return 1;
     return 0;
   }

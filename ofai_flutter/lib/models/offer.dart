@@ -15,6 +15,11 @@ class Offer {
   final Booking? booking;
   final List<GalleryImage>? gallery;
   final bool hasPromoCode;
+  // Platform polish fields
+  final int? saveCount;
+  final bool isTrending;
+  final int? maxReveals;
+  final int? revealCount;
 
   Offer({
     required this.id,
@@ -32,6 +37,10 @@ class Offer {
     this.booking,
     this.gallery,
     this.hasPromoCode = false,
+    this.saveCount,
+    this.isTrending = false,
+    this.maxReveals,
+    this.revealCount,
   });
 
   String get discountLabel {
@@ -68,8 +77,21 @@ class Offer {
           ?.map((e) => GalleryImage.fromJson(e as Map<String, dynamic>))
           .toList(),
       hasPromoCode: json['has_promo_code'] as bool? ?? false,
+      saveCount: json['save_count'] as int?,
+      isTrending: json['is_trending'] as bool? ?? false,
+      maxReveals: json['max_reveals'] as int?,
+      revealCount: json['reveal_count'] as int?,
     );
   }
+
+  /// Remaining codes available (null if unlimited)
+  int? get remainingCodes {
+    if (maxReveals == null) return null;
+    return (maxReveals! - (revealCount ?? 0)).clamp(0, maxReveals!);
+  }
+
+  /// Whether codes are exhausted
+  bool get codesExhausted => maxReveals != null && remainingCodes == 0;
 }
 
 class OfferBusiness {
@@ -84,6 +106,7 @@ class OfferBusiness {
   final double? rating;
   final int? ratingCount;
   final bool isVerified;
+  final int? categoryId;
 
   OfferBusiness({
     required this.id,
@@ -97,6 +120,7 @@ class OfferBusiness {
     this.rating,
     this.ratingCount,
     this.isVerified = false,
+    this.categoryId,
   });
 
   factory OfferBusiness.fromJson(Map<String, dynamic> json) {
@@ -112,6 +136,7 @@ class OfferBusiness {
       rating: (json['rating'] as num?)?.toDouble(),
       ratingCount: json['rating_count'] as int?,
       isVerified: json['is_verified'] as bool? ?? false,
+      categoryId: json['category_id'] as int?,
     );
   }
 }

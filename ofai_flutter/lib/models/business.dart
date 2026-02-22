@@ -25,6 +25,9 @@ class Business {
   final int? offerRequestCount;
   final bool? showPinchFlag;
   final bool isVerified;
+  // Platform polish fields
+  final int? followerCount;
+  final Map<int, int>? ratingDistribution; // {1: count, 2: count, ...5: count}
 
   Business({
     required this.id,
@@ -49,6 +52,8 @@ class Business {
     this.offerRequestCount,
     this.showPinchFlag,
     this.isVerified = false,
+    this.followerCount,
+    this.ratingDistribution,
   });
 
   String get cityName => city?.name ?? '';
@@ -94,7 +99,23 @@ class Business {
           : json['offerRequestCount'] as int?,
       showPinchFlag: json['showPinch'] as bool?,
       isVerified: json['is_verified'] as bool? ?? false,
+      followerCount: json['follower_count'] as int?,
+      ratingDistribution: _parseRatingDistribution(json['rating_distribution']),
     );
+  }
+
+  static Map<int, int>? _parseRatingDistribution(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is Map) {
+      final result = <int, int>{};
+      raw.forEach((key, value) {
+        final k = int.tryParse(key.toString());
+        final v = value is int ? value : int.tryParse(value.toString()) ?? 0;
+        if (k != null) result[k] = v;
+      });
+      return result.isNotEmpty ? result : null;
+    }
+    return null;
   }
 
   /// Whether the pinch card should be shown

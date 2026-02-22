@@ -130,7 +130,10 @@ class BusinessDetailScreen extends ConsumerWidget {
                               if (business.isVerified)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 6),
-                                  child: Icon(Icons.verified, color: AppColors.accent, size: 24),
+                                  child: GestureDetector(
+                                    onTap: () => _showVerifiedInfo(context),
+                                    child: Icon(Icons.verified, color: AppColors.accent, size: 24),
+                                  ),
                                 ),
                             ],
                           ),
@@ -141,6 +144,21 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 .join(' \u2022 '),
                             style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                           ),
+
+                          // Follower count
+                          if (business.followerCount != null && business.followerCount! >= 3) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.people_outline, size: 14, color: AppColors.textTertiary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${business.followerCount} urmăritori',
+                                  style: AppTypography.caption,
+                                ),
+                              ],
+                            ),
+                          ],
 
                           const SizedBox(height: AppSpacing.lg),
 
@@ -182,6 +200,12 @@ class BusinessDetailScreen extends ConsumerWidget {
                               ],
                             ),
                             const SizedBox(height: AppSpacing.xxl),
+                          ],
+
+                          // Rating breakdown
+                          if (business.ratingDistribution != null && (business.ratingCount ?? 0) >= 3) ...[
+                            _RatingBreakdown(distribution: business.ratingDistribution!, total: business.ratingCount ?? 0),
+                            const SizedBox(height: AppSpacing.lg),
                           ],
 
                           // Review summary
@@ -522,6 +546,38 @@ class BusinessDetailScreen extends ConsumerWidget {
           body: w.ErrorState(
             message: 'Nu s-a putut încărca business-ul',
             onRetry: () => ref.invalidate(businessDetailProvider(businessId)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showVerifiedInfo(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 32, height: 4, decoration: BoxDecoration(color: AppColors.textTertiary, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: AppSpacing.xxl),
+              Icon(Icons.verified, color: AppColors.accent, size: 48),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Business Verificat', style: AppTypography.headlineSmall),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Acest business a fost verificat de echipa OFAI. Verificăm identitatea, locația și calitatea serviciilor pentru a asigura o experiență de încredere.',
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+            ],
           ),
         ),
       ),
@@ -1038,6 +1094,56 @@ class _BookingChip extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RatingBreakdown extends StatelessWidget {
+  final Map<int, int> distribution;
+  final int total;
+  const _RatingBreakdown({required this.distribution, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: List.generate(5, (index) {
+        final star = 5 - index; // 5, 4, 3, 2, 1
+        final count = distribution[star] ?? 0;
+        final fraction = total > 0 ? count / total : 0.0;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                child: Text('$star', style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondary)),
+              ),
+              Icon(Icons.star, size: 12, color: AppColors.accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: fraction,
+                    backgroundColor: AppColors.bgSecondary,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                    minHeight: 6,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 28,
+                child: Text(
+                  '$count',
+                  style: AppTypography.captionMuted,
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }

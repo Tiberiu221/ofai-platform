@@ -15,6 +15,7 @@ import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
+import '../../widgets/offer_card.dart';
 import '../../widgets/animated_toggle_fab.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
@@ -144,6 +145,29 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           const SizedBox(height: AppSpacing.md),
 
+                          // Activity pills
+                          if (offer.isTrending || (offer.saveCount != null && offer.saveCount! >= 3)) ...[
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                if (offer.isTrending)
+                                  _ActivityPill(
+                                    icon: Icons.local_fire_department,
+                                    label: 'Trending',
+                                    color: AppColors.accent,
+                                  ),
+                                if (offer.saveCount != null && offer.saveCount! >= 3)
+                                  _ActivityPill(
+                                    icon: Icons.bookmark,
+                                    label: '${offer.saveCount} salvari',
+                                    color: AppColors.textTertiary,
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
+
                           // Date range + progress bar
                           if (startDate != null || endDate != null) ...[
                             Row(
@@ -212,6 +236,65 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Promo Code
                           if (offer.hasPromoCode) ...[
+                            // Limited codes indicator
+                            if (offer.maxReveals != null)
+                              Builder(
+                                builder: (_) {
+                                  final remaining = offer.remainingCodes ?? 0;
+                                  final pctUsed = (offer.revealCount ?? 0) / offer.maxReveals!;
+                                  final isLow = pctUsed > 0.8;
+                                  final isExhausted = remaining == 0;
+
+                                  return Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                    decoration: BoxDecoration(
+                                      color: isExhausted
+                                          ? AppColors.danger.withValues(alpha: 0.1)
+                                          : isLow
+                                              ? AppColors.warning.withValues(alpha: 0.1)
+                                              : AppColors.bgCard,
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                      border: Border.all(
+                                        color: isExhausted
+                                            ? AppColors.danger.withValues(alpha: 0.3)
+                                            : isLow
+                                                ? AppColors.warning.withValues(alpha: 0.3)
+                                                : AppColors.border,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          isExhausted ? Icons.block : Icons.confirmation_number_outlined,
+                                          size: 16,
+                                          color: isExhausted
+                                              ? AppColors.danger
+                                              : isLow
+                                                  ? AppColors.warning
+                                                  : AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            isExhausted
+                                                ? 'Codurile s-au epuizat'
+                                                : 'Doar $remaining coduri ramase!',
+                                            style: AppTypography.labelSmall.copyWith(
+                                              color: isExhausted
+                                                  ? AppColors.danger
+                                                  : isLow
+                                                      ? AppColors.warning
+                                                      : AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             _PromoCodeCard(offerId: offer.id, isLoggedIn: isLoggedIn),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
@@ -369,6 +452,40 @@ class OfferDetailScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
+
+                          // Similar offers
+                          Builder(
+                            builder: (_) {
+                              final similarAsync = ref.watch(similarOffersProvider(offer.id));
+                              return similarAsync.when(
+                                data: (similar) {
+                                  if (similar.isEmpty) return const SizedBox.shrink();
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Oferte similare', style: AppTypography.headlineSmall),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      SizedBox(
+                                        height: 220,
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: similar.length,
+                                          separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                                          itemBuilder: (_, i) => SizedBox(
+                                            width: 200,
+                                            child: OfferCard(offer: similar[i], horizontal: true),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.xxl),
+                                    ],
+                                  );
+                                },
+                                loading: () => const SizedBox.shrink(),
+                                error: (_, __) => const SizedBox.shrink(),
+                              );
+                            },
+                          ),
 
                           // Gallery
                           if (offer.gallery != null && offer.gallery!.isNotEmpty) ...[
@@ -875,6 +992,38 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _ActivityPill({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: AppTypography.labelSmall.copyWith(color: color)),
         ],
       ),
     );

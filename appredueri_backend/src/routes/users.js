@@ -188,6 +188,41 @@ router.put("/me/preferences", auth, async (req, res) => {
   }
 });
 
+// GET /users/me/gamification - gamification data (level, points, streak)
+router.get("/me/gamification", auth, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const { getLevelInfo, getStreak } = require("../services/gamification");
+
+    // Fetch points
+    const pointsRes = await pool.query(
+      "SELECT total_points FROM user_points WHERE user_id = $1",
+      [userId]
+    );
+    const points = pointsRes.rows[0]?.total_points ?? 0;
+
+    const levelInfo = getLevelInfo(points);
+    const streakData = await getStreak(userId);
+
+    // Map level names to numbers for the mobile app
+    const levelNumbers = { "Explorer": 1, "Local Hero": 2, "Legend": 3, "God Mode": 4 };
+
+    res.json({
+      points,
+      level: levelNumbers[levelInfo.level] || 1,
+      level_name: levelInfo.level,
+      progress: Math.min(1.0, (levelInfo.progress || 0) / 100),
+      next_level_points: levelInfo.pointsNeeded,
+      current_streak: streakData.current_streak || 0,
+      longest_streak: streakData.longest_streak || 0,
+    });
+  } catch (err) {
+    console.error("Eroare la GET /users/me/gamification:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
 // ============================================
 // PROFILE PICTURE (Mobile upload / delete)
 // ============================================

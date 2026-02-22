@@ -31,6 +31,8 @@ class ApiEndpoints {
   static const String offersFeed = '/offers/feed';
   static String offerDetail(int id) => '/offers/$id';
   static String revealCode(int id) => '/offers/$id/reveal-code';
+  static const String dealOfDay = '/offers/deal-of-day';
+  static String similarOffers(int id) => '/offers/$id/similar';
 
   // Businesses
   static const String businesses = '/businesses';
@@ -78,4 +80,7 @@ class ApiEndpoints {
   // Static data
   static const String cities = '/cities';
   static const String categories = '/categories';
+
+  // Gamification
+  static const String gamification = '/users/me/gamification';
 }

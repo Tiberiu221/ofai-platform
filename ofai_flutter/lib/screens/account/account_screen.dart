@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/subscriptions_provider.dart';
 import '../../providers/business_requests_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -33,6 +34,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       ref.read(favoritesProvider.notifier).fetch();
       ref.read(subscriptionsProvider.notifier).fetch();
       ref.read(businessRequestsProvider.notifier).fetchMyRequests();
+      ref.read(gamificationProvider.notifier).fetch();
     }
   }
 
@@ -109,6 +111,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     final favState = ref.watch(favoritesProvider);
     final subState = ref.watch(subscriptionsProvider);
     final bizReqState = ref.watch(businessRequestsProvider);
+    final gamState = ref.watch(gamificationProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -207,6 +210,89 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   spacing: 8,
                   runSpacing: 8,
                   children: user!.badges!.map((badge) => _BadgeChip(badge: badge)).toList(),
+                ),
+              ],
+
+              // Gamification card
+              if (gamState.points > 0 || gamState.currentStreak > 0) ...[
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.accent.withValues(alpha: 0.1),
+                        AppColors.accent.withValues(alpha: 0.03),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Level header
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent,
+                              borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                            ),
+                            child: Text(
+                              'Nivel ${gamState.level}',
+                              style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(gamState.levelName, style: AppTypography.labelLarge),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Progress bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: gamState.progress,
+                          backgroundColor: AppColors.bgSecondary,
+                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                          minHeight: 6,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${gamState.points} / ${gamState.nextLevelPoints} puncte',
+                        style: AppTypography.captionMuted,
+                      ),
+
+                      // Streak
+                      if (gamState.currentStreak > 0) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Divider(color: AppColors.border),
+                        const SizedBox(height: AppSpacing.sm),
+                        Row(
+                          children: [
+                            const Text('\u{1F525}', style: TextStyle(fontSize: 18)),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${gamState.currentStreak} ${gamState.currentStreak == 1 ? 'zi' : 'zile'} consecutiv${gamState.currentStreak > 1 ? 'e' : ''}',
+                              style: AppTypography.labelMedium,
+                            ),
+                            const Spacer(),
+                            Text(
+                              'Record: ${gamState.longestStreak}',
+                              style: AppTypography.captionMuted,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
 

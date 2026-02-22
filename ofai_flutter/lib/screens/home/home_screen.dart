@@ -15,6 +15,8 @@ import '../../widgets/skeleton_loader.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/featured_offer_card.dart';
+import '../../providers/gamification_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -56,6 +58,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
     final businessesAsync = ref.watch(homeBusinessesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final citiesAsync = ref.watch(citiesProvider);
+    final dealAsync = ref.watch(dealOfDayProvider);
+    final gamState = isLoggedIn ? ref.watch(gamificationProvider) : null;
+
+    // Trigger gamification fetch once for logged-in users
+    if (isLoggedIn && gamState != null && gamState.points == 0 && !gamState.isLoading && gamState.error == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(gamificationProvider.notifier).fetch();
+      });
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -68,6 +79,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(homeBusinessesProvider);
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
+            ref.invalidate(dealOfDayProvider);
+            if (isLoggedIn) ref.read(gamificationProvider.notifier).fetch();
           },
           child: CustomScrollView(
             slivers: [
@@ -98,6 +111,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                             color: AppColors.textSecondary,
                           ),
                         ),
+                        // Streak pill
+                        if (isLoggedIn && gamState != null && gamState.currentStreak > 0) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.accent.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                              border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('\u{1F525}', style: TextStyle(fontSize: 14)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${gamState.currentStreak} ${gamState.currentStreak == 1 ? 'zi' : 'zile'} consecutiv${gamState.currentStreak > 1 ? 'e' : ''}',
+                                  style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -295,10 +331,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
+              // Deal of the Day
+              SliverToBoxAdapter(
+                child: dealAsync.when(
+                  data: (deal) {
+                    if (deal == null) return const SizedBox.shrink();
+                    return FadeInItem(
+                      index: 5,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(title: 'Oferta Zilei'),
+                          const SizedBox(height: AppSpacing.md),
+                          Padding(
+                            padding: AppSpacing.pageH,
+                            child: FeaturedOfferCard(offer: deal),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
               // Offers section
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 5,
+                  index: 6,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -353,7 +416,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               // Businesses section header
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 6,
+                  index: 7,
                   child: SectionHeader(
                     title: 'Business-uri',
                     onViewAll: () => context.go('/explore'),

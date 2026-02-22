@@ -213,3 +213,28 @@ final offerDetailProvider = FutureProvider.autoDispose.family<Offer, int>((ref, 
   final response = await ApiClient().dio.get(ApiEndpoints.offerDetail(id));
   return Offer.fromJson(response.data);
 });
+
+// Deal of the day
+final dealOfDayProvider = FutureProvider.autoDispose<Offer?>((ref) async {
+  try {
+    final response = await ApiClient().dio.get(ApiEndpoints.dealOfDay);
+    if (response.data == null) return null;
+    return Offer.fromJson(response.data);
+  } catch (_) {
+    return null;
+  }
+});
+
+// Similar offers for offer detail
+final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, int>((ref, offerId) async {
+  try {
+    final response = await ApiClient().dio.get(
+      ApiEndpoints.offers,
+      queryParameters: {'exclude': offerId, 'limit': 6, 'sort': 'popular'},
+    );
+    final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
+    return paginated.data;
+  } catch (_) {
+    return [];
+  }
+});
