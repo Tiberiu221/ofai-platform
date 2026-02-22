@@ -4031,8 +4031,60 @@ ul, ol { list-style: none; }
 .urgency-critical { color: var(--danger, #EF4444); animation: urgency-pulse 2s ease-in-out infinite; }
 
 /* ═══════════════════════════════════════════════════════════
-   SOCIAL PROOF
+   TRENDING + SOCIAL PROOF (Platform Polish)
    ═══════════════════════════════════════════════════════════ */
+.trending-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: linear-gradient(135deg, #fb923c, #ef4444);
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  z-index: 2;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.activity-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.activity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255,255,255,0.04);
+}
+.activity-pill.trending { color: var(--accent); }
+.activity-pill.saves { color: var(--text-secondary); }
+/* Similar offers (Feature 4) */
+.similar-offers-section { margin-top: 32px; }
+.similar-offers-section h3 { font-size: 1.125rem; color: var(--text-primary); margin-bottom: 16px; }
+.similar-offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.similar-offer-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.similar-offer-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,0.12);
+}
 .offer-social-proof {
   color: var(--accent) !important;
 }

@@ -198,6 +198,9 @@
                 <span class="offer-placeholder-letter"><%= offer.business_name.charAt(0) %></span>
               </div>
             <% } %>
+            <% if (offer.is_trending) { %>
+              <div class="trending-badge">Trending</div>
+            <% } %>
             <div class="offer-badge">
               <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
                 -<%= offer.discount_value %>%
