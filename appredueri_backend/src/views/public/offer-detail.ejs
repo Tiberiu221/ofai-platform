@@ -296,9 +296,13 @@
     background: rgba(251, 146, 60, 0.08);
   }
 
+  .offer-conditions-accordion summary svg {
+    display: block;
+    flex-shrink: 0;
+  }
+
   .offer-conditions-accordion summary svg:first-child {
     color: var(--accent);
-    flex-shrink: 0;
   }
 
   .accordion-chevron {
@@ -929,12 +933,15 @@
     </div>
     <% } %>
 
-    <% if (offer.end_date) { %>
+    <% if (offer.end_date) {
+      var _cdDiff = new Date(offer.end_date) - new Date();
+      var _cdDays = Math.ceil(_cdDiff / 86400000);
+      if (_cdDays > 0 && _cdDays <= 7) { %>
       <div class="offer-detail-countdown-row">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span class="countdown-inline" data-end-date="<%= new Date(offer.end_date).toISOString() %>"></span>
       </div>
-    <% } %>
+    <% } } %>
 
     <%
       // Determine which booking type to show in redemption instructions

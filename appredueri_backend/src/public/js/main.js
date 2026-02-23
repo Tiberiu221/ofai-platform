@@ -44,11 +44,11 @@ function initCountdowns() {
       // Build display text
       var text;
       if (days > 0) {
-        text = days + 'z ' + hours + 'h ramase';
+        text = 'Oferta expiră în ' + days + 'z și ' + hours + 'h';
       } else if (hours > 0) {
-        text = hours + 'h ' + mins + 'm ramase';
+        text = 'Oferta expiră în ' + hours + 'h și ' + mins + 'm';
       } else {
-        text = mins + 'm ramase';
+        text = 'Oferta expiră în ' + mins + 'm';
       }
       el.textContent = text;
 
