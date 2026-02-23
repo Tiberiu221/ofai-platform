@@ -78,6 +78,6 @@ class GamificationNotifier extends StateNotifier<GamificationState> {
 }
 
 final gamificationProvider =
-    StateNotifierProvider<GamificationNotifier, GamificationState>((ref) {
+    StateNotifierProvider.autoDispose<GamificationNotifier, GamificationState>((ref) {
   return GamificationNotifier(ApiClient());
 });

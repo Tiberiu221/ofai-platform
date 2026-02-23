@@ -106,12 +106,13 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
     if (state.isLoadingMore || !state.hasMore) return;
     if (state.offers.length >= _maxItems) return;
     state = state.copyWith(isLoadingMore: true);
+    final loadMoreToken = CancelToken();
     try {
       final nextPage = state.page + 1;
       final response = await _api.dio.get(
         ApiEndpoints.offers,
         queryParameters: _params(nextPage),
-        cancelToken: _cancelToken,
+        cancelToken: loadMoreToken,
       );
       final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
       state = state.copyWith(
@@ -225,12 +226,17 @@ final dealOfDayProvider = FutureProvider.autoDispose<Offer?>((ref) async {
   }
 });
 
-// Similar offers for offer detail
-final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, int>((ref, offerId) async {
+// Similar offers for offer detail (filtered by category for relevance)
+final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, ({int offerId, int? categoryId})>((ref, params) async {
   try {
     final response = await ApiClient().dio.get(
       ApiEndpoints.offers,
-      queryParameters: {'exclude': offerId, 'limit': 6, 'sort': 'popular'},
+      queryParameters: {
+        'exclude': params.offerId,
+        'limit': 6,
+        'sort': 'popular',
+        if (params.categoryId != null) 'category_id': params.categoryId,
+      },
     );
     final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
     return paginated.data;

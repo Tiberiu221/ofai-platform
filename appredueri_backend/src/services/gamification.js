@@ -4,6 +4,11 @@
  */
 const pool = require("../db");
 
+// Helper: get today's date in Romania timezone (avoids UTC edge-case at midnight)
+function todayRomania() {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Bucharest" });
+}
+
 // Points awarded per action
 const POINTS_MAP = {
   review: 5,
@@ -22,12 +27,29 @@ async function awardPoints(userId, action) {
   const pts = POINTS_MAP[action];
   if (!pts || !userId) return;
   try {
+    // Dedup: skip if same action was awarded in the last 60 seconds (prevents toggle abuse)
+    if (action !== "daily_login") {
+      const recent = await pool.query(
+        `SELECT 1 FROM points_history
+         WHERE user_id = $1 AND action_type = $2 AND created_at > NOW() - INTERVAL '60 seconds'
+         LIMIT 1`,
+        [userId, action]
+      );
+      if (recent.rows.length > 0) return;
+    }
+
     await pool.query(
       `INSERT INTO user_points (user_id, total_points)
        VALUES ($1, $2)
        ON CONFLICT (user_id)
        DO UPDATE SET total_points = user_points.total_points + $2, updated_at = NOW()`,
       [userId, pts]
+    );
+
+    // Log to points_history for dedup and audit trail
+    await pool.query(
+      `INSERT INTO points_history (user_id, points_amount, action_type) VALUES ($1, $2, $3)`,
+      [userId, pts, action]
     );
   } catch (err) {
     console.error("[gamification] awardPoints error:", err.message);
@@ -47,7 +69,7 @@ async function updateStreak(userId) {
       [userId]
     );
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayRomania();
 
     if (res.rows.length === 0) {
       // First time — create streak
@@ -60,7 +82,7 @@ async function updateStreak(userId) {
 
     const row = res.rows[0];
     const lastDate = row.last_activity_date
-      ? new Date(row.last_activity_date).toISOString().slice(0, 10)
+      ? new Date(row.last_activity_date).toLocaleDateString("sv-SE", { timeZone: "Europe/Bucharest" })
       : null;
 
     if (lastDate === today) return; // Already counted today
@@ -68,9 +90,10 @@ async function updateStreak(userId) {
     // Award daily login point (once per day, inside streak update)
     awardPoints(userId, "daily_login").catch(() => {});
 
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+    // Calculate yesterday in Romania timezone
+    const nowRo = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Bucharest" }));
+    nowRo.setDate(nowRo.getDate() - 1);
+    const yesterdayStr = nowRo.toLocaleDateString("sv-SE");
 
     if (lastDate === yesterdayStr) {
       // Consecutive day

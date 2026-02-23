@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const pool = require("../db");
 const auth = require("../middleware/auth");
+const { deleteUserAccount } = require("../services/accountDeletion");
 
 // GET /users/me - detalii user logat: profil + preferinte
 router.get("/me", auth, async (req, res) => {
@@ -459,60 +460,8 @@ router.delete("/me", auth, async (req, res) => {
     // BEGIN TRANSACTION
     await client.query("BEGIN");
 
-    // 1. Revoke all refresh tokens
-    await client.query("DELETE FROM refresh_tokens WHERE user_id = $1", [userId]);
-
-    // 2. Delete password reset tokens
-    await client.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [userId]);
-
-    // 3. Delete push tokens
-    await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
-
-    // 4. Delete points
-    await client.query("DELETE FROM user_points WHERE user_id = $1", [userId]);
-
-    // 5. Delete favorites
-    await client.query("DELETE FROM favorite_offers WHERE user_id = $1", [userId]);
-
-    // 6. Delete followed businesses
-    await client.query("DELETE FROM followed_businesses WHERE user_id = $1", [userId]);
-
-    // 7. Anonymize review responses (where user's reviews have responses)
-    await client.query(
-      `UPDATE review_responses SET review_id = NULL
-       WHERE review_id IN (SELECT id FROM reviews WHERE user_id = $1)`,
-      [userId]
-    );
-
-    // 8. Anonymize reviews (remove user link, keep content for business ratings)
-    await client.query(
-      "UPDATE reviews SET user_id = NULL WHERE user_id = $1",
-      [userId]
-    );
-
-    // 9. Anonymize business requests
-    await client.query(
-      "UPDATE business_requests SET user_id = NULL WHERE user_id = $1",
-      [userId]
-    );
-
-    // 10. Remove user-business ownership links
-    await client.query("DELETE FROM user_businesses WHERE user_id = $1", [userId]);
-
-    // 11. Log deletion in audit log (before deleting user)
-    try {
-      await client.query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, user_id, ip_address, details)
-         VALUES ('account_delete', 'user', $1, $1, $2, '{"source":"user_request"}')`,
-        [userId, req.ip]
-      );
-    } catch (auditErr) {
-      // Don't fail deletion if audit logging fails
-      console.error("[Audit] Failed to log account deletion:", auditErr.message);
-    }
-
-    // 12. Finally, delete the user
-    await client.query("DELETE FROM users WHERE id = $1", [userId]);
+    // Use shared deletion service (ensures parity between mobile & web)
+    await deleteUserAccount(userId, client, req.ip, "user_request");
 
     // COMMIT
     await client.query("COMMIT");

@@ -31,6 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+  bool _hasFetchedGamification = false;
 
   @override
   void dispose() {
@@ -61,8 +62,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
     final dealAsync = ref.watch(dealOfDayProvider);
     final gamState = isLoggedIn ? ref.watch(gamificationProvider) : null;
 
-    // Trigger gamification fetch once for logged-in users
-    if (isLoggedIn && gamState != null && gamState.points == 0 && !gamState.isLoading && gamState.error == null) {
+    // Trigger gamification fetch once per session for logged-in users
+    if (isLoggedIn && !_hasFetchedGamification) {
+      _hasFetchedGamification = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) ref.read(gamificationProvider.notifier).fetch();
       });

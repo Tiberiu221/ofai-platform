@@ -17,6 +17,7 @@ const { sanitizeString, createImageFilter, validatePassword } = require("../help
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
+const { deleteUserAccount } = require("../services/accountDeletion");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { OAuth2Client } = require("google-auth-library");
@@ -232,7 +233,7 @@ router.get("/", async (req, res) => {
           LEFT JOIN cities ci2 ON b.city_id = ci2.id
           WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
-                   (SELECT COUNT(*) FROM offer_clicks oc WHERE oc.offer_id = o.id) DESC
+                   (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
           LIMIT 1
         `);
       }
@@ -2848,49 +2849,8 @@ router.delete("/api/web/delete-account", requireWebAuth, async (req, res) => {
 
     await client.query("BEGIN");
 
-    // 1. Revoke all refresh tokens
-    await client.query("DELETE FROM refresh_tokens WHERE user_id = $1", [userId]);
-    // 2. Delete password reset tokens
-    await client.query("DELETE FROM password_reset_tokens WHERE user_id = $1", [userId]);
-    // 3. Delete push tokens
-    await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
-    // 4. Delete points
-    await client.query("DELETE FROM user_points WHERE user_id = $1", [userId]);
-    // 5. Delete favorites
-    await client.query("DELETE FROM favorite_offers WHERE user_id = $1", [userId]);
-    // 6. Delete followed businesses
-    await client.query("DELETE FROM followed_businesses WHERE user_id = $1", [userId]);
-    // 7. Anonymize review responses
-    await client.query(
-      `UPDATE review_responses SET review_id = NULL
-       WHERE review_id IN (SELECT id FROM reviews WHERE user_id = $1)`,
-      [userId]
-    );
-    // 8. Anonymize reviews (remove user link, keep content for business ratings)
-    await client.query(
-      "UPDATE reviews SET user_id = NULL WHERE user_id = $1",
-      [userId]
-    );
-    // 9. Anonymize business requests
-    await client.query("UPDATE business_requests SET user_id = NULL WHERE user_id = $1", [userId]);
-    // 10. Remove user-business ownership links
-    await client.query("DELETE FROM user_businesses WHERE user_id = $1", [userId]);
-    // 11. Delete points history
-    await client.query("DELETE FROM points_history WHERE user_id = $1", [userId]);
-    // 12. Delete code reveals
-    await client.query("DELETE FROM code_reveals WHERE user_id = $1", [userId]);
-    // 13. Log deletion in audit log
-    try {
-      await client.query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, user_id, ip_address, details)
-         VALUES ('account_delete', 'user', $1, $1, $2, '{"source":"web_request"}')`,
-        [userId, req.ip]
-      );
-    } catch (auditErr) {
-      console.error("[Audit] Failed to log account deletion:", auditErr.message);
-    }
-    // 14. Finally, delete the user
-    await client.query("DELETE FROM users WHERE id = $1", [userId]);
+    // Use shared deletion service (ensures parity between mobile & web)
+    await deleteUserAccount(userId, client, req.ip, "web_request");
 
     await client.query("COMMIT");
 

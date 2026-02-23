@@ -301,7 +301,7 @@ router.get("/feed", auth, async (req, res) => {
       }
     }));
 
-    res.json(offers);
+    res.json(paginatedResponse(offers, offers.length, 1, offers.length || 50));
 
   } catch (err) {
     console.error("[Feed Error]", err);
@@ -347,7 +347,7 @@ router.get("/deal-of-day", async (req, res) => {
         WHERE o.is_active = TRUE
           AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
         ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
-                 (SELECT COUNT(*) FROM offer_clicks oc WHERE oc.offer_id = o.id) DESC
+                 (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
         LIMIT 1
       `);
     }
