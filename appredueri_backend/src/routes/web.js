@@ -542,6 +542,7 @@ router.get("/business-uri", async (req, res) => {
       popular: "offer_count DESC, rating_avg DESC",
       rating: "rating_avg DESC, rating_count DESC",
       newest: "b.id DESC",
+      offers: "offer_count DESC, b.id DESC",
     };
     const orderBy = sortOptions[sort] || sortOptions.popular;
 

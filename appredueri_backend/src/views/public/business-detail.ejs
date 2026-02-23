@@ -236,21 +236,7 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════
-     DESCRIPTION
-     ═══════════════════════════════════════════════════════ -->
-<% if (business.description) { %>
-<section class="section bd-section-compact">
-  <div class="container">
-    <div class="bd-section-header">
-      <h2 class="bd-section-title">Despre</h2>
-    </div>
-    <div class="bd-description"><%= business.description %></div>
-  </div>
-</section>
-<% } %>
-
-<!-- ═══════════════════════════════════════════════════════
-     ACTIVE OFFERS
+     ACTIVE OFFERS (moved first — main reason user visits)
      ═══════════════════════════════════════════════════════ -->
 <!-- Geo Banner (outside offers conditional so it always renders) -->
 <div class="container">
@@ -322,8 +308,8 @@
             </div>
           </div>
           <div class="offer-content">
-            <div class="offer-business"><%= offer.business ? offer.business.name : business.name %></div>
             <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-business"><%= offer.business ? offer.business.name : business.name %></div>
             <div class="offer-meta">
               <% if (business.city) { %>
                 <span class="offer-meta-item">
@@ -382,6 +368,41 @@
           </a>
         <% } %>
       </div>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     DESCRIPTION
+     ═══════════════════════════════════════════════════════ -->
+<% if (business.description) { %>
+<section class="section bd-section-compact">
+  <div class="container">
+    <div class="bd-section-header">
+      <h2 class="bd-section-title">Despre</h2>
+    </div>
+    <div class="bd-description"><%= business.description %></div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     AI REVIEW SUMMARY (moved up for credibility)
+     ═══════════════════════════════════════════════════════ -->
+<% if (reviewSummary) { %>
+<section class="section bd-section-compact">
+  <div class="container">
+    <div class="ai-summary-card reveal">
+      <div class="ai-summary-header">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
+        <span class="ai-summary-label">Sumar AI &mdash; Pe baza a <%= reviewSummary.review_count %> recenzii</span>
+      </div>
+      <p class="ai-summary-text"><%= reviewSummary.text %></p>
+      <a href="#reviews-section" class="ai-summary-cta" style="display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 0.8125rem; color: var(--accent); text-decoration: none; font-weight: 500; transition: opacity 0.2s;">
+        Adaugă recenzia ta
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
     </div>
   </div>
 </section>
@@ -452,26 +473,9 @@
 <% } %>
 
 <!-- ═══════════════════════════════════════════════════════
-     AI REVIEW SUMMARY
-     ═══════════════════════════════════════════════════════ -->
-<% if (reviewSummary) { %>
-<section class="section bd-section-compact">
-  <div class="container">
-    <div class="ai-summary-card reveal">
-      <div class="ai-summary-header">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
-        <span class="ai-summary-label">Sumar AI &mdash; Pe baza a <%= reviewSummary.review_count %> recenzii</span>
-      </div>
-      <p class="ai-summary-text"><%= reviewSummary.text %></p>
-    </div>
-  </div>
-</section>
-<% } %>
-
-<!-- ═══════════════════════════════════════════════════════
      REVIEWS
      ═══════════════════════════════════════════════════════ -->
-<section class="section bd-section-compact" style="background: var(--bg-secondary);">
+<section id="reviews-section" class="section bd-section-compact" style="background: var(--bg-secondary);">
   <div class="container">
     <div class="bd-section-header">
       <h2 class="bd-section-title">Recenzii</h2>

@@ -21,7 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
   initParticles();
   initScrollArrows();
   initCountdowns();
+  initStickyFilters();
 });
+
+/* ─── STICKY FILTER SENTINEL ─────────────────────────────── */
+function initStickyFilters() {
+  var sentinel = document.querySelector('.filters-sticky-sentinel');
+  var wrap = document.querySelector('.filters-sticky-wrap');
+  if (!sentinel || !wrap) return;
+
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      wrap.classList.toggle('stuck', !entry.isIntersecting);
+    });
+  }, { threshold: 0 });
+
+  observer.observe(sentinel);
+}
 
 /* ─── COUNTDOWN TIMERS ──────────────────────────────────── */
 function initCountdowns() {

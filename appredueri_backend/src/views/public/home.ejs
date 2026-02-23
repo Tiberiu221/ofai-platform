@@ -136,17 +136,8 @@
             <% } %>
           </div>
           <div class="offer-content">
-            <div class="offer-content-row">
-              <% if (fo.business_logo) { %>
-                <div class="offer-logo">
-                  <img src="<%= fo.business_logo %>" alt="<%= fo.business_name %>" loading="lazy">
-                </div>
-              <% } %>
-              <div class="offer-content-text">
-                <div class="offer-business"><%= fo.business_name %></div>
-                <div class="offer-title"><%= fo.title %></div>
-              </div>
-            </div>
+            <div class="offer-title"><%= fo.title %></div>
+            <div class="offer-business"><%= fo.business_name %></div>
           </div>
         </a>
       <% }); %>
@@ -199,8 +190,8 @@
         </div>
         <div class="offer-content">
           <div class="offer-content-text">
-            <div class="offer-business"><%= dealOfDay.business_name %></div>
             <div class="offer-title"><%= dealOfDay.title %></div>
+            <div class="offer-business"><%= dealOfDay.business_name %></div>
             <div class="offer-meta">
               <% if (dealOfDay.city_name) { %>
                 <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <%= dealOfDay.city_name %></span>
@@ -260,24 +251,21 @@
             <% } %>
           </div>
           <div class="offer-content">
-            <div class="offer-content-row">
-              <% if (offer.business_logo && i !== 0) { %>
-                <div class="offer-logo">
-                  <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" loading="lazy">
-                </div>
-              <% } %>
+            <% if (i === 0) { %>
               <div class="offer-content-text">
-                <div class="offer-business"><%= offer.business_name %></div>
-                <div class="offer-title"><%= offer.title %></div>
-                <% if (parseFloat(offer.rating_avg) > 0) { %>
-                  <div class="offer-rating">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    <span><%= parseFloat(offer.rating_avg).toFixed(1) %></span>
-                    <span class="offer-rating-count">(<%= offer.rating_count %>)</span>
-                  </div>
-                <% } %>
+            <% } %>
+            <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-business"><%= offer.business_name %></div>
+            <% if (parseFloat(offer.rating_avg) > 0) { %>
+              <div class="offer-rating">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span><%= parseFloat(offer.rating_avg).toFixed(1) %></span>
+                <span class="offer-rating-count">(<%= offer.rating_count %>)</span>
               </div>
-            </div>
+            <% } %>
+            <% if (i === 0) { %>
+              </div>
+            <% } %>
             <div class="offer-meta">
               <span class="offer-meta-item">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>

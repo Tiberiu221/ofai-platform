@@ -37,6 +37,8 @@
      FILTER BAR
      ═══════════════════════════════════════════════════════ -->
 <div class="container">
+  <div class="filters-sticky-sentinel"></div>
+  <div class="filters-sticky-wrap">
   <div class="scroll-container">
     <button class="scroll-arrow scroll-arrow-left" aria-label="Scroll stânga">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -108,8 +110,9 @@
        class="filter-pill<%= selectedSort === 'discount' ? ' active' : '' %>">Reducere mare</a>
     <button type="button" class="filter-pill" id="sort-distance-btn" onclick="sortByDistance()" style="opacity: 0.5;" title="Activează locația pentru sortare după distanță">Distanță</button>
   </div>
+  </div><!-- /.filters-sticky-wrap -->
 
-  <!-- Geo Banner -->
+  <!-- Geo Banner (outside sticky) -->
   <div id="geo-banner" class="geo-banner" style="display:none;">
     <div class="geo-banner-content">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -121,6 +124,10 @@
   <!-- ═══════════════════════════════════════════════════════
        OFFERS GRID
        ═══════════════════════════════════════════════════════ -->
+  <% if (offers.length > 0) { %>
+    <p class="results-count">Afișând <%= offers.length %> din <%= totalOffers.toLocaleString('ro-RO') %> oferte</p>
+  <% } %>
+
   <% if (offers.length === 0) { %>
     <div style="text-align: center; padding: 80px 0;">
       <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
@@ -156,27 +163,15 @@
             <% } } %>
           </div>
           <div class="offer-content">
-            <div class="offer-content-row">
-              <% if (offer.business_logo) { %>
-                <div class="offer-logo">
-                  <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" loading="lazy" width="40" height="40">
-                </div>
-              <% } %>
-              <div class="offer-content-text">
-                <div class="offer-business"><%= offer.business_name %></div>
-                <div class="offer-title"><%= offer.title %></div>
-                <% if (offer.description) { %>
-                  <div class="offer-description"><%= offer.description.length > 80 ? offer.description.substring(0, 80) + '...' : offer.description %></div>
-                <% } %>
-                <% if (parseFloat(offer.rating_avg) > 0) { %>
-                  <div class="offer-rating">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    <span><%= parseFloat(offer.rating_avg).toFixed(1) %></span>
-                    <span class="offer-rating-count">(<%= offer.rating_count %>)</span>
-                  </div>
-                <% } %>
+            <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-business"><%= offer.business_name %></div>
+            <% if (parseFloat(offer.rating_avg) > 0) { %>
+              <div class="offer-rating">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span><%= parseFloat(offer.rating_avg).toFixed(1) %></span>
+                <span class="offer-rating-count">(<%= offer.rating_count %>)</span>
               </div>
-            </div>
+            <% } %>
             <div class="offer-meta">
               <span class="offer-meta-item">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>

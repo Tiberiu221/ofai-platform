@@ -828,10 +828,10 @@ ul, ol { list-style: none; }
 
 .offer-title {
   font-weight: 600;
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   color: var(--text-primary);
   line-height: 1.35;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .offer-title:last-child {
@@ -1414,6 +1414,27 @@ ul, ol { list-style: none; }
   font-size: 1.0625rem;
   position: relative;
   z-index: 1;
+}
+
+/* Sticky filter wrapper */
+.filters-sticky-wrap {
+  position: sticky;
+  top: var(--nav-height);
+  z-index: 50;
+  background: var(--bg-primary);
+  padding-bottom: 4px;
+  margin-bottom: 24px;
+  transition: box-shadow 0.2s ease;
+}
+.filters-sticky-wrap.stuck {
+  box-shadow: 0 1px 0 var(--border);
+}
+
+/* Results count */
+.results-count {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
 }
 
 /* Filter bar */
@@ -4073,18 +4094,13 @@ ul, ol { list-style: none; }
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
 }
-.similar-offer-card {
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  overflow: hidden;
-  text-decoration: none;
-  transition: transform 0.2s, border-color 0.2s;
-}
-.similar-offer-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255,255,255,0.12);
-}
+/* Compact offer card variant (similar offers on detail page) */
+.offer-card.offer-card-compact .offer-image-wrapper { aspect-ratio: 16/9; }
+.offer-card.offer-card-compact .offer-content { padding: 12px 14px 14px; }
+.offer-card.offer-card-compact .offer-title { font-size: 0.875rem; -webkit-line-clamp: 1; }
+.offer-card.offer-card-compact .offer-business { font-size: 0.75rem; }
+.offer-card.offer-card-compact .offer-meta { margin-top: 6px; }
+.offer-card.offer-card-compact .offer-badge { font-size: 0.6875rem; padding: 3px 8px; }
 .offer-social-proof {
   color: var(--accent) !important;
 }
