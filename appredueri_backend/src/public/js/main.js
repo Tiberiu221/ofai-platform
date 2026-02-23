@@ -47,8 +47,8 @@ function initCountdowns() {
         return;
       }
 
-      // Show the element
-      el.style.display = '';
+      // Show the element (must be 'block' to override CSS display:none)
+      el.style.display = 'block';
 
       // Build display text
       var text;
