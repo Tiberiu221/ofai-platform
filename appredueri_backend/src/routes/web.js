@@ -218,7 +218,7 @@ router.get("/", async (req, res) => {
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities ci2 ON b.city_id = ci2.id
         WHERE o.is_active = TRUE AND o.is_deal_of_day = TRUE AND o.deal_of_day_date = CURRENT_DATE
-          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          AND (o.end_date IS NULL OR o.end_date > CURRENT_DATE)
         LIMIT 1
       `);
       if (dodResult.rows.length === 0) {
@@ -231,7 +231,7 @@ router.get("/", async (req, res) => {
           FROM offers o
           JOIN businesses b ON o.business_id = b.id
           LEFT JOIN cities ci2 ON b.city_id = ci2.id
-          WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date > CURRENT_DATE)
           ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
                    (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
           LIMIT 1

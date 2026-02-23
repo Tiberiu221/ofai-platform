@@ -164,8 +164,8 @@
       <div class="section-label">⭐ Recomandat</div>
       <h2 class="section-title text-gradient">Oferta Zilei</h2>
     </div>
-    <div class="offer-grid reveal" style="margin-bottom: 40px;">
-      <a href="/oferta/<%= dealOfDay.id %>" class="offer-card featured" style="grid-column: span 2; grid-row: span 2;">
+    <div class="reveal" style="margin-bottom: 40px;">
+      <a href="/oferta/<%= dealOfDay.id %>" class="offer-card featured" style="display: block;">
         <div class="offer-image-wrapper">
           <% if (dealOfDay.image_url) { %>
             <img src="<%= dealOfDay.image_url %>" alt="<%= dealOfDay.title %>" class="offer-image" loading="lazy" width="600" height="400">
