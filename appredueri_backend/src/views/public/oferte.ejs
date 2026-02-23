@@ -106,6 +106,8 @@
        class="filter-pill<%= selectedSort === 'popular' ? ' active' : '' %>">Populare</a>
     <a href="/oferte?sort=discount<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
        class="filter-pill<%= selectedSort === 'discount' ? ' active' : '' %>">Reducere mare</a>
+    <a href="/oferte?sort=ending_soon<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
+       class="filter-pill<%= selectedSort === 'ending_soon' ? ' active' : '' %>">Expiră curând</a>
     <button type="button" class="filter-pill" id="sort-distance-btn" onclick="sortByDistance()" style="opacity: 0.5;" title="Activează locația pentru sortare după distanță">Distanță</button>
   </div>
   <!-- Geo Banner -->

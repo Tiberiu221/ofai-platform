@@ -279,14 +279,14 @@ router.get("/", async (req, res) => {
 router.get("/oferte", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = 24;
+    const limit = 48;
     const offset = (page - 1) * limit;
     const query = req.query.q || "";
     const selectedCategory = req.query.category || null;
     const selectedCity = req.query.city || null;
     const sort = req.query.sort || "newest";
 
-    const conditions = ["o.is_active = true", "o.end_date >= CURRENT_DATE"];
+    const conditions = ["o.is_active = true", "o.end_date > CURRENT_DATE"];
     const params = [];
     let paramIdx = 1;
 
@@ -364,8 +364,9 @@ router.get("/oferte", async (req, res) => {
       newest: "o.id DESC",
       popular: "rating_avg DESC, rating_count DESC",
       discount: "CASE WHEN o.discount_type IN ('percent','percentage') THEN o.discount_value ELSE 0 END DESC, o.discount_value DESC",
+      ending_soon: "o.end_date ASC NULLS LAST, o.id DESC",
     };
-    const validSorts = ["newest", "popular", "discount"];
+    const validSorts = ["newest", "popular", "discount", "ending_soon"];
     const sortKey = validSorts.includes(sort) ? sort : "newest";
     const orderBy = sortOptions[sortKey];
 
