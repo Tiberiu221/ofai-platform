@@ -374,21 +374,7 @@
 <% } %>
 
 <!-- ═══════════════════════════════════════════════════════
-     DESCRIPTION
-     ═══════════════════════════════════════════════════════ -->
-<% if (business.description) { %>
-<section class="section bd-section-compact">
-  <div class="container">
-    <div class="bd-section-header">
-      <h2 class="bd-section-title">Despre</h2>
-    </div>
-    <div class="bd-description"><%= business.description %></div>
-  </div>
-</section>
-<% } %>
-
-<!-- ═══════════════════════════════════════════════════════
-     AI REVIEW SUMMARY (moved up for credibility)
+     AI REVIEW SUMMARY
      ═══════════════════════════════════════════════════════ -->
 <% if (reviewSummary) { %>
 <section class="section bd-section-compact">
@@ -404,6 +390,20 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
     </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     DESCRIPTION
+     ═══════════════════════════════════════════════════════ -->
+<% if (business.description) { %>
+<section class="section bd-section-compact">
+  <div class="container">
+    <div class="bd-section-header">
+      <h2 class="bd-section-title">Despre</h2>
+    </div>
+    <div class="bd-description"><%= business.description %></div>
   </div>
 </section>
 <% } %>
@@ -477,16 +477,25 @@
      ═══════════════════════════════════════════════════════ -->
 <section id="reviews-section" class="section bd-section-compact" style="background: var(--bg-secondary);">
   <div class="container">
-    <div class="bd-section-header">
-      <h2 class="bd-section-title">Recenzii</h2>
-      <span class="bd-count-badge"><%= reviews.length %></span>
+    <div class="bd-section-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <h2 class="bd-section-title" style="margin: 0;">Recenzii</h2>
+        <span class="bd-count-badge"><%= reviews.length %></span>
+      </div>
+      <% if (webUser) { %>
+        <button class="btn btn-primary" id="toggle-review-form" style="font-size: 0.8125rem; padding: 8px 16px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Scrie o recenzie
+        </button>
+      <% } else { %>
+        <a href="/login?returnTo=/business/<%= business.id %>#reviews-section" class="btn btn-secondary" style="font-size: 0.8125rem; padding: 8px 16px; text-decoration: none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Scrie o recenzie
+        </a>
+      <% } %>
     </div>
 
     <% if (webUser) { %>
-      <button class="btn btn-primary" id="toggle-review-form" style="margin-bottom: 20px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Scrie o recenzie
-      </button>
 
       <div class="review-form" id="review-form" style="display: none;">
         <div class="rf-stars">

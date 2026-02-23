@@ -1416,20 +1416,6 @@ ul, ol { list-style: none; }
   z-index: 1;
 }
 
-/* Sticky filter wrapper */
-.filters-sticky-wrap {
-  position: sticky;
-  top: var(--nav-height);
-  z-index: 50;
-  background: var(--bg-primary);
-  padding-bottom: 4px;
-  margin-bottom: 24px;
-  transition: box-shadow 0.2s ease;
-}
-.filters-sticky-wrap.stuck {
-  box-shadow: 0 1px 0 var(--border);
-}
-
 /* Results count */
 .results-count {
   font-size: 0.8125rem;
