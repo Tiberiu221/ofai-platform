@@ -306,6 +306,9 @@
                 <%= offer.discount_value %> lei
               <% } %>
             </div>
+            <% if (offer.end_date) { %>
+              <div class="countdown-overlay" data-end-date="<%= new Date(offer.end_date).toISOString() %>"></div>
+            <% } %>
           </div>
           <div class="offer-content">
             <div class="offer-title"><%= offer.title %></div>

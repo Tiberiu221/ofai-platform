@@ -72,7 +72,20 @@ function initCronJobs() {
     }
   });
 
-  console.log('[Cron] All 5 scheduled cleanup jobs registered.');
+  // 6. Deactivate expired offers — Daily 03:45 UTC
+  cron.schedule('45 3 * * *', async () => {
+    try {
+      const result = await pool.query(
+        `UPDATE offers SET is_active = FALSE
+         WHERE is_active = TRUE AND end_date IS NOT NULL AND end_date < CURRENT_DATE`
+      );
+      if (result.rowCount > 0) console.log(`[Cron] Deactivated ${result.rowCount} expired offers`);
+    } catch (err) {
+      console.error('[Cron] offers deactivation failed:', err.message);
+    }
+  });
+
+  console.log('[Cron] All 6 scheduled cleanup jobs registered.');
 }
 
 module.exports = { initCronJobs };

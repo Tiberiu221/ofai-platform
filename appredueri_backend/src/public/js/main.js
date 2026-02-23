@@ -31,15 +31,24 @@ function initCountdowns() {
       var now = new Date();
       var diff = endDate - now;
 
+      // Expired — hide entirely (SQL filters should prevent this, but just in case)
       if (diff <= 0) {
-        el.textContent = 'Expirat';
-        el.classList.add('urgency-critical');
+        el.style.display = 'none';
         return;
       }
 
       var days = Math.floor(diff / 86400000);
       var hours = Math.floor((diff % 86400000) / 3600000);
       var mins = Math.floor((diff % 3600000) / 60000);
+
+      // Only show countdown when 7 days or less remain
+      if (days > 7) {
+        el.style.display = 'none';
+        return;
+      }
+
+      // Show the element
+      el.style.display = '';
 
       // Build display text
       var text;
@@ -55,10 +64,8 @@ function initCountdowns() {
       // Remove old urgency classes
       el.classList.remove('urgency-low', 'urgency-medium', 'urgency-high', 'urgency-critical');
 
-      // Apply color class
-      if (days > 7) {
-        el.classList.add('urgency-low');
-      } else if (days >= 3) {
+      // Apply color class based on remaining time
+      if (days >= 3) {
         el.classList.add('urgency-medium');
       } else if (days >= 1 || hours >= 24) {
         el.classList.add('urgency-high');
