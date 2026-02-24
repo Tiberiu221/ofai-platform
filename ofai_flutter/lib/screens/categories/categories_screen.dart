@@ -6,6 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/static_data_provider.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/empty_state.dart';
 
 class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({super.key});
@@ -23,11 +24,9 @@ class CategoriesScreen extends ConsumerWidget {
       body: categoriesAsync.when(
         data: (categories) {
           if (categories.isEmpty) {
-            return const Center(
-              child: Text(
-                'Nicio categorie disponibila',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
+            return const EmptyState(
+              icon: Icons.category_outlined,
+              title: 'Nicio categorie disponibila',
             );
           }
           return GridView.builder(

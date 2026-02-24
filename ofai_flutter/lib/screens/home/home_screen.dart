@@ -17,6 +17,7 @@ import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/featured_offer_card.dart';
+import '../../widgets/empty_state.dart';
 import '../../providers/gamification_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -365,11 +366,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                       offersAsync.when(
                         data: (offers) {
                           if (offers.isEmpty) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                              child: Center(
-                                child: Text('Nicio oferta disponibila', style: TextStyle(color: AppColors.textTertiary)),
-                              ),
+                            return const EmptyState(
+                              icon: Icons.local_offer_outlined,
+                              title: 'Nicio oferta disponibila',
+                              subtitle: 'Revino mai tarziu pentru oferte noi',
                             );
                           }
                           return SizedBox(
@@ -449,11 +449,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 data: (businesses) {
                   if (businesses.isEmpty) {
                     return const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                        child: Center(
-                          child: Text('Niciun business disponibil', style: TextStyle(color: AppColors.textTertiary)),
-                        ),
+                      child: EmptyState(
+                        icon: Icons.store_outlined,
+                        title: 'Niciun business disponibil',
+                        subtitle: 'Revino mai tarziu',
                       ),
                     );
                   }

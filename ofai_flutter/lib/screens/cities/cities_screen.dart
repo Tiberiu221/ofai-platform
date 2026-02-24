@@ -6,6 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/static_data_provider.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/empty_state.dart';
 
 class CitiesScreen extends ConsumerWidget {
   const CitiesScreen({super.key});
@@ -23,11 +24,9 @@ class CitiesScreen extends ConsumerWidget {
       body: citiesAsync.when(
         data: (cities) {
           if (cities.isEmpty) {
-            return const Center(
-              child: Text(
-                'Niciun oras disponibil',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
+            return const EmptyState(
+              icon: Icons.location_city_outlined,
+              title: 'Niciun oras disponibil',
             );
           }
           return ListView.separated(

@@ -143,6 +143,6 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
 
 // Provider
 final searchSuggestProvider =
-    StateNotifierProvider<SearchSuggestNotifier, SearchSuggestState>(
+    StateNotifierProvider.autoDispose<SearchSuggestNotifier, SearchSuggestState>(
   (ref) => SearchSuggestNotifier(),
 );

@@ -169,7 +169,7 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
 }
 
 // Providers
-final businessesListProvider = StateNotifierProvider<BusinessesListNotifier, BusinessesListState>((ref) {
+final businessesListProvider = StateNotifierProvider.autoDispose<BusinessesListNotifier, BusinessesListState>((ref) {
   return BusinessesListNotifier(ApiClient());
 });
 

@@ -17,6 +17,7 @@ import '../../widgets/review_card.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/animated_toggle_fab.dart';
+import '../../widgets/empty_state.dart';
 import '../../services/analytics_service.dart';
 import 'package:go_router/go_router.dart';
 
@@ -535,18 +536,11 @@ class BusinessDetailScreen extends ConsumerWidget {
                       ),
                     )
                   else if (reviewsState.reviews.isEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.xxl),
-                          child: Center(
-                            child: Text(
-                              'Nicio recenzie încă',
-                              style: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
-                            ),
-                          ),
-                        ),
+                    const SliverToBoxAdapter(
+                      child: EmptyState(
+                        icon: Icons.rate_review_outlined,
+                        title: 'Nicio recenzie inca',
+                        subtitle: 'Fii primul care scrie o recenzie!',
                       ),
                     )
                   else
