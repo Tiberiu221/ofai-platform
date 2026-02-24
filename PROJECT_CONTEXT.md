@@ -1,5 +1,5 @@
 # OFAI — Project Context Document
-## Ultima actualizare: 24 Februarie 2026
+## Ultima actualizare: 24 Februarie 2026 (v2 — Mobile Parity Sprint #2)
 
 > **Scop:** Document complet de context pentru sesiuni noi. Conține toată arhitectura, schema DB, API-uri, patterns și gotchas.
 > Changelog detaliat per sesiune → vezi `HANDOFF_DOCUMENT.md` (v16, 1785 linii).
@@ -312,6 +312,7 @@ Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (prefer
 | PUT | /api/web/preferences | Cookie | Save city/category preferences |
 | POST | /api/web/account/profile-picture | Cookie | Upload profile picture |
 | DELETE | /api/web/account/profile-picture | Cookie | Delete profile picture |
+| DELETE | /api/web/reviews/:id | Cookie | Delete own review (ownership check via `req.webUser.id`) |
 | GET | /api/web/portal/:bid/analytics/views | Business owner | Page view stats |
 | GET | /api/web/portal/:bid/analytics/offer-views | Business owner | Per-offer view stats |
 | GET | /api/web/portal/:bid/analytics/subscribers | Business owner | Subscriber growth |
@@ -379,13 +380,14 @@ Standalone routes:
 | dealOfDayProvider | FutureProvider.autoDispose | Deal of the day offer |
 | feedProvider | FutureProvider.autoDispose | Personalized offer feed |
 | popularOffersProvider | FutureProvider | Popular offers (no auth) |
+| offerRequestProvider(id) | StateNotifier.autoDispose.family | Pinch request count + submit per business |
 | offersCountProvider | FutureProvider.autoDispose | Total active offers count (reads pagination.total) |
 
 ### Models
 - **User** — id, email, firstName, lastName, role, preferredCityIds[], badges[], points, profilePictureUrl, hasPassword
 - **Offer** — id, title, description, discountType/Value, endDate, imageUrl, business (OfferBusiness), booking, gallery[], hasPromoCode, saveCount, isTrending
 - **Business** — id, name, address, lat, lng, logoUrl, coverImage, city, category, rating, ratingCount, isVerified, followerCount, reviewSummary, ratingDistribution
-- **Review** — id, rating, comment, firstName, lastName, response, profilePictureUrl
+- **Review** — id, rating, comment, firstName, lastName, response, profilePictureUrl, userId (for own-review detection + delete)
 - **PaginatedResponse<T>** — data[], pagination (page, limit, total, totalPages, hasMore)
 
 ### Services
@@ -537,6 +539,9 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 26. **`PUT /users/me` COALESCE pattern** — `COALESCE($1, first_name)` prevents NULL overwrite on partial updates (e.g. sending only `show_picture_in_reviews`)
 27. **Name change 30-day cooldown** — conditional guard only when `first_name`/`last_name` change, NOT on `show_picture_in_reviews` toggle. Returns 429 with `daysLeft`
 28. **API base:** `https://ofai.ro` (prod), `http://10.0.2.2:4000` (emulator dev)
+29. **Distance sort is client-side only** — sorts loaded items via `DistanceUtils.haversine()`. Offers/businesses without coords (`lat`/`lng` null) are pushed to end of list. Limited to items in memory (not full server dataset)
+30. **Offer interleaving per-page** — `_interleaveOffers()` applied per-page only (`fetch()` page 1, `loadMore()` new items only), never re-interleaves full accumulated list (prevents visual jumps)
+31. **`review_responses` ON DELETE CASCADE** — deleting a review (migration 029 FK) auto-deletes business responses. Intentional but user sees no warning about losing business response
 
 ### Deployment
 21. **Railway auto-deploys** on `git push origin main` (~1-2 min)
@@ -587,6 +592,19 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 - Flutter: "Cum să folosești oferta" card on offer detail (booking-type-aware tip text)
 - Flutter: marquee partner logos on home screen (`_MarqueeLogos` isolated widget, `AnimationController.repeat()`)
 
+**Mobile Parity Sprint v2 (24 Feb) — 8 features:**
+- Backend: `DELETE /reviews/:id` (mobile Bearer auth, ownership check `review.user_id === req.user.id`, CASCADE deletes review_responses)
+- Backend: `DELETE /api/web/reviews/:id` (web cookie auth, ownership check via `req.webUser.id`)
+- Backend: `user_id` field added to GET `/reviews/business/:id` response (for own-review detection)
+- Flutter: Review delete (ReviewCard delete icon visible only when `review.userId == currentUserId`, confirmation dialog, optimistic removal)
+- Flutter: Pinch card on expired offer detail (`_OfferDetailPinchCard` — shows when `!offer.isActive`, reuses `offerRequestProvider`, auto-follows business on success)
+- Flutter: Animated stat counters on home screen (`_AnimatedStatPill` — counts 0→target over 1500ms, easeOut curve, `_hasAnimated` flag prevents re-animation)
+- Flutter: Offer interleaving in providers (`_interleaveOffers()` — round-robin by business, applied per-page in `fetch()`/`loadMore()` to avoid visual jumps)
+- Flutter: Geolocation banner on Explore screen (visible when location denied + not dismissed, CTA requests permission, `deniedForever` → settings, `AnimatedSize` smooth show/hide)
+- Flutter: Distance sort on Explore screen ("Distanță" in sort picker, Haversine sort, null-coords pushed to end)
+- Flutter: Distance sort on Collection screen (both Favorites + Subscriptions tabs, same Haversine pattern)
+- Flutter: Per-location booking chips on business detail (shown only when location booking differs from main business booking, dedup logic via `_hasLocationBooking()`)
+
 ### ❌ TODO
 - **Scraping Phase 3-5:** Verify, cleanup, image assignment
 - **iOS build:** Requires macOS (not tested on Windows dev machine)
@@ -604,6 +622,7 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 - `offer_clicks` table referenced in deal-of-day fallback but actual table is `business_clicks`
 - Feed endpoint returns plain array but Flutter expects `PaginatedResponse` format
 - Gamification point manipulation (follow/unfollow toggling for infinite points, no dedup)
+- Review delete doesn't reverse gamification points (user earns 10pt on write, keeps them on delete, can re-earn on rewrite)
 - Streak timezone (UTC vs Romania UTC+2/3 can break streaks at 11 PM local)
 
 ---
@@ -691,8 +710,10 @@ All in-memory (reset on deploy). Persistence needs Redis/PG store.
 | #4 | 20 Feb | 113 issues (18C/60W/35S) | Mostly fixed (4 sprints) |
 | #5 | 23 Feb | 20 issues (7C/8W/5S) | 14 fixed, 6 remaining |
 | #6 (mobile) | 24 Feb | 5 issues | ALL FIXED |
+| #7 (parity v2) | 24 Feb | 6 issues (0C/2W/4minor) | 2W fixed, 4 by-design |
 
 **Session 24 Feb fixes:** CSRF mobile skip, exact offers count, countdown ≤7d gate, Clip.hardEdge cards, horizontal card overflow (home + offer detail)
+**Session 24 Feb v2:** Review delete (full stack), pinch on expired offers, animated counters, interleaving, geo banner, distance sort (explore+collection), per-location booking
 
 **Still unfixed from all audits:**
 - Rate limiter persistence (needs Redis/PG store)
