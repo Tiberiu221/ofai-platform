@@ -257,6 +257,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> updateShowPictureInReviews(bool value) async {
+    await _api.dio.put(ApiEndpoints.userMe, data: {
+      'show_picture_in_reviews': value,
+    });
+    await refreshUser();
+  }
+
   Future<void> deleteProfilePicture() async {
     try {
       await _api.dio.delete(ApiEndpoints.userProfilePicture);

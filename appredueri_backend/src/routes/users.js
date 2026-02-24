@@ -82,13 +82,32 @@ router.put("/me", auth, async (req, res) => {
     const showPicture =
       typeof show_picture_in_reviews === "boolean" ? show_picture_in_reviews : null;
 
+    // 30-day cooldown — only when name is being changed
+    if (safeFirst !== null || safeLast !== null) {
+      const cooldownCheck = await pool.query(
+        "SELECT last_profile_edit FROM users WHERE id = $1",
+        [userId]
+      );
+      const lastEdit = cooldownCheck.rows[0]?.last_profile_edit;
+      if (lastEdit) {
+        const daysSince = (Date.now() - new Date(lastEdit).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSince < 30) {
+          const daysLeft = Math.ceil(30 - daysSince);
+          return res.status(429).json({
+            message: `Poți schimba numele o dată la 30 de zile. Mai ai ${daysLeft} zile.`,
+          });
+        }
+      }
+    }
+
     const result = await pool.query(
       `
       UPDATE users
       SET
-        first_name = $1,
-        last_name = $2,
-        show_picture_in_reviews = COALESCE($3, show_picture_in_reviews)
+        first_name = COALESCE($1, first_name),
+        last_name = COALESCE($2, last_name),
+        show_picture_in_reviews = COALESCE($3, show_picture_in_reviews),
+        last_profile_edit = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN NOW() ELSE last_profile_edit END
       WHERE id = $4
       RETURNING
         id,

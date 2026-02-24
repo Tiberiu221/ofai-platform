@@ -13,6 +13,7 @@ class OffersListState {
   final String? error;
   final int page;
   final bool hasMore;
+  final int? total;
   // Filters
   final int? cityId;
   final int? categoryId;
@@ -27,6 +28,7 @@ class OffersListState {
     this.error,
     this.page = 1,
     this.hasMore = true,
+    this.total,
     this.cityId,
     this.categoryId,
     this.sort,
@@ -41,6 +43,7 @@ class OffersListState {
     String? error,
     int? page,
     bool? hasMore,
+    int? total,
     int? cityId,
     int? categoryId,
     String? sort,
@@ -59,6 +62,7 @@ class OffersListState {
       error: clearError ? null : (error ?? this.error),
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
+      total: total ?? this.total,
       cityId: clearCityId ? null : (cityId ?? this.cityId),
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       sort: clearSort ? null : (sort ?? this.sort),
@@ -93,6 +97,7 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
         isLoading: false,
         page: 1,
         hasMore: paginated.hasMore,
+        total: paginated.pagination.total,
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) return;

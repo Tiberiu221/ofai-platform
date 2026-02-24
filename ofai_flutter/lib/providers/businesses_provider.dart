@@ -13,6 +13,7 @@ class BusinessesListState {
   final String? error;
   final int page;
   final bool hasMore;
+  final int? total;
   final int? cityId;
   final int? categoryId;
   final String? query;
@@ -25,6 +26,7 @@ class BusinessesListState {
     this.error,
     this.page = 1,
     this.hasMore = true,
+    this.total,
     this.cityId,
     this.categoryId,
     this.query,
@@ -38,6 +40,7 @@ class BusinessesListState {
     String? error,
     int? page,
     bool? hasMore,
+    int? total,
     int? cityId,
     int? categoryId,
     String? query,
@@ -54,6 +57,7 @@ class BusinessesListState {
       error: clearError ? null : (error ?? this.error),
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
+      total: total ?? this.total,
       cityId: clearCityId ? null : (cityId ?? this.cityId),
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       query: clearQuery ? null : (query ?? this.query),
@@ -87,6 +91,7 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
         isLoading: false,
         page: 1,
         hasMore: paginated.hasMore,
+        total: paginated.pagination.total,
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) return;

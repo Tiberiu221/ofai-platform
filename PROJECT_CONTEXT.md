@@ -264,7 +264,7 @@ Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (prefer
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /users/me | Bearer | Profile + badges + points + preferences |
-| PUT | /users/me | Bearer | Update name, show_picture_in_reviews |
+| PUT | /users/me | Bearer | Update name (30-day cooldown, COALESCE), show_picture_in_reviews |
 | POST | /users/me/profile-picture | Bearer | Upload to Cloudinary (300x300) |
 | DELETE | /users/me/profile-picture | Bearer | Delete from Cloudinary |
 | PUT | /users/me/password | Bearer | Change password |
@@ -367,9 +367,9 @@ Standalone routes:
 ### Providers (Riverpod)
 | Provider | Type | Purpose |
 |----------|------|---------|
-| authProvider | StateNotifier | Auth state, login/register/logout, Google OAuth, profile picture |
-| offersListProvider | StateNotifier | Offers list with filters, pagination, preferences |
-| businessesListProvider | StateNotifier | Businesses list with filters, pagination |
+| authProvider | StateNotifier | Auth state, login/register/logout, Google OAuth, profile picture, updateShowPictureInReviews |
+| offersListProvider | StateNotifier | Offers list with filters, pagination, preferences, total count |
+| businessesListProvider | StateNotifier | Businesses list with filters, pagination, total count |
 | favoritesProvider | StateNotifier | Favorite offers, optimistic toggle |
 | subscriptionsProvider | StateNotifier | Followed businesses, optimistic toggle |
 | gamificationProvider | StateNotifier.autoDispose | Points, level, streaks, badges |
@@ -532,7 +532,11 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 21. **Horizontal OfferCard `height: 300`** — card needs ~288px max; used in home_screen + offer_detail_screen
 22. **Countdown urgency > 0 gate** — `_buildCountdown()` returns `SizedBox.shrink()` for >7 days offers
 23. **CSRF + mobile auth** — login/register have no Bearer token; `X-Client: mobile` header skips CSRF
-20. **API base:** `https://ofai.ro` (prod), `http://10.0.2.2:4000` (emulator dev)
+24. **`Business.category` is `IdName?` type** — use `b.categoryName` getter for String, NOT `b.category?.toLowerCase()`
+25. **`_MarqueeLogos` widget must be isolated** — separate StatefulWidget with own AnimationController. NEVER put setState at 60fps inside HomeScreen
+26. **`PUT /users/me` COALESCE pattern** — `COALESCE($1, first_name)` prevents NULL overwrite on partial updates (e.g. sending only `show_picture_in_reviews`)
+27. **Name change 30-day cooldown** — conditional guard only when `first_name`/`last_name` change, NOT on `show_picture_in_reviews` toggle. Returns 429 with `daysLeft`
+28. **API base:** `https://ofai.ro` (prod), `http://10.0.2.2:4000` (emulator dev)
 
 ### Deployment
 21. **Railway auto-deploys** on `git push origin main` (~1-2 min)
@@ -570,6 +574,18 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 - Flutter: countdown pill ≤7 days gate (urgency > 0 only, matches web)
 - Flutter: `Clip.hardEdge` on offer/business/featured cards (eliminates sub-pixel artifacts)
 - Flutter: horizontal card container `height: 300` (home + offer detail similar offers)
+
+**Mobile Parity Sprint (24 Feb) — 9 features:**
+- Backend: streak fix in mobile auth.js (fire-and-forget `updateStreak()`, parity with webAuth.js)
+- Backend: COALESCE fix on `PUT /users/me` (prevents NULL overwrite on partial updates)
+- Backend: 30-day name change cooldown guard (conditional — only when name fields change, returns 429)
+- Flutter: active offers navigable on business detail (InkWell → `/offer/:id`)
+- Flutter: toggle `show_picture_in_reviews` on account screen (SwitchListTile + `updateShowPictureInReviews`)
+- Flutter: name change cooldown warning on edit profile (catch 429, show backend message)
+- Flutter: results count on Explore ("Afișând X din Y oferte/business-uri", reads `pagination.total`)
+- Flutter: search + sort on Collection screen (TextField + sort chips: Nume A-Z, Rating, client-side filter)
+- Flutter: "Cum să folosești oferta" card on offer detail (booking-type-aware tip text)
+- Flutter: marquee partner logos on home screen (`_MarqueeLogos` isolated widget, `AnimationController.repeat()`)
 
 ### ❌ TODO
 - **Scraping Phase 3-5:** Verify, cleanup, image assignment

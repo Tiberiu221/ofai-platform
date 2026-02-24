@@ -28,6 +28,9 @@ async function authenticateToken(req, res, next) {
     }
 
     req.user = rows[0];
+    // Fire-and-forget: update login streak (also awards daily login point once per day)
+    const { updateStreak } = require("../services/gamification");
+    updateStreak(req.user.id).catch(() => {});
     next();
   } catch (err) {
     console.error("Eroare token:", err);
@@ -83,6 +86,10 @@ function optionalAuth(req, res, next) {
     pool.query("SELECT id, email, role FROM users WHERE id = $1", [decoded.id])
       .then(({ rows }) => {
         req.user = rows.length > 0 ? rows[0] : null;
+        if (req.user) {
+          const { updateStreak } = require("../services/gamification");
+          updateStreak(req.user.id).catch(() => {});
+        }
         next();
       })
       .catch(() => { req.user = null; next(); });

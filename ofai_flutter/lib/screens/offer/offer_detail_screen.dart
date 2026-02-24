@@ -234,6 +234,60 @@ class OfferDetailScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
+                          // How to use the offer
+                          Builder(builder: (_) {
+                            String tipText;
+                            IconData tipIcon;
+                            if (booking != null && booking.hasBooking) {
+                              switch (booking.type) {
+                                case 'phone':
+                                  tipText = 'Sună și menționează OFAI la rezervare';
+                                  tipIcon = Icons.phone_in_talk;
+                                  break;
+                                case 'whatsapp':
+                                  tipText = 'Scrie pe WhatsApp și menționează OFAI';
+                                  tipIcon = Icons.message_outlined;
+                                  break;
+                                case 'url':
+                                  tipText = 'Rezervă online prin link-ul de rezervare';
+                                  tipIcon = Icons.language;
+                                  break;
+                                default:
+                                  tipText = 'Arată această pagină la casă';
+                                  tipIcon = Icons.smartphone;
+                              }
+                            } else {
+                              tipText = 'Arată această pagină la casă';
+                              tipIcon = Icons.smartphone;
+                            }
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.accent.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(tipIcon, size: 22, color: AppColors.accent),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Cum să folosești oferta', style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
+                                        const SizedBox(height: 2),
+                                        Text(tipText, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: AppSpacing.xxl),
+
                           // Promo Code
                           if (offer.hasPromoCode) ...[
                             // Limited codes indicator

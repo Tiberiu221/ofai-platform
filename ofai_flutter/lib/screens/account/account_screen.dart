@@ -321,6 +321,21 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   label: 'Schimba parola',
                   onTap: () => context.push('/account/change-password'),
                 ),
+              _SwitchMenuItem(
+                icon: Icons.face_outlined,
+                label: 'Arată poza în recenzii',
+                value: user?.showPictureInReviews ?? true,
+                onChanged: (val) async {
+                  try {
+                    await ref.read(authProvider.notifier).updateShowPictureInReviews(val);
+                  } catch (_) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Eroare la salvare'), backgroundColor: AppColors.danger),
+                    );
+                  }
+                },
+              ),
               _MenuItem(
                 icon: Icons.help_outline,
                 label: 'Ajutor',
@@ -671,6 +686,50 @@ class _MenuItem extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SwitchMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchMenuItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textPrimary, size: 22),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.bodyLarge.copyWith(color: AppColors.textPrimary),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.accent,
+            activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
+            inactiveThumbColor: AppColors.textTertiary,
+            inactiveTrackColor: AppColors.bgSecondary,
+          ),
+        ],
       ),
     );
   }

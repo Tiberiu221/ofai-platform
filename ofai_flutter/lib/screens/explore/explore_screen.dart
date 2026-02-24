@@ -327,7 +327,25 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               ),
             ),
 
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
+
+            // Results count
+            Builder(builder: (_) {
+              final isOffers = _tabController.index == 0;
+              final count = isOffers ? offersState.offers.length : businessesState.businesses.length;
+              final total = isOffers ? offersState.total : businessesState.total;
+              final isLoading = isOffers ? offersState.isLoading : businessesState.isLoading;
+              if (isLoading || total == null || total == 0) return const SizedBox.shrink();
+              return Padding(
+                padding: AppSpacing.pageH,
+                child: Text(
+                  'Afișând $count din $total ${isOffers ? 'oferte' : 'business-uri'}',
+                  style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                ),
+              );
+            }),
+
+            const SizedBox(height: AppSpacing.sm),
 
             // Tab content
             Expanded(

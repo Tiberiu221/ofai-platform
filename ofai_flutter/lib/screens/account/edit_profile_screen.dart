@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -56,9 +57,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Eroare la salvare';
+        if (e is DioException && e.response?.statusCode == 429) {
+          final data = e.response?.data;
+          if (data is Map) {
+            errorMessage = data['message'] as String? ?? errorMessage;
+          }
+        } else {
+          errorMessage = e.toString().split(':').last.trim();
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare: ${e.toString().split(':').last.trim()}'),
+            content: Text(errorMessage),
             backgroundColor: AppColors.danger,
           ),
         );
@@ -120,7 +130,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
               ),
 
-              const SizedBox(height: AppSpacing.xxxl),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Numele poate fi schimbat o dată la 30 de zile.',
+                style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+              ),
+
+              const SizedBox(height: AppSpacing.xxl),
 
               SizedBox(
                 width: double.infinity,

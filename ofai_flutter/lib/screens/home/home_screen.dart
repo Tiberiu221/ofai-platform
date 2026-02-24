@@ -6,6 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/offers_provider.dart';
 import '../../providers/businesses_provider.dart';
+import '../../models/business.dart';
 import '../../providers/static_data_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/offer_card.dart';
@@ -17,6 +18,7 @@ import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/featured_offer_card.dart';
 import '../../providers/gamification_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -415,6 +417,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
+              // Marquee logos
+              SliverToBoxAdapter(
+                child: businessesAsync.when(
+                  data: (businesses) {
+                    if (businesses.isEmpty) return const SizedBox.shrink();
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: AppSpacing.pageH,
+                          child: Text(
+                            'Business-uri partenere',
+                            style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _MarqueeLogos(businesses: businesses),
+                        const SizedBox(height: AppSpacing.xxl),
+                      ],
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ),
+
               // Businesses section header
               SliverToBoxAdapter(
                 child: FadeInItem(
@@ -480,6 +508,122 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
   }
 }
 
+
+class _MarqueeLogos extends StatefulWidget {
+  final List<Business> businesses;
+
+  const _MarqueeLogos({required this.businesses});
+
+  @override
+  State<_MarqueeLogos> createState() => _MarqueeLogosState();
+}
+
+class _MarqueeLogosState extends State<_MarqueeLogos> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  static const double _itemWidth = 80;
+  static const double _itemSpacing = 12;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: widget.businesses.length * 3),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final totalItemWidth = _itemWidth + _itemSpacing;
+    final listWidth = widget.businesses.length * totalItemWidth;
+
+    return SizedBox(
+      height: _itemWidth,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final offset = _controller.value * listWidth;
+          return ClipRect(
+            child: OverflowBox(
+              maxWidth: double.infinity,
+              alignment: Alignment.centerLeft,
+              child: Transform.translate(
+                offset: Offset(-offset, 0),
+                child: child,
+              ),
+            ),
+          );
+        },
+        child: Row(
+          children: [
+            // Double the list for seamless looping
+            ...List.generate(2, (_) => widget.businesses).expand((list) => list).map((biz) {
+              final name = biz.name;
+              final logoUrl = biz.logoUrl;
+              return Padding(
+                padding: const EdgeInsets.only(right: _itemSpacing),
+                child: SizedBox(
+                  width: _itemWidth,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: logoUrl != null && logoUrl.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: logoUrl,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (_, __, ___) => _MarqueeInitial(name),
+                                )
+                              : _MarqueeInitial(name),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        name,
+                        style: AppTypography.captionMuted,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MarqueeInitial extends StatelessWidget {
+  final String name;
+  const _MarqueeInitial(this.name);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.bgSecondary,
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'B',
+          style: AppTypography.labelLarge.copyWith(color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+}
 
 class _StatPill extends StatelessWidget {
   final String value;

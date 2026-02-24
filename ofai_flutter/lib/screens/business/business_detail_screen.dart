@@ -16,6 +16,7 @@ import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/animated_toggle_fab.dart';
 import '../../services/analytics_service.dart';
+import 'package:go_router/go_router.dart';
 
 class BusinessDetailScreen extends ConsumerWidget {
   final int businessId;
@@ -362,38 +363,45 @@ class BusinessDetailScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.sm),
                             ...business.activeOffers!.map((offer) => Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bgCard,
-                                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    if (offer.discountLabel.isNotEmpty)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.accent,
-                                          borderRadius: BorderRadius.circular(6),
+                              child: InkWell(
+                                onTap: () => context.push('/offer/${offer.id}'),
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                splashColor: AppColors.accent.withValues(alpha: 0.1),
+                                child: Container(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bgCard,
+                                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      if (offer.discountLabel.isNotEmpty)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accent,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            offer.discountLabel,
+                                            style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                                          ),
                                         ),
+                                      if (offer.discountLabel.isNotEmpty)
+                                        const SizedBox(width: AppSpacing.sm),
+                                      Expanded(
                                         child: Text(
-                                          offer.discountLabel,
-                                          style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                                          offer.title,
+                                          style: AppTypography.bodyMedium,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
-                                    if (offer.discountLabel.isNotEmpty)
                                       const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: Text(
-                                        offer.title,
-                                        style: AppTypography.bodyMedium,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
+                                      Icon(Icons.chevron_right, size: 18, color: AppColors.textTertiary),
+                                    ],
+                                  ),
                                 ),
                               ),
                             )),

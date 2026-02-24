@@ -27,12 +27,18 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
   late TabController _tabController;
   final _favScrollController = ScrollController();
   final _subScrollController = ScrollController();
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _sortMode; // 'name_asc' | 'rating_desc' (subscriptions only)
   bool _didFetch = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) setState(() {});
+    });
     _favScrollController.addListener(_onFavScroll);
     _subScrollController.addListener(_onSubScroll);
   }
@@ -51,6 +57,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
     _tabController.dispose();
     _favScrollController.dispose();
     _subScrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -112,7 +119,73 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               padding: AppSpacing.pageH,
               child: Text('Colecția mea', style: AppTypography.displaySmall),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.md),
+
+            // Search field
+            Padding(
+              padding: AppSpacing.pageH,
+              child: TextField(
+                controller: _searchController,
+                onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
+                style: AppTypography.bodyMedium,
+                decoration: InputDecoration(
+                  hintText: _tabController.index == 0 ? 'Caută în favorite...' : 'Caută în urmărite...',
+                  hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: AppColors.bgCard,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                    borderSide: BorderSide(color: AppColors.border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                    borderSide: BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                    borderSide: BorderSide(color: AppColors.accent),
+                  ),
+                ),
+              ),
+            ),
+
+            // Sort chips (only for Urmărite tab)
+            if (_tabController.index == 1) ...[
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                  children: [
+                    _CollectionSortChip(
+                      label: 'Nume A-Z',
+                      isActive: _sortMode == 'name_asc',
+                      onTap: () => setState(() => _sortMode = _sortMode == 'name_asc' ? null : 'name_asc'),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _CollectionSortChip(
+                      label: 'Rating',
+                      isActive: _sortMode == 'rating_desc',
+                      onTap: () => setState(() => _sortMode = _sortMode == 'rating_desc' ? null : 'rating_desc'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: AppSpacing.md),
 
             // Tab bar
             Container(
@@ -146,8 +219,8 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _FavoritesTab(scrollController: _favScrollController),
-                  _SubscriptionsTab(scrollController: _subScrollController),
+                  _FavoritesTab(scrollController: _favScrollController, searchQuery: _searchQuery),
+                  _SubscriptionsTab(scrollController: _subScrollController, searchQuery: _searchQuery, sortMode: _sortMode),
                 ],
               ),
             ),
@@ -160,8 +233,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
 
 class _FavoritesTab extends ConsumerWidget {
   final ScrollController scrollController;
+  final String searchQuery;
 
-  const _FavoritesTab({required this.scrollController});
+  const _FavoritesTab({required this.scrollController, required this.searchQuery});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -198,16 +272,31 @@ class _FavoritesTab extends ConsumerWidget {
       );
     }
 
+    final filtered = searchQuery.isEmpty
+        ? state.offers
+        : state.offers.where((o) =>
+            o.title.toLowerCase().contains(searchQuery) ||
+            (o.business?.name.toLowerCase().contains(searchQuery) ?? false)
+          ).toList();
+
+    if (filtered.isEmpty && searchQuery.isNotEmpty) {
+      return const EmptyState(
+        icon: Icons.search_off,
+        title: 'Niciun rezultat',
+        subtitle: 'Nicio ofertă favorită nu corespunde căutării',
+      );
+    }
+
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: () => ref.read(favoritesProvider.notifier).fetch(),
       child: ListView.separated(
         controller: scrollController,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: AppSpacing.sm),
-        itemCount: state.offers.length + (state.isLoadingMore ? 1 : 0),
+        itemCount: filtered.length + (state.isLoadingMore && searchQuery.isEmpty ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
-          if (index >= state.offers.length) {
+          if (index >= filtered.length) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.lg),
@@ -215,7 +304,7 @@ class _FavoritesTab extends ConsumerWidget {
               ),
             );
           }
-          final offer = state.offers[index];
+          final offer = filtered[index];
           return Dismissible(
             key: ValueKey('fav_${offer.id}'),
             direction: DismissDirection.endToStart,
@@ -252,8 +341,10 @@ class _FavoritesTab extends ConsumerWidget {
 
 class _SubscriptionsTab extends ConsumerWidget {
   final ScrollController scrollController;
+  final String searchQuery;
+  final String? sortMode;
 
-  const _SubscriptionsTab({required this.scrollController});
+  const _SubscriptionsTab({required this.scrollController, required this.searchQuery, this.sortMode});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -290,16 +381,38 @@ class _SubscriptionsTab extends ConsumerWidget {
       );
     }
 
+    var filtered = searchQuery.isEmpty
+        ? state.businesses.toList()
+        : state.businesses.where((b) =>
+            b.name.toLowerCase().contains(searchQuery) ||
+            (b.categoryName.toLowerCase().contains(searchQuery))
+          ).toList();
+
+    // Apply sort
+    if (sortMode == 'name_asc') {
+      filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } else if (sortMode == 'rating_desc') {
+      filtered.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+    }
+
+    if (filtered.isEmpty && searchQuery.isNotEmpty) {
+      return const EmptyState(
+        icon: Icons.search_off,
+        title: 'Niciun rezultat',
+        subtitle: 'Niciun business urmărit nu corespunde căutării',
+      );
+    }
+
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: () => ref.read(subscriptionsProvider.notifier).fetch(),
       child: ListView.separated(
         controller: scrollController,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: AppSpacing.sm),
-        itemCount: state.businesses.length + (state.isLoadingMore ? 1 : 0),
+        itemCount: filtered.length + (state.isLoadingMore && searchQuery.isEmpty ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
-          if (index >= state.businesses.length) {
+          if (index >= filtered.length) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.lg),
@@ -307,7 +420,7 @@ class _SubscriptionsTab extends ConsumerWidget {
               ),
             );
           }
-          final biz = state.businesses[index];
+          final biz = filtered[index];
           return Dismissible(
             key: ValueKey('sub_${biz.id}'),
             direction: DismissDirection.endToStart,
@@ -337,6 +450,41 @@ class _SubscriptionsTab extends ConsumerWidget {
             child: BusinessCard(business: biz),
           );
         },
+      ),
+    );
+  }
+}
+
+class _CollectionSortChip extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _CollectionSortChip({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.accentMuted : AppColors.bgCard,
+          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+          border: Border.all(
+            color: isActive ? AppColors.accent : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.labelMedium.copyWith(
+            color: isActive ? AppColors.accent : AppColors.textSecondary,
+          ),
+        ),
       ),
     );
   }
