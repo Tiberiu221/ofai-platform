@@ -6,6 +6,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/launchers.dart';
+import '../../models/business.dart' show BusinessLocation;
+import '../../models/offer.dart' show Booking;
 import '../../providers/businesses_provider.dart';
 import '../../providers/subscriptions_provider.dart';
 import '../../providers/reviews_provider.dart';
@@ -281,12 +283,11 @@ class BusinessDetailScreen extends ConsumerWidget {
                           if (business.locations != null && business.locations!.length > 1) ...[
                             Text('Locații', style: AppTypography.headlineSmall),
                             const SizedBox(height: AppSpacing.sm),
-                            ...business.locations!.map((loc) => Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: GestureDetector(
-                                onTap: loc.lat != null && loc.lng != null
-                                    ? () => Launchers.maps(loc.lat!, loc.lng!, address: loc.address)
-                                    : null,
+                            ...business.locations!.map((loc) {
+                              // Check if location has its own booking different from main
+                              final hasLocBooking = _hasLocationBooking(loc, business.booking);
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                                 child: Container(
                                   padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
@@ -294,26 +295,75 @@ class BusinessDetailScreen extends ConsumerWidget {
                                     borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
                                     border: Border.all(color: AppColors.border),
                                   ),
-                                  child: Row(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Icon(Icons.location_on_outlined, size: 18, color: AppColors.textTertiary),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                      GestureDetector(
+                                        onTap: loc.lat != null && loc.lng != null
+                                            ? () => Launchers.maps(loc.lat!, loc.lng!, address: loc.address)
+                                            : null,
+                                        child: Row(
                                           children: [
-                                            if (loc.address != null)
-                                              Text(loc.address!, style: AppTypography.bodyMedium),
-                                            if (loc.city != null)
-                                              Text(loc.city!.name, style: AppTypography.captionMuted),
+                                            Icon(Icons.location_on_outlined, size: 18, color: AppColors.textTertiary),
+                                            const SizedBox(width: AppSpacing.sm),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  if (loc.address != null)
+                                                    Text(loc.address!, style: AppTypography.bodyMedium),
+                                                  if (loc.city != null)
+                                                    Text(loc.city!.name, style: AppTypography.captionMuted),
+                                                ],
+                                              ),
+                                            ),
+                                            if (loc.lat != null)
+                                              Icon(Icons.map_outlined, size: 18, color: AppColors.accent),
                                           ],
                                         ),
                                       ),
+                                      // Per-location booking chips
+                                      if (hasLocBooking) ...[
+                                        const SizedBox(height: AppSpacing.sm),
+                                        Wrap(
+                                          spacing: AppSpacing.xs,
+                                          runSpacing: AppSpacing.xs,
+                                          children: [
+                                            if (loc.bookingPhone != null)
+                                              _BookingChip(
+                                                icon: Icons.phone,
+                                                label: 'Telefon',
+                                                onTap: () {
+                                                  Launchers.call(loc.bookingPhone!);
+                                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
+                                                },
+                                              ),
+                                            if (loc.bookingWhatsapp != null)
+                                              _BookingChip(
+                                                icon: Icons.message,
+                                                label: 'WhatsApp',
+                                                onTap: () {
+                                                  Launchers.whatsApp(loc.bookingWhatsapp!);
+                                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'whatsapp');
+                                                },
+                                              ),
+                                            if (loc.bookingUrl != null)
+                                              _BookingChip(
+                                                icon: Icons.language,
+                                                label: 'Online',
+                                                onTap: () {
+                                                  Launchers.website(loc.bookingUrl!);
+                                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'booking_url');
+                                                },
+                                              ),
+                                          ],
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
-                              ),
-                            )),
+                              );
+                            }),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
@@ -505,7 +555,13 @@ class BusinessDetailScreen extends ConsumerWidget {
                       sliver: SliverList.separated(
                         itemCount: reviewsState.reviews.length,
                         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (_, i) => ReviewCard(review: reviewsState.reviews[i]),
+                        itemBuilder: (_, i) {
+                          final review = reviewsState.reviews[i];
+                          return ReviewCard(
+                            review: review,
+                            onDelete: review.isOwn ? () => _confirmDeleteReview(context, ref, businessId, review.id) : null,
+                          );
+                        },
                       ),
                     ),
 
@@ -736,6 +792,52 @@ class _Initial extends StatelessWidget {
       ),
     );
   }
+}
+
+void _confirmDeleteReview(BuildContext context, WidgetRef ref, int businessId, int reviewId) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.bgCard,
+      title: Text('Sterge recenzia?', style: AppTypography.headlineSmall),
+      content: Text(
+        'Recenzia si eventualul raspuns al business-ului vor fi sterse definitiv.',
+        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text('Anuleaza', style: AppTypography.labelMedium.copyWith(color: AppColors.textSecondary)),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(ctx);
+            final success = await ref.read(businessReviewsProvider(businessId).notifier).deleteReview(reviewId);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(success ? 'Recenzia a fost stearsa' : 'Eroare la stergerea recenziei'),
+                  backgroundColor: success ? AppColors.success : AppColors.danger,
+                ),
+              );
+            }
+          },
+          child: Text('Sterge', style: AppTypography.labelMedium.copyWith(color: AppColors.danger)),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Returns true if the location has its own booking info different from the main business booking
+bool _hasLocationBooking(BusinessLocation loc, Booking? mainBooking) {
+  final hasAny = loc.bookingPhone != null || loc.bookingWhatsapp != null || loc.bookingUrl != null;
+  if (!hasAny) return false;
+  if (mainBooking == null) return true;
+  // Show only if different from main business booking
+  return loc.bookingPhone != mainBooking.phone ||
+      loc.bookingWhatsapp != mainBooking.whatsapp ||
+      loc.bookingUrl != mainBooking.url;
 }
 
 class _InfoTile extends StatelessWidget {

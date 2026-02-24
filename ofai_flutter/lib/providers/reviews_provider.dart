@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -100,6 +101,20 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
       await fetch();
       return true;
     } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteReview(int reviewId) async {
+    try {
+      await _api.dio.delete(ApiEndpoints.deleteReview(reviewId));
+      // Remove from local state
+      state = state.copyWith(
+        reviews: state.reviews.where((r) => r.id != reviewId).toList(),
+      );
+      return true;
+    } catch (e) {
+      debugPrint('deleteReview error: $e');
       return false;
     }
   }

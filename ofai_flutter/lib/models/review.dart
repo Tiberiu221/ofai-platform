@@ -1,5 +1,7 @@
 class Review {
   final int id;
+  final int? userId;
+  final bool isOwn;
   final int rating;
   final String? comment;
   final String? createdAt;
@@ -11,6 +13,8 @@ class Review {
 
   Review({
     required this.id,
+    this.userId,
+    this.isOwn = false,
     required this.rating,
     this.comment,
     this.createdAt,
@@ -38,6 +42,8 @@ class Review {
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
       id: json['id'] as int,
+      userId: json['user_id'] as int?,
+      isOwn: json['is_own'] as bool? ?? false,
       rating: json['rating'] as int,
       comment: json['comment'] as String?,
       createdAt: json['created_at'] as String?,

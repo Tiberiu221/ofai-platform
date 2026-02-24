@@ -5,6 +5,47 @@ import '../core/network/api_endpoints.dart';
 import '../models/offer.dart';
 import '../models/pagination.dart';
 
+/// Interleave offers so same business doesn't appear consecutively.
+/// Round-robin from business-grouped buckets, sorted by bucket size DESC.
+List<Offer> _interleaveOffers(List<Offer> offers) {
+  if (offers.length <= 2) return offers;
+
+  // Group by business ID
+  final buckets = <int, List<Offer>>{};
+  for (final offer in offers) {
+    final bizId = offer.business?.id ?? 0;
+    buckets.putIfAbsent(bizId, () => []).add(offer);
+  }
+
+  // If all from different businesses, no interleaving needed
+  if (buckets.length == offers.length) return offers;
+
+  // Sort buckets by size DESC (largest groups first)
+  final sortedBuckets = buckets.values.toList()
+    ..sort((a, b) => b.length.compareTo(a.length));
+
+  // Round-robin: pick one from each bucket in turn
+  final result = <Offer>[];
+  final indices = List<int>.filled(sortedBuckets.length, 0);
+  var placed = 0;
+  final total = offers.length;
+
+  while (placed < total) {
+    var placedThisRound = false;
+    for (var i = 0; i < sortedBuckets.length; i++) {
+      if (indices[i] < sortedBuckets[i].length) {
+        result.add(sortedBuckets[i][indices[i]]);
+        indices[i]++;
+        placed++;
+        placedThisRound = true;
+      }
+    }
+    if (!placedThisRound) break;
+  }
+
+  return result;
+}
+
 // Offers list state
 class OffersListState {
   final List<Offer> offers;
@@ -93,7 +134,7 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
       );
       final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
       state = state.copyWith(
-        offers: paginated.data,
+        offers: _interleaveOffers(paginated.data),
         isLoading: false,
         page: 1,
         hasMore: paginated.hasMore,
@@ -120,8 +161,10 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
         cancelToken: loadMoreToken,
       );
       final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
+      // Interleave only the new page items, then append (avoids visual jumps)
+      final interleavedNew = _interleaveOffers(paginated.data);
       state = state.copyWith(
-        offers: [...state.offers, ...paginated.data],
+        offers: [...state.offers, ...interleavedNew],
         isLoadingMore: false,
         page: nextPage,
         hasMore: paginated.hasMore,
@@ -190,7 +233,7 @@ final popularOffersProvider = FutureProvider.autoDispose<List<Offer>>((ref) asyn
     'page': 1,
   });
   final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
-  return paginated.data;
+  return _interleaveOffers(paginated.data);
 });
 
 // Personalized feed for home screen (authenticated users)
@@ -201,7 +244,7 @@ final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
       'page': 1,
     });
     final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
-    return paginated.data;
+    return _interleaveOffers(paginated.data);
   } catch (_) {
     // Fall back to popular offers if feed fails (e.g. not authenticated)
     final response = await ApiClient().dio.get(ApiEndpoints.offers, queryParameters: {
@@ -210,7 +253,7 @@ final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
       'page': 1,
     });
     final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
-    return paginated.data;
+    return _interleaveOffers(paginated.data);
   }
 });
 

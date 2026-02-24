@@ -42,6 +42,7 @@ class ApiEndpoints {
   // Reviews
   static String businessReviews(int id) => '/reviews/business/$id';
   static const String reviews = '/reviews';
+  static String deleteReview(int id) => '/reviews/$id';
 
   // Favorites
   static const String favorites = '/favorites';

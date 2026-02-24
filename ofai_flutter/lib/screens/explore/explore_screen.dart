@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -21,6 +22,8 @@ import '../../widgets/error_state.dart' as w;
 import '../../widgets/search_suggest_dropdown.dart';
 import '../../widgets/fade_in_item.dart';
 import '../../providers/search_suggest_provider.dart';
+import '../../core/utils/distance.dart';
+import '../../models/offer.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -43,12 +46,30 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   int? _lastAppliedCategoryId;
   int? _lastAppliedCityId;
 
+  bool _locationGranted = false;
+  bool _locationBannerDismissed = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _offersScrollController.addListener(_onOffersScroll);
     _businessesScrollController.addListener(_onBusinessesScroll);
+    _checkLocationPermission();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (mounted) {
+        setState(() {
+          _locationGranted = permission == LocationPermission.always ||
+              permission == LocationPermission.whileInUse;
+        });
+      }
+    } catch (_) {
+      // Geolocator may throw on some devices
+    }
   }
 
   @override
@@ -345,6 +366,59 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               );
             }),
 
+            // Location banner (shown only when location NOT granted)
+            if (!_locationGranted && !_locationBannerDismissed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.sm,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 20, color: AppColors.accent),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Activeaza locatia pentru distante',
+                          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          final permission = await Geolocator.requestPermission();
+                          if (permission == LocationPermission.deniedForever) {
+                            await Geolocator.openLocationSettings();
+                          }
+                          _checkLocationPermission();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.accent,
+                            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                          ),
+                          child: Text(
+                            'Activeaza',
+                            style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
+                        onTap: () => setState(() => _locationBannerDismissed = true),
+                        child: const Icon(Icons.close, size: 16, color: AppColors.textTertiary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
             const SizedBox(height: AppSpacing.sm),
 
             // Tab content
@@ -388,19 +462,26 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
         subtitle: 'Încearcă alte filtre sau caută altceva',
       );
     }
+    // Use distance-sorted list if active, otherwise normal provider list
+    final displayOffers = (_isDistanceSort && _distanceSortedOffers != null)
+        ? _distanceSortedOffers!
+        : state.offers;
     return RefreshIndicator(
       color: AppColors.accent,
       backgroundColor: AppColors.bgCard,
-      onRefresh: () => ref.read(offersListProvider.notifier).fetch(),
+      onRefresh: () async {
+        await ref.read(offersListProvider.notifier).fetch();
+        if (_isDistanceSort) _sortCurrentOffersByDistance();
+      },
       child: ListView.separated(
         controller: _offersScrollController,
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.huge,
         ),
-        itemCount: state.offers.length + (state.isLoadingMore ? 1 : 0),
+        itemCount: displayOffers.length + (state.isLoadingMore ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
-          if (index >= state.offers.length) {
+          if (index >= displayOffers.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
@@ -408,7 +489,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
           }
           return FadeInItem(
             index: index,
-            child: OfferCard(offer: state.offers[index]),
+            child: OfferCard(offer: displayOffers[index]),
           );
         },
       ),
@@ -476,7 +557,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     );
   }
 
+  // Distance sort state (client-side only, overlays API results)
+  bool _isDistanceSort = false;
+  List<Offer>? _distanceSortedOffers;
+  Position? _userPosition;
+
   String _sortLabel(String? sort) {
+    if (_isDistanceSort) return 'Distanță';
     switch (sort) {
       case 'popular':
         return 'Populare';
@@ -587,14 +674,80 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
           _PickerItem(label: 'Populare', value: 'popular'),
           _PickerItem(label: 'Reducere maximă', value: 'discount_desc'),
           _PickerItem(label: 'Se termină curând', value: 'ending_soon'),
+          _PickerItem(label: 'Distanță', value: 'distance'),
         ],
         onSelected: (value) {
           Navigator.pop(context);
-          ref.read(offersListProvider.notifier).setFilter(sort: value);
+          if (value == 'distance') {
+            _applyDistanceSort();
+          } else {
+            setState(() => _isDistanceSort = false);
+            ref.read(offersListProvider.notifier).setFilter(sort: value);
+          }
           setState(() {});
         },
       ),
     );
+  }
+
+  Future<void> _applyDistanceSort() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever) {
+        await Geolocator.openLocationSettings();
+        return;
+      }
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Locatia nu este disponibila')),
+          );
+        }
+        return;
+      }
+      _userPosition ??= await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(timeLimit: Duration(seconds: 8)),
+      );
+      if (!mounted) return;
+
+      _sortCurrentOffersByDistance();
+      setState(() {
+        _isDistanceSort = true;
+        _locationGranted = true;
+        _locationBannerDismissed = true;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nu s-a putut determina locatia')),
+        );
+      }
+    }
+  }
+
+  void _sortCurrentOffersByDistance() {
+    if (_userPosition == null) return;
+    final pos = _userPosition!;
+    final offersState = ref.read(offersListProvider);
+    final sorted = List<Offer>.from(offersState.offers);
+    sorted.sort((a, b) {
+      final aLat = a.business?.lat ?? a.locations?.firstOrNull?.lat;
+      final aLng = a.business?.lng ?? a.locations?.firstOrNull?.lng;
+      final bLat = b.business?.lat ?? b.locations?.firstOrNull?.lat;
+      final bLng = b.business?.lng ?? b.locations?.firstOrNull?.lng;
+      final aHas = aLat != null && aLng != null;
+      final bHas = bLat != null && bLng != null;
+      if (!aHas && !bHas) return 0;
+      if (!aHas) return 1;
+      if (!bHas) return -1;
+      final aDist = DistanceUtils.haversine(pos.latitude, pos.longitude, aLat, aLng);
+      final bDist = DistanceUtils.haversine(pos.latitude, pos.longitude, bLat, bLng);
+      return aDist.compareTo(bDist);
+    });
+    _distanceSortedOffers = sorted;
   }
 }
 

@@ -2273,6 +2273,37 @@ router.delete("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBu
   }
 });
 
+// ==========================================
+// DELETE /api/web/reviews/:id - Sterge propria recenzie (web auth)
+// ==========================================
+router.delete("/api/web/reviews/:id", requireWebAuth, async (req, res) => {
+  const { id } = req.params;
+  const user_id = req.webUser.id;
+
+  try {
+    const review = await pool.query(
+      "SELECT id, user_id, business_id FROM reviews WHERE id = $1",
+      [id]
+    );
+
+    if (review.rows.length === 0) {
+      return res.status(404).json({ error: "Recenzia nu exista." });
+    }
+
+    if (review.rows[0].user_id !== user_id) {
+      return res.status(403).json({ error: "Nu poti sterge aceasta recenzie." });
+    }
+
+    // Delete review (CASCADE sterge si review_responses)
+    await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+
+    res.status(204).send();
+  } catch (err) {
+    console.error("[Web API] Delete review error:", err);
+    res.status(500).json({ error: "Eroare server la stergerea recenziei." });
+  }
+});
+
 // Analytics views timeline
 router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, async (req, res) => {
   try {

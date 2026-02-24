@@ -8,8 +8,13 @@ import 'initial_avatar.dart';
 
 class ReviewCard extends StatelessWidget {
   final Review review;
+  final VoidCallback? onDelete;
 
-  const ReviewCard({super.key, required this.review});
+  const ReviewCard({
+    super.key,
+    required this.review,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +30,7 @@ class ReviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: avatar + name + date
+          // Header: avatar + name + date + delete
           Row(
             children: [
               if (review.reviewerProfilePictureUrl != null && review.reviewerShowPicture)
@@ -50,6 +55,16 @@ class ReviewCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Delete button — visible only for own reviews
+              if (review.isOwn && onDelete != null)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  color: AppColors.danger,
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                  tooltip: 'Sterge recenzia',
+                  onPressed: onDelete,
+                ),
             ],
           ),
 

@@ -1,20 +1,22 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const authenticateToken = require("../middleware/auth"); // Asigură-te că calea e corectă
+const authenticateToken = require("../middleware/auth");
+const { optionalAuth } = require("../middleware/auth");
 const { triggerWebhook } = require("../services/n8n");
 const { parsePagination, paginatedResponse, sanitizeString } = require("../helpers/validate");
 
 // ==========================================
 // GET /reviews/business/:id - Vezi recenziile unui business
 // ==========================================
-router.get("/business/:id", async (req, res) => {
+router.get("/business/:id", optionalAuth, async (req, res) => {
     const { id } = req.params;
     const { page, limit, offset } = parsePagination(req.query);
+    const currentUserId = req.user ? req.user.id : null;
     try {
         const [result, countResult] = await Promise.all([
           pool.query(
-            `SELECT r.id, r.rating, r.comment, r.created_at,
+            `SELECT r.id, r.user_id, r.rating, r.comment, r.created_at,
               u.first_name, u.last_name,
               u.profile_picture_url, u.show_picture_in_reviews,
               rr.response_text, rr.created_at as response_date
@@ -34,6 +36,8 @@ router.get("/business/:id", async (req, res) => {
         const total = parseInt(countResult.rows[0].total, 10);
         const reviews = result.rows.map(r => ({
           id: r.id,
+          user_id: r.user_id,
+          is_own: currentUserId ? r.user_id === currentUserId : false,
           rating: r.rating,
           comment: r.comment,
           created_at: r.created_at,
@@ -196,6 +200,38 @@ router.post("/", authenticateToken, async (req, res) => {
         res.status(500).json({ error: "Eroare server la salvarea recenziei." });
     } finally {
         client.release();
+    }
+});
+
+// ==========================================
+// DELETE /reviews/:id - Sterge propria recenzie (Necesita Autentificare)
+// ==========================================
+router.delete("/:id", authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const user_id = req.user.id;
+
+    try {
+        // Ownership check
+        const review = await pool.query(
+            "SELECT id, user_id, business_id FROM reviews WHERE id = $1",
+            [id]
+        );
+
+        if (review.rows.length === 0) {
+            return res.status(404).json({ error: "Recenzia nu exista." });
+        }
+
+        if (review.rows[0].user_id !== user_id) {
+            return res.status(403).json({ error: "Nu poti sterge aceasta recenzie." });
+        }
+
+        // Delete review (CASCADE sterge si review_responses)
+        await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+
+        res.status(204).send();
+    } catch (err) {
+        console.error("REVIEW DELETE ERROR:", err);
+        res.status(500).json({ error: "Eroare server la stergerea recenziei." });
     }
 });
 

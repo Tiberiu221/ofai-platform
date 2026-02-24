@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/distance.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/subscriptions_provider.dart';
@@ -29,8 +31,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
   final _subScrollController = ScrollController();
   final _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _sortMode; // 'name_asc' | 'rating_desc' (subscriptions only)
+  String? _sortMode; // 'name_asc' | 'rating_desc' | 'distance' (both tabs)
   bool _didFetch = false;
+  Position? _userPosition;
 
   @override
   void initState() {
@@ -72,6 +75,30 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
     if (_subScrollController.position.pixels >=
         _subScrollController.position.maxScrollExtent - 200) {
       ref.read(subscriptionsProvider.notifier).loadMore();
+    }
+  }
+
+  Future<void> _activateDistanceSort() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever) {
+        await Geolocator.openLocationSettings();
+        return;
+      }
+      if (permission == LocationPermission.denied) return;
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+      );
+      setState(() {
+        _userPosition = pos;
+        _sortMode = 'distance';
+      });
+    } catch (_) {
+      // Location unavailable — silently ignore
     }
   }
 
@@ -160,8 +187,8 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               ),
             ),
 
-            // Sort chips (only for Urmărite tab)
-            if (_tabController.index == 1) ...[
+            // Sort chips (both tabs)
+            ...[
               const SizedBox(height: AppSpacing.sm),
               SizedBox(
                 height: 40,
@@ -169,16 +196,32 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                   children: [
+                    if (_tabController.index == 1) ...[
+                      _CollectionSortChip(
+                        label: 'Nume A-Z',
+                        isActive: _sortMode == 'name_asc',
+                        onTap: () => setState(() => _sortMode = _sortMode == 'name_asc' ? null : 'name_asc'),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      _CollectionSortChip(
+                        label: 'Rating',
+                        isActive: _sortMode == 'rating_desc',
+                        onTap: () => setState(() => _sortMode = _sortMode == 'rating_desc' ? null : 'rating_desc'),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
                     _CollectionSortChip(
-                      label: 'Nume A-Z',
-                      isActive: _sortMode == 'name_asc',
-                      onTap: () => setState(() => _sortMode = _sortMode == 'name_asc' ? null : 'name_asc'),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    _CollectionSortChip(
-                      label: 'Rating',
-                      isActive: _sortMode == 'rating_desc',
-                      onTap: () => setState(() => _sortMode = _sortMode == 'rating_desc' ? null : 'rating_desc'),
+                      label: 'Distanță',
+                      isActive: _sortMode == 'distance',
+                      onTap: () {
+                        if (_sortMode == 'distance') {
+                          setState(() => _sortMode = null);
+                        } else if (_userPosition != null) {
+                          setState(() => _sortMode = 'distance');
+                        } else {
+                          _activateDistanceSort();
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -219,8 +262,8 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _FavoritesTab(scrollController: _favScrollController, searchQuery: _searchQuery),
-                  _SubscriptionsTab(scrollController: _subScrollController, searchQuery: _searchQuery, sortMode: _sortMode),
+                  _FavoritesTab(scrollController: _favScrollController, searchQuery: _searchQuery, sortMode: _sortMode, userPosition: _userPosition),
+                  _SubscriptionsTab(scrollController: _subScrollController, searchQuery: _searchQuery, sortMode: _sortMode, userPosition: _userPosition),
                 ],
               ),
             ),
@@ -234,8 +277,10 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
 class _FavoritesTab extends ConsumerWidget {
   final ScrollController scrollController;
   final String searchQuery;
+  final String? sortMode;
+  final Position? userPosition;
 
-  const _FavoritesTab({required this.scrollController, required this.searchQuery});
+  const _FavoritesTab({required this.scrollController, required this.searchQuery, this.sortMode, this.userPosition});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -272,12 +317,30 @@ class _FavoritesTab extends ConsumerWidget {
       );
     }
 
-    final filtered = searchQuery.isEmpty
-        ? state.offers
+    var filtered = searchQuery.isEmpty
+        ? state.offers.toList()
         : state.offers.where((o) =>
             o.title.toLowerCase().contains(searchQuery) ||
             (o.business?.name.toLowerCase().contains(searchQuery) ?? false)
           ).toList();
+
+    // Apply distance sort for favorites
+    if (sortMode == 'distance' && userPosition != null) {
+      filtered.sort((a, b) {
+        final aLat = a.business?.lat;
+        final aLng = a.business?.lng;
+        final bLat = b.business?.lat;
+        final bLng = b.business?.lng;
+        final aHas = aLat != null && aLng != null;
+        final bHas = bLat != null && bLng != null;
+        if (!aHas && !bHas) return 0;
+        if (!aHas) return 1;
+        if (!bHas) return -1;
+        final aDist = DistanceUtils.haversine(userPosition!.latitude, userPosition!.longitude, aLat!, aLng!);
+        final bDist = DistanceUtils.haversine(userPosition!.latitude, userPosition!.longitude, bLat!, bLng!);
+        return aDist.compareTo(bDist);
+      });
+    }
 
     if (filtered.isEmpty && searchQuery.isNotEmpty) {
       return const EmptyState(
@@ -343,8 +406,9 @@ class _SubscriptionsTab extends ConsumerWidget {
   final ScrollController scrollController;
   final String searchQuery;
   final String? sortMode;
+  final Position? userPosition;
 
-  const _SubscriptionsTab({required this.scrollController, required this.searchQuery, this.sortMode});
+  const _SubscriptionsTab({required this.scrollController, required this.searchQuery, this.sortMode, this.userPosition});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -393,6 +457,17 @@ class _SubscriptionsTab extends ConsumerWidget {
       filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     } else if (sortMode == 'rating_desc') {
       filtered.sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+    } else if (sortMode == 'distance' && userPosition != null) {
+      filtered.sort((a, b) {
+        final aHas = a.lat != null && a.lng != null;
+        final bHas = b.lat != null && b.lng != null;
+        if (!aHas && !bHas) return 0;
+        if (!aHas) return 1;
+        if (!bHas) return -1;
+        final aDist = DistanceUtils.haversine(userPosition!.latitude, userPosition!.longitude, a.lat!, a.lng!);
+        final bDist = DistanceUtils.haversine(userPosition!.latitude, userPosition!.longitude, b.lat!, b.lng!);
+        return aDist.compareTo(bDist);
+      });
     }
 
     if (filtered.isEmpty && searchQuery.isNotEmpty) {

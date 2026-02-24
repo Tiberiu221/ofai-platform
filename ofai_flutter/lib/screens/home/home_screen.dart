@@ -152,33 +152,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                     padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                     child: Row(
                       children: [
-                        _StatPill(
-                          value: categoriesAsync.when(
-                            data: (cats) {
-                              final total = cats.fold<int>(0, (sum, c) => sum + (c.count ?? 0));
-                              return total > 0 ? '$total+' : '-';
-                            },
-                            loading: () => '...',
-                            error: (_, __) => '-',
+                        _AnimatedStatPill(
+                          targetValue: categoriesAsync.whenOrNull(
+                            data: (cats) => cats.fold<int>(0, (sum, c) => sum + (c.count ?? 0)),
                           ),
                           label: 'Business-uri',
+                          suffix: '+',
                         ),
                         const SizedBox(width: AppSpacing.sm),
-                        _StatPill(
-                          value: ref.watch(offersCountProvider).when(
-                            data: (total) => total > 0 ? '$total' : '-',
-                            loading: () => '...',
-                            error: (_, __) => '-',
-                          ),
+                        _AnimatedStatPill(
+                          targetValue: ref.watch(offersCountProvider).whenOrNull(data: (t) => t),
                           label: 'Oferte active',
                         ),
                         const SizedBox(width: AppSpacing.sm),
-                        _StatPill(
-                          value: categoriesAsync.when(
-                            data: (cats) => '${cats.length}',
-                            loading: () => '...',
-                            error: (_, __) => '-',
-                          ),
+                        _AnimatedStatPill(
+                          targetValue: categoriesAsync.whenOrNull(data: (cats) => cats.length),
                           label: 'Categorii',
                         ),
                       ],
@@ -625,11 +613,51 @@ class _MarqueeInitial extends StatelessWidget {
   }
 }
 
-class _StatPill extends StatelessWidget {
-  final String value;
+class _AnimatedStatPill extends StatefulWidget {
+  final int? targetValue;
   final String label;
+  final String? suffix;
 
-  const _StatPill({required this.value, required this.label});
+  const _AnimatedStatPill({required this.targetValue, required this.label, this.suffix});
+
+  @override
+  State<_AnimatedStatPill> createState() => _AnimatedStatPillState();
+}
+
+class _AnimatedStatPillState extends State<_AnimatedStatPill>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _hasAnimated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    if (widget.targetValue != null && widget.targetValue! > 0) {
+      _hasAnimated = true;
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedStatPill oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.targetValue != null && widget.targetValue! > 0 && !_hasAnimated) {
+      _hasAnimated = true;
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -643,15 +671,24 @@ class _StatPill extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              value,
-              style: AppTypography.headlineSmall.copyWith(color: AppColors.accent),
-            ),
+            if (widget.targetValue == null || widget.targetValue == 0)
+              Text(
+                widget.targetValue == 0 ? '0' : '...',
+                style: AppTypography.headlineSmall.copyWith(color: AppColors.accent),
+              )
+            else
+              AnimatedBuilder(
+                animation: _animation,
+                builder: (_, __) {
+                  final value = (_animation.value * widget.targetValue!).round();
+                  return Text(
+                    '$value${widget.suffix ?? ''}',
+                    style: AppTypography.headlineSmall.copyWith(color: AppColors.accent),
+                  );
+                },
+              ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppTypography.captionMuted,
-            ),
+            Text(widget.label, style: AppTypography.captionMuted),
           ],
         ),
       ),
