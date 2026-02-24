@@ -23,6 +23,7 @@ import '../../widgets/search_suggest_dropdown.dart';
 import '../../widgets/fade_in_item.dart';
 import '../../providers/search_suggest_provider.dart';
 import '../../core/utils/distance.dart';
+import '../../core/storage/preferences.dart';
 import '../../models/offer.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -56,6 +57,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     _offersScrollController.addListener(_onOffersScroll);
     _businessesScrollController.addListener(_onBusinessesScroll);
     _checkLocationPermission();
+    _loadBannerDismissed();
+  }
+
+  Future<void> _loadBannerDismissed() async {
+    final dismissed = await AppPreferences.isLocationBannerDismissed();
+    if (mounted && dismissed) setState(() => _locationBannerDismissed = true);
   }
 
   Future<void> _checkLocationPermission() async {
@@ -411,7 +418,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                       ),
                       const SizedBox(width: 4),
                       GestureDetector(
-                        onTap: () => setState(() => _locationBannerDismissed = true),
+                        onTap: () {
+                          setState(() => _locationBannerDismissed = true);
+                          AppPreferences.setLocationBannerDismissed();
+                        },
                         child: const Icon(Icons.close, size: 16, color: AppColors.textTertiary),
                       ),
                     ],

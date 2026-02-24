@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/network/api_exceptions.dart';
 
 /// State for offer request (pinch) data for a specific business
 class OfferRequestState {
@@ -69,7 +70,7 @@ class OfferRequestNotifier extends StateNotifier<OfferRequestState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/network/api_exceptions.dart';
 import '../models/offer.dart';
 import '../models/pagination.dart';
 
@@ -142,9 +143,9 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.cancel) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 

@@ -380,19 +380,30 @@ class _FavoritesTab extends ConsumerWidget {
               ),
               child: const Icon(Icons.delete_outline, color: AppColors.danger),
             ),
-            onDismissed: (_) {
-              ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${offer.title} eliminată din favorite'),
-                  backgroundColor: AppColors.bgSecondary,
-                  action: SnackBarAction(
-                    label: 'Anulează',
-                    textColor: AppColors.accent,
-                    onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
-                  ),
-                ),
-              );
+            confirmDismiss: (_) async {
+              try {
+                await ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${offer.title} eliminata din favorite'),
+                      backgroundColor: AppColors.bgSecondary,
+                      action: SnackBarAction(
+                        label: 'Anuleaza',
+                        textColor: AppColors.accent,
+                        onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
+                      ),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Eroare la eliminare'), backgroundColor: AppColors.danger),
+                  );
+                }
+              }
+              return false;
             },
             child: OfferCard(offer: offer),
           );
@@ -508,19 +519,30 @@ class _SubscriptionsTab extends ConsumerWidget {
               ),
               child: const Icon(Icons.delete_outline, color: AppColors.danger),
             ),
-            onDismissed: (_) {
-              ref.read(subscriptionsProvider.notifier).toggleSubscription(biz.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${biz.name} eliminat din urmărite'),
-                  backgroundColor: AppColors.bgSecondary,
-                  action: SnackBarAction(
-                    label: 'Anulează',
-                    textColor: AppColors.accent,
-                    onPressed: () => ref.read(subscriptionsProvider.notifier).toggleSubscription(biz.id),
-                  ),
-                ),
-              );
+            confirmDismiss: (_) async {
+              try {
+                await ref.read(subscriptionsProvider.notifier).toggleSubscription(biz.id);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${biz.name} eliminat din urmarite'),
+                      backgroundColor: AppColors.bgSecondary,
+                      action: SnackBarAction(
+                        label: 'Anuleaza',
+                        textColor: AppColors.accent,
+                        onPressed: () => ref.read(subscriptionsProvider.notifier).toggleSubscription(biz.id),
+                      ),
+                    ),
+                  );
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Eroare la eliminare'), backgroundColor: AppColors.danger),
+                  );
+                }
+              }
+              return false;
             },
             child: BusinessCard(business: biz),
           );

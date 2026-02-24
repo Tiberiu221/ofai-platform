@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import '../core/network/api_exceptions.dart';
 import '../models/business.dart';
 import '../models/pagination.dart';
 import '../services/analytics_service.dart';
@@ -68,7 +69,7 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
         hasMore: paginated.hasMore,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 

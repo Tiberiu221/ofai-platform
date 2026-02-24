@@ -137,7 +137,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Parola este obligatorie';
-                        if (v.length < 6) return 'Minim 6 caractere';
+                        if (v.length < 8) return 'Minim 8 caractere';
+                        if (!RegExp(r'\d').hasMatch(v)) return 'Trebuie sa contina cel putin o cifra';
                         return null;
                       },
                     ),

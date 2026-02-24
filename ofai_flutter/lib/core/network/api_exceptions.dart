@@ -59,3 +59,11 @@ class ApiException implements Exception {
 class UnauthorizedException extends ApiException {
   UnauthorizedException() : super(message: 'Sesiunea a expirat.', statusCode: 401);
 }
+
+/// Convert any error to a user-friendly Romanian message.
+/// Use this instead of `e.toString()` in providers.
+String friendlyError(dynamic e) {
+  if (e is ApiException) return e.message;
+  if (e is DioException) return ApiException.fromDioError(e).message;
+  return 'Eroare neasteptata. Incearca din nou.';
+}

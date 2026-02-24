@@ -105,7 +105,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 controller: _newCtrl,
                 obscureText: _obscureNew,
                 decoration: InputDecoration(
-                  hintText: 'Minim 6 caractere',
+                  hintText: 'Minim 8 caractere, cel putin o cifra',
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureNew ? Icons.visibility_off : Icons.visibility,
@@ -116,7 +116,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Parola nouă este obligatorie';
-                  if (v.length < 6) return 'Minim 6 caractere';
+                  if (v.length < 8) return 'Minim 8 caractere';
+                  if (!RegExp(r'\d').hasMatch(v)) return 'Trebuie sa contina cel putin o cifra';
                   return null;
                 },
               ),

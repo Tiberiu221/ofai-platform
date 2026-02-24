@@ -27,11 +27,13 @@ async function awardPoints(userId, action) {
   const pts = POINTS_MAP[action];
   if (!pts || !userId) return;
   try {
-    // Dedup: skip if same action was awarded in the last 60 seconds (prevents toggle abuse)
+    // Dedup: toggle actions (favorite/follow) use 24h cooldown to prevent abuse;
+    // non-toggle actions (review/code_reveal) use 60s cooldown
     if (action !== "daily_login") {
+      const interval = (action === "favorite" || action === "follow") ? "24 hours" : "60 seconds";
       const recent = await pool.query(
         `SELECT 1 FROM points_history
-         WHERE user_id = $1 AND action_type = $2 AND created_at > NOW() - INTERVAL '60 seconds'
+         WHERE user_id = $1 AND action_type = $2 AND created_at > NOW() - INTERVAL '${interval}'
          LIMIT 1`,
         [userId, action]
       );
@@ -146,4 +148,26 @@ function getLevelInfo(points) {
   return { level: "Explorer", nextLevel: "Local Hero", progress: (points / 100) * 100, pointsNeeded: 100 };
 }
 
-module.exports = { awardPoints, updateStreak, getStreak, getLevelInfo, POINTS_MAP };
+/**
+ * Reverse points when an action is undone (e.g. review deleted)
+ * @param {number} userId
+ * @param {string} action - key from POINTS_MAP
+ */
+async function reversePoints(userId, action) {
+  const pts = POINTS_MAP[action];
+  if (!pts || !userId) return;
+  try {
+    await pool.query(
+      `UPDATE user_points SET total_points = GREATEST(total_points - $2, 0), updated_at = NOW() WHERE user_id = $1`,
+      [userId, pts]
+    );
+    await pool.query(
+      `INSERT INTO points_history (user_id, points_amount, action_type) VALUES ($1, $2, $3)`,
+      [userId, -pts, action + "_reversed"]
+    );
+  } catch (err) {
+    console.error("[gamification] reversePoints error:", err.message);
+  }
+}
+
+module.exports = { awardPoints, reversePoints, updateStreak, getStreak, getLevelInfo, POINTS_MAP };

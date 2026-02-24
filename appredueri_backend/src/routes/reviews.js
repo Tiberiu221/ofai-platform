@@ -5,6 +5,7 @@ const authenticateToken = require("../middleware/auth");
 const { optionalAuth } = require("../middleware/auth");
 const { triggerWebhook } = require("../services/n8n");
 const { parsePagination, paginatedResponse, sanitizeString } = require("../helpers/validate");
+const { reversePoints } = require("../services/gamification");
 
 // ==========================================
 // GET /reviews/business/:id - Vezi recenziile unui business
@@ -227,6 +228,9 @@ router.delete("/:id", authenticateToken, async (req, res) => {
 
         // Delete review (CASCADE sterge si review_responses)
         await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+
+        // Reverse gamification points (fire-and-forget)
+        reversePoints(user_id, "review").catch(() => {});
 
         res.status(204).send();
     } catch (err) {
