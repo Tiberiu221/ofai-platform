@@ -1,5 +1,5 @@
 # OFAI — Project Context Document
-## Ultima actualizare: 23 Februarie 2026
+## Ultima actualizare: 24 Februarie 2026
 
 > **Scop:** Document complet de context pentru sesiuni noi. Conține toată arhitectura, schema DB, API-uri, patterns și gotchas.
 > Changelog detaliat per sesiune → vezi `HANDOFF_DOCUMENT.md` (v16, 1785 linii).
@@ -241,7 +241,8 @@ Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (prefer
 - **Meta tag:** `<meta name="csrf-token">` in head.ejs
 - **Forms:** Hidden `_csrf` field
 - **AJAX:** `X-CSRF-Token` header via `getCsrfToken()` helper in main.js
-- **Skipped:** Mobile API (Bearer auth), `/api/web/clicks`, `/auth/google`, safe methods
+- **Skipped:** Mobile API (Bearer auth), `X-Client: mobile` header, `/api/web/clicks`, `/auth/google`, safe methods
+- **IMPORTANT:** Mobile app sends `X-Client: mobile` on ALL requests (incl. login/register which lack Bearer token). Without this skip, CSRF blocks mobile auth endpoints with 403
 
 ---
 
@@ -378,6 +379,7 @@ Standalone routes:
 | dealOfDayProvider | FutureProvider.autoDispose | Deal of the day offer |
 | feedProvider | FutureProvider.autoDispose | Personalized offer feed |
 | popularOffersProvider | FutureProvider | Popular offers (no auth) |
+| offersCountProvider | FutureProvider.autoDispose | Total active offers count (reads pagination.total) |
 
 ### Models
 - **User** — id, email, firstName, lastName, role, preferredCityIds[], badges[], points, profilePictureUrl, hasPassword
@@ -396,6 +398,12 @@ Standalone routes:
 - Deep linking: `https://ofai.ro/**` (autoVerify)
 - Permissions: FINE_LOCATION, COARSE_LOCATION, POST_NOTIFICATIONS
 - Release signing: `key.properties` → `ofai-release.keystore` (both gitignored)
+
+### Flutter Gotchas
+- **Card `clipBehavior: Clip.hardEdge`** — NOT antiAlias; avoids sub-pixel rendering artifacts on some GPUs
+- **Horizontal OfferCard container: `height: 300`** — card content max ~288px (image 140 + padding 12+12 + text/rows ~124). Both home_screen and offer_detail_screen use this height
+- **Countdown pill: urgency > 0 gate** — only shown when ≤7 days remaining (matches web `initCountdowns()` behavior). Urgency 0 = >7d (hidden), 1 = 3-7d (yellow), 2 = <3d (red), 3 = <24h (red bold)
+- **`Formatters.timeLeft()` / `urgencyLevel()`** — in `core/utils/formatters.dart`, shared by OfferCard + FeaturedOfferCard + OfferDetailScreen
 
 ---
 
@@ -520,6 +528,10 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 17. **`setState` must check `mounted`** before executing in async callbacks
 18. **`ref.invalidate()` before navigation** after SharedPreferences write (cached values)
 19. **Firebase background handler** must be top-level function (not method)
+20. **Card `Clip.hardEdge` not `antiAlias`** — avoids sub-pixel bleed on some GPUs (Samsung A33 tested)
+21. **Horizontal OfferCard `height: 300`** — card needs ~288px max; used in home_screen + offer_detail_screen
+22. **Countdown urgency > 0 gate** — `_buildCountdown()` returns `SizedBox.shrink()` for >7 days offers
+23. **CSRF + mobile auth** — login/register have no Bearer token; `X-Client: mobile` header skips CSRF
 20. **API base:** `https://ofai.ro` (prod), `http://10.0.2.2:4000` (emulator dev)
 
 ### Deployment
@@ -553,6 +565,11 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 - Deal of the Day (manual flag + fallback query)
 - Sort "Expiră curând" on /oferte (48 offers per page)
 - Scraping pipeline Phase 1-2 done (225 JSON files, 15 cities, LLM enrichment)
+- CSRF mobile skip via `X-Client: mobile` header (24 Feb)
+- Flutter: exact offers count on home screen (`offersCountProvider` reads `pagination.total`)
+- Flutter: countdown pill ≤7 days gate (urgency > 0 only, matches web)
+- Flutter: `Clip.hardEdge` on offer/business/featured cards (eliminates sub-pixel artifacts)
+- Flutter: horizontal card container `height: 300` (home + offer detail similar offers)
 
 ### ❌ TODO
 - **Scraping Phase 3-5:** Verify, cleanup, image assignment
@@ -657,6 +674,9 @@ All in-memory (reset on deploy). Persistence needs Redis/PG store.
 | #3 | 18 Feb | 15 issues | ALL FIXED |
 | #4 | 20 Feb | 113 issues (18C/60W/35S) | Mostly fixed (4 sprints) |
 | #5 | 23 Feb | 20 issues (7C/8W/5S) | 14 fixed, 6 remaining |
+| #6 (mobile) | 24 Feb | 5 issues | ALL FIXED |
+
+**Session 24 Feb fixes:** CSRF mobile skip, exact offers count, countdown ≤7d gate, Clip.hardEdge cards, horizontal card overflow (home + offer detail)
 
 **Still unfixed from all audits:**
 - Rate limiter persistence (needs Redis/PG store)
