@@ -22,7 +22,7 @@ class BusinessCard extends StatelessWidget {
       child: TapScale(
       onTap: () => context.push('/business/${business.id}'),
       child: Container(
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),

@@ -181,6 +181,10 @@ function csrfMiddleware(req, res, next) {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     return next();
   }
+  // Skip for mobile app requests (CSRF is browser-only; mobile uses Bearer tokens, not cookies)
+  if (req.headers['x-client'] === 'mobile') {
+    return next();
+  }
   // Skip for anonymous click tracking endpoint
   if (req.path === '/api/web/clicks' && req.method === 'POST') {
     return next();

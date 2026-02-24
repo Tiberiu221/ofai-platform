@@ -163,8 +163,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         _StatPill(
-                          value: offersAsync.when(
-                            data: (offers) => offers.isNotEmpty ? '${offers.length}+' : '-',
+                          value: ref.watch(offersCountProvider).when(
+                            data: (total) => total > 0 ? '$total' : '-',
                             loading: () => '...',
                             error: (_, __) => '-',
                           ),
@@ -383,7 +383,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                             );
                           }
                           return SizedBox(
-                            height: 280,
+                            height: 300,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),

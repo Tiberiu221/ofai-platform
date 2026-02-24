@@ -67,7 +67,7 @@ class OfferCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(color: AppColors.border),
         ),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.hardEdge,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -213,7 +213,7 @@ class OfferCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(color: AppColors.border),
         ),
-        clipBehavior: Clip.antiAlias,
+        clipBehavior: Clip.hardEdge,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -439,21 +439,20 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
-  /// Expiry countdown pill — always visible when endDate exists.
-  /// Colors: success (>7d), warning (3-7d), danger (<3d / <24h).
+  /// Expiry countdown pill — only visible when offer expires within 7 days.
+  /// Colors: warning (3-7d), danger (<3d / <24h).
   /// Critical level (<24h) uses bold text for extra emphasis.
   Widget _buildCountdown() {
     final text = Formatters.timeLeft(offer.endDate);
     if (text == null) return const SizedBox.shrink();
 
     final urgency = Formatters.urgencyLevel(offer.endDate);
+    // Only show countdown when ≤7 days remaining (urgency > 0)
+    if (urgency == 0) return const SizedBox.shrink();
 
     final Color bgColor;
     final Color textColor;
     switch (urgency) {
-      case 0:
-        bgColor = AppColors.success;
-        textColor = Colors.white;
       case 1:
         bgColor = AppColors.warning;
         textColor = AppColors.bgPrimary;

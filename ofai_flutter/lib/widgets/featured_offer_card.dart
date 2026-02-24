@@ -52,6 +52,7 @@ class FeaturedOfferCard extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          clipBehavior: Clip.hardEdge,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -213,8 +214,8 @@ class FeaturedOfferCard extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                     ],
 
-                    // Countdown row
-                    if (timeLeft != null)
+                    // Countdown row — only show within 7 days (urgency > 0)
+                    if (timeLeft != null && urgency > 0)
                       Row(
                         children: [
                           Icon(

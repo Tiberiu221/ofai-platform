@@ -209,6 +209,16 @@ final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
   }
 });
 
+// Total active offers count (lightweight — fetches 1 item, reads pagination.total)
+final offersCountProvider = FutureProvider.autoDispose<int>((ref) async {
+  final response = await ApiClient().dio.get(ApiEndpoints.offers, queryParameters: {
+    'limit': 1,
+    'page': 1,
+  });
+  final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
+  return paginated.pagination.total;
+});
+
 // Single offer detail
 final offerDetailProvider = FutureProvider.autoDispose.family<Offer, int>((ref, id) async {
   final response = await ApiClient().dio.get(ApiEndpoints.offerDetail(id));
