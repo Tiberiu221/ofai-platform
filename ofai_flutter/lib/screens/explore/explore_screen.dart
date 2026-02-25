@@ -573,16 +573,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   Position? _userPosition;
 
   String _sortLabel(String? sort) {
-    if (_isDistanceSort) return 'Distanță';
+    if (_isDistanceSort) return '📍 Distanță';
     switch (sort) {
       case 'popular':
-        return 'Populare';
+        return '🔥 Populare';
       case 'discount_desc':
-        return 'Reducere max';
+        return '↓% Reducere';
       case 'ending_soon':
-        return 'Se termină';
+        return '⏰ Expiră';
       default:
-        return 'Sortare';
+        return '🕐 Sortare';
     }
   }
 
@@ -680,11 +680,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       child: _PickerSheet(
         title: 'Sortare',
         items: [
-          _PickerItem(label: 'Implicit', value: null),
-          _PickerItem(label: 'Populare', value: 'popular'),
-          _PickerItem(label: 'Reducere maximă', value: 'discount_desc'),
-          _PickerItem(label: 'Se termină curând', value: 'ending_soon'),
-          _PickerItem(label: 'Distanță', value: 'distance'),
+          _PickerItem(label: '🕐 Implicit', value: null),
+          _PickerItem(label: '🔥 Populare', value: 'popular'),
+          _PickerItem(label: '↓% Reducere maximă', value: 'discount_desc'),
+          _PickerItem(label: '⏰ Expiră curând', value: 'ending_soon'),
+          _PickerItem(label: '📍 Distanță', value: 'distance'),
         ],
         onSelected: (value) {
           Navigator.pop(context);

@@ -1642,6 +1642,84 @@ ul, ol { list-style: none; }
   background: var(--bg-card);
 }
 
+/* ─── FILTER BAR V2 (2-row compact) ───────────────────── */
+.filter-bar-v2 {
+  margin-bottom: 4px;
+}
+
+.filter-bar-v2-sort {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.sort-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-pill-sort {
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+}
+
+.filter-pill-sort.active {
+  background: var(--accent);
+  color: #09090b;
+  border-color: var(--accent);
+}
+
+.filter-reset {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+}
+
+.filter-reset:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.filter-city-escape {
+  margin-left: auto;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.filter-city-escape a {
+  color: var(--accent);
+  font-weight: 500;
+  transition: opacity 0.2s ease;
+}
+
+.filter-city-escape a:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .filter-bar-v2-sort {
+    gap: 8px;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+  }
+  .filter-city-escape {
+    width: 100%;
+    margin-left: 0;
+    padding-top: 4px;
+  }
+}
+
 /* Offers grid */
 .offers-grid {
   display: grid;

@@ -172,40 +172,54 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Date range + progress bar
                           if (startDate != null || endDate != null) ...[
-                            Row(
-                              children: [
-                                Icon(Icons.calendar_today, size: 16, color: AppColors.textTertiary),
-                                const SizedBox(width: AppSpacing.xs),
-                                Expanded(
-                                  child: Text(
-                                    'Valabila: ${Formatters.date(startDate)} - ${Formatters.date(endDate)}',
-                                    style: AppTypography.caption,
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.bgCard,
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.calendar_today, size: 16, color: AppColors.textTertiary),
+                                      const SizedBox(width: AppSpacing.xs),
+                                      Expanded(
+                                        child: Text(
+                                          'Valabila: ${Formatters.date(startDate)} - ${Formatters.date(endDate)}',
+                                          style: AppTypography.caption,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: offer.isActive
+                                              ? AppColors.success.withValues(alpha: 0.15)
+                                              : AppColors.danger.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          offer.isActive ? 'Activa' : 'Expirata',
+                                          style: AppTypography.labelSmall.copyWith(
+                                            color: offer.isActive ? AppColors.success : AppColors.danger,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: offer.isActive
-                                        ? AppColors.success.withValues(alpha: 0.15)
-                                        : AppColors.danger.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    offer.isActive ? 'Activa' : 'Expirata',
-                                    style: AppTypography.labelSmall.copyWith(
-                                      color: offer.isActive ? AppColors.success : AppColors.danger,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                  // Expiry progress bar
+                                  if (offer.isActive && startDate != null && endDate != null) ...[
+                                    const SizedBox(height: AppSpacing.sm),
+                                    _ExpiryProgressBar(startDate: startDate, endDate: endDate),
+                                  ],
+                                ],
+                              ),
                             ),
-                            // Expiry progress bar
-                            if (offer.isActive && startDate != null && endDate != null) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              _ExpiryProgressBar(startDate: startDate, endDate: endDate),
-                            ],
-                            const SizedBox(height: AppSpacing.lg),
+                            const SizedBox(height: AppSpacing.xxl),
                           ],
 
                           // Description
@@ -214,7 +228,7 @@ class OfferDetailScreen extends ConsumerWidget {
                               offer.description!,
                               style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                             ),
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           ],
 
                           // Conditions
@@ -227,13 +241,14 @@ class OfferDetailScreen extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 color: AppColors.bgSecondary,
                                 borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                border: Border.all(color: AppColors.border),
                               ),
                               child: Text(
                                 offer.conditions!,
                                 style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           ],
 
                           // How to use the offer
@@ -288,7 +303,7 @@ class OfferDetailScreen extends ConsumerWidget {
                               ),
                             );
                           }),
-                          const SizedBox(height: AppSpacing.xxl),
+                          const SizedBox(height: 40),
 
                           // Promo Code
                           if (offer.hasPromoCode) ...[
