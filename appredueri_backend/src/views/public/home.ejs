@@ -17,11 +17,11 @@
     </div>
 
     <h1 class="hero-title text-gradient">
-      Reduceri de la business-uri <span class="accent">locale</span>
+      Cele mai bune oferte din <span class="accent">orașul tău</span>
     </h1>
 
     <p class="hero-subtitle">
-      Descoperă cele mai bune oferte de la peste <%= stats.totalBusinesses.toLocaleString('ro-RO') %> business-uri din <%= stats.totalCities %> orașe. Restaurante, beauty, fitness și multe altele.
+      Descoperă reduceri verificate la frizerii, restaurante, fitness și 12+ categorii. Gratuit. Fără reclame. Fără catch.
     </p>
 
     <div class="search-wrapper" style="margin-bottom: 40px;">
@@ -38,7 +38,35 @@
         Explorează oferte
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
-      <a href="#how-it-works" class="btn btn-secondary btn-lg">Cum funcționează?</a>
+      <a href="/pentru-business" class="btn btn-secondary btn-lg">
+        Pentru Business
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+    </div>
+
+    <!-- Trust Pillars -->
+    <div class="trust-pillars">
+      <div class="trust-pill">
+        <div class="trust-pill-icon">🔒</div>
+        <div class="trust-pill-text">
+          <div class="trust-pill-title">100% Gratuit</div>
+          <div class="trust-pill-desc">Fără costuri ascunse, fără abonamente</div>
+        </div>
+      </div>
+      <div class="trust-pill">
+        <div class="trust-pill-icon">✅</div>
+        <div class="trust-pill-text">
+          <div class="trust-pill-title">Business-uri Verificate</div>
+          <div class="trust-pill-desc">Echipa OFAI verifică fiecare partener</div>
+        </div>
+      </div>
+      <div class="trust-pill">
+        <div class="trust-pill-icon">🎯</div>
+        <div class="trust-pill-text">
+          <div class="trust-pill-title">Oferte Personalizate</div>
+          <div class="trust-pill-desc">Bazate pe orașul și preferințele tale</div>
+        </div>
+      </div>
     </div>
 
     <div class="hero-stats">
@@ -75,76 +103,45 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════
-     CATEGORIES SECTION
+     HOW IT WORKS (mutat sus — vizitatorii noi trebuie sa inteleaga flow-ul devreme)
      ═══════════════════════════════════════════════════════ -->
-<section class="section" id="categories">
+<section class="section" id="how-it-works">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label">📂 Categorii</div>
-      <h2 class="section-title text-gradient">Ce te interesează?</h2>
-      <p class="section-subtitle">Explorează oferte din categoriile care te pasionează</p>
+      <div class="section-label">✨ Simplu</div>
+      <h2 class="section-title text-gradient">Cum funcționează?</h2>
+      <p class="section-subtitle">Trei pași simpli pentru a accesa cele mai bune oferte</p>
     </div>
 
-    <div class="categories-grid">
-      <% const catIcons = {
-        'Clinica': '🏥', 'Frizerie': '💈', 'Beauty': '💄', 'Auto': '🚗',
-        'Cafenea': '☕', 'Fitness': '💪', 'Spa & Wellness': '🧖',
-        'Optica': '👓', 'Farmacie': '💊', 'Veterinar': '🐾', 'Stomatologie': '🦷',
-        'Florarie': '🌸', 'Curatatorie': '👔', 'Foto & Video': '📸', 'Magazine Online': '🛒'
-      }; %>
-      <% categories.forEach((cat, i) => { %>
-        <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= Math.min(i % 5 + 1, 5) %>">
-          <div class="category-icon"><%= catIcons[cat.name] || '📦' %></div>
-          <div class="category-name"><%= cat.name %></div>
-          <div class="category-count"><%= cat.offer_count || 0 %> oferte</div>
-        </a>
-      <% }); %>
+    <div class="steps-grid">
+      <div class="step-card reveal reveal-delay-1">
+        <div class="step-number">1</div>
+        <h3 class="step-title">Alege orașul și categoriile</h3>
+        <p class="step-desc">Setează preferințele tale în 30 de secunde. Primești doar oferte relevante pentru tine.</p>
+      </div>
+      <div class="step-card reveal reveal-delay-2">
+        <div class="step-number">2</div>
+        <h3 class="step-title">Salvează și urmărește</h3>
+        <p class="step-desc">Adaugă ofertele la favorite. Urmărește business-urile preferate și primești notificări când apar reduceri noi.</p>
+      </div>
+      <div class="step-card reveal reveal-delay-3">
+        <div class="step-number">3</div>
+        <h3 class="step-title">Folosește reducerea</h3>
+        <p class="step-desc">Mergi la business, arată codul promo sau menționează oferta. Atât de simplu!</p>
+      </div>
     </div>
-  </div>
-</section>
 
-<!-- ═══════════════════════════════════════════════════════
-     NEW OFFERS FROM FOLLOWED BUSINESSES
-     ═══════════════════════════════════════════════════════ -->
-<% if (followedOffers && followedOffers.length > 0) { %>
-<section class="section" style="padding-top: 48px; padding-bottom: 48px;">
-  <div class="container">
-    <div class="section-header reveal">
-      <div class="section-label">🔔 Pentru tine</div>
-      <h2 class="section-title" style="font-size: 1.5rem;">Noutăți de la business-urile tale</h2>
+    <% if (!webUser) { %>
+    <div style="text-align: center; margin-top: 40px;" class="reveal reveal-delay-4">
+      <a href="/register" class="btn btn-secondary btn-lg">
+        Creează cont gratuit
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+      </a>
     </div>
-    <div class="offers-grid offers-grid-auto">
-      <% followedOffers.forEach((fo, i) => { %>
-        <a href="/oferta/<%= fo.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 4) %>">
-          <div class="offer-image-wrapper">
-            <% if (fo.image_url) { %>
-              <img src="<%= fo.image_url %>" alt="<%= fo.title %>" class="offer-image" loading="lazy" width="400" height="240">
-            <% } else { %>
-              <div class="offer-image-placeholder">
-                <span class="offer-placeholder-letter"><%= fo.business_name.charAt(0) %></span>
-              </div>
-            <% } %>
-            <div class="offer-badge">
-              <% if (fo.discount_type === 'percent' || fo.discount_type === 'percentage') { %>
-                -<%= fo.discount_value %>%
-              <% } else { %>
-                <%= fo.discount_value %> lei
-              <% } %>
-            </div>
-            <% if (fo.end_date) { %>
-              <div class="countdown-overlay" data-end-date="<%= new Date(fo.end_date).toISOString() %>"></div>
-            <% } %>
-          </div>
-          <div class="offer-content">
-            <div class="offer-title"><%= fo.title %></div>
-            <div class="offer-business"><%= fo.business_name %></div>
-          </div>
-        </a>
-      <% }); %>
-    </div>
+    <% } %>
+
   </div>
 </section>
-<% } %>
 
 <!-- ═══════════════════════════════════════════════════════
      FEATURED OFFERS — Bento Grid
@@ -360,35 +357,76 @@
 <% } %>
 
 <!-- ═══════════════════════════════════════════════════════
-     HOW IT WORKS
+     CATEGORIES SECTION (mutat dupa oferte — proof first, taxonomy later)
      ═══════════════════════════════════════════════════════ -->
-<section class="section" id="how-it-works">
+<section class="section" id="categories">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label">✨ Simplu</div>
-      <h2 class="section-title text-gradient">Cum funcționează?</h2>
-      <p class="section-subtitle">Trei pași simpli pentru a accesa cele mai bune oferte</p>
+      <div class="section-label">📂 Categorii</div>
+      <h2 class="section-title text-gradient">Ce te interesează?</h2>
+      <p class="section-subtitle">Explorează oferte din categoriile care te pasionează</p>
     </div>
 
-    <div class="steps-grid">
-      <div class="step-card reveal reveal-delay-1">
-        <div class="step-number">1</div>
-        <h3 class="step-title">Descoperă</h3>
-        <p class="step-desc">Caută oferte în orașul tău sau explorează pe categorii. Filtrează după ce te interesează.</p>
-      </div>
-      <div class="step-card reveal reveal-delay-2">
-        <div class="step-number">2</div>
-        <h3 class="step-title">Salvează</h3>
-        <p class="step-desc">Adaugă ofertele preferate la favorite și urmărește business-urile care te interesează.</p>
-      </div>
-      <div class="step-card reveal reveal-delay-3">
-        <div class="step-number">3</div>
-        <h3 class="step-title">Profită</h3>
-        <p class="step-desc">Mergi la business și prezintă oferta. Bucură-te de reducere!</p>
-      </div>
+    <div class="categories-grid">
+      <% const catIcons = {
+        'Clinica': '🏥', 'Frizerie': '💈', 'Beauty': '💄', 'Auto': '🚗',
+        'Cafenea': '☕', 'Fitness': '💪', 'Spa & Wellness': '🧖',
+        'Optica': '👓', 'Farmacie': '💊', 'Veterinar': '🐾', 'Stomatologie': '🦷',
+        'Florarie': '🌸', 'Curatatorie': '👔', 'Foto & Video': '📸', 'Magazine Online': '🛒'
+      }; %>
+      <% categories.forEach((cat, i) => { %>
+        <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= Math.min(i % 5 + 1, 5) %>">
+          <div class="category-icon"><%= catIcons[cat.name] || '📦' %></div>
+          <div class="category-name"><%= cat.name %></div>
+          <div class="category-count"><%= cat.offer_count || 0 %> oferte</div>
+        </a>
+      <% }); %>
     </div>
   </div>
 </section>
+
+<!-- ═══════════════════════════════════════════════════════
+     NEW OFFERS FROM FOLLOWED BUSINESSES
+     ═══════════════════════════════════════════════════════ -->
+<% if (followedOffers && followedOffers.length > 0) { %>
+<section class="section" style="padding-top: 48px; padding-bottom: 48px;">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">🔔 Pentru tine</div>
+      <h2 class="section-title" style="font-size: 1.5rem;">Noutăți de la business-urile tale</h2>
+    </div>
+    <div class="offers-grid offers-grid-auto">
+      <% followedOffers.forEach((fo, i) => { %>
+        <a href="/oferta/<%= fo.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 4) %>">
+          <div class="offer-image-wrapper">
+            <% if (fo.image_url) { %>
+              <img src="<%= fo.image_url %>" alt="<%= fo.title %>" class="offer-image" loading="lazy" width="400" height="240">
+            <% } else { %>
+              <div class="offer-image-placeholder">
+                <span class="offer-placeholder-letter"><%= fo.business_name.charAt(0) %></span>
+              </div>
+            <% } %>
+            <div class="offer-badge">
+              <% if (fo.discount_type === 'percent' || fo.discount_type === 'percentage') { %>
+                -<%= fo.discount_value %>%
+              <% } else { %>
+                <%= fo.discount_value %> lei
+              <% } %>
+            </div>
+            <% if (fo.end_date) { %>
+              <div class="countdown-overlay" data-end-date="<%= new Date(fo.end_date).toISOString() %>"></div>
+            <% } %>
+          </div>
+          <div class="offer-content">
+            <div class="offer-title"><%= fo.title %></div>
+            <div class="offer-business"><%= fo.business_name %></div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
 
 <!-- ═══════════════════════════════════════════════════════
      CITIES SECTION
@@ -447,12 +485,27 @@
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-box-glow"></div>
-      <h2 class="cta-title text-gradient">Ai un business? Adaugă-l pe OFAI</h2>
+      <h2 class="cta-title text-gradient">Ai un business? Listează-te gratuit</h2>
       <p class="cta-subtitle">
-        Crește-ți vizibilitatea și atrage clienți noi cu oferte și reduceri atractive. Gratuit.
+        Crește-ți vizibilitatea și atrage clienți noi cu reduceri atractive.
       </p>
+      <div class="cta-benefits">
+        <div class="cta-benefit">
+          <span class="cta-benefit-icon">📊</span>
+          <span>Dashboard propriu</span>
+        </div>
+        <div class="cta-benefit">
+          <span class="cta-benefit-icon">⭐</span>
+          <span>Recenzii de la clienți</span>
+        </div>
+        <div class="cta-benefit">
+          <span class="cta-benefit-icon">📈</span>
+          <span>Statistici de audiență</span>
+        </div>
+      </div>
+      <p class="cta-guarantee">Fără comisioane · Fără contracte · Anulează oricând</p>
       <a href="/pentru-business" class="btn btn-primary btn-lg">
-        Înregistrează business-ul
+        Înscrie-ți afacerea
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
     </div>

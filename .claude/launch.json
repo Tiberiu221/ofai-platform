@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "visual-overview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "require('http').createServer((q,r)=>{const fs=require('fs'),p=require('path');let f=p.join('docs',q.url==='/'?'ofai-visual-overview.html':q.url);fs.readFile(f,(e,d)=>{if(e){r.writeHead(404);r.end('Not found')}else{r.writeHead(200,{'Content-Type':'text/html'});r.end(d)}})}).listen(8877,()=>console.log('http://localhost:8877'))"],
+      "port": 8877
+    },
+    {
+      "name": "backend-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/index.js"],
+      "port": 4000,
+      "cwd": "appredueri_backend"
+    }
+  ]
+}

@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OFAI — Platform Architecture Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ============ THEME ============ */
+  :root {
+    --font-heading: 'DM Serif Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+    /* Dark theme — OFAI brand */
+    --bg: #06060a;
+    --bg-mesh-1: rgba(251, 146, 60, 0.04);
+    --bg-mesh-2: rgba(99, 102, 241, 0.03);
+    --surface: #0f0f14;
+    --surface2: #16161e;
+    --surface-elevated: #1a1a24;
+    --border: rgba(255, 255, 255, 0.06);
+    --border-bright: rgba(255, 255, 255, 0.12);
+    --text: #eee8e0;
+    --text-dim: #8a8494;
+
+    --accent: #fb923c;
+    --accent-dim: rgba(251, 146, 60, 0.10);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96, 165, 250, 0.10);
+    --green: #4ade80;
+    --green-dim: rgba(74, 222, 128, 0.08);
+    --purple: #a78bfa;
+    --purple-dim: rgba(167, 139, 250, 0.10);
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45, 212, 191, 0.10);
+    --rose: #fb7185;
+    --rose-dim: rgba(251, 113, 133, 0.10);
+    --yellow: #fbbf24;
+    --yellow-dim: rgba(251, 191, 36, 0.10);
+    --red: #f87171;
+    --red-dim: rgba(248, 113, 113, 0.10);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #faf8f6;
+      --bg-mesh-1: rgba(251, 146, 60, 0.05);
+      --bg-mesh-2: rgba(99, 102, 241, 0.04);
+      --surface: #ffffff;
+      --surface2: #f5f0ec;
+      --surface-elevated: #fff9f5;
+      --border: rgba(0, 0, 0, 0.07);
+      --border-bright: rgba(0, 0, 0, 0.14);
+      --text: #1c1917;
+      --text-dim: #78716c;
+
+      --accent: #ea580c;
+      --accent-dim: rgba(234, 88, 12, 0.07);
+      --blue: #2563eb;
+      --blue-dim: rgba(37, 99, 235, 0.07);
+      --green: #16a34a;
+      --green-dim: rgba(22, 163, 74, 0.07);
+      --purple: #7c3aed;
+      --purple-dim: rgba(124, 58, 237, 0.07);
+      --teal: #0d9488;
+      --teal-dim: rgba(13, 148, 136, 0.07);
+      --rose: #e11d48;
+      --rose-dim: rgba(225, 29, 72, 0.07);
+      --yellow: #ca8a04;
+      --yellow-dim: rgba(202, 138, 4, 0.07);
+      --red: #dc2626;
+      --red-dim: rgba(220, 38, 38, 0.07);
+    }
+  }
+
+  /* ============ RESET + BASE ============ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 15% 0%, var(--bg-mesh-1) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 100%, var(--bg-mesh-2) 0%, transparent 40%);
+    color: var(--text);
+    font-family: var(--font-body);
+    padding: 48px 40px;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+
+  /* ============ ANIMATIONS ============ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate {
+    animation: fadeUp 0.45s ease-out both;
+    animation-delay: calc(var(--i, 0) * 0.055s);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-delay: 0ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ============ HEADER ============ */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .header__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .header__logo-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    font-family: var(--font-heading);
+    box-shadow: 0 4px 24px rgba(251, 146, 60, 0.25);
+  }
+
+  .header__logo-text {
+    font-family: var(--font-heading);
+    font-size: 36px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  h1 {
+    font-family: var(--font-heading);
+    font-size: 42px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ============ SECTION DIVIDER ============ */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 48px 0 28px;
+  }
+
+  .divider__line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .divider__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  /* ============ KPI ROW ============ */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .kpi-card:hover {
+    border-color: var(--border-bright);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .kpi-card__value {
+    font-family: var(--font-heading);
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .kpi-card__label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+
+  /* ============ SECTION CARD ============ */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .section--hero {
+    background: var(--surface-elevated);
+    border-color: color-mix(in srgb, var(--border) 50%, var(--accent) 50%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    padding: 28px 32px;
+  }
+
+  .section--recessed {
+    background: var(--surface2);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Color variants */
+  .c-accent  .section-label { color: var(--accent); }
+  .c-accent  .section-label .dot { background: var(--accent); }
+  .c-blue    .section-label { color: var(--blue); }
+  .c-blue    .section-label .dot { background: var(--blue); }
+  .c-green   .section-label { color: var(--green); }
+  .c-green   .section-label .dot { background: var(--green); }
+  .c-purple  .section-label { color: var(--purple); }
+  .c-purple  .section-label .dot { background: var(--purple); }
+  .c-teal    .section-label { color: var(--teal); }
+  .c-teal    .section-label .dot { background: var(--teal); }
+  .c-rose    .section-label { color: var(--rose); }
+  .c-rose    .section-label .dot { background: var(--rose); }
+  .c-yellow  .section-label { color: var(--yellow); }
+  .c-yellow  .section-label .dot { background: var(--yellow); }
+
+  /* ============ TECH STACK GRID ============ */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 10px;
+  }
+
+  .stack-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .stack-chip:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+
+  .stack-chip__icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .stack-chip__name {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .stack-chip__role {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+  }
+
+  /* ============ FLOW ARROW ============ */
+  .flow-arrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 6px 0;
+  }
+
+  .flow-arrow svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: var(--border-bright);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ============ INNER GRID ============ */
+  .inner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .inner-grid--3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .inner-grid--4 {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  .inner-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+
+  .inner-card:hover { border-color: var(--border-bright); }
+
+  .inner-card .title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .inner-card .desc {
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .inner-card code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .inner-card .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+  }
+
+  .tag--cookie   { background: var(--accent-dim); color: var(--accent); }
+  .tag--bearer   { background: var(--blue-dim); color: var(--blue); }
+  .tag--basic    { background: var(--purple-dim); color: var(--purple); }
+  .tag--google   { background: var(--green-dim); color: var(--green); }
+
+  /* ============ ARCHITECTURE DIAGRAM ============ */
+  .arch-diagram {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  .arch-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .arch-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 24px;
+  }
+
+  .arch-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: center;
+    min-width: 160px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .arch-box:hover {
+    border-color: var(--border-bright);
+    transform: scale(1.02);
+  }
+
+  .arch-box__icon { font-size: 28px; margin-bottom: 6px; }
+  .arch-box__name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .arch-box__desc { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+
+  .arch-box--core {
+    background: var(--surface-elevated);
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(251, 146, 60, 0.08);
+  }
+
+  .arch-box--db {
+    border-color: var(--blue);
+    box-shadow: 0 0 20px rgba(96, 165, 250, 0.06);
+  }
+
+  .arch-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--border-bright);
+    position: relative;
+  }
+
+  .arch-connector::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: -3px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 6px solid var(--border-bright);
+  }
+
+  .arch-connector--left::after {
+    right: auto;
+    left: -4px;
+    border-left: none;
+    border-right: 6px solid var(--border-bright);
+  }
+
+  .arch-v-connector {
+    width: 2px;
+    height: 20px;
+    background: var(--border-bright);
+    position: relative;
+  }
+
+  .arch-v-connector::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: -3px;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid var(--border-bright);
+  }
+
+  /* ============ PIPELINE ============ */
+  .pipeline {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .pipeline::-webkit-scrollbar { height: 4px; }
+  .pipeline::-webkit-scrollbar-track { background: transparent; }
+  .pipeline::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .pipeline-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    min-width: 130px;
+    flex-shrink: 0;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .pipeline-step:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+
+  .pipeline-step .step-num {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .pipeline-step .step-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .pipeline-step .step-detail {
+    font-size: 10px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+
+  .pipeline-step--accent  { border-color: var(--accent-dim); }
+  .pipeline-step--accent  .step-num { color: var(--accent); }
+  .pipeline-step--blue    { border-color: var(--blue-dim); }
+  .pipeline-step--blue    .step-num { color: var(--blue); }
+  .pipeline-step--green   { border-color: var(--green-dim); }
+  .pipeline-step--green   .step-num { color: var(--green); }
+  .pipeline-step--purple  { border-color: var(--purple-dim); }
+  .pipeline-step--purple  .step-num { color: var(--purple); }
+  .pipeline-step--teal    { border-color: var(--teal-dim); }
+  .pipeline-step--teal    .step-num { color: var(--teal); }
+  .pipeline-step--rose    { border-color: var(--rose-dim); }
+  .pipeline-step--rose    .step-num { color: var(--rose); }
+
+  .pipeline-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 3px;
+    color: var(--border-bright);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* ============ TABLES ============ */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .data-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .data-table th {
+    background: var(--surface2);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--border-bright);
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .data-table tbody tr:last-child td { border-bottom: none; }
+
+  .data-table tbody tr:nth-child(even) {
+    background: var(--accent-dim);
+  }
+
+  .data-table tbody tr {
+    transition: background 0.15s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: var(--border);
+  }
+
+  .data-table code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .data-table small {
+    display: block;
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .data-table tfoot td {
+    background: var(--surface2);
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border-top: 2px solid var(--border-bright);
+    border-bottom: none;
+    padding: 12px 16px;
+  }
+
+  /* ============ STATUS BADGES ============ */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  .status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .status--done    { background: var(--green-dim); color: var(--green); }
+  .status--todo    { background: var(--yellow-dim); color: var(--yellow); }
+  .status--issue   { background: var(--red-dim); color: var(--red); }
+
+  /* ============ NODE LIST ============ */
+  .node-list {
+    list-style: none;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+
+  .node-list li {
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .node-list li::before {
+    content: '>';
+    color: var(--text-dim);
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    position: absolute;
+    left: 0;
+  }
+
+  .node-list code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ============ CALLOUT ============ */
+  .callout {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  .callout strong { color: var(--text); font-weight: 600; }
+
+  .callout code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ============ COLLAPSIBLE ============ */
+  details.collapsible {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  details.collapsible summary {
+    padding: 14px 20px;
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+    transition: background 0.15s ease;
+  }
+
+  details.collapsible summary:hover { background: var(--surface-elevated); }
+  details.collapsible summary::-webkit-details-marker { display: none; }
+
+  details.collapsible summary::before {
+    content: '\25B8';
+    font-size: 11px;
+    color: var(--text-dim);
+    transition: transform 0.15s ease;
+  }
+
+  details.collapsible[open] summary::before { transform: rotate(90deg); }
+
+  details.collapsible .collapsible__body {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+  }
+
+  details.collapsible .collapsible__body strong { color: var(--text); font-weight: 600; }
+
+  details.collapsible .collapsible__body code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ============ LEGEND ============ */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  /* ============ THREE COL ============ */
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ============ BADGE GRID ============ */
+  .badge-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  .badge-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 10px;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .badge-item:hover {
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+
+  .badge-item__icon { font-size: 24px; margin-bottom: 4px; }
+  .badge-item__name { font-size: 11px; font-weight: 600; }
+  .badge-item__trigger { font-size: 9px; color: var(--text-dim); margin-top: 2px; font-family: var(--font-mono); }
+
+  /* ============ FOOTER ============ */
+  .footer {
+    text-align: center;
+    padding: 40px 0 0;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: var(--font-mono);
+  }
+
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .footer a:hover { text-decoration: underline; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .arch-diagram { grid-template-columns: 1fr; gap: 12px; }
+    .arch-center { padding: 0; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .arch-connector, .arch-connector--left { display: none; }
+    .three-col { grid-template-columns: 1fr; }
+    .inner-grid--3, .inner-grid--4 { grid-template-columns: 1fr 1fr; }
+    .badge-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 16px; }
+    h1 { font-size: 28px; }
+    .inner-grid, .two-col { grid-template-columns: 1fr; }
+    .inner-grid--3, .inner-grid--4 { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .pipeline { flex-wrap: wrap; gap: 6px; }
+    .pipeline-arrow { display: none; }
+    .badge-grid { grid-template-columns: repeat(2, 1fr); }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ==================== HEADER ==================== -->
+  <div class="header animate" style="--i:0">
+    <div class="header__logo">
+      <div class="header__logo-icon">O</div>
+      <span class="header__logo-text">OFAI</span>
+    </div>
+    <h1>Platform Architecture</h1>
+    <p class="subtitle">ofai.ro &mdash; platforma de oferte si reduceri &mdash; feb 2026</p>
+  </div>
+
+  <!-- ==================== KPI ROW ==================== -->
+  <div class="kpi-row">
+    <div class="kpi-card animate" style="--i:1">
+      <div class="kpi-card__value" style="color:var(--accent)">20+</div>
+      <div class="kpi-card__label">Pagini Web</div>
+    </div>
+    <div class="kpi-card animate" style="--i:2">
+      <div class="kpi-card__value" style="color:var(--blue)">20+</div>
+      <div class="kpi-card__label">Ecrane Flutter</div>
+    </div>
+    <div class="kpi-card animate" style="--i:3">
+      <div class="kpi-card__value" style="color:var(--green)">35+</div>
+      <div class="kpi-card__label">Tabele DB</div>
+    </div>
+    <div class="kpi-card animate" style="--i:4">
+      <div class="kpi-card__value" style="color:var(--purple)">70+</div>
+      <div class="kpi-card__label">API Endpoints</div>
+    </div>
+    <div class="kpi-card animate" style="--i:5">
+      <div class="kpi-card__value" style="color:var(--teal)">7</div>
+      <div class="kpi-card__label">Audituri</div>
+    </div>
+    <div class="kpi-card animate" style="--i:6">
+      <div class="kpi-card__value" style="color:var(--rose)">10</div>
+      <div class="kpi-card__label">Badge-uri</div>
+    </div>
+  </div>
+
+  <!-- ==================== TECH STACK ==================== -->
+  <div class="divider animate" style="--i:7">
+    <div class="divider__line"></div>
+    <div class="divider__label">Tech Stack</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="section section--hero animate" style="--i:8">
+    <div class="stack-grid">
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#9881;</span>
+        <div class="stack-chip__name">Express 5.1</div>
+        <div class="stack-chip__role">Backend API</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128450;</span>
+        <div class="stack-chip__name">PostgreSQL</div>
+        <div class="stack-chip__role">Database</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128241;</span>
+        <div class="stack-chip__name">Flutter 3.41</div>
+        <div class="stack-chip__role">Mobile App</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#127760;</span>
+        <div class="stack-chip__name">EJS</div>
+        <div class="stack-chip__role">Web Templates</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128642;</span>
+        <div class="stack-chip__name">Railway</div>
+        <div class="stack-chip__role">Hosting</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#9729;</span>
+        <div class="stack-chip__name">Cloudflare</div>
+        <div class="stack-chip__role">CDN + DNS</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128247;</span>
+        <div class="stack-chip__name">Cloudinary</div>
+        <div class="stack-chip__role">Imagini</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128276;</span>
+        <div class="stack-chip__name">Firebase</div>
+        <div class="stack-chip__role">Push FCM</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#9993;</span>
+        <div class="stack-chip__name">Resend</div>
+        <div class="stack-chip__role">Email</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#129302;</span>
+        <div class="stack-chip__name">Claude AI</div>
+        <div class="stack-chip__role">Review + Validare</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128027;</span>
+        <div class="stack-chip__name">Sentry</div>
+        <div class="stack-chip__role">Error Tracking</div>
+      </div>
+      <div class="stack-chip">
+        <span class="stack-chip__icon">&#128260;</span>
+        <div class="stack-chip__name">n8n</div>
+        <div class="stack-chip__role">Automatizare</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ARCHITECTURE ==================== -->
+  <div class="divider animate" style="--i:9">
+    <div class="divider__line"></div>
+    <div class="divider__label">Arhitectura Sistemului</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="section animate" style="--i:10">
+    <div class="arch-diagram">
+      <!-- Left: Web -->
+      <div class="arch-col">
+        <div class="arch-box">
+          <div class="arch-box__icon">&#128187;</div>
+          <div class="arch-box__name">Web Browser</div>
+          <div class="arch-box__desc">EJS + main.css + main.js</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box__icon">&#128188;</div>
+          <div class="arch-box__name">Portal Business</div>
+          <div class="arch-box__desc">Dashboard + Analytics</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box__icon">&#128272;</div>
+          <div class="arch-box__name">Admin Panel</div>
+          <div class="arch-box__desc">CRUD + Basic Auth</div>
+        </div>
+      </div>
+
+      <!-- Center: Core -->
+      <div class="arch-center">
+        <div class="arch-connector arch-connector--left"></div>
+        <div class="arch-box arch-box--core">
+          <div class="arch-box__icon">&#9889;</div>
+          <div class="arch-box__name">Express Server</div>
+          <div class="arch-box__desc">Routes + Middleware + Services</div>
+        </div>
+        <div class="arch-v-connector"></div>
+        <div class="arch-box arch-box--db">
+          <div class="arch-box__icon">&#128450;</div>
+          <div class="arch-box__name">PostgreSQL</div>
+          <div class="arch-box__desc">35+ tabele, SSL, pool 20</div>
+        </div>
+        <div class="arch-connector"></div>
+      </div>
+
+      <!-- Right: Mobile -->
+      <div class="arch-col">
+        <div class="arch-box">
+          <div class="arch-box__icon">&#128241;</div>
+          <div class="arch-box__name">Flutter App</div>
+          <div class="arch-box__desc">Riverpod + GoRouter + Dio</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box__icon">&#128276;</div>
+          <div class="arch-box__name">Firebase</div>
+          <div class="arch-box__desc">FCM Push + Deep Links</div>
+        </div>
+        <div class="arch-box">
+          <div class="arch-box__icon">&#128274;</div>
+          <div class="arch-box__name">Secure Storage</div>
+          <div class="arch-box__desc">JWT + Refresh Tokens</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== AUTH SYSTEMS ==================== -->
+  <div class="divider animate" style="--i:11">
+    <div class="divider__line"></div>
+    <div class="divider__label">Sisteme de Autentificare</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="inner-grid inner-grid--4 animate" style="--i:12">
+    <div class="inner-card">
+      <div class="title">&#127760; Web Auth</div>
+      <div class="desc">
+        Cookie JWT (<code>ofai_token</code>) cu auto-refresh transparent.
+        HttpOnly, Secure, SameSite=lax. CSRF double-submit.
+      </div>
+      <div class="tag tag--cookie">Cookie 24h</div>
+    </div>
+    <div class="inner-card">
+      <div class="title">&#128241; Mobile Auth</div>
+      <div class="desc">
+        Bearer token in header, refresh token rotativ in DB.
+        Dio interceptor cu Completer anti-race.
+      </div>
+      <div class="tag tag--bearer">Bearer JWT</div>
+    </div>
+    <div class="inner-card">
+      <div class="title">&#128188; Portal Auth</div>
+      <div class="desc">
+        Cookie auth + verificare ownership din
+        <code>user_businesses</code>. Admin bypass pentru toate.
+      </div>
+      <div class="tag tag--cookie">Cookie + Own</div>
+    </div>
+    <div class="inner-card">
+      <div class="title">&#128274; Google OAuth</div>
+      <div class="desc">
+        Google Identity Services (One Tap) pe web,
+        <code>google_sign_in</code> pe Flutter. Account linking automat.
+      </div>
+      <div class="tag tag--google">OAuth 2.0</div>
+    </div>
+  </div>
+
+  <!-- ==================== USER JOURNEY ==================== -->
+  <div class="divider animate" style="--i:13">
+    <div class="divider__line"></div>
+    <div class="divider__label">User Journey</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="section c-accent animate" style="--i:14">
+    <div class="section-label"><span class="dot"></span> Parcursul Utilizatorului</div>
+    <div class="pipeline">
+      <div class="pipeline-step pipeline-step--accent">
+        <div class="step-num">01</div>
+        <div class="step-name">Inregistrare</div>
+        <div class="step-detail">Email / Google<br>OAuth</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step pipeline-step--blue">
+        <div class="step-num">02</div>
+        <div class="step-name">Onboarding</div>
+        <div class="step-detail">Oras + Categorie<br>preferinte</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step pipeline-step--green">
+        <div class="step-num">03</div>
+        <div class="step-name">Browse</div>
+        <div class="step-detail">Feed personalizat<br>Cautare + Filtre</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step pipeline-step--purple">
+        <div class="step-num">04</div>
+        <div class="step-name">Engage</div>
+        <div class="step-detail">Salvare, Follow<br>Reveal cod promo</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step pipeline-step--teal">
+        <div class="step-num">05</div>
+        <div class="step-name">Recenzie</div>
+        <div class="step-detail">Rating + Comment<br>AI Summary</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-step pipeline-step--rose">
+        <div class="step-num">06</div>
+        <div class="step-name">Gamificare</div>
+        <div class="step-detail">Puncte, Badge-uri<br>Streak, Level-up</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DATABASE SCHEMA ==================== -->
+  <div class="divider animate" style="--i:15">
+    <div class="divider__line"></div>
+    <div class="divider__label">Schema Bazei de Date</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="three-col animate" style="--i:16">
+    <div class="section c-accent">
+      <div class="section-label"><span class="dot"></span> Core</div>
+      <ul class="node-list">
+        <li><code>users</code> email, password, Google, role, preferences</li>
+        <li><code>businesses</code> name, address, coords, logo, is_verified</li>
+        <li><code>offers</code> title, discount, dates, booking, promo codes</li>
+        <li><code>reviews</code> rating 1-5, comment, response, AI summary</li>
+        <li><code>categories</code> 15 categorii cu icoane</li>
+        <li><code>cities</code> orase disponibile</li>
+      </ul>
+    </div>
+    <div class="section c-blue">
+      <div class="section-label"><span class="dot"></span> Relatii</div>
+      <ul class="node-list">
+        <li><code>favorite_offers</code> user &harr; offer</li>
+        <li><code>followed_businesses</code> user &harr; business</li>
+        <li><code>user_businesses</code> ownership M:N</li>
+        <li><code>promo_codes</code> 1:N per oferta</li>
+        <li><code>code_reveals</code> user reveal tracking</li>
+        <li><code>business_locations</code> multi-locatie</li>
+        <li><code>business_images</code> galerie Cloudinary</li>
+      </ul>
+    </div>
+    <div class="section c-green">
+      <div class="section-label"><span class="dot"></span> Analytics + Gamification</div>
+      <ul class="node-list">
+        <li><code>business_clicks</code> 12 action types (GDPR)</li>
+        <li><code>business_views</code> vizite pagina</li>
+        <li><code>offer_views</code> vizite oferta</li>
+        <li><code>badge_definitions</code> 10 badge-uri</li>
+        <li><code>user_badges</code> earned_at</li>
+        <li><code>user_points</code> total + history</li>
+        <li><code>user_login_streaks</code> streak tracking</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== SERVICES LAYER ==================== -->
+  <div class="divider animate" style="--i:17">
+    <div class="divider__line"></div>
+    <div class="divider__label">Backend Services</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="inner-grid inner-grid--3 animate" style="--i:18">
+    <div class="inner-card">
+      <div class="title" style="color:var(--accent)">&#128276; Push Notifications</div>
+      <div class="desc">Dual routing FCM + Expo legacy. Token registration per-device. Deep link handling pe Flutter.</div>
+    </div>
+    <div class="inner-card">
+      <div class="title" style="color:var(--blue)">&#128247; Cloudinary</div>
+      <div class="desc">Upload, resize (300x300 avatar, logo 400x400), delete, WebP auto-format. Max 8 gallery images.</div>
+    </div>
+    <div class="inner-card">
+      <div class="title" style="color:var(--green)">&#9993; Resend Email</div>
+      <div class="desc">Welcome, password reset (6-digit code), business notifications. Template-uri inline HTML.</div>
+    </div>
+    <div class="inner-card">
+      <div class="title" style="color:var(--purple)">&#129302; Claude Haiku AI</div>
+      <div class="desc">Review summarization pe business detail, AI validation score pe business request sign-up.</div>
+    </div>
+    <div class="inner-card">
+      <div class="title" style="color:var(--teal)">&#127942; Gamification</div>
+      <div class="desc">Points award (fire-and-forget), badge checks, streak tracking. 10 badges, 5 levels.</div>
+    </div>
+    <div class="inner-card">
+      <div class="title" style="color:var(--rose)">&#128338; Cron Jobs</div>
+      <div class="desc">6 scheduled tasks: token cleanup, offer deactivation, audit log rotation. node-cron in-process.</div>
+    </div>
+  </div>
+
+  <!-- ==================== FLUTTER NAVIGATION ==================== -->
+  <div class="divider animate" style="--i:19">
+    <div class="divider__line"></div>
+    <div class="divider__label">Flutter App Navigation</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="section c-blue animate" style="--i:20">
+    <div class="section-label"><span class="dot"></span> GoRouter + Riverpod</div>
+    <div class="two-col">
+      <div>
+        <div class="inner-card" style="margin-bottom:10px">
+          <div class="title">&#127968; ShellRoute (Bottom Nav)</div>
+          <div class="desc">
+            <code>/</code> Acasa &mdash; Deal of Day, trending, popular<br>
+            <code>/explore</code> Explorare &mdash; oferte + business-uri cu filtre<br>
+            <code>/collection</code> Colectia Mea &mdash; favorite + followed<br>
+            <code>/account</code> Cont &mdash; profil, badges, setari
+          </div>
+        </div>
+        <div class="inner-card">
+          <div class="title">&#128194; Ecrane Standalone</div>
+          <div class="desc">
+            <code>/offer/:id</code> Detaliu oferta (slide-up)<br>
+            <code>/business/:id</code> Detaliu business (slide-up)<br>
+            <code>/login</code> <code>/register</code> <code>/onboarding</code><br>
+            <code>/categories</code> <code>/cities</code> <code>/preferences</code>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="inner-card" style="margin-bottom:10px">
+          <div class="title">&#128202; State Management</div>
+          <div class="desc">
+            <code>authProvider</code> &mdash; login, register, Google, profile<br>
+            <code>offersListProvider</code> &mdash; filters, pagination, total<br>
+            <code>favoritesProvider</code> &mdash; optimistic toggle<br>
+            <code>gamificationProvider</code> &mdash; points, streaks, badges
+          </div>
+        </div>
+        <div class="inner-card">
+          <div class="title">&#128225; Networking</div>
+          <div class="desc">
+            <strong>Dio</strong> client cu interceptor auth<br>
+            Auto-refresh la 401 (Completer anti-race)<br>
+            <code>FlutterSecureStorage</code> pentru tokens<br>
+            Base URL: <code>https://ofai.ro</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== API ENDPOINTS ==================== -->
+  <div class="divider animate" style="--i:21">
+    <div class="divider__line"></div>
+    <div class="divider__label">API Endpoints</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="table-wrap animate" style="--i:22">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Grup</th>
+            <th>Rute</th>
+            <th>Auth</th>
+            <th>Descriere</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="--i:23">
+            <td><strong>Auth</strong></td>
+            <td><code>/auth/*</code><small>8 endpoints</small></td>
+            <td>None / Refresh</td>
+            <td>Register, Login, Google OAuth, Refresh, Forgot/Reset Password, Logout</td>
+          </tr>
+          <tr style="--i:24">
+            <td><strong>Users</strong></td>
+            <td><code>/users/*</code><small>8 endpoints</small></td>
+            <td>Bearer</td>
+            <td>Profile CRUD, picture upload, password change, GDPR export/delete, gamification</td>
+          </tr>
+          <tr style="--i:25">
+            <td><strong>Offers</strong></td>
+            <td><code>/offers/*</code><small>8 endpoints</small></td>
+            <td>Optional / Bearer</td>
+            <td>List, Detail, Feed personalizat, Deal of Day, Similar, Promo code reveal</td>
+          </tr>
+          <tr style="--i:26">
+            <td><strong>Businesses</strong></td>
+            <td><code>/businesses/*</code><small>3 endpoints</small></td>
+            <td>Optional</td>
+            <td>List cu filtre, Detail cu oferte + reviews + gallery, Autocomplete suggest</td>
+          </tr>
+          <tr style="--i:27">
+            <td><strong>Reviews</strong></td>
+            <td><code>/reviews/*</code><small>3 endpoints</small></td>
+            <td>None / Bearer</td>
+            <td>List per business (paginated), Create, Delete (ownership check)</td>
+          </tr>
+          <tr style="--i:28">
+            <td><strong>Favorites</strong></td>
+            <td><code>/favorites/*</code><small>3 endpoints</small></td>
+            <td>Bearer</td>
+            <td>List, Add (toggle), Remove</td>
+          </tr>
+          <tr style="--i:29">
+            <td><strong>Subscriptions</strong></td>
+            <td><code>/subscriptions/*</code><small>3 endpoints</small></td>
+            <td>Bearer</td>
+            <td>List followed, Follow, Unfollow</td>
+          </tr>
+          <tr style="--i:30">
+            <td><strong>Web AJAX</strong></td>
+            <td><code>/api/web/*</code><small>8 endpoints</small></td>
+            <td>Cookie</td>
+            <td>Click tracking, preferences, profile picture, review delete, portal analytics</td>
+          </tr>
+          <tr style="--i:31">
+            <td><strong>Other</strong></td>
+            <td><code>/cities /categories</code><small>+ push, requests</small></td>
+            <td>Mixed</td>
+            <td>Cities list, Categories + counts, Push tokens, Business/Offer requests</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">9 grupuri API</td>
+            <td></td>
+            <td>70+ endpoints totale</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== GAMIFICATION ==================== -->
+  <div class="divider animate" style="--i:32">
+    <div class="divider__line"></div>
+    <div class="divider__label">Gamification &mdash; Badge-uri</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="section c-yellow animate" style="--i:33">
+    <div class="section-label"><span class="dot"></span> 10 Badge-uri Disponibile</div>
+    <div class="badge-grid">
+      <div class="badge-item">
+        <div class="badge-item__icon">&#127775;</div>
+        <div class="badge-item__name">Early Adopter</div>
+        <div class="badge-item__trigger">Primii utilizatori</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#9997;</div>
+        <div class="badge-item__name">First Review</div>
+        <div class="badge-item__trigger">Prima recenzie</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#129353;</div>
+        <div class="badge-item__name">Reviewer Bronze</div>
+        <div class="badge-item__trigger">5+ recenzii</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#129352;</div>
+        <div class="badge-item__name">Reviewer Silver</div>
+        <div class="badge-item__trigger">15+ recenzii</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#129351;</div>
+        <div class="badge-item__name">Reviewer Gold</div>
+        <div class="badge-item__trigger">50+ recenzii</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#10084;</div>
+        <div class="badge-item__name">First Favorite</div>
+        <div class="badge-item__trigger">Prima salvare</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#129303;</div>
+        <div class="badge-item__name">Social Butterfly</div>
+        <div class="badge-item__trigger">Follow 5+ afaceri</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#128150;</div>
+        <div class="badge-item__name">Loyal Fan</div>
+        <div class="badge-item__trigger">Follow 10+ afaceri</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#128273;</div>
+        <div class="badge-item__name">Code Hunter</div>
+        <div class="badge-item__trigger">5+ coduri dezvaluite</div>
+      </div>
+      <div class="badge-item">
+        <div class="badge-item__icon">&#128270;</div>
+        <div class="badge-item__name">Explorer</div>
+        <div class="badge-item__trigger">20+ oferte vizualizate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== FEATURE STATUS ==================== -->
+  <div class="divider animate" style="--i:34">
+    <div class="divider__line"></div>
+    <div class="divider__label">Feature Status</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="table-wrap animate" style="--i:35">
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Detalii</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="--i:36">
+            <td><strong>Website EJS</strong></td>
+            <td>20+ pagini, dark theme, glassmorphism, SEO complet (sitemap, JSON-LD, OG tags)</td>
+            <td><span class="status status--done">Complet</span></td>
+          </tr>
+          <tr style="--i:37">
+            <td><strong>Flutter Android</strong></td>
+            <td>20+ ecrane, auth, push FCM, deep links, geolocation, Google Sign-In</td>
+            <td><span class="status status--done">Complet</span></td>
+          </tr>
+          <tr style="--i:38">
+            <td><strong>Portal Business</strong></td>
+            <td>Dashboard, CRUD oferte, recenzii + raspunsuri, statistici Chart.js</td>
+            <td><span class="status status--done">Complet</span></td>
+          </tr>
+          <tr style="--i:39">
+            <td><strong>Gamification</strong></td>
+            <td>10 badge-uri, puncte, streak-uri, level system (web + Flutter)</td>
+            <td><span class="status status--done">Complet</span></td>
+          </tr>
+          <tr style="--i:40">
+            <td><strong>GDPR Compliance</strong></td>
+            <td>Consent, data export JSON, account deletion cascade, anonymous tracking</td>
+            <td><span class="status status--done">Complet</span></td>
+          </tr>
+          <tr style="--i:41">
+            <td><strong>Security</strong></td>
+            <td>7 audituri, CSRF, 9 rate limiters, Helmet, Sentry, bcrypt, JWT rotation</td>
+            <td><span class="status status--done">Complet</span></td>
+          </tr>
+          <tr style="--i:42">
+            <td><strong>Scraping Pipeline</strong></td>
+            <td>Playwright + Google Maps + DeepSeek LLM enrichment. Faza 1-2 done (225 JSON, 15 orase)</td>
+            <td><span class="status status--todo">Faza 3-5</span></td>
+          </tr>
+          <tr style="--i:43">
+            <td><strong>Monetizare</strong></td>
+            <td>Stripe + tiers (49/99/199 RON/luna). Inca neimplementat</td>
+            <td><span class="status status--todo">Todo</span></td>
+          </tr>
+          <tr style="--i:44">
+            <td><strong>iOS Build</strong></td>
+            <td>Necesita macOS. Config exista, build netestat</td>
+            <td><span class="status status--todo">Todo</span></td>
+          </tr>
+          <tr style="--i:45">
+            <td><strong>Play Store</strong></td>
+            <td>Signing config done, store listing nesubmis</td>
+            <td><span class="status status--todo">Todo</span></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td>10 features</td>
+            <td></td>
+            <td>6 complete &middot; 4 todo</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ==================== SECURITY ==================== -->
+  <div class="divider animate" style="--i:46">
+    <div class="divider__line"></div>
+    <div class="divider__label">Securitate &amp; Rate Limiting</div>
+    <div class="divider__line"></div>
+  </div>
+
+  <div class="two-col animate" style="--i:47">
+    <div class="section c-rose">
+      <div class="section-label"><span class="dot"></span> Masuri de Securitate</div>
+      <ul class="node-list">
+        <li><strong>CSRF</strong> &mdash; double-submit cookie (<code>csrf-csrf</code>)</li>
+        <li><strong>Helmet.js</strong> &mdash; security headers (CORP disabled for CDN)</li>
+        <li><strong>bcrypt</strong> &mdash; password hashing (cost factor 10)</li>
+        <li><strong>JWT rotation</strong> &mdash; refresh token rotativ, DB-backed</li>
+        <li><strong>Input validation</strong> &mdash; server-side sanitization</li>
+        <li><strong>SQL parameterization</strong> &mdash; $1, $2 placeholders</li>
+        <li><strong>7 audituri</strong> de securitate (113+ issues found &amp; fixed)</li>
+      </ul>
+    </div>
+    <div class="section c-purple">
+      <div class="section-label"><span class="dot"></span> Rate Limiters (9)</div>
+      <ul class="node-list">
+        <li><code>general</code> 100 req/min &mdash; global middleware</li>
+        <li><code>auth</code> 10 req/15min &mdash; login, register</li>
+        <li><code>passwordReset</code> 3 req/h &mdash; forgot password</li>
+        <li><code>verifyCode</code> 5 req/15min &mdash; reset code</li>
+        <li><code>admin</code> 60 req/min &mdash; admin panel</li>
+        <li><code>createContent</code> 20 req/h &mdash; reviews</li>
+        <li><code>click</code> 100 req/min &mdash; analytics</li>
+        <li><code>search</code> 30 req/min &mdash; autocomplete</li>
+        <li><code>reveal</code> 20 req/min &mdash; promo codes</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== KNOWN ISSUES ==================== -->
+  <details class="collapsible animate" style="--i:48">
+    <summary>Probleme Cunoscute &amp; Limitari</summary>
+    <div class="collapsible__body">
+      <strong>Rate limiter persistence</strong> &mdash; in-memory, se reseteaza la deploy. Necesita Redis/PG store.<br><br>
+      <strong>Firebase keys in git history</strong> &mdash; cheile au fost rotite, dar history-ul contine versiunile vechi.<br><br>
+      <strong>Gallery race condition</strong> &mdash; count check non-atomic; upload-uri concurente pot depasi limita de 8.<br><br>
+      <strong>Feed format mismatch</strong> &mdash; backend returneaza array plain, Flutter asteapta <code>PaginatedResponse</code>.<br><br>
+      <strong>Gamification dedup</strong> &mdash; follow/unfollow toggling poate genera puncte infinite (fara dedup).<br><br>
+      <strong>Streak timezone</strong> &mdash; UTC vs Romania UTC+2/3 poate intrerupe streak-urile la ora 23:00 local.
+    </div>
+  </details>
+
+  <!-- ==================== DEPLOYMENT ==================== -->
+  <div class="callout animate" style="--i:49">
+    <strong>Deployment</strong> &mdash; <code>git push origin main</code> declanseaza auto-deploy pe Railway (~1-2 min).
+    Migratiile SQL se ruleaza separat via <code>run-migration-production.js</code>.
+    DNS gestionat prin Cloudflare (CNAME proxy ON). Flutter SDK la <code>C:\dev\flutter</code>.
+  </div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <div class="footer animate" style="--i:50">
+    <p>OFAI &mdash; <a href="https://ofai.ro">ofai.ro</a> &mdash; Feb 2026</p>
+    <p style="margin-top:4px; font-size:10px; opacity:0.5">Generat cu visual-explainer pattern</p>
+  </div>
+
+</div>
+
+</body>
+</html>

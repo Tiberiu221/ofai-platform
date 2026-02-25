@@ -111,9 +111,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Descopera cele mai bune oferte',
+                          'Cele mai bune oferte din orașul tău',
                           style: AppTypography.bodyLarge.copyWith(
                             color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Gratuit. Fără reclame. Fără catch.',
+                          style: AppTypography.labelSmall.copyWith(
+                            color: AppColors.textTertiary,
                           ),
                         ),
                         // Streak pill
@@ -169,6 +176,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         _AnimatedStatPill(
                           targetValue: categoriesAsync.whenOrNull(data: (cats) => cats.length),
                           label: 'Categorii',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Trust Pillars
+              SliverToBoxAdapter(
+                child: FadeInItem(
+                  index: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.pagePadding, AppSpacing.md,
+                      AppSpacing.pagePadding, 0,
+                    ),
+                    child: Column(
+                      children: [
+                        _TrustPill(
+                          icon: '\u{1F512}',
+                          title: '100% Gratuit',
+                          desc: 'Fara costuri ascunse',
+                        ),
+                        const SizedBox(height: 8),
+                        _TrustPill(
+                          icon: '\u{2705}',
+                          title: 'Verificate',
+                          desc: 'Echipa OFAI verifica partenerii',
+                        ),
+                        const SizedBox(height: 8),
+                        _TrustPill(
+                          icon: '\u{1F3AF}',
+                          title: 'Personalizate',
+                          desc: 'Bazate pe preferintele tale',
                         ),
                       ],
                     ),
@@ -607,6 +648,65 @@ class _MarqueeInitial extends StatelessWidget {
           name.isNotEmpty ? name[0].toUpperCase() : 'B',
           style: AppTypography.labelLarge.copyWith(color: AppColors.textSecondary),
         ),
+      ),
+    );
+  }
+}
+
+class _TrustPill extends StatelessWidget {
+  final String icon;
+  final String title;
+  final String desc;
+
+  const _TrustPill({
+    required this.icon,
+    required this.title,
+    required this.desc,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Text(icon, style: const TextStyle(fontSize: 18)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  desc,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textTertiary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
