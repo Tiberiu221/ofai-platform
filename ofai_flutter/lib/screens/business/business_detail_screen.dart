@@ -206,12 +206,6 @@ class BusinessDetailScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
-                          // Rating breakdown
-                          if (business.ratingDistribution != null && (business.ratingCount ?? 0) >= 3) ...[
-                            _RatingBreakdown(distribution: business.ratingDistribution!, total: business.ratingCount ?? 0),
-                            const SizedBox(height: AppSpacing.lg),
-                          ],
-
                           // Review summary
                           if (business.reviewSummary != null && business.reviewSummary!.text.isNotEmpty) ...[
                             Container(
@@ -240,44 +234,57 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           ],
 
                           // Contact info
                           if (business.address != null || business.phone != null || business.website != null) ...[
-                            Text('Contact', style: AppTypography.headlineSmall),
-                            const SizedBox(height: AppSpacing.sm),
-                            if (business.address != null)
-                              _InfoTile(
-                                icon: Icons.location_on_outlined,
-                                label: business.address!,
-                                onTap: business.lat != null && business.lng != null
-                                    ? () {
-                                        Launchers.maps(business.lat!, business.lng!, address: business.address);
-                                        AnalyticsService.trackClick(businessId: business.id, actionType: 'navigate');
-                                      }
-                                    : null,
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.bgCard,
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                border: Border.all(color: AppColors.border),
                               ),
-                            if (business.phone != null)
-                              _InfoTile(
-                                icon: Icons.phone_outlined,
-                                label: business.phone!,
-                                onTap: () {
-                                  Launchers.call(business.phone!);
-                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
-                                },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Contact', style: AppTypography.headlineSmall),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  if (business.address != null)
+                                    _InfoTile(
+                                      icon: Icons.location_on_outlined,
+                                      label: business.address!,
+                                      onTap: business.lat != null && business.lng != null
+                                          ? () {
+                                              Launchers.maps(business.lat!, business.lng!, address: business.address);
+                                              AnalyticsService.trackClick(businessId: business.id, actionType: 'navigate');
+                                            }
+                                          : null,
+                                    ),
+                                  if (business.phone != null)
+                                    _InfoTile(
+                                      icon: Icons.phone_outlined,
+                                      label: business.phone!,
+                                      onTap: () {
+                                        Launchers.call(business.phone!);
+                                        AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
+                                      },
+                                    ),
+                                  if (business.website != null)
+                                    _InfoTile(
+                                      icon: Icons.language,
+                                      label: business.website!,
+                                      onTap: () {
+                                        Launchers.website(business.website!);
+                                        AnalyticsService.trackClick(businessId: business.id, actionType: 'website');
+                                      },
+                                      accent: true,
+                                    ),
+                                ],
                               ),
-                            if (business.website != null)
-                              _InfoTile(
-                                icon: Icons.language,
-                                label: business.website!,
-                                onTap: () {
-                                  Launchers.website(business.website!);
-                                  AnalyticsService.trackClick(businessId: business.id, actionType: 'website');
-                                },
-                                accent: true,
-                              ),
-                            const SizedBox(height: AppSpacing.xxl),
+                            ),
+                            const SizedBox(height: 40),
                           ],
 
                           // Locations
@@ -365,7 +372,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 ),
                               );
                             }),
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           ],
 
                           // Booking
@@ -405,7 +412,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   ),
                               ],
                             ),
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           ],
 
                           // Active offers have priority over pinch card — mutually exclusive
@@ -456,7 +463,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 ),
                               ),
                             )),
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           ] else if (business.showPinch) ...[
                             // Pinch card — "Vreau o ofertă!" (only when NO active offers)
                             _PinchRequestCard(
@@ -520,8 +527,12 @@ class BusinessDetailScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (business.images != null && business.images!.isNotEmpty)
-                            const SizedBox(height: AppSpacing.xxl),
+                            const SizedBox(height: 40),
                           Text('Recenzii', style: AppTypography.headlineSmall),
+                          if (business.ratingDistribution != null && (business.ratingCount ?? 0) >= 3) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            _RatingBreakdown(distribution: business.ratingDistribution!, total: business.ratingCount ?? 0),
+                          ],
                         ],
                       ),
                     ),
