@@ -69,10 +69,10 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
-// PUT /users/me - actualizeaza first_name / last_name / show_picture_in_reviews
+// PUT /users/me - actualizeaza first_name / last_name / show_picture_in_reviews / display_badge_id
 router.put("/me", auth, async (req, res) => {
   const userId = req.user.id;
-  const { first_name, last_name, show_picture_in_reviews } = req.body || {};
+  const { first_name, last_name, show_picture_in_reviews, display_badge_id } = req.body || {};
 
   try {
     const safeFirst =
@@ -81,6 +81,26 @@ router.put("/me", auth, async (req, res) => {
       typeof last_name === "string" ? last_name.trim().slice(0, 100) : null;
     const showPicture =
       typeof show_picture_in_reviews === "boolean" ? show_picture_in_reviews : null;
+
+    // Handle display_badge_id: null = clear, number = set, undefined = skip
+    let safeBadgeId = undefined; // undefined = don't update
+    if (display_badge_id === null) {
+      safeBadgeId = null; // explicit clear
+    } else if (display_badge_id !== undefined) {
+      const parsed = parseInt(display_badge_id, 10);
+      if (Number.isNaN(parsed) || parsed < 1) {
+        return res.status(400).json({ message: "ID insignă invalid" });
+      }
+      // Security: verify user owns this badge
+      const owned = await pool.query(
+        "SELECT 1 FROM user_badges ub JOIN badge_definitions bd ON bd.id = ub.badge_id WHERE ub.user_id = $1 AND bd.id = $2",
+        [userId, parsed]
+      );
+      if (owned.rows.length === 0) {
+        return res.status(403).json({ message: "Nu ai obținut această insignă" });
+      }
+      safeBadgeId = parsed;
+    }
 
     // 30-day cooldown — only when name is being changed
     if (safeFirst !== null || safeLast !== null) {
@@ -107,8 +127,9 @@ router.put("/me", auth, async (req, res) => {
         first_name = COALESCE($1, first_name),
         last_name = COALESCE($2, last_name),
         show_picture_in_reviews = COALESCE($3, show_picture_in_reviews),
+        display_badge_id = CASE WHEN $5 = true THEN $4 ELSE display_badge_id END,
         last_profile_edit = CASE WHEN $1 IS NOT NULL OR $2 IS NOT NULL THEN NOW() ELSE last_profile_edit END
-      WHERE id = $4
+      WHERE id = $6
       RETURNING
         id,
         email,
@@ -117,9 +138,10 @@ router.put("/me", auth, async (req, res) => {
         last_name,
         preferred_city_ids,
         preferred_category_ids,
-        show_picture_in_reviews
+        show_picture_in_reviews,
+        display_badge_id
       `,
-      [safeFirst, safeLast, showPicture, userId]
+      [safeFirst, safeLast, showPicture, safeBadgeId, safeBadgeId !== undefined, userId]
     );
 
     if (result.rows.length === 0) {
@@ -139,6 +161,7 @@ router.put("/me", auth, async (req, res) => {
         ? user.preferred_category_ids.map(Number).filter(Number.isInteger)
         : [],
       show_picture_in_reviews: user.show_picture_in_reviews !== false,
+      display_badge_id: user.display_badge_id,
     });
   } catch (err) {
     console.error("Eroare la PUT /users/me:", err);

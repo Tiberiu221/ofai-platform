@@ -201,15 +201,27 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 ],
               ),
 
-              // Badges section
+              // Badges section (selectable for review display)
               if (user?.badges != null && user!.badges!.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
                 Text('Insigne', style: AppTypography.labelLarge),
+                Text('Selectează una pentru a o afișa în recenzii', style: AppTypography.captionMuted),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: user!.badges!.map((badge) => _BadgeChip(badge: badge)).toList(),
+                  children: [
+                    _BadgeChip(
+                      badge: null,
+                      isSelected: user!.displayBadgeId == null,
+                      onTap: () => _updateDisplayBadge(ref, null),
+                    ),
+                    ...user!.badges!.map((badge) => _BadgeChip(
+                      badge: badge,
+                      isSelected: user!.displayBadgeId == badge.id,
+                      onTap: () => _updateDisplayBadge(ref, badge.id),
+                    )),
+                  ],
                 ),
               ],
 
@@ -487,37 +499,89 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       );
     }
   }
+
+  Future<void> _updateDisplayBadge(WidgetRef ref, int? badgeId) async {
+    try {
+      await ref.read(authProvider.notifier).updateDisplayBadge(badgeId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(badgeId != null ? 'Insignă selectată!' : 'Insignă dezactivată')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Eroare: ${e.toString()}')),
+      );
+    }
+  }
 }
 
 class _BadgeChip extends StatelessWidget {
-  final UserBadge badge;
-  const _BadgeChip({required this.badge});
+  final UserBadge? badge;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  const _BadgeChip({this.badge, this.isSelected = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final color = _parseColor(badge.color);
-    return Tooltip(
-      message: badge.description ?? badge.name,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.verified, size: 14, color: color),
-            const SizedBox(width: 4),
-            Text(
-              badge.name,
-              style: AppTypography.caption.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
+    // "Niciuna" chip when badge is null
+    if (badge == null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.accent.withValues(alpha: 0.15) : AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.close, size: 14, color: isSelected ? AppColors.accent : AppColors.textTertiary),
+              const SizedBox(width: 4),
+              Text(
+                'Niciuna',
+                style: AppTypography.caption.copyWith(
+                  color: isSelected ? AppColors.accent : AppColors.textTertiary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final color = _parseColor(badge!.color);
+    return GestureDetector(
+      onTap: onTap,
+      child: Tooltip(
+        message: badge!.description ?? badge!.name,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withValues(alpha: 0.2) : color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? color : color.withValues(alpha: 0.3),
+              width: isSelected ? 2 : 1,
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(isSelected ? Icons.star : Icons.verified, size: 14, color: color),
+              const SizedBox(width: 4),
+              Text(
+                badge!.name,
+                style: AppTypography.caption.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

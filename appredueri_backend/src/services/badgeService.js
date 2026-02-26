@@ -167,7 +167,8 @@ async function checkAndAwardBadges(userId, badgeSlugsToCheck) {
  */
 async function getUserBadges(userId) {
   const result = await pool.query(
-    `SELECT bd.slug,
+    `SELECT bd.id,
+            bd.slug,
             bd.name,
             bd.description,
             bd.icon,

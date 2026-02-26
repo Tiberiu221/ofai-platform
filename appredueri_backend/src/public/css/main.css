@@ -3421,6 +3421,12 @@ ul, ol { list-style: none; }
   font-weight: 700;
   font-size: 1.5rem;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.account-avatar:has(img) {
+  border-radius: 50%;
+  background: transparent;
 }
 
 .account-name {
@@ -4762,6 +4768,22 @@ ul, ol { list-style: none; }
   font-weight: 600;
   color: var(--text-secondary);
   line-height: 1.2;
+}
+.badge-item {
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+.badge-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+.badge-item.badge-selected {
+  background: var(--accent-muted);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.badge-item.badge-selected .badge-name {
+  color: var(--accent);
 }
 
 /* ─── DETAIL CARDS (shared) ─── */

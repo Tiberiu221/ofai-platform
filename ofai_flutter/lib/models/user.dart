@@ -12,6 +12,7 @@ class User {
   final bool hasPassword;
   final List<UserBadge>? badges;
   final bool showPictureInReviews;
+  final int? displayBadgeId;
 
   User({
     required this.id,
@@ -27,6 +28,7 @@ class User {
     this.hasPassword = true,
     this.badges,
     this.showPictureInReviews = true,
+    this.displayBadgeId,
   });
 
   String get displayName {
@@ -67,11 +69,13 @@ class User {
           ?.map((e) => UserBadge.fromJson(e as Map<String, dynamic>))
           .toList(),
       showPictureInReviews: json['show_picture_in_reviews'] as bool? ?? true,
+      displayBadgeId: json['display_badge_id'] as int?,
     );
   }
 }
 
 class UserBadge {
+  final int? id;
   final String slug;
   final String name;
   final String? description;
@@ -81,6 +85,7 @@ class UserBadge {
   final String? earnedAt;
 
   UserBadge({
+    this.id,
     required this.slug,
     required this.name,
     this.description,
@@ -92,6 +97,7 @@ class UserBadge {
 
   factory UserBadge.fromJson(Map<String, dynamic> json) {
     return UserBadge(
+      id: json['id'] as int?,
       slug: json['slug'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,

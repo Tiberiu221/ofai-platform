@@ -953,9 +953,12 @@ router.get("/business/:id", async (req, res) => {
              COALESCE(u.last_name, '') as last_name,
              u.profile_picture_url,
              COALESCE(u.show_picture_in_reviews, TRUE) as show_picture_in_reviews,
+             bd_display.color as display_badge_color,
+             bd_display.name as display_badge_name,
              rr.response_text, rr.created_at as response_date
       FROM reviews r
       LEFT JOIN users u ON r.user_id = u.id
+      LEFT JOIN badge_definitions bd_display ON bd_display.id = u.display_badge_id
       LEFT JOIN review_responses rr ON rr.review_id = r.id
       WHERE r.business_id = $1
       ORDER BY r.created_at DESC
@@ -2954,10 +2957,34 @@ router.put("/api/web/profile", requireWebAuth, async (req, res) => {
   }
 });
 
-// --- Update Account Settings (show_picture_in_reviews etc.) ---
+// --- Update Account Settings (show_picture_in_reviews, display_badge_id) ---
 router.put("/api/web/account", requireWebAuth, async (req, res) => {
   try {
-    const { show_picture_in_reviews } = req.body || {};
+    const { show_picture_in_reviews, display_badge_id } = req.body || {};
+    const { validateInt } = require("../helpers/validate");
+
+    // Handle display_badge_id: null = clear, integer = set (with ownership check)
+    if (display_badge_id !== undefined) {
+      if (display_badge_id === null) {
+        // Clear badge selection
+        await pool.query("UPDATE users SET display_badge_id = NULL WHERE id = $1", [req.webUser.id]);
+      } else {
+        const badgeId = validateInt(display_badge_id, { min: 1 });
+        if (!badgeId) return res.status(400).json({ message: "ID insignă invalid" });
+
+        // Security: verify user owns this badge
+        const owned = await pool.query(
+          "SELECT 1 FROM user_badges ub JOIN badge_definitions bd ON bd.id = ub.badge_id WHERE ub.user_id = $1 AND bd.id = $2",
+          [req.webUser.id, badgeId]
+        );
+        if (owned.rows.length === 0) {
+          return res.status(403).json({ message: "Nu ai obținut această insignă" });
+        }
+
+        await pool.query("UPDATE users SET display_badge_id = $1 WHERE id = $2", [badgeId, req.webUser.id]);
+      }
+      return res.json({ success: true, message: "Insigna a fost actualizată!" });
+    }
 
     await pool.query(
       "UPDATE users SET show_picture_in_reviews = $1 WHERE id = $2",

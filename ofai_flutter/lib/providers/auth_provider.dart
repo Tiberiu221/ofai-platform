@@ -283,10 +283,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
           hasPassword: u.hasPassword,
           badges: u.badges,
           showPictureInReviews: u.showPictureInReviews,
+          displayBadgeId: u.displayBadgeId,
         ));
       }
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la ștergerea pozei';
+      throw ApiException(message: msg);
+    }
+  }
+
+  Future<void> updateDisplayBadge(int? badgeId) async {
+    try {
+      await _api.dio.put(ApiEndpoints.userMe, data: {'display_badge_id': badgeId});
+      if (state.user != null) {
+        final u = state.user!;
+        state = state.copyWith(user: User(
+          id: u.id,
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          role: u.role,
+          preferredCityIds: u.preferredCityIds,
+          preferredCategoryIds: u.preferredCategoryIds,
+          points: u.points,
+          createdAt: u.createdAt,
+          profilePictureUrl: u.profilePictureUrl,
+          hasPassword: u.hasPassword,
+          badges: u.badges,
+          showPictureInReviews: u.showPictureInReviews,
+          displayBadgeId: badgeId,
+        ));
+      }
+    } catch (e) {
+      final msg = e is ApiException ? e.message : 'Eroare la actualizarea insignei';
       throw ApiException(message: msg);
     }
   }

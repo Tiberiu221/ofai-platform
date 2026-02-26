@@ -46,7 +46,18 @@ class ReviewCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(review.reviewerName, style: AppTypography.labelMedium),
+                    Row(
+                      children: [
+                        Flexible(child: Text(review.reviewerName, style: AppTypography.labelMedium)),
+                        if (review.displayBadgeColor != null) ...[
+                          const SizedBox(width: 4),
+                          Tooltip(
+                            message: review.displayBadgeName ?? '',
+                            child: Icon(Icons.star, size: 14, color: _parseHexColor(review.displayBadgeColor!)),
+                          ),
+                        ],
+                      ],
+                    ),
                     if (date != null)
                       Text(
                         Formatters.timeAgo(date),
@@ -113,5 +124,9 @@ class ReviewCard extends StatelessWidget {
         ],
       ),
     );
+  Color _parseHexColor(String hex) {
+    final clean = hex.replaceAll('#', '');
+    if (clean.length == 6) return Color(int.parse('FF$clean', radix: 16));
+    return AppColors.accent;
   }
 }

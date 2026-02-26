@@ -20,9 +20,12 @@ router.get("/business/:id", optionalAuth, async (req, res) => {
             `SELECT r.id, r.user_id, r.rating, r.comment, r.created_at,
               u.first_name, u.last_name,
               u.profile_picture_url, u.show_picture_in_reviews,
+              bd_display.color as display_badge_color,
+              bd_display.name as display_badge_name,
               rr.response_text, rr.created_at as response_date
              FROM reviews r
              LEFT JOIN users u ON r.user_id = u.id
+             LEFT JOIN badge_definitions bd_display ON bd_display.id = u.display_badge_id
              LEFT JOIN review_responses rr ON rr.review_id = r.id
              WHERE r.business_id = $1
              ORDER BY r.created_at DESC
@@ -46,6 +49,8 @@ router.get("/business/:id", optionalAuth, async (req, res) => {
           last_name: r.last_name,
           reviewer_profile_picture_url: r.show_picture_in_reviews ? r.profile_picture_url : null,
           reviewer_show_picture: r.show_picture_in_reviews || false,
+          display_badge_color: r.display_badge_color || null,
+          display_badge_name: r.display_badge_name || null,
           response: r.response_text ? {
             text: r.response_text,
             date: r.response_date,

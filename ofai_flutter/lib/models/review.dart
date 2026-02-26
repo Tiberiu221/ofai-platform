@@ -10,6 +10,8 @@ class Review {
   final ReviewResponse? response;
   final String? reviewerProfilePictureUrl;
   final bool reviewerShowPicture;
+  final String? displayBadgeColor;
+  final String? displayBadgeName;
 
   Review({
     required this.id,
@@ -23,6 +25,8 @@ class Review {
     this.response,
     this.reviewerProfilePictureUrl,
     this.reviewerShowPicture = true,
+    this.displayBadgeColor,
+    this.displayBadgeName,
   });
 
   String get reviewerName {
@@ -54,6 +58,8 @@ class Review {
           : null,
       reviewerProfilePictureUrl: json['reviewer_profile_picture_url'] as String?,
       reviewerShowPicture: json['reviewer_show_picture'] as bool? ?? true,
+      displayBadgeColor: json['display_badge_color'] as String?,
+      displayBadgeName: json['display_badge_name'] as String?,
     );
   }
 }
