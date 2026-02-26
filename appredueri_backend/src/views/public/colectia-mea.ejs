@@ -171,10 +171,14 @@
 
   .collection-item {
     position: relative;
+    display: flex;
+    flex-direction: column;
   }
 
   .collection-card-link {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     border-radius: var(--radius-lg);
     overflow: hidden;
     background: var(--bg-card);
@@ -241,6 +245,7 @@
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
+    flex: 1;
   }
 
   .collection-card-avatar {

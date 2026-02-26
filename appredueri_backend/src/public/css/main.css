@@ -3589,6 +3589,8 @@ ul, ol { list-style: none; }
 
 .collection-item {
   position: relative;
+  display: flex;
+  flex-direction: column;
   text-decoration: none;
   color: inherit;
 }
