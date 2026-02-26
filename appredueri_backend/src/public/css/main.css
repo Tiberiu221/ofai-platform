@@ -3588,18 +3588,10 @@ ul, ol { list-style: none; }
 }
 
 .collection-item {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.2s;
 }
 
-.collection-item:hover {
-  border-color: var(--border-hover);
-}
 
 .collection-item-image {
   width: 100%;
