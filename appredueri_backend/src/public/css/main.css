@@ -4169,9 +4169,9 @@ ul, ol { list-style: none; }
   background: rgba(0,0,0,0.7);
   color: #fff;
 }
-/* On featured cards (deal-of-day), offset below the "Oferta Zilei" badge */
+/* On featured cards (deal-of-day), offset below the heart btn + "Oferta Zilei" badge */
 .offer-card.featured .countdown-overlay {
-  top: 42px;
+  top: 52px;
 }
 /* Inline variant: in content flow (NOT absolute positioned) */
 .countdown-inline {
