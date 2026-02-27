@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
+import '../core/utils/distance.dart';
 import '../models/business.dart';
 import '../providers/auth_provider.dart';
+import '../providers/location_provider.dart';
 import '../providers/subscriptions_provider.dart';
 import 'tap_scale.dart';
 
@@ -90,14 +92,19 @@ class BusinessCard extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          [business.categoryName, business.cityName]
+                        Builder(builder: (_) {
+                          final dist = _distanceText(ref);
+                          final parts = [business.categoryName, business.cityName]
                               .where((s) => s.isNotEmpty)
-                              .join(' • '),
-                          style: AppTypography.captionMuted,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                              .toList();
+                          if (dist != null) parts.add(dist);
+                          return Text(
+                            parts.join(' • '),
+                            style: AppTypography.captionMuted,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        }),
                         const SizedBox(height: AppSpacing.xs),
                         Row(
                           children: [
@@ -139,6 +146,18 @@ class BusinessCard extends ConsumerWidget {
       ),
       ),
     );
+  }
+
+  /// Distance text — returns formatted distance if user location and business coords available
+  String? _distanceText(WidgetRef ref) {
+    final locAsync = ref.watch(userLocationProvider);
+    final pos = locAsync.valueOrNull;
+    if (pos == null) return null;
+    final bLat = business.lat;
+    final bLng = business.lng;
+    if (bLat == null || bLng == null) return null;
+    final km = DistanceUtils.haversine(pos.latitude, pos.longitude, bLat, bLng);
+    return DistanceUtils.format(km);
   }
 
   /// Follow heart icon — shown for all users, redirects to login if not authenticated

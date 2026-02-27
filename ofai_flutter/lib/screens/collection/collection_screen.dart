@@ -196,17 +196,31 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                   children: [
-                    if (_tabController.index == 1) ...[
+                    // Common sort chips for both tabs
+                    _CollectionSortChip(
+                      label: 'Nume A-Z',
+                      isActive: _sortMode == 'name_asc',
+                      onTap: () => setState(() => _sortMode = _sortMode == 'name_asc' ? null : 'name_asc'),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _CollectionSortChip(
+                      label: 'Rating',
+                      isActive: _sortMode == 'rating_desc',
+                      onTap: () => setState(() => _sortMode = _sortMode == 'rating_desc' ? null : 'rating_desc'),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    // Favorites-only sort chips
+                    if (_tabController.index == 0) ...[
                       _CollectionSortChip(
-                        label: 'Nume A-Z',
-                        isActive: _sortMode == 'name_asc',
-                        onTap: () => setState(() => _sortMode = _sortMode == 'name_asc' ? null : 'name_asc'),
+                        label: 'Reducere',
+                        isActive: _sortMode == 'discount_desc',
+                        onTap: () => setState(() => _sortMode = _sortMode == 'discount_desc' ? null : 'discount_desc'),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       _CollectionSortChip(
-                        label: 'Rating',
-                        isActive: _sortMode == 'rating_desc',
-                        onTap: () => setState(() => _sortMode = _sortMode == 'rating_desc' ? null : 'rating_desc'),
+                        label: 'Expiră curând',
+                        isActive: _sortMode == 'ending_soon',
+                        onTap: () => setState(() => _sortMode = _sortMode == 'ending_soon' ? null : 'ending_soon'),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                     ],
@@ -324,8 +338,21 @@ class _FavoritesTab extends ConsumerWidget {
             (o.business?.name.toLowerCase().contains(searchQuery) ?? false)
           ).toList();
 
-    // Apply distance sort for favorites
-    if (sortMode == 'distance' && userPosition != null) {
+    // Apply sort for favorites
+    if (sortMode == 'name_asc') {
+      filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    } else if (sortMode == 'rating_desc') {
+      filtered.sort((a, b) => (b.business?.rating ?? 0).compareTo(a.business?.rating ?? 0));
+    } else if (sortMode == 'discount_desc') {
+      filtered.sort((a, b) => (b.discountValue ?? 0).compareTo(a.discountValue ?? 0));
+    } else if (sortMode == 'ending_soon') {
+      filtered.sort((a, b) {
+        if (a.endDate == null && b.endDate == null) return 0;
+        if (a.endDate == null) return 1;
+        if (b.endDate == null) return -1;
+        return a.endDate!.compareTo(b.endDate!);
+      });
+    } else if (sortMode == 'distance' && userPosition != null) {
       filtered.sort((a, b) {
         final aLat = a.business?.lat;
         final aLng = a.business?.lng;

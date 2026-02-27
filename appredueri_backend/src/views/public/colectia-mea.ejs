@@ -25,12 +25,34 @@
       </button>
     </div>
 
+    <!-- Category Filter Pills -->
+    <% if (categories && categories.length > 0) { %>
+      <div class="collection-categories">
+        <a href="/colectia-mea?sort=<%= sort %>&tab=<%= typeof selectedTab !== 'undefined' ? selectedTab : '' %>" class="filter-pill<%= !selectedCategory ? ' active' : '' %>">Toate</a>
+        <% categories.forEach(function(cat) { %>
+          <a href="/colectia-mea?sort=<%= sort %>&category=<%= cat.id %>&tab=<%= typeof selectedTab !== 'undefined' ? selectedTab : '' %>" class="filter-pill<%= selectedCategory === cat.id ? ' active' : '' %>"><%= cat.name %></a>
+        <% }); %>
+      </div>
+    <% } %>
+
     <!-- Sort Bar -->
     <div class="sort-bar">
       <span class="sort-bar-label">Sortare:</span>
-      <button type="button" class="filter-pill<%= sort === 'recent' ? ' active' : '' %>" data-sort="recent" onclick="changeSort('recent')">Recent adăugate</button>
-      <button type="button" class="filter-pill<%= sort === 'rating' ? ' active' : '' %>" data-sort="rating" data-tab-sort="businesses" onclick="changeSort('rating')">Rating</button>
-      <button type="button" class="filter-pill<%= sort === 'distance' ? ' active' : '' %>" data-sort="distance" data-tab-sort="businesses" onclick="changeSort('distance')">Distanță</button>
+      <button type="button" class="filter-pill<%= sort === 'recent' ? ' active' : '' %>" data-sort="recent" onclick="changeSort('recent')">Recent ad&#259;ugate</button>
+      <button type="button" class="filter-pill<%= sort === 'rating' ? ' active' : '' %>" data-sort="rating" onclick="changeSort('rating')">Rating</button>
+      <button type="button" class="filter-pill" data-tab-sort="offers" data-sort="discount" onclick="changeSort('discount')"><%= sort === 'discount' ? '&#8595;% ' : '' %>Reducere</button>
+      <button type="button" class="filter-pill" data-tab-sort="offers" data-sort="ending_soon" onclick="changeSort('ending_soon')"><%= sort === 'ending_soon' ? '&#9200; ' : '' %>Expir&#259; cur&#226;nd</button>
+      <button type="button" class="filter-pill" data-tab-sort="businesses" data-sort="offers" onclick="changeSort('offers')">Oferte active</button>
+      <button type="button" class="filter-pill" id="sort-distance-btn" onclick="sortCollectionByDistance()" style="opacity: 0.5;" title="Activ&#259; loca&#539;ia">&#128205; Distan&#539;&#259;</button>
+    </div>
+
+    <!-- Geo Banner -->
+    <div id="geo-banner" class="geo-banner" style="display:none;">
+      <div class="geo-banner-content">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="geo-banner-text">Activeaz&#259; loca&#539;ia pentru a vedea distan&#539;a</span>
+        <button class="btn btn-primary" id="geo-activate-btn">Activeaz&#259; loca&#539;ia</button>
+      </div>
     </div>
 
     <!-- Search bar -->
@@ -77,7 +99,13 @@
                         <span><%= parseFloat(b.rating_avg).toFixed(1) %></span>
                       </div>
                     <% } %>
-                    <p class="collection-card-meta"><%= b.category_name || '' %><%= b.city_name ? ' · ' + b.city_name : '' %></p>
+                    <p class="collection-card-meta">
+                      <%= b.category_name || '' %><%= b.city_name ? ' &middot; ' + b.city_name : '' %>
+                      <span class="offer-distance collection-distance" data-lat="<%= b.lat || '' %>" data-lng="<%= b.lng || '' %>" style="display:none;">
+                        &middot; <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                        <span class="offer-distance-text"></span>
+                      </span>
+                    </p>
                   </div>
                 </div>
               </a>
@@ -119,7 +147,13 @@
                 <div class="collection-card-body" style="padding-top: 14px;">
                   <div class="collection-card-info" style="padding-left: 0;">
                     <h3><%= o.title %></h3>
-                    <p class="collection-card-meta"><%= o.business_name || '' %><%= o.city_name ? ' · ' + o.city_name : '' %></p>
+                    <p class="collection-card-meta">
+                      <%= o.business_name || '' %><%= o.city_name ? ' &middot; ' + o.city_name : '' %>
+                      <span class="offer-distance collection-distance" data-lat="<%= o.lat || '' %>" data-lng="<%= o.lng || '' %>" style="display:none;">
+                        &middot; <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                        <span class="offer-distance-text"></span>
+                      </span>
+                    </p>
                   </div>
                 </div>
               </a>
@@ -136,6 +170,21 @@
 </section>
 
 <style>
+  .collection-categories {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .collection-categories::-webkit-scrollbar { display: none; }
+  .collection-categories .filter-pill {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   .collection-search {
     display: flex;
     align-items: center;
@@ -303,6 +352,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .collection-distance {
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+  }
 
   .collection-remove-btn {
     position: absolute;
@@ -356,15 +409,71 @@
     document.getElementById('panel-offers').style.display = tab === 'offers' ? '' : 'none';
     document.getElementById('collection-search-input').value = '';
     filterCollection('');
-    // Hide sort buttons not relevant to current tab
+    // Show/hide sort buttons relevant to current tab
     document.querySelectorAll('[data-tab-sort]').forEach(function(btn) {
       btn.style.display = btn.getAttribute('data-tab-sort') === tab ? '' : 'none';
+    });
+    // Mark active sort pills
+    var currentSort = new URLSearchParams(window.location.search).get('sort') || 'recent';
+    document.querySelectorAll('.sort-bar .filter-pill').forEach(function(btn) {
+      var sortVal = btn.getAttribute('data-sort');
+      if (sortVal) btn.classList.toggle('active', sortVal === currentSort);
     });
   }
 
   function changeSort(sortValue) {
     var currentTab = document.querySelector('.collection-tab.active').getAttribute('data-tab');
-    window.location.href = '/colectia-mea?sort=' + sortValue + '&tab=' + currentTab;
+    var params = new URLSearchParams(window.location.search);
+    params.set('sort', sortValue);
+    params.set('tab', currentTab);
+    window.location.href = '/colectia-mea?' + params.toString();
+  }
+
+  // Client-side distance sort using functions from main.js
+  function sortCollectionByDistance() {
+    var cached = sessionStorage.getItem('ofai_user_pos');
+    if (!cached) {
+      // Trigger geo activation
+      var btn = document.getElementById('geo-activate-btn');
+      if (btn) btn.click();
+      // Retry after geo is activated
+      var retryCount = 0;
+      var retryInterval = setInterval(function() {
+        retryCount++;
+        if (retryCount > 30) { clearInterval(retryInterval); return; }
+        var pos = sessionStorage.getItem('ofai_user_pos');
+        if (pos) {
+          clearInterval(retryInterval);
+          sortCollectionByDistance();
+        }
+      }, 500);
+      return;
+    }
+
+    var pos = JSON.parse(cached);
+    var activePanel = document.querySelector('.collection-panel:not([style*="display: none"])') || document.getElementById('panel-businesses');
+    var grid = activePanel.querySelector('.collection-grid');
+    if (!grid) return;
+
+    var items = Array.from(grid.querySelectorAll('.collection-item'));
+    items.forEach(function(item) {
+      var distEl = item.querySelector('.offer-distance[data-lat][data-lng]');
+      if (!distEl) { item._dist = 99999; return; }
+      var lat = parseFloat(distEl.getAttribute('data-lat'));
+      var lng = parseFloat(distEl.getAttribute('data-lng'));
+      if (!lat || !lng) { item._dist = 99999; return; }
+      item._dist = haversineKm(pos.lat, pos.lng, lat, lng);
+    });
+
+    items.sort(function(a, b) { return a._dist - b._dist; });
+    items.forEach(function(item) { grid.appendChild(item); });
+
+    // Update active pill
+    document.querySelectorAll('.sort-bar .filter-pill').forEach(function(btn) { btn.classList.remove('active'); });
+    document.getElementById('sort-distance-btn').classList.add('active');
+
+    // Update distances display
+    if (typeof updateDistances === 'function') updateDistances(pos.lat, pos.lng);
   }
 
   function filterCollection(query) {
@@ -415,12 +524,20 @@
     } catch(e) { console.error(e); }
   }
 
-  // Restore tab from URL parameter on page load
+  // Init on page load
   (function() {
     var urlParams = new URLSearchParams(window.location.search);
     var tab = urlParams.get('tab');
     if (tab === 'offers') {
       switchCollectionTab('offers');
+    } else {
+      // Ensure correct sort pills visibility for default businesses tab
+      switchCollectionTab('businesses');
+    }
+
+    // Initialize geolocation (reuses initGeolocation from main.js)
+    if (typeof initGeolocation === 'function') {
+      initGeolocation();
     }
   })();
 </script>

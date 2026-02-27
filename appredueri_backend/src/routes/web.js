@@ -1555,41 +1555,57 @@ router.get("/cont", requireWebAuth, async (req, res) => {
 router.get("/colectia-mea", requireWebAuth, async (req, res) => {
   try {
     const sort = req.query.sort || "recent";
+    const selectedCategory = req.query.category ? parseInt(req.query.category) : null;
 
     // Sort for favorites (offers)
     let favoritesOrderBy = "f.created_at DESC";
-    if (sort === "rating") {
-      favoritesOrderBy = "rating_avg DESC";
+    if (sort === "rating") favoritesOrderBy = "rating_avg DESC";
+    else if (sort === "discount") favoritesOrderBy = "o.discount_value DESC";
+    else if (sort === "ending_soon") favoritesOrderBy = "o.end_date ASC";
+    // distance handled client-side
+
+    const favParams = [req.webUser.id];
+    let favCategoryFilter = "";
+    if (selectedCategory) {
+      favParams.push(selectedCategory);
+      favCategoryFilter = `AND b.category_id = $${favParams.length}`;
     }
-    // distance will be handled client-side
 
     const favoritesRes = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
-             b.cover_image_url as business_cover,
+             b.cover_image_url as business_cover, b.lat, b.lng,
              COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
-             ci.name as city_name,
+             ci.name as city_name, cat.name as category_name,
              COALESCE(AVG(r.rating), 0) as rating_avg
       FROM favorite_offers f
       JOIN offers o ON o.id = f.offer_id
       JOIN businesses b ON b.id = o.business_id
       LEFT JOIN cities ci ON ci.id = b.city_id
+      LEFT JOIN categories cat ON cat.id = b.category_id
       LEFT JOIN reviews r ON r.business_id = b.id
-      WHERE f.user_id = $1
-      GROUP BY o.id, o.title, o.discount_type, o.discount_value,
-               b.name, b.logo_url, b.cover_image_url, ci.name, f.created_at
+      WHERE f.user_id = $1 ${favCategoryFilter}
+      GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+               b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
+               ci.name, cat.name, f.created_at
       ORDER BY ${favoritesOrderBy}
-    `, [req.webUser.id]);
+    `, favParams);
 
     // Sort for subscriptions (businesses)
     let subscriptionsOrderBy = "MAX(f.created_at) DESC";
-    if (sort === "rating") {
-      subscriptionsOrderBy = "rating_avg DESC";
+    if (sort === "rating") subscriptionsOrderBy = "rating_avg DESC";
+    else if (sort === "offers") subscriptionsOrderBy = "active_offers_count DESC";
+    // distance handled client-side
+
+    const subParams = [req.webUser.id];
+    let subCategoryFilter = "";
+    if (selectedCategory) {
+      subParams.push(selectedCategory);
+      subCategoryFilter = `AND b.category_id = $${subParams.length}`;
     }
-    // distance will be handled client-side
 
     const subscriptionsRes = await pool.query(`
-      SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+      SELECT b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
              c.name as city_name, cat.name as category_name,
              COUNT(DISTINCT o.id) as active_offers_count,
              COALESCE(AVG(rev.rating), 0) as rating_avg
@@ -1599,9 +1615,21 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
       LEFT JOIN categories cat ON cat.id = b.category_id
       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
       LEFT JOIN reviews rev ON rev.business_id = b.id
-      WHERE f.user_id = $1
-      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, c.name, cat.name
+      WHERE f.user_id = $1 ${subCategoryFilter}
+      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, c.name, cat.name
       ORDER BY ${subscriptionsOrderBy}
+    `, subParams);
+
+    // Categories present in user's collection (for filter pills)
+    const categoriesRes = await pool.query(`
+      SELECT DISTINCT cat.id, cat.name FROM categories cat WHERE cat.id IN (
+        SELECT b.category_id FROM followed_businesses fb
+        JOIN businesses b ON b.id = fb.business_id WHERE fb.user_id = $1
+        UNION
+        SELECT b2.category_id FROM favorite_offers fo
+        JOIN offers o ON o.id = fo.offer_id
+        JOIN businesses b2 ON b2.id = o.business_id WHERE fo.user_id = $1
+      ) ORDER BY cat.name
     `, [req.webUser.id]);
 
     // All items on collection page are favorited/followed by definition
@@ -1611,6 +1639,8 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
     res.render("public/colectia-mea", {
       favorites: favoritesRes.rows,
       subscriptions: subscriptionsRes.rows,
+      categories: categoriesRes.rows,
+      selectedCategory,
       sort,
       userFavoriteIds,
       userFollowedIds,

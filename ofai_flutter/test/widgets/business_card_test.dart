@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ofai_flutter/models/business.dart';
 import 'package:ofai_flutter/widgets/business_card.dart';
 
-/// Helper to wrap widget in a MaterialApp for testing
+/// Helper to wrap widget in a MaterialApp + ProviderScope for testing
 Widget _buildTestApp(Widget child) {
-  return MaterialApp(
-    home: Scaffold(
-      body: SingleChildScrollView(child: child),
+  return ProviderScope(
+    child: MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(child: child),
+      ),
     ),
   );
 }
