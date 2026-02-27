@@ -878,6 +878,49 @@ ul, ol { list-style: none; }
   box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
 }
 
+/* ─── CARD HEART BUTTON (inline favorite/follow on cards) ─── */
+.card-heart-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+}
+.card-heart-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
+}
+.card-heart-btn.is-active {
+  color: #ef4444;
+}
+.card-heart-btn .heart-outline,
+.card-heart-btn .heart-filled {
+  display: none;
+}
+.card-heart-btn:not(.is-active) .heart-outline {
+  display: block;
+}
+.card-heart-btn.is-active .heart-filled {
+  display: block;
+}
+
+/* biz-card cover needs position for heart button */
+.biz-card-cover {
+  position: relative;
+}
+
 /* Content */
 .offer-content {
   padding: 16px;

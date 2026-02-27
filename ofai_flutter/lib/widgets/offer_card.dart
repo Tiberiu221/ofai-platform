@@ -402,23 +402,28 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
-  /// Favorite bookmark icon — only shown when logged in
+  /// Favorite heart icon — shown for all users, redirects to login if not authenticated
   Widget _buildFavoriteIcon(WidgetRef ref) {
     final auth = ref.watch(authProvider);
-    if (auth.status != AuthStatus.authenticated) return const SizedBox.shrink();
-
-    final isFav = ref.watch(favoritesProvider.select((s) => s.favoriteIds.contains(offer.id)));
+    final isLoggedIn = auth.status == AuthStatus.authenticated;
+    final isFav = isLoggedIn
+        ? ref.watch(favoritesProvider.select((s) => s.favoriteIds.contains(offer.id)))
+        : false;
 
     return Positioned(
       top: 8,
       left: 8,
       child: Semantics(
-        label: isFav ? 'Elimina din favorite' : 'Adauga la favorite',
+        label: isFav ? 'Elimină din favorite' : 'Adaugă la favorite',
         button: true,
         child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
           HapticFeedback.lightImpact();
+          if (!isLoggedIn) {
+            GoRouter.of(ref.context).push('/login');
+            return;
+          }
           ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
         },
         child: Container(
@@ -429,9 +434,9 @@ class OfferCard extends ConsumerWidget {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            isFav ? Icons.bookmark : Icons.bookmark_outline,
+            isFav ? Icons.favorite : Icons.favorite_border,
             size: 18,
-            color: isFav ? AppColors.accent : AppColors.textPrimary,
+            color: isFav ? const Color(0xFFEF4444) : AppColors.textPrimary,
           ),
         ),
       ),

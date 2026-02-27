@@ -253,10 +253,11 @@ window.showToast = function(message, type = 'info', duration = 3500) {
 
 /* ─── FAVORITE TOGGLE ───────────────────────────────────── */
 window.toggleFavorite = async function(offerId) {
-  const btn = document.querySelector(`.bookmark-btn[data-offer-id="${offerId}"]`);
-  if (!btn) return;
+  // Find ALL buttons for this offer (detail page .bookmark-btn + card .card-heart-btn)
+  const allBtns = document.querySelectorAll(`.bookmark-btn[data-offer-id="${offerId}"], .card-heart-btn[data-offer-id="${offerId}"]`);
+  if (!allBtns.length) return;
 
-  const isFav = btn.dataset.favorited === 'true';
+  const isFav = allBtns[0].dataset.favorited === 'true' || allBtns[0].classList.contains('is-active');
 
   try {
     if (isFav) {
@@ -269,10 +270,11 @@ window.toggleFavorite = async function(offerId) {
         if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
-      btn.dataset.favorited = 'false';
-      btn.classList.remove('is-favorited');
+      allBtns.forEach(btn => {
+        btn.dataset.favorited = 'false';
+        btn.classList.remove('is-favorited', 'is-active');
+      });
       showToast('Eliminat din favorite', 'info');
-      // Track unfavorite (extract business_id from page context)
       const businessId = extractBusinessIdFromContext();
       if (businessId && window.trackClick) {
         window.trackClick(businessId, 'unfavorite', offerId);
@@ -291,10 +293,11 @@ window.toggleFavorite = async function(offerId) {
         if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
-      btn.dataset.favorited = 'true';
-      btn.classList.add('is-favorited');
+      allBtns.forEach(btn => {
+        btn.dataset.favorited = 'true';
+        btn.classList.add('is-favorited', 'is-active');
+      });
       showToast('Adăugat la favorite!', 'success');
-      // Track favorite (extract business_id from page context)
       const businessId = extractBusinessIdFromContext();
       if (businessId && window.trackClick) {
         window.trackClick(businessId, 'favorite', offerId);
@@ -307,10 +310,15 @@ window.toggleFavorite = async function(offerId) {
 
 /* ─── FOLLOW / UNFOLLOW TOGGLE ──────────────────────────── */
 window.toggleFollow = async function(businessId) {
-  const btn = document.querySelector(`.bd-follow-btn[data-business-id="${businessId}"]`);
-  if (!btn) return;
+  // Find ALL buttons for this business (detail page .bd-follow-btn + card .card-heart-btn)
+  const detailBtn = document.querySelector(`.bd-follow-btn[data-business-id="${businessId}"]`);
+  const heartBtns = document.querySelectorAll(`.card-heart-btn[data-business-id="${businessId}"]`);
 
-  const isFollowing = btn.dataset.following === 'true';
+  const isFollowing = detailBtn
+    ? detailBtn.dataset.following === 'true'
+    : (heartBtns.length ? heartBtns[0].classList.contains('is-active') : false);
+
+  if (!detailBtn && !heartBtns.length) return;
 
   try {
     if (isFollowing) {
@@ -323,11 +331,13 @@ window.toggleFollow = async function(businessId) {
         if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
-      btn.dataset.following = 'false';
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Urmărește';
-      btn.classList.remove('following');
+      if (detailBtn) {
+        detailBtn.dataset.following = 'false';
+        detailBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Urmărește';
+        detailBtn.classList.remove('following');
+      }
+      heartBtns.forEach(btn => btn.classList.remove('is-active'));
       showToast('Nu mai urmărești acest business', 'info');
-      // Track unfollow
       if (window.trackClick) {
         window.trackClick(businessId, 'unfollow');
       }
@@ -345,11 +355,13 @@ window.toggleFollow = async function(businessId) {
         if (resp.status === 401) return window.location.href = '/login?returnTo=' + encodeURIComponent(window.location.pathname + window.location.search);
         throw new Error(data.message);
       }
-      btn.dataset.following = 'true';
-      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Urmărești';
-      btn.classList.add('following');
+      if (detailBtn) {
+        detailBtn.dataset.following = 'true';
+        detailBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Urmărești';
+        detailBtn.classList.add('following');
+      }
+      heartBtns.forEach(btn => btn.classList.add('is-active'));
       showToast('Urmărești acest business!', 'success');
-      // Track follow
       if (window.trackClick) {
         window.trackClick(businessId, 'follow');
       }
@@ -357,6 +369,16 @@ window.toggleFollow = async function(businessId) {
   } catch (err) {
     showToast(err.message || 'Eroare', 'error');
   }
+};
+
+/* ─── CARD HEART HELPERS (stop event propagation inside <a> tags) ─── */
+window.toggleCardFavorite = function(offerId, event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  window.toggleFavorite(offerId);
+};
+window.toggleCardFollow = function(businessId, event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
+  window.toggleFollow(businessId);
 };
 
 /* ─── USER MENU — Close on outside click ────────────────── */

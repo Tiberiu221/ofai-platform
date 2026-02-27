@@ -240,6 +240,18 @@ router.get("/", async (req, res) => {
       if (dodResult.rows.length > 0) dealOfDay = dodResult.rows[0];
     } catch (e) { /* silently fail — deal of day is optional */ }
 
+    // Fetch user favorite/follow IDs for card heart buttons
+    let userFavoriteIds = [];
+    let userFollowedIds = [];
+    if (req.webUser) {
+      const [favRes, followRes] = await Promise.all([
+        pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
+        pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
+      ]);
+      userFavoriteIds = favRes.rows.map(r => r.offer_id);
+      userFollowedIds = followRes.rows.map(r => r.business_id);
+    }
+
     res.render("public/home", {
       stats,
       categories: categories.rows,
@@ -251,6 +263,8 @@ router.get("/", async (req, res) => {
       followedOffers,
       preferredCityName,
       hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),
+      userFavoriteIds,
+      userFollowedIds,
       activePage: "home",
       webUser: req.webUser,
       structuredData: {
@@ -427,6 +441,13 @@ router.get("/oferte", async (req, res) => {
 
     const selectedCityName = selectedCity ? (citiesResult.rows.find(c => c.id == selectedCity) || {}).name : null;
 
+    // Fetch user favorite IDs for card heart buttons
+    let userFavoriteIds = [];
+    if (req.webUser) {
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
+      userFavoriteIds = favRes.rows.map(r => r.offer_id);
+    }
+
     res.render("public/oferte", {
       offers: interleaved,
       categories: categoriesResult.rows,
@@ -444,6 +465,7 @@ router.get("/oferte", async (req, res) => {
       userHasPrefs,
       userPrefsCityNames,
       userPrefsCategoryNames,
+      userFavoriteIds,
       activePage: "oferte",
       webUser: req.webUser,
     });
@@ -581,6 +603,13 @@ router.get("/business-uri", async (req, res) => {
       "SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"
     );
 
+    // Fetch user followed IDs for card heart buttons
+    let userFollowedIds = [];
+    if (req.webUser) {
+      const followRes = await pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1", [req.webUser.id]);
+      userFollowedIds = followRes.rows.map(r => r.business_id);
+    }
+
     res.render("public/business-uri", {
       businesses: businessesResult.rows,
       categories: categoriesResult.rows,
@@ -597,6 +626,7 @@ router.get("/business-uri", async (req, res) => {
       userHasPrefs,
       userPrefsCityNames,
       userPrefsCategoryNames,
+      userFollowedIds,
       activePage: "business-uri",
       webUser: req.webUser,
     });
@@ -759,10 +789,18 @@ router.get("/oferta/:id", async (req, res) => {
       } catch (e) { /* silently fail */ }
     }
 
+    // Fetch user favorite IDs for similar offer heart buttons
+    let userFavoriteIds = [];
+    if (req.webUser) {
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
+      userFavoriteIds = favRes.rows.map(r => r.offer_id);
+    }
+
     res.render("public/offer-detail", {
       offer,
       similarOffers,
       isFavorite,
+      userFavoriteIds,
       activePage: null,
       webUser: req.webUser,
       structuredData: [
@@ -1061,6 +1099,13 @@ router.get("/business/:id", async (req, res) => {
       },
     };
 
+    // Fetch user favorite IDs for offer card heart buttons
+    let userFavoriteIds = [];
+    if (req.webUser) {
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
+      userFavoriteIds = favRes.rows.map(r => r.offer_id);
+    }
+
     res.render("public/business-detail", {
       business,
       offers: offersRes.rows,
@@ -1071,6 +1116,7 @@ router.get("/business/:id", async (req, res) => {
       showPinch,
       requestCount,
       userRequested,
+      userFavoriteIds,
       activePage: null,
       webUser: req.webUser,
       structuredData: [
@@ -1552,10 +1598,16 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
       ORDER BY ${subscriptionsOrderBy}
     `, [req.webUser.id]);
 
+    // All items on collection page are favorited/followed by definition
+    const userFavoriteIds = favoritesRes.rows.map(r => r.id);
+    const userFollowedIds = subscriptionsRes.rows.map(r => r.id);
+
     res.render("public/colectia-mea", {
       favorites: favoritesRes.rows,
       subscriptions: subscriptionsRes.rows,
       sort,
+      userFavoriteIds,
+      userFollowedIds,
       activePage: "colectie",
       webUser: req.webUser,
     });

@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
 import '../models/business.dart';
+import '../providers/auth_provider.dart';
+import '../providers/subscriptions_provider.dart';
 import 'tap_scale.dart';
 
-class BusinessCard extends StatelessWidget {
+class BusinessCard extends ConsumerWidget {
   final Business business;
 
   const BusinessCard({super.key, required this.business});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasCover = business.coverImage != null && business.coverImage!.isNotEmpty;
 
     return Semantics(
@@ -30,16 +34,22 @@ class BusinessCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Optional cover image strip
+            // Cover image strip with follow heart overlay
             if (hasCover)
               SizedBox(
                 height: 64,
                 width: double.infinity,
-                child: CachedNetworkImage(
-                  imageUrl: business.coverImage!,
-                  fit: BoxFit.cover,
-                  placeholder: (_, __) => Container(color: AppColors.bgSecondary),
-                  errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: business.coverImage!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: AppColors.bgSecondary),
+                      errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
+                    ),
+                    _buildFollowHeart(ref),
+                  ],
                 ),
               ),
             // Main row content
@@ -83,7 +93,7 @@ class BusinessCard extends StatelessWidget {
                         Text(
                           [business.categoryName, business.cityName]
                               .where((s) => s.isNotEmpty)
-                              .join(' \u2022 '),
+                              .join(' • '),
                           style: AppTypography.captionMuted,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -127,6 +137,48 @@ class BusinessCard extends StatelessWidget {
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  /// Follow heart icon — shown for all users, redirects to login if not authenticated
+  Widget _buildFollowHeart(WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    final isLoggedIn = auth.status == AuthStatus.authenticated;
+    final isFollowing = isLoggedIn
+        ? ref.watch(subscriptionsProvider.select((s) => s.subscribedIds.contains(business.id)))
+        : false;
+
+    return Positioned(
+      top: 8,
+      left: 8,
+      child: Semantics(
+        label: isFollowing ? 'Nu mai urmări' : 'Urmărește',
+        button: true,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            if (!isLoggedIn) {
+              GoRouter.of(ref.context).push('/login');
+              return;
+            }
+            ref.read(subscriptionsProvider.notifier).toggleSubscription(business.id);
+          },
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.overlay,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isFollowing ? Icons.favorite : Icons.favorite_border,
+              size: 16,
+              color: isFollowing ? const Color(0xFFEF4444) : AppColors.textPrimary,
+            ),
+          ),
+        ),
       ),
     );
   }
