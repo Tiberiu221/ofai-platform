@@ -236,7 +236,7 @@ router.get("/me/gamification", auth, async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const { getLevelInfo, getStreak } = require("../services/gamification");
+    const { getLevelInfo } = require("../services/gamification");
 
     // Fetch points
     const pointsRes = await pool.query(
@@ -246,7 +246,6 @@ router.get("/me/gamification", auth, async (req, res) => {
     const points = pointsRes.rows[0]?.total_points ?? 0;
 
     const levelInfo = getLevelInfo(points);
-    const streakData = await getStreak(userId);
 
     // Map level names to numbers for the mobile app
     const levelNumbers = { "Explorer": 1, "Local Hero": 2, "Legend": 3, "God Mode": 4 };
@@ -257,8 +256,8 @@ router.get("/me/gamification", auth, async (req, res) => {
       level_name: levelInfo.level,
       progress: Math.min(1.0, (levelInfo.progress || 0) / 100),
       next_level_points: levelInfo.pointsNeeded,
-      current_streak: streakData.current_streak || 0,
-      longest_streak: streakData.longest_streak || 0,
+      current_streak: 0,
+      longest_streak: 0,
     });
   } catch (err) {
     console.error("Eroare la GET /users/me/gamification:", err);

@@ -18,7 +18,6 @@ import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/featured_offer_card.dart';
 import '../../widgets/empty_state.dart';
-import '../../providers/gamification_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -34,7 +33,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  bool _hasFetchedGamification = false;
 
   @override
   void dispose() {
@@ -63,15 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
     final categoriesAsync = ref.watch(categoriesProvider);
     final citiesAsync = ref.watch(citiesProvider);
     final dealAsync = ref.watch(dealOfDayProvider);
-    final gamState = isLoggedIn ? ref.watch(gamificationProvider) : null;
 
-    // Trigger gamification fetch once per session for logged-in users
-    if (isLoggedIn && !_hasFetchedGamification) {
-      _hasFetchedGamification = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) ref.read(gamificationProvider.notifier).fetch();
-      });
-    }
 
     return Scaffold(
       body: SafeArea(
@@ -85,7 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
             ref.invalidate(dealOfDayProvider);
-            if (isLoggedIn) ref.read(gamificationProvider.notifier).fetch();
           },
           child: CustomScrollView(
             slivers: [
@@ -116,101 +105,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Gratuit. Fără reclame. Fără catch.',
-                          style: AppTypography.labelSmall.copyWith(
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        // Streak pill
-                        if (isLoggedIn && gamState != null && gamState.currentStreak > 0) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.accent.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                              border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('\u{1F525}', style: TextStyle(fontSize: 14)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${gamState.currentStreak} ${gamState.currentStreak == 1 ? 'zi' : 'zile'} consecutiv${gamState.currentStreak > 1 ? 'e' : ''}',
-                                  style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Stats row (dynamic)
-              SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                    child: Row(
-                      children: [
-                        _AnimatedStatPill(
-                          targetValue: categoriesAsync.whenOrNull(
-                            data: (cats) => cats.fold<int>(0, (sum, c) => sum + (c.count ?? 0)),
-                          ),
-                          label: 'Business-uri',
-                          suffix: '+',
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        _AnimatedStatPill(
-                          targetValue: ref.watch(offersCountProvider).whenOrNull(data: (t) => t),
-                          label: 'Oferte active',
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        _AnimatedStatPill(
-                          targetValue: categoriesAsync.whenOrNull(data: (cats) => cats.length),
-                          label: 'Categorii',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Trust Pillars
-              SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.pagePadding, AppSpacing.md,
-                      AppSpacing.pagePadding, 0,
-                    ),
-                    child: Column(
-                      children: [
-                        _TrustPill(
-                          icon: '\u{1F512}',
-                          title: '100% Gratuit',
-                          desc: 'Fara costuri ascunse',
-                        ),
-                        const SizedBox(height: 8),
-                        _TrustPill(
-                          icon: '\u{2705}',
-                          title: 'Verificate',
-                          desc: 'Echipa OFAI verifica partenerii',
-                        ),
-                        const SizedBox(height: 8),
-                        _TrustPill(
-                          icon: '\u{1F3AF}',
-                          title: 'Personalizate',
-                          desc: 'Bazate pe preferintele tale',
-                        ),
                       ],
                     ),
                   ),
@@ -222,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               // Search bar — submit navigates to Explore with query
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 2,
+                  index: 1,
                   child: Padding(
                     padding: AppSpacing.pageH,
                     child: TextField(
@@ -653,144 +547,3 @@ class _MarqueeInitial extends StatelessWidget {
   }
 }
 
-class _TrustPill extends StatelessWidget {
-  final String icon;
-  final String title;
-  final String desc;
-
-  const _TrustPill({
-    required this.icon,
-    required this.title,
-    required this.desc,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.bgCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            alignment: Alignment.center,
-            child: Text(icon, style: const TextStyle(fontSize: 18)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  desc,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: AppColors.textTertiary,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AnimatedStatPill extends StatefulWidget {
-  final int? targetValue;
-  final String label;
-  final String? suffix;
-
-  const _AnimatedStatPill({required this.targetValue, required this.label, this.suffix});
-
-  @override
-  State<_AnimatedStatPill> createState() => _AnimatedStatPillState();
-}
-
-class _AnimatedStatPillState extends State<_AnimatedStatPill>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-  bool _hasAnimated = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    if (widget.targetValue != null && widget.targetValue! > 0) {
-      _hasAnimated = true;
-      _controller.forward();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _AnimatedStatPill oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.targetValue != null && widget.targetValue! > 0 && !_hasAnimated) {
-      _hasAnimated = true;
-      _controller.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          children: [
-            if (widget.targetValue == null || widget.targetValue == 0)
-              Text(
-                widget.targetValue == 0 ? '0' : '...',
-                style: AppTypography.headlineSmall.copyWith(color: AppColors.accent),
-              )
-            else
-              AnimatedBuilder(
-                animation: _animation,
-                builder: (_, __) {
-                  final value = (_animation.value * widget.targetValue!).round();
-                  return Text(
-                    '$value${widget.suffix ?? ''}',
-                    style: AppTypography.headlineSmall.copyWith(color: AppColors.accent),
-                  );
-                },
-              ),
-            const SizedBox(height: 2),
-            Text(widget.label, style: AppTypography.captionMuted),
-          ],
-        ),
-      ),
-    );
-  }
-}

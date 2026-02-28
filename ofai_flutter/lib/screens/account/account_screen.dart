@@ -226,7 +226,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               ],
 
               // Gamification card
-              if (gamState.points > 0 || gamState.currentStreak > 0) ...[
+              if (gamState.points > 0) ...[
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   width: double.infinity,
@@ -282,27 +282,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                         style: AppTypography.captionMuted,
                       ),
 
-                      // Streak
-                      if (gamState.currentStreak > 0) ...[
-                        const SizedBox(height: AppSpacing.md),
-                        Divider(color: AppColors.border),
-                        const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            const Text('\u{1F525}', style: TextStyle(fontSize: 18)),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${gamState.currentStreak} ${gamState.currentStreak == 1 ? 'zi' : 'zile'} consecutiv${gamState.currentStreak > 1 ? 'e' : ''}',
-                              style: AppTypography.labelMedium,
-                            ),
-                            const Spacer(),
-                            Text(
-                              'Record: ${gamState.longestStreak}',
-                              style: AppTypography.captionMuted,
-                            ),
-                          ],
-                        ),
-                      ],
                     ],
                   ),
                 ),

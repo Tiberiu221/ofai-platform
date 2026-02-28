@@ -124,6 +124,8 @@ class ReviewCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
   Color _parseHexColor(String hex) {
     final clean = hex.replaceAll('#', '');
     if (clean.length == 6) return Color(int.parse('FF$clean', radix: 16));

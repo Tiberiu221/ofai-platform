@@ -1514,9 +1514,8 @@ router.get("/orase", async (req, res) => {
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
     const { getUserBadges } = require("../services/badgeService");
-    const { getStreak } = require("../services/gamification");
 
-    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges, streakData] = await Promise.all([
+    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges] = await Promise.all([
       pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
@@ -1527,7 +1526,6 @@ router.get("/cont", requireWebAuth, async (req, res) => {
         console.error("[Web] Badges fetch error:", err.message);
         return [];
       }),
-      getStreak(req.webUser.id),
     ]);
 
     const userPoints = pointsRes.rows[0]?.total_points || 0;
@@ -1538,7 +1536,6 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       activePage: "cont",
       webUser: req.webUser,
       userPoints,
-      userStreak: streakData.current_streak || 0,
       favCount: parseInt(favCount.rows[0].total),
       followCount: parseInt(followCount.rows[0].total),
       reviewCount: parseInt(reviewCount.rows[0].total),

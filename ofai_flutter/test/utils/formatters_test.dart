@@ -65,9 +65,18 @@ void main() {
       expect(result, contains('zile ramase'));
     });
 
-    test('returns null for > 7 days', () {
-      final farAway = DateTime.now().add(const Duration(days: 30)).toIso8601String();
-      expect(Formatters.timeLeft(farAway), isNull);
+    test('returns text for > 7 days', () {
+      final farAway = DateTime.now().add(const Duration(days: 20)).toIso8601String();
+      final result = Formatters.timeLeft(farAway);
+      expect(result, isNotNull);
+      expect(result, contains('zile ramase'));
+    });
+
+    test('returns weeks format for > 30 days', () {
+      final veryFar = DateTime.now().add(const Duration(days: 45)).toIso8601String();
+      final result = Formatters.timeLeft(veryFar);
+      expect(result, isNotNull);
+      expect(result, contains('sapt. ramase'));
     });
   });
 
@@ -76,13 +85,18 @@ void main() {
       expect(Formatters.urgencyLevel(null), 0);
     });
 
-    test('returns 2 for expired', () {
+    test('returns 3 (critical) for expired', () {
       final past = DateTime.now().subtract(const Duration(days: 1)).toIso8601String();
-      expect(Formatters.urgencyLevel(past), 2);
+      expect(Formatters.urgencyLevel(past), 3);
     });
 
-    test('returns 2 for < 48 hours', () {
+    test('returns 3 (critical) for < 24 hours', () {
       final soon = DateTime.now().add(const Duration(hours: 12)).toIso8601String();
+      expect(Formatters.urgencyLevel(soon), 3);
+    });
+
+    test('returns 2 (high) for < 3 days', () {
+      final soon = DateTime.now().add(const Duration(hours: 36)).toIso8601String();
       expect(Formatters.urgencyLevel(soon), 2);
     });
 

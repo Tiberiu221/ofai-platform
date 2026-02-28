@@ -22,17 +22,29 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _OnboardingPage(
       icon: Icons.local_offer_outlined,
       title: 'Descoperă oferte',
-      description: 'Găsește cele mai bune reduceri și oferte de la business-urile din orașul tău.',
+      description:
+          'Găsește reduceri verificate de la frizerii, restaurante, fitness și 12+ categorii din orașul tău.',
+      trustIcon: Icons.shield_outlined,
+      trustTitle: '100% Gratuit',
+      trustDesc: 'Fără costuri ascunse, fără abonamente',
     ),
     _OnboardingPage(
       icon: Icons.store_outlined,
       title: 'Urmărește business-uri',
-      description: 'Abonează-te la business-urile preferate și primește notificări despre ofertele lor.',
+      description:
+          'Abonează-te la business-urile preferate și primește notificări când apar oferte noi.',
+      trustIcon: Icons.verified_outlined,
+      trustTitle: 'Business-uri Verificate',
+      trustDesc: 'Echipa OFAI verifică fiecare partener',
     ),
     _OnboardingPage(
       icon: Icons.savings_outlined,
       title: 'Economisește mai mult',
-      description: 'Salvează ofertele favorite și profită de reduceri exclusive.',
+      description:
+          'Salvează ofertele la favorite, dezvăluie coduri promo și profită de reduceri exclusive.',
+      trustIcon: Icons.auto_awesome_outlined,
+      trustTitle: 'Oferte Personalizate',
+      trustDesc: 'Bazate pe orașul și preferințele tale',
     ),
   ];
 
@@ -65,7 +77,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   onTap: _complete,
                   child: Text(
                     'Sari peste',
-                    style: AppTypography.labelMedium.copyWith(color: AppColors.textSecondary),
+                    style: AppTypography.labelMedium.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ),
@@ -80,34 +94,101 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 itemBuilder: (_, i) {
                   final page = _pages[i];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxxl),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xxl,
+                    ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Icon with glow
                         Container(
-                          width: 120,
-                          height: 120,
+                          width: 140,
+                          height: 140,
                           decoration: BoxDecoration(
                             color: AppColors.accentMuted,
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(36),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.accent.withValues(alpha: 0.15),
+                                blurRadius: 40,
+                                spreadRadius: 0,
+                              ),
+                            ],
                           ),
                           child: Icon(
                             page.icon,
-                            size: 56,
+                            size: 60,
                             color: AppColors.accent,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xxxl),
+
+                        // Title
                         Text(
                           page.title,
-                          style: AppTypography.displaySmall,
+                          style: AppTypography.displayMedium,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: AppSpacing.lg),
+
+                        // Description
                         Text(
                           page.description,
-                          style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
+                          style: AppTypography.bodyLarge.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.6,
+                          ),
                           textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.xxl),
+
+                        // Trust badge
+                        AnimatedOpacity(
+                          opacity: _currentPage == i ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeOut,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgCard,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  page.trustIcon,
+                                  size: 26,
+                                  color: AppColors.accent,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        page.trustTitle,
+                                        style:
+                                            AppTypography.labelLarge.copyWith(
+                                              color: AppColors.textPrimary,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        page.trustDesc,
+                                        style:
+                                            AppTypography.bodySmall.copyWith(
+                                              color: AppColors.textTertiary,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -125,11 +206,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   final isActive = i == _currentPage;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: isActive ? 24 : 8,
+                    width: isActive ? 28 : 8,
                     height: 8,
                     margin: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
-                      color: isActive ? AppColors.accent : AppColors.bgSecondary,
+                      gradient: isActive
+                          ? const LinearGradient(
+                              colors: AppColors.accentGradient,
+                            )
+                          : null,
+                      color: isActive ? null : AppColors.bgSecondary,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
@@ -140,12 +226,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             // Action button
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.xxl, 0, AppSpacing.xxl, AppSpacing.xxxl,
+                AppSpacing.xxl,
+                0,
+                AppSpacing.xxl,
+                AppSpacing.xxxl,
               ),
               child: SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 54,
                 child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   onPressed: () {
                     if (_currentPage < _pages.length - 1) {
                       _pageController.nextPage(
@@ -173,10 +267,16 @@ class _OnboardingPage {
   final IconData icon;
   final String title;
   final String description;
+  final IconData trustIcon;
+  final String trustTitle;
+  final String trustDesc;
 
   const _OnboardingPage({
     required this.icon,
     required this.title,
     required this.description,
+    required this.trustIcon,
+    required this.trustTitle,
+    required this.trustDesc,
   });
 }

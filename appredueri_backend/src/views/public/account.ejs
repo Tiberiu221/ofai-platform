@@ -93,13 +93,6 @@
       <% if (nextLevel) { %>
         <p class="gamification-next">Încă <%= pointsNeeded - points %> puncte până la <strong><%= nextLevel %></strong></p>
       <% } %>
-      <% var streak = typeof userStreak !== 'undefined' ? userStreak : 0; %>
-      <% if (streak > 0) { %>
-        <div style="display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 0.8125rem; color: var(--text-secondary);">
-          <span style="font-size: 1.1rem;">🔥</span>
-          <span><strong style="color: var(--accent);"><%= streak %></strong> <%= streak === 1 ? 'zi' : 'zile' %> consecutiv<%= streak > 1 ? 'e' : '' %></span>
-        </div>
-      <% } %>
     </div>
 
     <% if (typeof userBadges !== 'undefined' && userBadges && userBadges.length > 0) { %>

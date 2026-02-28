@@ -106,6 +106,9 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   Future<void> toggleFavorite(int offerId) async {
     final wasFavorite = state.favoriteIds.contains(offerId);
 
+    // Capture analytics data BEFORE optimistic removal (offer disappears from list on unfavorite)
+    final offerForAnalytics = state.offers.where((o) => o.id == offerId).firstOrNull;
+
     // Optimistic update
     final newIds = Set<int>.from(state.favoriteIds);
     if (wasFavorite) {
@@ -126,11 +129,10 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
         await _api.dio.post(ApiEndpoints.favorites, data: {'offer_id': offerId});
       }
 
-      // Track favorite/unfavorite action
-      final offer = state.offers.where((o) => o.id == offerId).firstOrNull;
-      if (offer?.business != null) {
+      // Track favorite/unfavorite action (using pre-captured reference)
+      if (offerForAnalytics?.business != null) {
         AnalyticsService.trackClick(
-          businessId: offer!.business!.id,
+          businessId: offerForAnalytics!.business!.id,
           offerId: offerId,
           actionType: wasFavorite ? 'unfavorite' : 'favorite',
         );

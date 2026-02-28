@@ -88,7 +88,7 @@ class OfferCard extends ConsumerWidget {
                         child: _buildBadge(),
                       ),
                     // Favorite bookmark (top left)
-                    _buildFavoriteIcon(ref),
+                    _buildFavoriteIcon(context, ref),
                     // Expiry countdown (bottom left)
                     _buildCountdown(),
                     // Trending badge (bottom right)
@@ -230,7 +230,7 @@ class OfferCard extends ConsumerWidget {
                       right: 8,
                       child: _buildBadge(),
                     ),
-                  _buildFavoriteIcon(ref),
+                  _buildFavoriteIcon(context, ref),
                   _buildCountdown(),
                   _buildTrendingBadge(),
                 ],
@@ -403,7 +403,7 @@ class OfferCard extends ConsumerWidget {
   }
 
   /// Favorite heart icon — shown for all users, redirects to login if not authenticated
-  Widget _buildFavoriteIcon(WidgetRef ref) {
+  Widget _buildFavoriteIcon(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final isFav = isLoggedIn
@@ -421,7 +421,7 @@ class OfferCard extends ConsumerWidget {
         onTap: () {
           HapticFeedback.lightImpact();
           if (!isLoggedIn) {
-            GoRouter.of(ref.context).push('/login');
+            GoRouter.of(context).push('/login');
             return;
           }
           ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);

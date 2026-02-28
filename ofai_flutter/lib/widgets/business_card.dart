@@ -50,7 +50,7 @@ class BusinessCard extends ConsumerWidget {
                       placeholder: (_, __) => Container(color: AppColors.bgSecondary),
                       errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
                     ),
-                    _buildFollowHeart(ref),
+                    _buildFollowHeart(context, ref),
                   ],
                 ),
               ),
@@ -161,7 +161,7 @@ class BusinessCard extends ConsumerWidget {
   }
 
   /// Follow heart icon — shown for all users, redirects to login if not authenticated
-  Widget _buildFollowHeart(WidgetRef ref) {
+  Widget _buildFollowHeart(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final isFollowing = isLoggedIn
@@ -179,7 +179,7 @@ class BusinessCard extends ConsumerWidget {
           onTap: () {
             HapticFeedback.lightImpact();
             if (!isLoggedIn) {
-              GoRouter.of(ref.context).push('/login');
+              GoRouter.of(context).push('/login');
               return;
             }
             ref.read(subscriptionsProvider.notifier).toggleSubscription(business.id);

@@ -55,7 +55,8 @@ class _ShellScreen extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: child,
-      bottomNavigationBar: ClipRRect(
+      bottomNavigationBar: RepaintBoundary(
+        child: ClipRRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
@@ -116,6 +117,7 @@ class _ShellScreen extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -130,10 +132,11 @@ class _NavItem {
 // Tab index helper
 int _tabIndex(GoRouterState state) {
   final path = state.uri.path;
+  if (path == '/') return 0;
   if (path.startsWith('/explore')) return 1;
   if (path.startsWith('/collection')) return 2;
   if (path.startsWith('/account')) return 3;
-  return 0;
+  return -1; // no active tab for detail/browse/legal pages
 }
 
 // Onboarding state — loaded once at app startup
@@ -196,7 +199,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Shell route with bottom nav
+      // Shell route with bottom nav — all non-auth routes
       ShellRoute(
         builder: (context, state, child) {
           return _ShellScreen(
@@ -205,6 +208,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
         routes: [
+          // Main tabs
           GoRoute(
             path: '/',
             builder: (context, state) => const HomeScreen(),
@@ -221,32 +225,88 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/account',
             builder: (context, state) => const AccountScreen(),
           ),
+
+          // Detail routes (slide up transition)
+          GoRoute(
+            path: '/offer/:id',
+            pageBuilder: (context, state) {
+              final id = int.tryParse(state.pathParameters['id'] ?? '');
+              if (id == null) {
+                return fadeTransition(state: state, child: const HomeScreen());
+              }
+              return slideUpTransition(
+                state: state,
+                child: OfferDetailScreen(offerId: id),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/business/:id',
+            pageBuilder: (context, state) {
+              final id = int.tryParse(state.pathParameters['id'] ?? '');
+              if (id == null) {
+                return fadeTransition(state: state, child: const HomeScreen());
+              }
+              return slideUpTransition(
+                state: state,
+                child: BusinessDetailScreen(businessId: id),
+              );
+            },
+          ),
+
+          // Account sub-routes
+          GoRoute(
+            path: '/account/edit-profile',
+            builder: (context, state) => const EditProfileScreen(),
+          ),
+          GoRoute(
+            path: '/account/preferences',
+            builder: (context, state) => const PreferencesScreen(),
+          ),
+          GoRoute(
+            path: '/account/change-password',
+            builder: (context, state) => const ChangePasswordScreen(),
+          ),
+          GoRoute(
+            path: '/account/data-export',
+            builder: (context, state) => const DataExportScreen(),
+          ),
+          GoRoute(
+            path: '/account/delete-account',
+            builder: (context, state) => const DeleteAccountScreen(),
+          ),
+
+          // Browse routes
+          GoRoute(
+            path: '/categories',
+            builder: (context, state) => const CategoriesScreen(),
+          ),
+          GoRoute(
+            path: '/cities',
+            builder: (context, state) => const CitiesScreen(),
+          ),
+          GoRoute(
+            path: '/business-request',
+            builder: (context, state) => const BusinessRequestScreen(),
+          ),
+
+          // Legal & Help routes
+          GoRoute(
+            path: '/terms',
+            builder: (context, state) => const TermsScreen(),
+          ),
+          GoRoute(
+            path: '/privacy',
+            builder: (context, state) => const PrivacyScreen(),
+          ),
+          GoRoute(
+            path: '/help',
+            builder: (context, state) => const HelpScreen(),
+          ),
         ],
       ),
 
-      // Detail routes (slide up transition)
-      GoRoute(
-        path: '/offer/:id',
-        pageBuilder: (context, state) {
-          final id = int.parse(state.pathParameters['id']!);
-          return slideUpTransition(
-            state: state,
-            child: OfferDetailScreen(offerId: id),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/business/:id',
-        pageBuilder: (context, state) {
-          final id = int.parse(state.pathParameters['id']!);
-          return slideUpTransition(
-            state: state,
-            child: BusinessDetailScreen(businessId: id),
-          );
-        },
-      ),
-
-      // Auth routes (fade transition)
+      // Auth routes — full screen, NO bottom nav (fade transition)
       GoRoute(
         path: '/login',
         pageBuilder: (context, state) => fadeTransition(
@@ -262,7 +322,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Forgot/Reset password routes
+      // Forgot/Reset password routes — full screen, NO bottom nav
       GoRoute(
         path: '/forgot-password',
         pageBuilder: (context, state) => fadeTransition(
@@ -290,56 +350,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: ResetPasswordScreen(email: email, code: code),
           );
         },
-      ),
-
-      // Account sub-routes (no bottom nav)
-      GoRoute(
-        path: '/account/edit-profile',
-        builder: (context, state) => const EditProfileScreen(),
-      ),
-      GoRoute(
-        path: '/account/preferences',
-        builder: (context, state) => const PreferencesScreen(),
-      ),
-      GoRoute(
-        path: '/account/change-password',
-        builder: (context, state) => const ChangePasswordScreen(),
-      ),
-      GoRoute(
-        path: '/account/data-export',
-        builder: (context, state) => const DataExportScreen(),
-      ),
-      GoRoute(
-        path: '/account/delete-account',
-        builder: (context, state) => const DeleteAccountScreen(),
-      ),
-
-      // Browse routes
-      GoRoute(
-        path: '/categories',
-        builder: (context, state) => const CategoriesScreen(),
-      ),
-      GoRoute(
-        path: '/cities',
-        builder: (context, state) => const CitiesScreen(),
-      ),
-      GoRoute(
-        path: '/business-request',
-        builder: (context, state) => const BusinessRequestScreen(),
-      ),
-
-      // Legal & Help routes
-      GoRoute(
-        path: '/terms',
-        builder: (context, state) => const TermsScreen(),
-      ),
-      GoRoute(
-        path: '/privacy',
-        builder: (context, state) => const PrivacyScreen(),
-      ),
-      GoRoute(
-        path: '/help',
-        builder: (context, state) => const HelpScreen(),
       ),
     ],
   );

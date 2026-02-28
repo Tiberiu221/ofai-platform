@@ -131,9 +131,11 @@ class PushNotificationService {
     final type = data['type'];
 
     if (type == 'new_offer' && data['offerId'] != null) {
-      _pendingDeepLink = '/offer/${data['offerId']}';
+      final id = int.tryParse(data['offerId'].toString());
+      if (id != null) _pendingDeepLink = '/offer/$id';
     } else if (data['businessId'] != null) {
-      _pendingDeepLink = '/business/${data['businessId']}';
+      final id = int.tryParse(data['businessId'].toString());
+      if (id != null) _pendingDeepLink = '/business/$id';
     }
 
     print('[Push] Notification tap -> $_pendingDeepLink');

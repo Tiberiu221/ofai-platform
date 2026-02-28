@@ -106,6 +106,9 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
   Future<void> toggleSubscription(int businessId) async {
     final wasSubscribed = state.subscribedIds.contains(businessId);
 
+    // Snapshot full state for complete rollback on failure
+    final previousState = state;
+
     // Optimistic update
     final newIds = Set<int>.from(state.subscribedIds);
     if (wasSubscribed) {
@@ -132,14 +135,8 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
         actionType: wasSubscribed ? 'unfollow' : 'follow',
       );
     } catch (e) {
-      // Revert on failure
-      if (wasSubscribed) {
-        newIds.add(businessId);
-      } else {
-        newIds.remove(businessId);
-      }
-      state = state.copyWith(subscribedIds: newIds);
-      fetch();
+      // Full rollback to pre-optimistic state
+      state = previousState;
     }
   }
 }
