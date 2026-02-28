@@ -403,7 +403,7 @@ Standalone routes:
 
 ### Flutter Gotchas
 - **Card `clipBehavior: Clip.hardEdge`** — NOT antiAlias; avoids sub-pixel rendering artifacts on some GPUs
-- **Horizontal OfferCard container: `height: 300`** — card content max ~288px (image 140 + padding 12+12 + text/rows ~124). Both home_screen and offer_detail_screen use this height
+- **Horizontal OfferCard container: `height: 288`** — card content max ~286px (image 150 + padding 12+16 + divider/metadata ~108). Both home_screen and offer_detail_screen use this height
 - **Countdown pill: urgency > 0 gate** — only shown when ≤7 days remaining (matches web `initCountdowns()` behavior). Urgency 0 = >7d (hidden), 1 = 3-7d (yellow), 2 = <3d (red), 3 = <24h (red bold)
 - **`Formatters.timeLeft()` / `urgencyLevel()`** — in `core/utils/formatters.dart`, shared by OfferCard + FeaturedOfferCard + OfferDetailScreen
 
@@ -531,7 +531,7 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 18. **`ref.invalidate()` before navigation** after SharedPreferences write (cached values)
 19. **Firebase background handler** must be top-level function (not method)
 20. **Card `Clip.hardEdge` not `antiAlias`** — avoids sub-pixel bleed on some GPUs (Samsung A33 tested)
-21. **Horizontal OfferCard `height: 300`** — card needs ~288px max; used in home_screen + offer_detail_screen
+21. **Horizontal OfferCard `height: 288`** — card needs ~286px max (image 150 + content); used in home_screen + offer_detail_screen
 22. **Countdown urgency > 0 gate** — `_buildCountdown()` returns `SizedBox.shrink()` for >7 days offers
 23. **CSRF + mobile auth** — login/register have no Bearer token; `X-Client: mobile` header skips CSRF
 24. **`Business.category` is `IdName?` type** — use `b.categoryName` getter for String, NOT `b.category?.toLowerCase()`
