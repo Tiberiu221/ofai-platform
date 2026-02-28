@@ -94,15 +94,37 @@ class BusinessCard extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Builder(builder: (_) {
                           final dist = _distanceText(ref);
-                          final parts = [business.categoryName, business.cityName]
+                          final infoParts = [business.categoryName, business.cityName]
                               .where((s) => s.isNotEmpty)
-                              .toList();
-                          if (dist != null) parts.add(dist);
-                          return Text(
-                            parts.join(' • '),
-                            style: AppTypography.captionMuted,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                              .join(' \u2022 ');
+                          if (dist == null) {
+                            return Text(
+                              infoParts,
+                              style: AppTypography.captionMuted,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          }
+                          return Row(
+                            children: [
+                              if (infoParts.isNotEmpty) ...[
+                                Flexible(
+                                  child: Text(
+                                    infoParts,
+                                    style: AppTypography.captionMuted,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(' \u2022 ', style: AppTypography.captionMuted),
+                              ],
+                              Icon(Icons.location_on_outlined, size: 12, color: AppColors.accent),
+                              const SizedBox(width: 2),
+                              Text(
+                                dist,
+                                style: AppTypography.captionMuted.copyWith(color: AppColors.accent),
+                              ),
+                            ],
                           );
                         }),
                         const SizedBox(height: AppSpacing.xs),

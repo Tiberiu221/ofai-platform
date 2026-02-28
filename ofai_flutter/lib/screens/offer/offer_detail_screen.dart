@@ -544,7 +544,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                       Text('Oferte similare', style: AppTypography.headlineSmall),
                                       const SizedBox(height: AppSpacing.sm),
                                       SizedBox(
-                                        height: 300,
+                                        height: 288,
                                         child: ListView.separated(
                                           scrollDirection: Axis.horizontal,
                                           itemCount: similar.length,

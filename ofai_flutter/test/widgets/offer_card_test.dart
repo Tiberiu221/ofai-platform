@@ -104,7 +104,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('4.5'), findsOneWidget);
-      expect(find.byIcon(Icons.star), findsAtLeastNWidgets(1));
+      expect(find.byIcon(Icons.star_rounded), findsAtLeastNWidgets(1));
     });
 
     testWidgets('does not show rating when business has no rating', (tester) async {
@@ -117,7 +117,7 @@ void main() {
       await tester.pumpWidget(_buildTestApp(OfferCard(offer: offer)));
       await tester.pump();
 
-      expect(find.byIcon(Icons.star), findsNothing);
+      expect(find.byIcon(Icons.star_rounded), findsNothing);
     });
 
     testWidgets('shows placeholder when no image URL', (tester) async {

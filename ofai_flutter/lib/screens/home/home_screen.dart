@@ -18,6 +18,7 @@ import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/featured_offer_card.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/location_banner.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -286,6 +287,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
+              // Location banner (hidden when location granted or dismissed)
+              SliverToBoxAdapter(child: LocationBanner()),
+
               // Offers section
               SliverToBoxAdapter(
                 child: FadeInItem(
@@ -308,7 +312,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                             );
                           }
                           return SizedBox(
-                            height: 300,
+                            height: 288,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),

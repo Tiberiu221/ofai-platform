@@ -23,8 +23,8 @@ import '../../widgets/search_suggest_dropdown.dart';
 import '../../widgets/fade_in_item.dart';
 import '../../providers/search_suggest_provider.dart';
 import '../../core/utils/distance.dart';
-import '../../core/storage/preferences.dart';
 import '../../models/offer.dart';
+import '../../widgets/location_banner.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -47,8 +47,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   int? _lastAppliedCategoryId;
   int? _lastAppliedCityId;
 
-  bool _locationGranted = false;
-  bool _locationBannerDismissed = false;
+  int _locationCheckKey = 0;
 
   @override
   void initState() {
@@ -56,27 +55,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     _tabController = TabController(length: 2, vsync: this);
     _offersScrollController.addListener(_onOffersScroll);
     _businessesScrollController.addListener(_onBusinessesScroll);
-    _checkLocationPermission();
-    _loadBannerDismissed();
-  }
-
-  Future<void> _loadBannerDismissed() async {
-    final dismissed = await AppPreferences.isLocationBannerDismissed();
-    if (mounted && dismissed) setState(() => _locationBannerDismissed = true);
-  }
-
-  Future<void> _checkLocationPermission() async {
-    try {
-      final permission = await Geolocator.checkPermission();
-      if (mounted) {
-        setState(() {
-          _locationGranted = permission == LocationPermission.always ||
-              permission == LocationPermission.whileInUse;
-        });
-      }
-    } catch (_) {
-      // Geolocator may throw on some devices
-    }
   }
 
   @override
@@ -374,60 +352,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
             }),
 
             // Location banner (shown only when location NOT granted)
-            if (!_locationGranted && !_locationBannerDismissed)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.sm,
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on_outlined, size: 20, color: AppColors.accent),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          'Activeaza locatia pentru distante',
-                          style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () async {
-                          final permission = await Geolocator.requestPermission();
-                          if (permission == LocationPermission.deniedForever) {
-                            await Geolocator.openLocationSettings();
-                          }
-                          _checkLocationPermission();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                          ),
-                          child: Text(
-                            'Activeaza',
-                            style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _locationBannerDismissed = true);
-                          AppPreferences.setLocationBannerDismissed();
-                        },
-                        child: const Icon(Icons.close, size: 16, color: AppColors.textTertiary),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            LocationBanner(key: ValueKey(_locationCheckKey)),
 
             const SizedBox(height: AppSpacing.sm),
 
@@ -726,8 +651,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       _sortCurrentOffersByDistance();
       setState(() {
         _isDistanceSort = true;
-        _locationGranted = true;
-        _locationBannerDismissed = true;
+        _locationCheckKey++;
       });
     } catch (e) {
       if (mounted) {

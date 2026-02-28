@@ -55,153 +55,133 @@ class OfferCard extends ConsumerWidget {
     return _buildVertical(context, ref);
   }
 
+  // ── Vertical layout ──────────────────────────────────────────
+
   Widget _buildVertical(BuildContext context, WidgetRef ref) {
     return Semantics(
       label: 'Oferta: ${offer.title}${offer.business != null ? ', ${offer.business!.name}' : ''}',
       button: true,
       child: TapScale(
-      onTap: () => context.push('/offer/${offer.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.border),
-        ),
-        clipBehavior: Clip.hardEdge,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            AspectRatio(
-              aspectRatio: 16 / 10,
-              child: Hero(
-                tag: 'offer-image-${offer.id}',
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _buildImage(),
-                    // Discount badge (top right)
-                    if (offer.discountValue != null)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: _buildBadge(),
+        onTap: () => context.push('/offer/${offer.id}'),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bgSecondary,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(color: AppColors.border),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Image section ──
+              AspectRatio(
+                aspectRatio: 16 / 10,
+                child: Hero(
+                  tag: 'offer-image-${offer.id}',
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildImage(),
+                      // Gradient overlay — smooth fade into bgSecondary
+                      const Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Color(0x00111111),
+                                Color(0x66111111),
+                                Color(0xCC111111),
+                              ],
+                              stops: [0.0, 0.4, 0.75, 1.0],
+                            ),
+                          ),
+                        ),
                       ),
-                    // Favorite bookmark (top left)
-                    _buildFavoriteIcon(context, ref),
-                    // Expiry countdown (bottom left)
-                    _buildCountdown(),
-                    // Trending badge (bottom right)
-                    _buildTrendingBadge(),
-                  ],
+                      // Discount badge (top right)
+                      if (offer.discountValue != null)
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: _buildBadge(),
+                        ),
+                      // Favorite bookmark (top left)
+                      _buildFavoriteIcon(context, ref),
+                      // Expiry countdown (bottom left)
+                      _buildCountdown(),
+                      // Rating badge (bottom right) — only when not trending
+                      _buildRatingBadge(),
+                      // Trending badge (bottom right) — overrides rating position
+                      _buildTrendingBadge(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    offer.title,
-                    style: AppTypography.labelLarge,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  if (offer.description != null && offer.description!.isNotEmpty) ...[
+
+              // ── Content section ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
                     Text(
-                      offer.description!,
-                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                      offer.title,
+                      style: AppTypography.labelLarge,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                  ],
-                  if (offer.business != null) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            offer.business!.name,
-                            style: AppTypography.caption,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (offer.business!.isVerified)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(Icons.verified, color: AppColors.accent, size: 14),
-                          ),
-                      ],
-                    ),
-                    // Save count row
-                    if (offer.saveCount != null && offer.saveCount! >= 3) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${offer.saveCount} salvări',
-                            style: AppTypography.captionMuted,
-                          ),
-                        ],
+
+                    // Description
+                    if (offer.description != null &&
+                        offer.description!.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        offer.description!,
+                        style: AppTypography.bodySmall
+                            .copyWith(color: AppColors.textSecondary),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 2),
-                    Builder(builder: (_) {
-                      final dist = _distanceText(ref);
-                      final locationPart = dist != null
-                          ? '$dist distanță de tine'
-                          : offer.business!.city;
-                      return Row(
-                        children: [
-                          if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
-                            Icon(Icons.star, size: 12, color: AppColors.accent),
-                            const SizedBox(width: 2),
-                            Text(
-                              offer.business!.rating!.toStringAsFixed(1),
-                              style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
-                            ),
-                            if (offer.business!.ratingCount != null && offer.business!.ratingCount! > 0) ...[
-                              const SizedBox(width: 2),
-                              Text(
-                                '(${offer.business!.ratingCount})',
-                                style: AppTypography.captionMuted,
-                              ),
-                            ],
-                            const SizedBox(width: AppSpacing.sm),
-                          ],
-                          if (locationPart != null && locationPart.isNotEmpty) ...[
-                            Icon(Icons.location_on_outlined, size: 12, color: AppColors.textTertiary),
-                            const SizedBox(width: 2),
-                          ],
-                          Expanded(
-                            child: Text(
-                              [offer.business!.category, locationPart]
-                                  .where((s) => s != null && s.isNotEmpty)
-                                  .join(' \u2022 '),
-                              style: AppTypography.captionMuted,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
+
+                    // Metadata (business info)
+                    if (offer.business != null) ...[
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Subtle divider
+                      Container(height: 1, color: AppColors.border),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Business name row — verified (left) + full-width name
+                      _buildBusinessRow(),
+                      const SizedBox(height: AppSpacing.xs),
+
+                      // Location + category row
+                      _buildLocationRow(ref),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
+
+  // ── Horizontal layout ────────────────────────────────────────
 
   Widget _buildHorizontal(BuildContext context, WidgetRef ref) {
     return TapScale(
@@ -209,135 +189,90 @@ class OfferCard extends ConsumerWidget {
       child: Container(
         width: 260,
         decoration: BoxDecoration(
-          color: AppColors.bgCard,
+          color: AppColors.bgSecondary,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(color: AppColors.border),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         clipBehavior: Clip.hardEdge,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Image section ──
             SizedBox(
-              height: 140,
+              height: 150,
               width: double.infinity,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   _buildImage(),
+                  // Gradient overlay
+                  const Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Color(0x00111111),
+                            Color(0x66111111),
+                            Color(0xCC111111),
+                          ],
+                          stops: [0.0, 0.4, 0.75, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
                   if (offer.discountValue != null)
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: 12,
+                      right: 12,
                       child: _buildBadge(),
                     ),
                   _buildFavoriteIcon(context, ref),
                   _buildCountdown(),
+                  _buildRatingBadge(),
                   _buildTrendingBadge(),
                 ],
               ),
             ),
+
+            // ── Content section ──
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title
                   Text(
                     offer.title,
                     style: AppTypography.labelLarge,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+
                   if (offer.business != null) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            offer.business!.name,
-                            style: AppTypography.caption,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (offer.business!.isVerified)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Icon(Icons.verified, color: AppColors.accent, size: 14),
-                          ),
-                      ],
-                    ),
-                    // Save count row
-                    if (offer.saveCount != null && offer.saveCount! >= 3) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${offer.saveCount} salvări',
-                            style: AppTypography.captionMuted,
-                          ),
-                        ],
-                      ),
-                    ],
-                    // Row 1: rating + category
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Row(
-                        children: [
-                          if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
-                            Icon(Icons.star, size: 12, color: AppColors.accent),
-                            const SizedBox(width: 2),
-                            Text(
-                              offer.business!.rating!.toStringAsFixed(1),
-                              style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
-                            ),
-                            if (offer.business!.ratingCount != null && offer.business!.ratingCount! > 0) ...[
-                              const SizedBox(width: 2),
-                              Text(
-                                '(${offer.business!.ratingCount})',
-                                style: AppTypography.captionMuted,
-                              ),
-                            ],
-                            const SizedBox(width: AppSpacing.sm),
-                          ],
-                          if (offer.business!.category != null && offer.business!.category!.isNotEmpty)
-                            Expanded(
-                              child: Text(
-                                offer.business!.category!,
-                                style: AppTypography.captionMuted,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Row 2: distance or city
-                    Builder(builder: (_) {
-                      final dist = _distanceText(ref);
-                      final locationLabel = dist != null
-                          ? '$dist distanță de tine'
-                          : offer.business!.city;
-                      if (locationLabel == null || locationLabel.isEmpty) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on_outlined, size: 12, color: AppColors.textTertiary),
-                            const SizedBox(width: 2),
-                            Expanded(
-                              child: Text(
-                                locationLabel,
-                                style: AppTypography.captionMuted,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Subtle divider
+                    Container(height: 1, color: AppColors.border),
+                    const SizedBox(height: AppSpacing.md),
+
+                    // Business name row
+                    _buildBusinessRow(),
+                    const SizedBox(height: AppSpacing.xs),
+
+                    // Location + category row
+                    _buildLocationRow(ref),
                   ],
                 ],
               ),
@@ -348,13 +283,97 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
+  // ── Shared metadata rows ─────────────────────────────────────
+
+  /// Business name row: [verified] full-width name
+  Widget _buildBusinessRow() {
+    final biz = offer.business!;
+    return Row(
+      children: [
+        if (biz.isVerified) ...[
+          Icon(Icons.verified, color: AppColors.accent, size: 14),
+          const SizedBox(width: 4),
+        ],
+        Expanded(
+          child: Text(
+            biz.name,
+            style: AppTypography.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Location + category row: [icon] distance/city . category ... [bookmark] saves
+  Widget _buildLocationRow(WidgetRef ref) {
+    final biz = offer.business!;
+    final dist = _distanceText(ref);
+    final hasDistance = dist != null;
+    final locationLabel = hasDistance ? '$dist distanta' : biz.city;
+    final hasLocation = locationLabel != null && locationLabel.isNotEmpty;
+    final hasCategory = biz.category != null && biz.category!.isNotEmpty;
+    final hasSaves = offer.saveCount != null && offer.saveCount! >= 3;
+
+    if (!hasLocation && !hasCategory && !hasSaves) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      children: [
+        if (hasLocation) ...[
+          Icon(
+            Icons.location_on_outlined,
+            size: 12,
+            color: hasDistance ? AppColors.accent : AppColors.textTertiary,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              locationLabel,
+              style: AppTypography.captionMuted.copyWith(
+                color: hasDistance ? AppColors.accent : null,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (hasCategory)
+            Text(' \u2022 ', style: AppTypography.captionMuted),
+        ],
+        if (hasCategory)
+          Flexible(
+            child: Text(
+              biz.category!,
+              style: AppTypography.captionMuted,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        if (hasSaves) ...[
+          const Spacer(),
+          Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
+          const SizedBox(width: 2),
+          Text(
+            '${offer.saveCount} salvari',
+            style: AppTypography.captionMuted,
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ── Shared image builder ─────────────────────────────────────
+
   Widget _buildImage() {
     final url = offer.displayImage;
     if (url == null || url.isEmpty) {
       return Container(
         color: AppColors.bgSecondary,
         child: const Center(
-          child: Icon(Icons.local_offer_outlined, size: 40, color: AppColors.textTertiary),
+          child: Icon(Icons.local_offer_outlined,
+              size: 40, color: AppColors.textTertiary),
         ),
       );
     }
@@ -365,7 +384,8 @@ class OfferCard extends ConsumerWidget {
       errorWidget: (_, __, ___) => Container(
         color: AppColors.bgSecondary,
         child: const Center(
-          child: Icon(Icons.broken_image_outlined, size: 40, color: AppColors.textTertiary),
+          child: Icon(Icons.broken_image_outlined,
+              size: 40, color: AppColors.textTertiary),
         ),
       ),
     );
@@ -407,39 +427,76 @@ class OfferCard extends ConsumerWidget {
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final isFav = isLoggedIn
-        ? ref.watch(favoritesProvider.select((s) => s.favoriteIds.contains(offer.id)))
+        ? ref.watch(
+            favoritesProvider.select((s) => s.favoriteIds.contains(offer.id)))
         : false;
 
     return Positioned(
-      top: 8,
-      left: 8,
+      top: 12,
+      left: 12,
       child: Semantics(
-        label: isFav ? 'Elimină din favorite' : 'Adaugă la favorite',
+        label: isFav ? 'Elimina din favorite' : 'Adauga la favorite',
         button: true,
         child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {
-          HapticFeedback.lightImpact();
-          if (!isLoggedIn) {
-            GoRouter.of(context).push('/login');
-            return;
-          }
-          ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
-        },
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: AppColors.overlay,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            isFav ? Icons.favorite : Icons.favorite_border,
-            size: 18,
-            color: isFav ? const Color(0xFFEF4444) : AppColors.textPrimary,
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            if (!isLoggedIn) {
+              GoRouter.of(context).push('/login');
+              return;
+            }
+            ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
+          },
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xB3111111),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.border, width: 0.5),
+            ),
+            child: Icon(
+              isFav ? Icons.favorite : Icons.favorite_border,
+              size: 18,
+              color: isFav ? const Color(0xFFEF4444) : AppColors.textPrimary,
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// Rating badge — bottom right on image, glassy dark pill with ★ rating.
+  /// Only shown when business has a rating AND offer is NOT trending
+  /// (trending badge takes priority at bottom-right).
+  Widget _buildRatingBadge() {
+    if (offer.isTrending) return const SizedBox.shrink();
+    final rating = offer.business?.rating;
+    if (rating == null || rating <= 0) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 12,
+      right: 12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xB3111111),
+          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+          border: Border.all(color: AppColors.border, width: 0.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.star_rounded, size: 12, color: AppColors.accent),
+            const SizedBox(width: 3),
+            Text(
+              rating.toStringAsFixed(1),
+              style: AppTypography.labelSmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -479,8 +536,8 @@ class OfferCard extends ConsumerWidget {
         : AppTypography.labelSmall.copyWith(color: textColor);
 
     return Positioned(
-      bottom: 8,
-      left: 8,
+      bottom: 12,
+      left: 12,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -500,14 +557,12 @@ class OfferCard extends ConsumerWidget {
   }
 
   /// Trending badge — shown at bottom right when offer.isTrending is true.
-  /// Positioned at bottom:8, right:8 to avoid conflict with the discount badge
-  /// (top right) and the favorite icon (top left).
   Widget _buildTrendingBadge() {
     if (!offer.isTrending) return const SizedBox.shrink();
 
     return Positioned(
-      bottom: 8,
-      right: 8,
+      bottom: 12,
+      right: 12,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -521,7 +576,8 @@ class OfferCard extends ConsumerWidget {
             const SizedBox(width: 3),
             Text(
               'Trending',
-              style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+              style:
+                  AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
             ),
           ],
         ),
