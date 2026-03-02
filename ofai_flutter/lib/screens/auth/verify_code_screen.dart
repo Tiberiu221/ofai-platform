@@ -7,6 +7,8 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../widgets/particle_background.dart';
+import '../../widgets/glass_card.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   final String email;
@@ -20,6 +22,7 @@ class VerifyCodeScreen extends StatefulWidget {
 class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   final List<TextEditingController> _controllers = List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
+  final _pointerNotifier = ValueNotifier<Offset>(const Offset(-1000, -1000));
   bool _isLoading = false;
   bool _isResending = false;
   String? _error;
@@ -40,6 +43,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     for (final f in _focusNodes) {
       f.dispose();
     }
+    _pointerNotifier.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -164,165 +168,186 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.huge),
+      body: Listener(
+        onPointerMove: (e) => _pointerNotifier.value = e.localPosition,
+        onPointerDown: (e) => _pointerNotifier.value = e.localPosition,
+        onPointerUp: (_) => _pointerNotifier.value = const Offset(-1000, -1000),
+        behavior: HitTestBehavior.translucent,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ParticleBackground(pointerPosition: _pointerNotifier),
+            ),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSpacing.huge),
 
-              // Back button
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-
-              const SizedBox(height: AppSpacing.xxxl),
-
-              // Title
-              Text('Verifică codul', style: AppTypography.displayMedium),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Am trimis un cod de 6 cifre la ${widget.email}',
-                style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
-              ),
-
-              const SizedBox(height: AppSpacing.xxxl),
-
-              // Timer
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _secondsLeft > 0
-                        ? AppColors.bgSecondary
-                        : AppColors.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.timer_outlined,
-                        size: 16,
-                        color: _secondsLeft > 0 ? AppColors.textSecondary : AppColors.danger,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _secondsLeft > 0 ? 'Expiră în $_timerText' : 'Cod expirat',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: _secondsLeft > 0 ? AppColors.textSecondary : AppColors.danger,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Error
-              if (_error != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                    border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: AppTypography.bodyMedium.copyWith(color: AppColors.danger),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-
-              // 6 digit inputs
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(6, (i) => SizedBox(
-                  width: 48,
-                  height: 56,
-                  child: KeyboardListener(
-                    focusNode: FocusNode(),
-                    onKeyEvent: (event) => _onKeyEvent(i, event),
-                    child: TextField(
-                      controller: _controllers[i],
-                      focusNode: _focusNodes[i],
-                      textAlign: TextAlign.center,
-                      keyboardType: TextInputType.number,
-                      maxLength: i == 0 ? 6 : 1, // Allow paste on first field
-                      style: AppTypography.headlineMedium,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        counterText: '',
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        filled: true,
-                        fillColor: AppColors.bgCard,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                          borderSide: BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                          borderSide: BorderSide(color: AppColors.border),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                          borderSide: BorderSide(color: AppColors.accent, width: 2),
-                        ),
-                      ),
-                      onChanged: (v) => _onDigitChanged(i, v),
+                    // Back button
+                    IconButton(
+                      onPressed: () => context.pop(),
+                      icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
                     ),
-                  ),
-                )),
-              ),
 
-              const SizedBox(height: AppSpacing.xxl),
+                    const SizedBox(height: AppSpacing.xxxl),
 
-              // Verify button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _verify,
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary),
-                        )
-                      : const Text('Verifică'),
-                ),
-              ),
+                    // Title
+                    Text('Verifică codul', style: AppTypography.displayMedium),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Am trimis un cod de 6 cifre la ${widget.email}',
+                      style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
+                    ),
 
-              const SizedBox(height: AppSpacing.xxl),
+                    const SizedBox(height: AppSpacing.xxxl),
 
-              // Resend
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Nu ai primit codul? ',
-                    style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
-                  ),
-                  GestureDetector(
-                    onTap: _isResending ? null : _resend,
-                    child: Text(
-                      _isResending ? 'Se trimite...' : 'Retrimite',
-                      style: AppTypography.labelLarge.copyWith(
-                        color: _isResending ? AppColors.textTertiary : AppColors.accent,
+                    // Glass card wraps form content
+                    GlassCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Timer
+                          Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: _secondsLeft > 0
+                                    ? AppColors.bgSecondary
+                                    : AppColors.danger.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.timer_outlined,
+                                    size: 16,
+                                    color: _secondsLeft > 0 ? AppColors.textSecondary : AppColors.danger,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _secondsLeft > 0 ? 'Expiră în $_timerText' : 'Cod expirat',
+                                    style: AppTypography.labelMedium.copyWith(
+                                      color: _secondsLeft > 0 ? AppColors.textSecondary : AppColors.danger,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: AppSpacing.xxl),
+
+                          // Error
+                          if (_error != null) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.danger.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                _error!,
+                                style: AppTypography.bodyMedium.copyWith(color: AppColors.danger),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+
+                          // 6 digit inputs
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(6, (i) => SizedBox(
+                              width: 48,
+                              height: 56,
+                              child: KeyboardListener(
+                                focusNode: FocusNode(),
+                                onKeyEvent: (event) => _onKeyEvent(i, event),
+                                child: TextField(
+                                  controller: _controllers[i],
+                                  focusNode: _focusNodes[i],
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: i == 0 ? 6 : 1,
+                                  style: AppTypography.headlineMedium,
+                                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                  decoration: InputDecoration(
+                                    counterText: '',
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                    filled: true,
+                                    fillColor: AppColors.bgCard,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                      borderSide: BorderSide(color: AppColors.border),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                      borderSide: BorderSide(color: AppColors.border),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                      borderSide: BorderSide(color: AppColors.accent, width: 2),
+                                    ),
+                                  ),
+                                  onChanged: (v) => _onDigitChanged(i, v),
+                                ),
+                              ),
+                            )),
+                          ),
+
+                          const SizedBox(height: AppSpacing.xxl),
+
+                          // Verify button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _verify,
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 20, height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary),
+                                    )
+                                  : const Text('Verifică'),
+                            ),
+                          ),
+
+                          const SizedBox(height: AppSpacing.xxl),
+
+                          // Resend
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Nu ai primit codul? ',
+                                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                              ),
+                              GestureDetector(
+                                onTap: _isResending ? null : _resend,
+                                child: Text(
+                                  _isResending ? 'Se trimite...' : 'Retrimite',
+                                  style: AppTypography.labelLarge.copyWith(
+                                    color: _isResending ? AppColors.textTertiary : AppColors.accent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
