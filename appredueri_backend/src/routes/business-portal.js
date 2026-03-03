@@ -8,6 +8,8 @@ const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
 const offerService = require("../services/offerService");
 const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
+const { attachTier, requireFeature, requireLimit } = require("../middleware/tierAuth");
+const { countActiveOffers, countGalleryImages } = require("../helpers/tiers");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage pentru Cloudinary)
@@ -71,6 +73,61 @@ router.get("/", businessUserAuth, async (req, res) => {
   } catch (err) {
     console.error("[BusinessPortal] Eroare la GET /my-businesses:", err);
     res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// =====================================
+//   TIER MIDDLEWARE — attach tier info to all /:businessId routes
+// =====================================
+router.use("/:businessId", attachTier(pool));
+
+// =====================================
+//   SUBSCRIPTION — current tier info
+// =====================================
+router.get("/:businessId/subscription", businessAuth, async (req, res) => {
+  try {
+    const { plan, tier, isTrial, subscription } = req.tier || {};
+    if (!plan) {
+      return res.status(500).json({ error: 'Tier info missing' });
+    }
+    res.json({
+      tier,
+      plan: {
+        slug: plan.slug,
+        name: plan.name,
+        priceMonthly: plan.price_monthly,
+        priceYearly: plan.price_yearly,
+        maxActiveOffers: plan.max_active_offers,
+        maxGalleryImages: plan.max_gallery_images,
+        maxLocations: plan.max_locations,
+        maxPromoCodesPerOffer: plan.max_promo_codes_per_offer,
+        analyticsDays: plan.analytics_days,
+        canRespondReviews: plan.can_respond_reviews,
+        canUploadLogo: plan.can_upload_logo,
+        canUploadCover: plan.can_upload_cover,
+        hasVerifiedBadge: plan.has_verified_badge,
+        hasAiSummary: plan.has_ai_summary,
+        hasPushOnOffer: plan.has_push_on_offer,
+        hasCustomPush: plan.has_custom_push,
+        hasAnalyticsCharts: plan.has_analytics_charts,
+        hasAnalyticsExport: plan.has_analytics_export,
+        hasCompetitiveInsights: plan.has_competitive_insights,
+        hasPromotedPlacement: plan.has_promoted_placement,
+        hasSearchPriority: plan.has_search_priority,
+        hasCompetitorBlocking: plan.has_competitor_blocking,
+        hasDealNomination: plan.has_deal_nomination,
+        hasBooking: plan.has_booking,
+        hasPrioritySupport: plan.has_priority_support,
+        badgeType: plan.badge_type,
+      },
+      isTrial,
+      trialEnd: subscription?.trial_end || null,
+      periodEnd: subscription?.current_period_end || null,
+      cancelAtPeriodEnd: subscription?.cancel_at_period_end || false,
+    });
+  } catch (err) {
+    console.error('[Portal] Subscription info error:', err);
+    res.status(500).json({ error: 'Eroare server' });
   }
 });
 
@@ -198,7 +255,7 @@ router.put("/:businessId", businessAuth, async (req, res) => {
 // =====================================
 //   UPLOAD LOGO - Cloudinary
 // =====================================
-router.post("/:businessId/logo", businessAuth, upload.single("logo"), async (req, res) => {
+router.post("/:businessId/logo", businessAuth, requireFeature('can_upload_logo'), upload.single("logo"), async (req, res) => {
   try {
     const { businessId } = req.params;
     console.log("[BusinessPortal] POST logo - Starting upload for business:", businessId);
@@ -235,7 +292,7 @@ router.post("/:businessId/logo", businessAuth, upload.single("logo"), async (req
 // =====================================
 //   UPLOAD COVER - Cloudinary
 // =====================================
-router.post("/:businessId/cover", businessAuth, upload.single("cover"), async (req, res) => {
+router.post("/:businessId/cover", businessAuth, requireFeature('can_upload_cover'), upload.single("cover"), async (req, res) => {
   try {
     const { businessId } = req.params;
     console.log("[BusinessPortal] POST cover - Starting upload for business:", businessId);
@@ -271,7 +328,7 @@ router.post("/:businessId/cover", businessAuth, upload.single("cover"), async (r
 // =====================================
 //   UPLOAD GALLERY IMAGE - Cloudinary
 // =====================================
-router.post("/:businessId/images", businessAuth, upload.single("image"), async (req, res) => {
+router.post("/:businessId/images", businessAuth, requireLimit('max_gallery_images', countGalleryImages), upload.single("image"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { businessId } = req.params;
@@ -379,7 +436,7 @@ router.get("/:businessId/offers", businessAuth, async (req, res) => {
 // =====================================
 //   CREATE OFFER - Cloudinary
 // =====================================
-router.post("/:businessId/offers", businessAuth, upload.single("image"), async (req, res) => {
+router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers', countActiveOffers), upload.single("image"), async (req, res) => {
   try {
     const { businessId } = req.params;
     const {
@@ -437,6 +494,9 @@ router.post("/:businessId/offers", businessAuth, upload.single("image"), async (
     res.json({ success: true, offer_id: offerId });
   } catch (err) {
     console.error("[BusinessPortal] Error creating offer:", err);
+    if (err.message === 'promo_code_limit' && err.details) {
+      return res.status(err.statusCode || 403).json(err.details);
+    }
     res.status(500).json({ message: "Eroare la creare" });
   }
 });
@@ -792,13 +852,14 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
 // =====================================
 //   ANALYTICS - Views Timeline
 // =====================================
-router.get("/:businessId/analytics/views", businessAuth, async (req, res) => {
+router.get("/:businessId/analytics/views", businessAuth, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const period = req.query.period || "30d";
 
     const intervalMap = { "7d": 7, "30d": 30, "90d": 90 };
-    const days = intervalMap[period] || 30;
+    const maxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(intervalMap[period] || 30, maxDays);
 
     const result = await pool.query(
       `SELECT DATE(viewed_at) as date, COUNT(*) as views
@@ -833,13 +894,14 @@ router.get("/:businessId/analytics/views", businessAuth, async (req, res) => {
 // =====================================
 //   ANALYTICS - Subscriber Trend
 // =====================================
-router.get("/:businessId/analytics/subscribers", businessAuth, async (req, res) => {
+router.get("/:businessId/analytics/subscribers", businessAuth, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const period = req.query.period || "30d";
 
     const intervalMap = { "7d": 7, "30d": 30, "90d": 90 };
-    const days = intervalMap[period] || 30;
+    const maxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(intervalMap[period] || 30, maxDays);
 
     const [trendRes, totalRes] = await Promise.all([
       pool.query(
@@ -921,7 +983,7 @@ router.get("/:businessId/reviews", businessAuth, async (req, res) => {
 // =====================================
 //   REVIEWS - Răspunde la o recenzie
 // =====================================
-router.post("/:businessId/reviews/:reviewId/respond", businessAuth, async (req, res) => {
+router.post("/:businessId/reviews/:reviewId/respond", businessAuth, requireFeature('can_respond_reviews'), async (req, res) => {
   try {
     const { businessId, reviewId } = req.params;
     const responseText = sanitizeString(req.body.response_text, 500);
@@ -971,7 +1033,7 @@ router.post("/:businessId/reviews/:reviewId/respond", businessAuth, async (req, 
 // =====================================
 //   REVIEWS - Editează răspunsul
 // =====================================
-router.put("/:businessId/reviews/:reviewId/respond", businessAuth, async (req, res) => {
+router.put("/:businessId/reviews/:reviewId/respond", businessAuth, requireFeature('can_respond_reviews'), async (req, res) => {
   try {
     const { businessId, reviewId } = req.params;
     const responseText = sanitizeString(req.body.response_text, 500);
@@ -1094,5 +1156,251 @@ router.get("/:businessId/score", businessAuth, async (req, res) => {
     res.status(500).json({ message: "Eroare la calculul scorului" });
   }
 });
+
+// =====================================
+//   DEAL OF THE DAY NOMINATION
+// =====================================
+
+// Nominate an offer for Deal of the Day
+router.post(
+  '/:businessId/nominations',
+  businessAuth,
+  requireFeature('has_deal_nomination'),
+  async (req, res) => {
+    const { businessId } = req.params;
+    const { offerId } = req.body;
+
+    if (!offerId) {
+      return res.status(400).json({ error: 'offerId este obligatoriu' });
+    }
+
+    try {
+      // Verify the offer belongs to this business AND is active + not expired
+      const offerCheck = await pool.query(`
+        SELECT id, title, is_active, end_date
+        FROM offers
+        WHERE id = $1 AND business_id = $2
+      `, [offerId, businessId]);
+
+      if (offerCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Oferta nu a fost gasita pentru acest business' });
+      }
+
+      const offer = offerCheck.rows[0];
+      if (!offer.is_active) {
+        return res.status(400).json({ error: 'Oferta trebuie sa fie activa pentru nominalizare' });
+      }
+      if (offer.end_date && new Date(offer.end_date) < new Date()) {
+        return res.status(400).json({ error: 'Oferta a expirat' });
+      }
+      // Offer must have at least 2 days of validity remaining
+      const twoDaysFromNow = new Date();
+      twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+      if (offer.end_date && new Date(offer.end_date) < twoDaysFromNow) {
+        return res.status(400).json({
+          error: 'Oferta trebuie sa fie valabila cel putin 2 zile de la nominalizare'
+        });
+      }
+
+      // Rate limit: 1 nomination per 7 rolling days per business
+      const recentNom = await pool.query(`
+        SELECT id, nominated_at FROM deal_nominations
+        WHERE business_id = $1
+          AND nominated_at > NOW() - INTERVAL '7 days'
+          AND status IN ('pending', 'selected')
+        ORDER BY nominated_at DESC
+        LIMIT 1
+      `, [businessId]);
+
+      if (recentNom.rows.length > 0) {
+        const nextAllowed = new Date(recentNom.rows[0].nominated_at);
+        nextAllowed.setDate(nextAllowed.getDate() + 7);
+        return res.status(429).json({
+          error: 'rate_limited',
+          message: `Poti nominaliza din nou dupa ${nextAllowed.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long' })}`,
+          nextAllowedAt: nextAllowed.toISOString(),
+        });
+      }
+
+      // Check the offer is not already pending nomination
+      const alreadyPending = await pool.query(`
+        SELECT id FROM deal_nominations
+        WHERE offer_id = $1 AND status = 'pending'
+      `, [offerId]);
+
+      if (alreadyPending.rows.length > 0) {
+        return res.status(409).json({ error: 'Aceasta oferta este deja nominalizata' });
+      }
+
+      // Insert nomination
+      const result = await pool.query(`
+        INSERT INTO deal_nominations (business_id, offer_id, nominated_at, status)
+        VALUES ($1, $2, NOW(), 'pending')
+        RETURNING id, nominated_at, status
+      `, [businessId, offerId]);
+
+      console.log(`[Nominations] Business ${businessId} nominated offer ${offerId} for Deal of the Day`);
+
+      res.status(201).json({
+        nomination: result.rows[0],
+        message: 'Oferta a fost nominalizata cu succes pentru Oferta Zilei!',
+      });
+    } catch (err) {
+      if (err.code === '23505') {
+        return res.status(409).json({ error: 'Aceasta oferta este deja nominalizata' });
+      }
+      console.error('[Nominations] Error:', err);
+      res.status(500).json({ error: 'Eroare server' });
+    }
+  }
+);
+
+// Cancel a pending nomination
+router.delete(
+  '/:businessId/nominations/:nominationId',
+  businessAuth,
+  async (req, res) => {
+    const { businessId, nominationId } = req.params;
+
+    try {
+      const result = await pool.query(`
+        UPDATE deal_nominations
+        SET status = 'cancelled'
+        WHERE id = $1 AND business_id = $2 AND status = 'pending'
+        RETURNING id
+      `, [nominationId, businessId]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Nominalizare negasita sau nu poate fi anulata' });
+      }
+
+      res.json({ message: 'Nominalizare anulata' });
+    } catch (err) {
+      console.error('[Nominations] Cancel error:', err);
+      res.status(500).json({ error: 'Eroare server' });
+    }
+  }
+);
+
+// Get nomination status for this business
+router.get(
+  '/:businessId/nominations',
+  businessAuth,
+  async (req, res) => {
+    const { businessId } = req.params;
+
+    try {
+      const nominations = await pool.query(`
+        SELECT dn.id, dn.offer_id, dn.nominated_at, dn.selected_for_date, dn.status,
+               o.title as offer_title
+        FROM deal_nominations dn
+        JOIN offers o ON o.id = dn.offer_id
+        WHERE dn.business_id = $1
+          AND dn.status IN ('pending', 'selected')
+        ORDER BY dn.nominated_at DESC
+      `, [businessId]);
+
+      const lastNom = await pool.query(`
+        SELECT nominated_at FROM deal_nominations
+        WHERE business_id = $1
+          AND nominated_at > NOW() - INTERVAL '7 days'
+          AND status IN ('pending', 'selected')
+        ORDER BY nominated_at DESC
+        LIMIT 1
+      `, [businessId]);
+
+      let canNominate = true;
+      let nextAllowedAt = null;
+      if (lastNom.rows.length > 0) {
+        canNominate = false;
+        const next = new Date(lastNom.rows[0].nominated_at);
+        next.setDate(next.getDate() + 7);
+        nextAllowedAt = next.toISOString();
+      }
+
+      res.json({
+        nominations: nominations.rows,
+        canNominate,
+        nextAllowedAt,
+      });
+    } catch (err) {
+      console.error('[Nominations] List error:', err);
+      res.status(500).json({ error: 'Eroare server' });
+    }
+  }
+);
+
+// ── CANCEL SUBSCRIPTION ──
+router.post('/:businessId/subscription/cancel', businessAuth, async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.businessId);
+
+    // Mark as cancel at period end (don't immediately cancel)
+    const result = await pool.query(`
+      UPDATE business_subscriptions
+      SET cancel_at_period_end = TRUE, updated_at = NOW()
+      WHERE business_id = $1
+        AND status IN ('active')
+        AND billing_cycle != 'none'
+      RETURNING id, current_period_end
+    `, [businessId]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nu exista un abonament activ de anulat.',
+      });
+    }
+
+    // Log to history
+    await pool.query(`
+      INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
+      SELECT bs.plan_id, bs.plan_id, bs.plan_id, 'cancelled', 'User requested cancellation'
+      FROM business_subscriptions bs
+      WHERE bs.id = $1
+    `, [result.rows[0].id]);
+
+    console.log(`[BusinessPortal] Subscription cancelled for business ${businessId}, active until ${result.rows[0].current_period_end}`);
+
+    res.json({
+      success: true,
+      message: 'Abonamentul a fost anulat. Beneficiile raman active pana la ' +
+        new Date(result.rows[0].current_period_end).toLocaleDateString('ro-RO') + '.',
+      activeUntil: result.rows[0].current_period_end,
+    });
+  } catch (err) {
+    console.error('[BusinessPortal] Cancel subscription error:', err);
+    res.status(500).json({ success: false, message: 'Eroare la anularea abonamentului.' });
+  }
+});
+
+// =====================================
+//   COMPETITOR BLOCKING — Toggle
+// =====================================
+router.put(
+  '/:businessId/competitor-blocking',
+  businessAuth,
+  requireFeature('has_competitor_blocking'),
+  async (req, res) => {
+    const { businessId } = req.params;
+    const { enabled } = req.body;
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled trebuie sa fie boolean' });
+    }
+
+    try {
+      await pool.query(
+        'UPDATE businesses SET competitor_blocking_enabled = $1 WHERE id = $2',
+        [enabled, businessId]
+      );
+
+      res.json({ competitor_blocking_enabled: enabled });
+    } catch (err) {
+      console.error('[Portal] Competitor blocking toggle error:', err);
+      res.status(500).json({ error: 'Eroare server' });
+    }
+  }
+);
 
 module.exports = router;

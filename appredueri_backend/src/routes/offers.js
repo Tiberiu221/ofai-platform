@@ -71,10 +71,47 @@ router.get("/", optionalAuth, async (req, res) => {
       idx++;
     }
 
+    // Filter to promoted offers only (for Premium businesses)
+    if (req.query.promoted_only === '1') {
+      filters.push(`splan.has_promoted_placement = TRUE`);
+    }
+
+    // Competitor blocking: if block_competitors_for is a business_id,
+    // check if that business has competitor blocking enabled
+    // and if so, filter to only that business's offers
+    if (req.query.block_competitors_for) {
+      const blockBizId = parseInt(req.query.block_competitors_for);
+      if (!Number.isNaN(blockBizId)) {
+        try {
+          const tierCheck = await pool.query(`
+            SELECT splan.has_competitor_blocking, bs.competitor_blocking_enabled
+            FROM business_subscriptions bsub
+            JOIN subscription_plans splan ON splan.id = bsub.plan_id
+            JOIN businesses bs ON bs.id = bsub.business_id
+            WHERE bsub.business_id = $1
+              AND bsub.status IN ('active', 'trial')
+            LIMIT 1
+          `, [blockBizId]);
+
+          if (tierCheck.rows.length > 0
+              && tierCheck.rows[0].has_competitor_blocking
+              && tierCheck.rows[0].competitor_blocking_enabled) {
+            // Override: only show offers from this business
+            filters.push(`b.id = $${idx}`);
+            values.push(blockBizId);
+            idx++;
+          }
+        } catch (e) { /* fail open */ }
+      }
+    }
+
     let orderBy = "o.id DESC";
     if (sort === "discount_desc") orderBy = "o.discount_value DESC";
     if (sort === "ending_soon") orderBy = "o.end_date ASC";
-    if (sort === "popular") orderBy = "rating_avg DESC NULLS LAST, o.id DESC";
+    if (sort === "popular") orderBy = `(
+      (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id)
+      + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
+    ) DESC NULLS LAST, o.id DESC`;
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
@@ -89,6 +126,7 @@ router.get("/", optionalAuth, async (req, res) => {
         b.lat, b.lng, b.logo_url as business_logo,
         b.cover_image_url as business_cover,
         b.is_verified as business_verified,
+        b.subscription_badge_type as business_badge_type,
 
         c.name as city_name, cat.name as category_name,
 
@@ -97,11 +135,16 @@ router.get("/", optionalAuth, async (req, res) => {
         (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
         (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending,
 
+        COALESCE(splan.has_promoted_placement, FALSE) as is_promoted,
         locs.locations as locations
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN business_subscriptions bsub
+        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+      LEFT JOIN subscription_plans splan
+        ON splan.id = bsub.plan_id
 
       LEFT JOIN LATERAL (
         SELECT COALESCE(
@@ -166,6 +209,7 @@ router.get("/", optionalAuth, async (req, res) => {
         has_promo_code: !!row.has_promo_code,
         save_count: parseInt(row.save_count || 0),
         is_trending: row.is_trending === true,
+        is_promoted: row.is_promoted || false,
         image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
         locations: Array.isArray(row.locations) ? row.locations : [],
         business: {
@@ -179,7 +223,9 @@ router.get("/", optionalAuth, async (req, res) => {
           lng: row.lng,
           rating: parseFloat(avg.toFixed(1)),
           rating_count: count,
-          is_verified: row.business_verified || false
+          is_verified: row.business_verified || false,
+          subscription_badge_type: row.business_badge_type || null,
+          badge_type: row.business_badge_type || (row.business_verified ? 'verified' : null),
         }
       };
     });
@@ -249,6 +295,7 @@ router.get("/feed", auth, async (req, res) => {
         b.lat, b.lng, b.logo_url as business_logo,
         b.cover_image_url as business_cover,
         b.is_verified as business_verified,
+        b.subscription_badge_type as business_badge_type,
         c.name as city_name, cat.name as category_name,
         (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
         (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
@@ -297,7 +344,9 @@ router.get("/feed", auth, async (req, res) => {
         lng: row.lng,
         rating: parseFloat(parseFloat(row.rating_avg || 0).toFixed(1)),
         rating_count: parseInt(row.rating_count || 0),
-        is_verified: row.business_verified || false
+        is_verified: row.business_verified || false,
+        subscription_badge_type: row.business_badge_type || null,
+        badge_type: row.business_badge_type || (row.business_verified ? 'verified' : null),
       }
     }));
 
@@ -320,6 +369,7 @@ router.get("/deal-of-day", async (req, res) => {
              o.logo_url as offer_logo,
              b.id as business_id, b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover, b.is_verified as business_verified,
+             b.subscription_badge_type as business_badge_type,
              c.name as city_name,
              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
       FROM offers o
@@ -339,6 +389,7 @@ router.get("/deal-of-day", async (req, res) => {
                o.logo_url as offer_logo,
                b.id as business_id, b.name as business_name, b.logo_url as business_logo,
                b.cover_image_url as business_cover, b.is_verified as business_verified,
+               b.subscription_badge_type as business_badge_type,
                c.name as city_name,
                (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
         FROM offers o
@@ -368,7 +419,9 @@ router.get("/deal-of-day", async (req, res) => {
         name: row.business_name,
         logo_url: makeAbsoluteUrl(req, row.business_logo),
         city: row.city_name,
-        is_verified: row.business_verified || false
+        is_verified: row.business_verified || false,
+        subscription_badge_type: row.business_badge_type || null,
+        badge_type: row.business_badge_type || (row.business_verified ? 'verified' : null),
       }
     });
   } catch (err) {
@@ -409,6 +462,7 @@ router.get("/:id", async (req, res) => {
         b.logo_url as business_logo,
         b.cover_image_url as business_cover,
         b.is_verified as business_verified,
+        b.subscription_badge_type as business_badge_type,
         -- Booking business
         b.booking_type as biz_booking_type,
         b.booking_phone as biz_booking_phone,
@@ -559,7 +613,9 @@ router.get("/:id", async (req, res) => {
         category: { id: row.cat_id, name: row.cat_name },
         rating: parseFloat(avg.toFixed(1)),
         rating_count: count,
-        is_verified: row.business_verified || false
+        is_verified: row.business_verified || false,
+        subscription_badge_type: row.business_badge_type || null,
+        badge_type: row.business_badge_type || (row.business_verified ? 'verified' : null),
       },
 
       // Locațiile pot avea booking propriu (de pe business_locations)

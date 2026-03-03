@@ -534,7 +534,7 @@ class OfferDetailScreen extends ConsumerWidget {
                           // Similar offers
                           Builder(
                             builder: (_) {
-                              final similarAsync = ref.watch(similarOffersProvider((offerId: offer.id, categoryId: offer.business?.categoryId)));
+                              final similarAsync = ref.watch(similarOffersProvider((offerId: offer.id, categoryId: offer.business?.categoryId, businessId: offer.business?.id)));
                               return similarAsync.when(
                                 data: (similar) {
                                   if (similar.isEmpty) return const SizedBox.shrink();

@@ -25,6 +25,9 @@ class Business {
   final int? offerRequestCount;
   final bool? showPinchFlag;
   final bool isVerified;
+  final String? subscriptionBadgeType; // null, 'verified', 'premium'
+  final String? badgeType;             // effective badge: subscription badge || is_verified fallback
+  final bool isPromoted;
   // Platform polish fields
   final int? followerCount;
   final Map<int, int>? ratingDistribution; // {1: count, 2: count, ...5: count}
@@ -52,9 +55,21 @@ class Business {
     this.offerRequestCount,
     this.showPinchFlag,
     this.isVerified = false,
+    this.subscriptionBadgeType,
+    this.badgeType,
+    this.isPromoted = false,
     this.followerCount,
     this.ratingDistribution,
   });
+
+  /// Whether this business has any badge
+  bool get hasBadge => badgeType != null;
+
+  /// Whether this is a premium badge
+  bool get isPremium => badgeType == 'premium';
+
+  /// Whether this is a verified (standard) badge
+  bool get isStandardVerified => badgeType == 'verified';
 
   String get cityName => city?.name ?? '';
   String get categoryName => category?.name ?? '';
@@ -99,6 +114,11 @@ class Business {
           : json['offerRequestCount'] as int?,
       showPinchFlag: json['showPinch'] as bool?,
       isVerified: json['is_verified'] as bool? ?? false,
+      subscriptionBadgeType: json['subscription_badge_type'] as String?,
+      badgeType: json['badge_type'] as String?
+          ?? json['subscription_badge_type'] as String?
+          ?? ((json['is_verified'] as bool? ?? false) ? 'verified' : null),
+      isPromoted: json['is_promoted'] == true,
       followerCount: json['follower_count'] as int?,
       ratingDistribution: _parseRatingDistribution(json['rating_distribution']),
     );

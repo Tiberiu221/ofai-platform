@@ -72,6 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
           onRefresh: () async {
             ref.invalidate(feedProvider);
             ref.invalidate(popularOffersProvider);
+            ref.invalidate(promotedOffersProvider);
             ref.invalidate(homeBusinessesProvider);
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
@@ -343,6 +344,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+              // Promoted Offers (Premium businesses)
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final promotedAsync = ref.watch(promotedOffersProvider);
+                    return promotedAsync.when(
+                      data: (promoted) {
+                        if (promoted.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(title: 'Oferte Promovate'),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              height: 200,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                                itemCount: promoted.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+                                itemBuilder: (_, i) => SizedBox(
+                                  width: 280,
+                                  child: OfferCard(offer: promoted[i], horizontal: true),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ),
 
               // Marquee logos
               SliverToBoxAdapter(

@@ -237,6 +237,18 @@ final popularOffersProvider = FutureProvider.autoDispose<List<Offer>>((ref) asyn
   return _interleaveOffers(paginated.data);
 });
 
+// Promoted offers (from Premium businesses)
+final promotedOffersProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
+  final response = await ApiClient().dio.get(ApiEndpoints.offers, queryParameters: {
+    'sort': 'popular',
+    'limit': 3,
+    'page': 1,
+    'promoted_only': '1',
+  });
+  final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
+  return paginated.data.where((o) => o.isPromoted).take(3).toList();
+});
+
 // Personalized feed for home screen (authenticated users)
 final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
   try {
@@ -276,7 +288,8 @@ final dealOfDayProvider = FutureProvider.autoDispose<Offer?>((ref) async {
 });
 
 // Similar offers for offer detail (filtered by category for relevance)
-final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, ({int offerId, int? categoryId})>((ref, params) async {
+// businessId is passed for competitor blocking — backend decides whether to apply
+final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, ({int offerId, int? categoryId, int? businessId})>((ref, params) async {
   try {
     final response = await ApiClient().dio.get(
       ApiEndpoints.offers,
@@ -285,6 +298,7 @@ final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, ({i
         'limit': 6,
         'sort': 'popular',
         if (params.categoryId != null) 'category_id': params.categoryId,
+        if (params.businessId != null) 'block_competitors_for': params.businessId,
       },
     );
     final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);

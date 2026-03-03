@@ -300,6 +300,76 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════
+     PROMOTED OFFERS (Premium businesses)
+     ═══════════════════════════════════════════════════════ -->
+<% if (typeof promotedOffers !== 'undefined' && promotedOffers && promotedOffers.length > 0) { %>
+<section class="section">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">⭐ Parteneri</div>
+      <h2 class="section-title text-gradient">Oferte Promovate</h2>
+      <p class="section-subtitle">De la business-urile noastre partenere</p>
+    </div>
+
+    <div class="offers-bento promoted-grid">
+      <% promotedOffers.forEach((offer, i) => { %>
+        <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min(i + 1, 3) %>">
+          <div class="offer-image-wrapper">
+            <% if (offer.image_url) { %>
+              <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy" width="400" height="240">
+            <% } else if (offer.business_logo) { %>
+              <div class="offer-image-placeholder">
+                <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" class="offer-placeholder-logo">
+              </div>
+            <% } else { %>
+              <div class="offer-image-placeholder">
+                <span class="offer-placeholder-letter"><%= (offer.business_name || 'O').charAt(0) %></span>
+              </div>
+            <% } %>
+            <span class="promoted-badge">Promovat</span>
+            <% if (offer.discount_value) { %>
+              <div class="offer-badge">
+                <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
+                  -<%= offer.discount_value %>%
+                <% } else { %>
+                  <%= offer.discount_value %> lei
+                <% } %>
+              </div>
+            <% } %>
+            <% if (offer.end_date) { %>
+              <div class="countdown-overlay" data-end-date="<%= new Date(offer.end_date).toISOString() %>"></div>
+            <% } %>
+            <div class="card-heart-btn<%= (userFavoriteIds || []).includes(offer.id) ? ' is-active' : '' %>" data-offer-id="<%= offer.id %>" data-favorited="<%= (userFavoriteIds || []).includes(offer.id) ? 'true' : 'false' %>" onclick="window.toggleCardFavorite(<%= offer.id %>, event)" role="button" tabindex="0" aria-label="Favorite"><svg class="heart-outline" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><svg class="heart-filled" width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+          </div>
+          <div class="offer-content">
+            <div class="offer-title"><%= offer.title %></div>
+            <div class="offer-business"><%= offer.business_name %></div>
+            <% if (parseFloat(offer.rating_avg) > 0) { %>
+              <div class="offer-rating">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span><%= parseFloat(offer.rating_avg).toFixed(1) %></span>
+                <span class="offer-rating-count">(<%= offer.rating_count %>)</span>
+              </div>
+            <% } %>
+            <div class="offer-meta">
+              <span class="offer-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <%= offer.city_name %>
+              </span>
+              <span class="offer-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <%= offer.category_name %>
+              </span>
+            </div>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
      TOP BUSINESSES
      ═══════════════════════════════════════════════════════ -->
 <% if (topBusinesses && topBusinesses.length > 0) { %>

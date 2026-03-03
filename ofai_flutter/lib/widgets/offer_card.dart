@@ -12,6 +12,7 @@ import '../providers/auth_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/location_provider.dart';
 import '../core/utils/distance.dart';
+import 'subscription_badge.dart';
 import 'tap_scale.dart';
 
 class OfferCard extends ConsumerWidget {
@@ -116,6 +117,8 @@ class OfferCard extends ConsumerWidget {
                         ),
                       // Favorite bookmark (top left)
                       _buildFavoriteIcon(context, ref),
+                      // Promoted badge (top left, next to fav)
+                      _buildPromotedBadge(),
                       // Expiry countdown (bottom left)
                       _buildCountdown(),
                       // Rating badge (bottom right) — only when not trending
@@ -237,6 +240,7 @@ class OfferCard extends ConsumerWidget {
                       child: _buildBadge(),
                     ),
                   _buildFavoriteIcon(context, ref),
+                  _buildPromotedBadge(),
                   _buildCountdown(),
                   _buildRatingBadge(),
                   _buildTrendingBadge(),
@@ -285,13 +289,13 @@ class OfferCard extends ConsumerWidget {
 
   // ── Shared metadata rows ─────────────────────────────────────
 
-  /// Business name row: [verified] full-width name
+  /// Business name row: [badge] full-width name
   Widget _buildBusinessRow() {
     final biz = offer.business!;
     return Row(
       children: [
-        if (biz.isVerified) ...[
-          Icon(Icons.verified, color: AppColors.accent, size: 14),
+        if (biz.badgeType != null) ...[
+          SubscriptionBadge(badgeType: biz.badgeType, size: 14),
           const SizedBox(width: 4),
         ],
         Expanded(
@@ -551,6 +555,33 @@ class OfferCard extends ConsumerWidget {
             const SizedBox(width: 4),
             Text(text, style: labelStyle),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Promoted badge — shown at top left (next to fav icon) when offer is promoted.
+  Widget _buildPromotedBadge() {
+    if (!offer.isPromoted) return const SizedBox.shrink();
+
+    return Positioned(
+      top: 12,
+      left: 56,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          'PROMOVAT',
+          style: TextStyle(
+            color: AppColors.accent,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );

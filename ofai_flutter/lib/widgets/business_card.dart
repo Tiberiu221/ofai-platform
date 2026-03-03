@@ -11,6 +11,7 @@ import '../models/business.dart';
 import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/subscriptions_provider.dart';
+import 'subscription_badge.dart';
 import 'tap_scale.dart';
 
 class BusinessCard extends ConsumerWidget {
@@ -84,10 +85,10 @@ class BusinessCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (business.isVerified)
+                            if (business.hasBadge)
                               Padding(
                                 padding: const EdgeInsets.only(left: 4),
-                                child: Icon(Icons.verified, color: AppColors.accent, size: 16),
+                                child: SubscriptionBadge(badgeType: business.badgeType, size: 16),
                               ),
                           ],
                         ),

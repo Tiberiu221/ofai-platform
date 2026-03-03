@@ -18,6 +18,7 @@ class Offer {
   // Platform polish fields
   final int? saveCount;
   final bool isTrending;
+  final bool isPromoted;
   final int? maxReveals;
   final int? revealCount;
 
@@ -39,6 +40,7 @@ class Offer {
     this.hasPromoCode = false,
     this.saveCount,
     this.isTrending = false,
+    this.isPromoted = false,
     this.maxReveals,
     this.revealCount,
   });
@@ -79,6 +81,7 @@ class Offer {
       hasPromoCode: json['has_promo_code'] as bool? ?? false,
       saveCount: json['save_count'] as int?,
       isTrending: json['is_trending'] as bool? ?? false,
+      isPromoted: json['is_promoted'] == true,
       maxReveals: json['max_reveals'] as int?,
       revealCount: json['reveal_count'] as int?,
     );
@@ -106,6 +109,7 @@ class OfferBusiness {
   final double? rating;
   final int? ratingCount;
   final bool isVerified;
+  final String? badgeType; // effective badge: null, 'verified', 'premium'
   final int? categoryId;
 
   OfferBusiness({
@@ -120,10 +124,12 @@ class OfferBusiness {
     this.rating,
     this.ratingCount,
     this.isVerified = false,
+    this.badgeType,
     this.categoryId,
   });
 
   factory OfferBusiness.fromJson(Map<String, dynamic> json) {
+    final isVerified = json['is_verified'] as bool? ?? false;
     return OfferBusiness(
       id: json['id'] as int,
       name: json['name'] as String,
@@ -135,7 +141,10 @@ class OfferBusiness {
       lng: (json['lng'] as num?)?.toDouble(),
       rating: (json['rating'] as num?)?.toDouble(),
       ratingCount: json['rating_count'] as int?,
-      isVerified: json['is_verified'] as bool? ?? false,
+      isVerified: isVerified,
+      badgeType: json['badge_type'] as String?
+          ?? json['subscription_badge_type'] as String?
+          ?? (isVerified ? 'verified' : null),
       categoryId: json['category_id'] as int?,
     );
   }

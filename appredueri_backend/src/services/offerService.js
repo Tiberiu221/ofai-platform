@@ -5,6 +5,7 @@
 
 const { triggerWebhook } = require("./n8n");
 const pushService = require("./pushNotifications");
+const { getBusinessTier } = require('../helpers/tiers');
 
 /**
  * Create a new offer with promo codes, push notifications, and n8n webhook
@@ -59,6 +60,37 @@ async function createOffer(pool, params) {
 
   try {
     await client.query("BEGIN");
+
+    // Advisory lock per business to prevent race condition on offer limit check
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtext('offer_limit_' || $1::text))",
+      [String(businessId)]
+    );
+
+    // Promo code limit check
+    if (promoCodes && Array.isArray(promoCodes)) {
+      const validCodes = promoCodes.filter(pc => pc.code && pc.code.trim());
+      if (validCodes.length > 0) {
+        const { plan } = await getBusinessTier(client, businessId);
+        const promoLimit = plan.max_promo_codes_per_offer;
+        if (promoLimit !== null && validCodes.length > promoLimit) {
+          await client.query("ROLLBACK");
+          const err = new Error('promo_code_limit');
+          err.statusCode = 403;
+          err.details = {
+            error: 'limit_reached',
+            message: promoLimit === 0
+              ? `Codurile promotionale nu sunt disponibile pe planul ${plan.name}.`
+              : `Maximum ${promoLimit} coduri per oferta pe planul ${plan.name}.`,
+            currentTier: plan.slug,
+            limit: promoLimit,
+            current: validCodes.length,
+            limitKey: 'max_promo_codes_per_offer',
+          };
+          throw err;
+        }
+      }
+    }
 
     const result = await client.query(`
       INSERT INTO offers (

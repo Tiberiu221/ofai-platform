@@ -50,7 +50,12 @@
       <div class="bd-profile-info">
         <h1 class="bd-business-name">
           <%= business.name %>
-          <% if (business.is_verified) { %>
+          <% if (business.badge_type === 'premium') { %>
+            <span class="premium-badge-wrap" style="position: relative; display: inline-flex; cursor: help;">
+              <svg class="premium-badge-icon" width="22" height="22" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+              <span class="premium-tooltip">Business Premium OFAI</span>
+            </span>
+          <% } else if (business.badge_type === 'verified' || business.is_verified) { %>
             <span class="verified-badge-wrap" style="position: relative; display: inline-flex; cursor: help;">
               <svg class="verified-badge" width="22" height="22" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
               <span class="verified-tooltip" style="display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-weight: 400;">Business verificat de echipa OFAI</span>

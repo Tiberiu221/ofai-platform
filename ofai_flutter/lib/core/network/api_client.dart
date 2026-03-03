@@ -97,6 +97,24 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Handle 403 upgrade_required / limit_reached
+    if (err.response?.statusCode == 403) {
+      final data = err.response?.data;
+      if (data is Map && (data['error'] == 'upgrade_required' || data['error'] == 'limit_reached')) {
+        handler.reject(DioException(
+          requestOptions: err.requestOptions,
+          response: err.response,
+          type: err.type,
+          error: UpgradeRequiredException(
+            message: data['message'] as String? ?? 'Upgrade necesar',
+            currentTier: data['currentTier'] as String? ?? 'free',
+            requiredFeature: data['requiredFeature'] as String?,
+          ),
+        ));
+        return;
+      }
+    }
+
     // Only attempt refresh on 401
     if (err.response?.statusCode != 401) {
       handler.next(err);

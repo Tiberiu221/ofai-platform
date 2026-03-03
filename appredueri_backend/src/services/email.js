@@ -456,10 +456,92 @@ async function sendBusinessRejectedEmail(to, firstName, businessName, reason) {
   }
 }
 
+/**
+ * Send Premium support welcome email when a business upgrades to Premium
+ */
+async function sendPremiumSupportWelcome(to, firstName, businessName) {
+  if (!resend) {
+    console.log(`[Email] Skipping premium support welcome (no API key): ${to}`);
+    return { success: false, reason: 'no_api_key' };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject: `Suport Prioritar activat pentru "${businessName}" - ${APP_NAME}`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="ro">
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="margin: 0; padding: 0; background-color: #06060a; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          <table role="presentation" width="100%" style="background-color: #06060a;">
+            <tr>
+              <td align="center" style="padding: 40px 16px;">
+                <table role="presentation" width="600" style="max-width: 600px; width: 100%;">
+                  <tr>
+                    <td style="background: radial-gradient(ellipse at center top, rgba(167, 139, 250, 0.12) 0%, rgba(6, 6, 10, 0) 70%); background-color: #0d0d12; border: 1px solid rgba(167, 139, 250, 0.15); border-bottom: none; border-radius: 16px 16px 0 0; padding: 40px 32px 24px; text-align: center;">
+                      <p style="margin: 0; font-size: 18px; font-weight: 700; color: #a78bfa;">PREMIUM</p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #0d0d12; border-left: 1px solid rgba(167, 139, 250, 0.15); border-right: 1px solid rgba(167, 139, 250, 0.15); padding: 0 32px 32px;">
+                      <h1 style="font-family: 'DM Serif Display', Georgia, serif; font-size: 24px; font-weight: 400; color: #fafafa; text-align: center; margin: 32px 0 16px;">Suport Prioritar Activat</h1>
+                      <p style="font-size: 15px; color: #a1a1aa; line-height: 1.6;">
+                        Salut${firstName ? ` <strong style="color: #fafafa;">${firstName}</strong>` : ''},
+                      </p>
+                      <p style="font-size: 15px; color: #a1a1aa; line-height: 1.6;">
+                        Business-ul <strong style="color: #a78bfa;">${businessName}</strong> beneficiaza acum de suport prioritar. Iata cum ne poti contacta:
+                      </p>
+                      <table role="presentation" width="100%" style="margin: 24px 0;">
+                        <tr>
+                          <td style="background: rgba(167, 139, 250, 0.06); border: 1px solid rgba(167, 139, 250, 0.12); border-radius: 12px; padding: 20px;">
+                            <p style="margin: 0 0 12px; font-size: 14px; color: #a78bfa; font-weight: 600;">Contact Prioritar:</p>
+                            <p style="margin: 0 0 8px; font-size: 14px; color: #fafafa;">
+                              Email: <a href="mailto:premium@ofai.ro" style="color: #a78bfa; text-decoration: none;">premium@ofai.ro</a>
+                            </p>
+                            <p style="margin: 0; font-size: 14px; color: #fafafa;">
+                              WhatsApp: <a href="https://wa.me/40700000000" style="color: #22c55e; text-decoration: none;">+40 700 000 000</a>
+                            </p>
+                            <p style="margin: 12px 0 0; font-size: 13px; color: #71717a;">
+                              Timp mediu de raspuns: sub 4 ore (zilele lucratoare)
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #0d0d12; border: 1px solid rgba(167, 139, 250, 0.15); border-top: none; border-radius: 0 0 16px 16px; padding: 20px 32px 32px; text-align: center;">
+                      <p style="font-size: 12px; color: #52525b;">&copy; ${new Date().getFullYear()} ${APP_NAME}. Toate drepturile rezervate.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error('[Email] Premium support welcome error:', error);
+      return { success: false, error };
+    }
+    console.log(`[Email] Premium support welcome sent to ${to}`);
+    return { success: true, data };
+  } catch (err) {
+    console.error('[Email] Premium support welcome exception:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendEmail,
   sendBusinessApprovedEmail,
   sendBusinessRejectedEmail,
+  sendPremiumSupportWelcome,
 };

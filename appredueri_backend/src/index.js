@@ -22,7 +22,7 @@ const { initCronJobs } = require("./services/cronJobs");
 // Rate Limiting
 const { generalLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
 
-// Database pool (for sitemap)
+// Database pool (for sitemap + tier middleware)
 const pool = require("./db");
 
 // Import Rute
@@ -36,6 +36,7 @@ const businessesRouter = require("./routes/businesses");
 const usersRouter = require("./routes/users");
 const adminRouter = require("./routes/admin");
 const businessPortalRouter = require("./routes/business-portal");
+const billingRouter = require("./routes/billing");
 const reviewsRoutes = require("./routes/reviews");
 const pushTokensRouter = require("./routes/push-tokens");
 const offerRequestsRouter = require("./routes/offer-requests");
@@ -44,6 +45,9 @@ const webRouter = require("./routes/web");
 const app = express();
 const PORT = process.env.PORT || 4000;
 const isProduction = process.env.NODE_ENV === "production";
+
+// Make pool available to middleware via app.get('pool')
+app.set('pool', pool);
 
 // Cache buster — changes on each server restart
 app.locals.cacheBust = Date.now();
@@ -187,6 +191,10 @@ function csrfMiddleware(req, res, next) {
   }
   // Skip for anonymous click tracking endpoint
   if (req.path === '/api/web/clicks' && req.method === 'POST') {
+    return next();
+  }
+  // Skip for Stripe webhook (signed by Stripe, not a browser request)
+  if (req.path === '/billing/webhook' && req.method === 'POST') {
     return next();
   }
   // Skip for Google OAuth (protected by Google ID token verification, stronger than CSRF)
@@ -335,6 +343,9 @@ app.use("/offer-requests", offerRequestsRouter);
 // Rute Admin (Securizat cu Basic Auth + Rate Limiting)
 app.use("/admin", adminLimiter, adminAuth, adminRouter);
 
+// Rute Billing (Stripe skeleton)
+app.use("/billing", billingRouter);
+
 // Rute Business Portal (pentru business owners)
 app.use("/my-businesses", businessPortalRouter);
 
@@ -397,7 +408,7 @@ app.use((req, res) => {
   if (req.path.startsWith('/auth') || req.path.startsWith('/users') || req.path.startsWith('/offers') ||
       req.path.startsWith('/businesses') || req.path.startsWith('/favorites') || req.path.startsWith('/subscriptions') ||
       req.path.startsWith('/reviews') || req.path.startsWith('/cities') || req.path.startsWith('/categories') ||
-      req.path.startsWith('/push-tokens') || req.path.startsWith('/my-businesses') || req.path.startsWith('/api')) {
+      req.path.startsWith('/push-tokens') || req.path.startsWith('/my-businesses') || req.path.startsWith('/billing') || req.path.startsWith('/api')) {
     return res.status(404).json({ message: "Endpoint negăsit" });
   }
   // Web pages render 404 EJS — try to pass webUser if cookie exists

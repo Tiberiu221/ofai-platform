@@ -60,10 +60,29 @@ class UnauthorizedException extends ApiException {
   UnauthorizedException() : super(message: 'Sesiunea a expirat.', statusCode: 401);
 }
 
+class UpgradeRequiredException extends ApiException {
+  final String currentTier;
+  final String? requiredFeature;
+
+  UpgradeRequiredException({
+    required String message,
+    required this.currentTier,
+    this.requiredFeature,
+  }) : super(message: message, statusCode: 403);
+
+  @override
+  String toString() => 'UpgradeRequiredException: $message (tier: $currentTier)';
+}
+
 /// Convert any error to a user-friendly Romanian message.
 /// Use this instead of `e.toString()` in providers.
 String friendlyError(dynamic e) {
+  if (e is UpgradeRequiredException) return e.message;
   if (e is ApiException) return e.message;
-  if (e is DioException) return ApiException.fromDioError(e).message;
+  if (e is DioException) {
+    // Check if the error wraps an UpgradeRequiredException
+    if (e.error is UpgradeRequiredException) return (e.error as UpgradeRequiredException).message;
+    return ApiException.fromDioError(e).message;
+  }
   return 'Eroare neasteptata. Incearca din nou.';
 }

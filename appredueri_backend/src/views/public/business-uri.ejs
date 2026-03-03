@@ -139,6 +139,9 @@
             <% if (biz.cover_image_url) { %>
               <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" loading="lazy" width="400" height="200">
             <% } %>
+            <% if (biz.is_promoted) { %>
+              <span class="promoted-badge">Promovat</span>
+            <% } %>
             <div class="card-heart-btn<%= (userFollowedIds || []).includes(biz.id) ? ' is-active' : '' %>" data-business-id="<%= biz.id %>" onclick="window.toggleCardFollow(<%= biz.id %>, event)" role="button" tabindex="0" aria-label="Urmărește"><svg class="heart-outline" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><svg class="heart-filled" width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
           </div>
           <div class="biz-card-avatar">
@@ -149,7 +152,7 @@
             <% } %>
           </div>
           <div class="biz-card-body">
-            <div class="biz-card-name"><%= biz.name %></div>
+            <div class="biz-card-name"><%= biz.name %><% const _bbt = biz.subscription_badge_type || (biz.is_verified ? 'verified' : null); if (_bbt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_bbt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
             <% if (parseFloat(biz.rating_avg) > 0) { %>
               <div class="biz-card-rating">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>

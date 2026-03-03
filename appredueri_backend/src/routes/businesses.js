@@ -96,11 +96,13 @@ router.get("/", optionalAuth, async (req, res) => {
         b.category_id,
         b.logo_url,
         b.is_verified,
+        b.subscription_badge_type,
         c.name AS city_name,
         cat.name AS category_name,
         COALESCE(o.active_offers_count, 0) AS active_offers_count,
         COALESCE(r.rating_avg, 0) AS rating_avg,
-        COALESCE(r.rating_count, 0) AS rating_count
+        COALESCE(r.rating_count, 0) AS rating_count,
+        COALESCE(splan.has_promoted_placement, FALSE) AS is_promoted
       FROM businesses b
       JOIN cities c ON c.id = b.city_id
       JOIN categories cat ON cat.id = b.category_id
@@ -121,8 +123,14 @@ router.get("/", optionalAuth, async (req, res) => {
         FROM reviews
         GROUP BY business_id
       ) r ON r.business_id = b.id
+      LEFT JOIN business_subscriptions bsub
+        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+      LEFT JOIN subscription_plans splan
+        ON splan.id = bsub.plan_id
       ${whereClause}
-      ORDER BY c.name, cat.name, b.name
+      ORDER BY
+        CASE WHEN splan.has_promoted_placement = TRUE THEN 0 ELSE 1 END,
+        c.name, cat.name, b.name
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
     values.push(limit, offset);
@@ -170,6 +178,9 @@ router.get("/", optionalAuth, async (req, res) => {
       rating: parseFloat(parseFloat(row.rating_avg || 0).toFixed(1)),
       rating_count: parseInt(row.rating_count || 0),
       is_verified: row.is_verified || false,
+      subscription_badge_type: row.subscription_badge_type || null,
+      badge_type: row.subscription_badge_type || (row.is_verified ? 'verified' : null),
+      is_promoted: row.is_promoted || false,
     }));
 
     return res.json(paginatedResponse(businesses, total, page, limit));
@@ -196,6 +207,7 @@ router.get("/:id", async (req, res) => {
         b.logo_url,
         b.cover_image_url,
         b.is_verified,
+        b.subscription_badge_type,
         b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
         c.id as city_id, c.name as city_name,
         cat.id as cat_id, cat.name as cat_name,
@@ -411,6 +423,8 @@ router.get("/:id", async (req, res) => {
       offerRequestCount,
       // Verified badge
       is_verified: b.is_verified || false,
+      subscription_badge_type: b.subscription_badge_type || null,
+      badge_type: b.subscription_badge_type || (b.is_verified ? 'verified' : null),
       // Show pinch button flag
       showPinch
     });

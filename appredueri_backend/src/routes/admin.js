@@ -16,6 +16,7 @@ const {
 } = require("../services/llm/summarizationService");
 const { sendBusinessApprovedEmail, sendBusinessRejectedEmail } = require("../services/email");
 const { parsePagination, createImageFilter } = require("../helpers/validate");
+const { getBusinessTier, countLocations } = require("../helpers/tiers");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage → Cloudinary)
@@ -1420,6 +1421,52 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
   }
 });
 
+
+// POST: Create new location for a business
+router.post("/businesses/:id/locations", async (req, res) => {
+  const businessId = req.params.id;
+  const { city_id, address, phone, lat, lng } = req.body;
+
+  const toNullableFloat = (v) => {
+    if (v === "" || v == null) return null;
+    const n = parseFloat(String(v).replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  };
+
+  if (!city_id || !address) {
+    return res.status(400).send("city_id si address sunt obligatorii");
+  }
+
+  try {
+    // Tier check: warn if over limit but still allow admin to create (Option B)
+    const { plan } = await getBusinessTier(pool, parseInt(businessId));
+    const currentCount = await countLocations(pool, parseInt(businessId));
+    const locationLimit = plan.max_locations;
+    const overLimit = locationLimit !== null && currentCount >= locationLimit;
+
+    await pool.query(
+      `INSERT INTO business_locations (business_id, city_id, address, phone, lat, lng)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        Number(businessId),
+        Number(city_id),
+        address,
+        phone || null,
+        toNullableFloat(lat),
+        toNullableFloat(lng),
+      ]
+    );
+
+    const redirectUrl = `/admin/businesses/${businessId}/locations`;
+    if (overLimit) {
+      return res.redirect(`${redirectUrl}?warn=location_limit&plan=${encodeURIComponent(plan.name)}&limit=${locationLimit}`);
+    }
+    return res.redirect(redirectUrl);
+  } catch (err) {
+    console.error("Create location error:", err);
+    return res.status(500).send(`Eroare la creare locatie: ${err.message}`);
+  }
+});
 
 // POST: Delete location
 router.post(

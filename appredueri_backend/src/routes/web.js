@@ -16,6 +16,8 @@ const offerService = require("../services/offerService");
 const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
+const { attachTier, requireFeature, requireLimit } = require('../middleware/tierAuth');
+const { countActiveOffers, countGalleryImages } = require('../helpers/tiers');
 const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
 const { deleteUserAccount } = require("../services/accountDeletion");
 const multer = require("multer");
@@ -171,11 +173,15 @@ router.get("/", async (req, res) => {
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
+      LEFT JOIN business_subscriptions bsub
+        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+      LEFT JOIN subscription_plans splan
+        ON splan.id = bsub.plan_id
       WHERE ${featuredWhere.join(" AND ")}
       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
-               ci.name, cat.name, o.logo_url
-      ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END) DESC
+               ci.name, cat.name, o.logo_url, splan.slug
+      ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC
       LIMIT 6
     `, featuredParams);
 
@@ -198,21 +204,59 @@ router.get("/", async (req, res) => {
 
     const topBusinesses = await pool.query(`
       SELECT b.id, b.name, b.logo_url, b.cover_image_url,
-             b.lat, b.lng, b.is_verified,
+             b.lat, b.lng, b.is_verified, b.subscription_badge_type,
              ci.name as city_name, cat.name as category_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
-             COUNT(DISTINCT o.id) as offer_count
+             COUNT(DISTINCT o.id) as offer_count,
+             COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
       FROM businesses b
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
-      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, ci.name, cat.name
+      LEFT JOIN business_subscriptions bsub
+        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+      LEFT JOIN subscription_plans splan
+        ON splan.id = bsub.plan_id
+      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
       HAVING COUNT(DISTINCT o.id) > 0
-      ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2) DESC, COALESCE(AVG(r.rating), 0) DESC
+      ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC
       LIMIT 8
     `);
+
+    // Promoted offers (dedicated section for Premium businesses)
+    let promotedOffers = [];
+    try {
+      const promotedResult = await pool.query(`
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+               b.name as business_name, b.logo_url as business_logo,
+               b.cover_image_url as business_cover,
+               b.lat as business_lat, b.lng as business_lng,
+               ci.name as city_name, cat.name as category_name,
+               COALESCE(b.cover_image_url, o.logo_url) as image_url,
+               COALESCE(AVG(r.rating), 0) as rating_avg,
+               COUNT(DISTINCT r.id) as rating_count,
+               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        JOIN business_subscriptions bsub
+          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+        JOIN subscription_plans splan
+          ON splan.id = bsub.plan_id AND splan.has_promoted_placement = TRUE
+        LEFT JOIN cities ci ON b.city_id = ci.id
+        LEFT JOIN categories cat ON b.category_id = cat.id
+        LEFT JOIN reviews r ON r.business_id = b.id
+        WHERE o.is_active = TRUE AND o.end_date >= CURRENT_DATE
+          ${dealOfDay ? `AND o.id != ${parseInt(dealOfDay.id)}` : ''}
+        GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+                 b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
+                 ci.name, cat.name, o.logo_url
+        ORDER BY RANDOM()
+        LIMIT 3
+      `);
+      promotedOffers = promotedResult.rows;
+    } catch (e) { /* promoted section is non-critical */ }
 
     const stats = {
       totalBusinesses: parseInt(bizCount.rows[0].total),
@@ -262,6 +306,7 @@ router.get("/", async (req, res) => {
       stats,
       categories: categories.rows,
       featuredOffers: featuredOffers.rows,
+      promotedOffers,
       dealOfDay,
       cities: cities.rows,
       featuredBusinesses: featuredBusinesses.rows,
@@ -382,7 +427,7 @@ router.get("/oferte", async (req, res) => {
 
     const sortOptions = {
       newest: "o.id DESC",
-      popular: "rating_avg DESC, rating_count DESC",
+      popular: `(COALESCE(AVG(r.rating), 0) + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC, COUNT(DISTINCT r.id) DESC`,
       discount: "CASE WHEN o.discount_type IN ('percent','percentage') THEN o.discount_value ELSE 0 END DESC, o.discount_value DESC",
       ending_soon: "o.end_date ASC NULLS LAST, o.id DESC",
     };
@@ -396,20 +441,28 @@ router.get("/oferte", async (req, res) => {
               b.name as business_name, b.logo_url as business_logo,
               b.cover_image_url as business_cover,
               b.lat as business_lat, b.lng as business_lng,
+              b.is_verified as business_verified,
+              b.subscription_badge_type as business_badge_type,
               ci.name as city_name, cat.name as category_name,
               COALESCE(o.logo_url, b.cover_image_url) as image_url,
               COALESCE(AVG(r.rating), 0) as rating_avg,
               COUNT(DISTINCT r.id) as rating_count,
-              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
+              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
+              COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
        FROM offers o
        JOIN businesses b ON o.business_id = b.id
        LEFT JOIN cities ci ON b.city_id = ci.id
        LEFT JOIN categories cat ON b.category_id = cat.id
        LEFT JOIN reviews r ON r.business_id = b.id
+       LEFT JOIN business_subscriptions bsub
+         ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+       LEFT JOIN subscription_plans splan
+         ON splan.id = bsub.plan_id
        WHERE ${whereClause}
        GROUP BY o.id, o.title, o.description, o.discount_type, o.discount_value, o.end_date,
                 o.business_id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
-                ci.name, cat.name, o.logo_url
+                b.is_verified, b.subscription_badge_type,
+                ci.name, cat.name, o.logo_url, splan.slug, splan.has_promoted_placement
        ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
@@ -569,27 +622,32 @@ router.get("/business-uri", async (req, res) => {
     const totalPages = Math.ceil(totalBusinesses / limit);
 
     const sortOptions = {
-      popular: "offer_count DESC, rating_avg DESC",
-      rating: "rating_avg DESC, rating_count DESC",
+      popular: `(COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC`,
+      rating: "COALESCE(AVG(r.rating), 0) DESC, COUNT(DISTINCT r.id) DESC",
       newest: "b.id DESC",
-      offers: "offer_count DESC, b.id DESC",
+      offers: "COUNT(DISTINCT o.id) DESC, b.id DESC",
     };
     const orderBy = sortOptions[sort] || sortOptions.popular;
 
     const businessesResult = await pool.query(
       `SELECT b.id, b.name, b.logo_url, b.cover_image_url,
-              b.lat, b.lng, b.is_verified,
+              b.lat, b.lng, b.is_verified, b.subscription_badge_type,
               ci.name as city_name, cat.name as category_name,
               COALESCE(AVG(r.rating), 0) as rating_avg,
               COUNT(DISTINCT r.id) as rating_count,
-              COUNT(DISTINCT o.id) as offer_count
+              COUNT(DISTINCT o.id) as offer_count,
+              COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
        FROM businesses b
        LEFT JOIN cities ci ON b.city_id = ci.id
        LEFT JOIN categories cat ON b.category_id = cat.id
        LEFT JOIN reviews r ON r.business_id = b.id
        LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+       LEFT JOIN business_subscriptions bsub
+         ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+       LEFT JOIN subscription_plans splan
+         ON splan.id = bsub.plan_id
        ${whereClause}
-       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, ci.name, cat.name
+       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
        ORDER BY ${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
@@ -773,24 +831,69 @@ router.get("/oferta/:id", async (req, res) => {
       })),
     };
 
-    // Similar offers (same category)
+    // Similar offers (same category, respecting competitor blocking)
     let similarOffers = [];
     if (row.cat_id) {
       try {
-        const simResult = await pool.query(`
-          SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-                 b.name as business_name, b.logo_url as business_logo,
-                 COALESCE(o.logo_url, b.cover_image_url) as image_url,
-                 c2.name as city_name
-          FROM offers o
-          JOIN businesses b ON o.business_id = b.id
-          LEFT JOIN cities c2 ON b.city_id = c2.id
-          WHERE o.id != $1 AND o.is_active = TRUE
-            AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-            AND b.category_id = $2
-          ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
-          LIMIT 4
-        `, [id, row.cat_id]);
+        // Check if the current offer's business has competitor blocking enabled
+        let blockCompetitors = false;
+        try {
+          const tierCheck = await pool.query(`
+            SELECT splan.has_competitor_blocking, b.competitor_blocking_enabled
+            FROM business_subscriptions bsub
+            JOIN subscription_plans splan ON splan.id = bsub.plan_id
+            JOIN businesses b ON b.id = bsub.business_id
+            WHERE bsub.business_id = $1
+              AND bsub.status IN ('active', 'trial')
+            LIMIT 1
+          `, [row.business_id]);
+          if (tierCheck.rows.length > 0
+              && tierCheck.rows[0].has_competitor_blocking
+              && tierCheck.rows[0].competitor_blocking_enabled) {
+            blockCompetitors = true;
+          }
+        } catch (e) { /* fail open — don't block on tier errors */ }
+
+        let simQuery;
+        let simParams;
+
+        if (blockCompetitors) {
+          // Show only offers from the SAME business (no competitors)
+          simQuery = `
+            SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+                   b.name as business_name, b.logo_url as business_logo,
+                   COALESCE(o.logo_url, b.cover_image_url) as image_url,
+                   c2.name as city_name
+            FROM offers o
+            JOIN businesses b ON o.business_id = b.id
+            LEFT JOIN cities c2 ON b.city_id = c2.id
+            WHERE o.id != $1 AND o.is_active = TRUE
+              AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+              AND o.business_id = $2
+            ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
+            LIMIT 4
+          `;
+          simParams = [id, row.business_id];
+        } else {
+          // Default: show offers from any business in the same category
+          simQuery = `
+            SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+                   b.name as business_name, b.logo_url as business_logo,
+                   COALESCE(o.logo_url, b.cover_image_url) as image_url,
+                   c2.name as city_name
+            FROM offers o
+            JOIN businesses b ON o.business_id = b.id
+            LEFT JOIN cities c2 ON b.city_id = c2.id
+            WHERE o.id != $1 AND o.is_active = TRUE
+              AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+              AND b.category_id = $2
+            ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
+            LIMIT 4
+          `;
+          simParams = [id, row.cat_id];
+        }
+
+        const simResult = await pool.query(simQuery, simParams);
         similarOffers = simResult.rows;
       } catch (e) { /* silently fail */ }
     }
@@ -910,7 +1013,7 @@ router.get("/business/:id", async (req, res) => {
 
     const businessRes = await pool.query(`
       SELECT b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,
-             b.logo_url, b.cover_image_url, b.is_verified,
+             b.logo_url, b.cover_image_url, b.is_verified, b.subscription_badge_type,
              b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
              c.id as city_id, c.name as city_name,
              cat.id as cat_id, cat.name as cat_name,
@@ -1090,6 +1193,8 @@ router.get("/business/:id", async (req, res) => {
       logo_url: b.logo_url,
       cover_image: coverImage,
       is_verified: !!b.is_verified,
+      subscription_badge_type: b.subscription_badge_type || null,
+      badge_type: b.subscription_badge_type || (b.is_verified ? 'verified' : null),
       city: { id: b.city_id, name: b.city_name },
       category: { id: b.cat_id, name: b.cat_name },
       rating: parseFloat(parseFloat(b.rating_avg).toFixed(1)),
@@ -1718,6 +1823,9 @@ router.get("/onboarding", requireWebAuth, async (req, res) => {
 // BUSINESS PORTAL WEB PAGES
 // ═══════════════════════════════════════════════════════
 
+// Attach tier info for all portal routes that carry a :businessId param
+router.use('/api/web/portal/:businessId', attachTier(pool));
+
 // Portal Dashboard — lista de business-uri
 router.get("/portal", requireWebAuth, async (req, res) => {
   try {
@@ -1761,7 +1869,7 @@ router.get("/portal", requireWebAuth, async (req, res) => {
 });
 
 // Portal — manage business page (tabs: Info / Oferte / Recenzii / Statistici)
-router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
+router.get("/portal/:businessId", requireBusinessOwner, attachTier(pool), async (req, res) => {
   try {
     const { businessId } = req.params;
 
@@ -1770,7 +1878,8 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       SELECT b.id, b.name, b.address, b.phone, b.website, b.lat, b.lng,
              b.logo_url, b.cover_image_url,
              b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
-             b.city_id, c.name as city_name, b.category_id, cat.name as category_name
+             b.city_id, c.name as city_name, b.category_id, cat.name as category_name,
+             b.competitor_blocking_enabled
       FROM businesses b
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
@@ -1935,6 +2044,36 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       pool.query("SELECT id, name FROM categories ORDER BY name"),
     ]);
 
+    // Fetch active nominations for this business (for Deal of the Day feature)
+    let nominations = [];
+    let canNominate = true;
+    let nextNominationAt = null;
+    try {
+      const nomResult = await pool.query(`
+        SELECT dn.id, dn.offer_id, dn.status, dn.selected_for_date, dn.nominated_at
+        FROM deal_nominations dn
+        WHERE dn.business_id = $1
+          AND dn.status IN ('pending', 'selected')
+        ORDER BY dn.nominated_at DESC
+      `, [businessId]);
+      nominations = nomResult.rows;
+
+      const lastNom = await pool.query(`
+        SELECT nominated_at FROM deal_nominations
+        WHERE business_id = $1
+          AND nominated_at > NOW() - INTERVAL '7 days'
+          AND status IN ('pending', 'selected')
+        ORDER BY nominated_at DESC
+        LIMIT 1
+      `, [businessId]);
+      if (lastNom.rows.length > 0) {
+        canNominate = false;
+        const next = new Date(lastNom.rows[0].nominated_at);
+        next.setDate(next.getDate() + 7);
+        nextNominationAt = next.toISOString();
+      }
+    } catch (e) { /* nominations are non-critical */ }
+
     res.render("public/portal/manage", {
       business,
       offers: offersRes.rows,
@@ -1947,6 +2086,11 @@ router.get("/portal/:businessId", requireBusinessOwner, async (req, res) => {
       activePage: "portal",
       webUser: req.webUser,
       loadChartJs: true,
+      tier: req.tier || { tier: 'free', plan: {} },
+      nominations,
+      canNominate,
+      nextNominationAt,
+      competitorBlockingEnabled: business.competitor_blocking_enabled,
     });
   } catch (err) {
     console.error("[Web] Portal manage error:", err);
@@ -2009,7 +2153,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
 // ═══════════════════════════════════════════════════════
 
 // Upload logo
-router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, portalUpload.single("logo"), async (req, res) => {
+router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, requireFeature('can_upload_logo'), portalUpload.single("logo"), async (req, res) => {
   try {
     const { businessId } = req.params;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
@@ -2030,7 +2174,7 @@ router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, portalUplo
 });
 
 // Upload cover
-router.post("/api/web/portal/:businessId/cover", requireBusinessOwner, portalUpload.single("cover"), async (req, res) => {
+router.post("/api/web/portal/:businessId/cover", requireBusinessOwner, requireFeature('can_upload_cover'), portalUpload.single("cover"), async (req, res) => {
   try {
     const { businessId } = req.params;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
@@ -2085,7 +2229,7 @@ router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (
 });
 
 // Upload gallery image (atomic count check to prevent race condition)
-router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, portalUpload.single("image"), async (req, res) => {
+router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, requireLimit('max_gallery_images', countGalleryImages), portalUpload.single("image"), async (req, res) => {
   const client = await pool.connect();
   try {
     const { businessId } = req.params;
@@ -2173,7 +2317,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 });
 
 // Create offer
-router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (req, res) => {
+router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireLimit('max_active_offers', countActiveOffers), async (req, res) => {
   try {
     const { businessId } = req.params;
     const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
@@ -2217,6 +2361,9 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, async (r
     res.json({ success: true, offer_id: offerId });
   } catch (err) {
     console.error("[Web API] Portal create offer error:", err);
+    if (err.message === 'promo_code_limit' && err.details) {
+      return res.status(err.statusCode || 403).json(err.details);
+    }
     res.status(500).json({ message: "Eroare server" });
   }
 });
@@ -2303,7 +2450,7 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
 });
 
 // Respond to review
-router.post("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, async (req, res) => {
+router.post("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, requireFeature('can_respond_reviews'), async (req, res) => {
   try {
     const { businessId, reviewId } = req.params;
     const responseText = sanitizeString(req.body.response_text, 500);
@@ -2328,7 +2475,7 @@ router.post("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusi
 });
 
 // Edit review response
-router.put("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, async (req, res) => {
+router.put("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, requireFeature('can_respond_reviews'), async (req, res) => {
   try {
     const responseText = sanitizeString(req.body.response_text, 500);
     if (!responseText) return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
@@ -2532,6 +2679,467 @@ router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner,
   } catch (err) {
     console.error("[Web API] Portal clicks error:", err);
     res.status(500).json({ message: "Eroare" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// ANALYTICS CSV EXPORT (Premium only)
+// ═══════════════════════════════════════════════════════
+
+// Helper: fill missing days with 0
+function fillMissingDays(rows, days, valueKey) {
+  const filled = [];
+  const now = new Date();
+  const rowMap = {};
+  for (const r of rows) {
+    const dateStr = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date);
+    rowMap[dateStr] = parseInt(r[valueKey]) || 0;
+  }
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    filled.push({ date: dateStr, value: rowMap[dateStr] || 0 });
+  }
+  return filled;
+}
+
+router.get("/api/web/portal/:businessId/analytics/export",
+  requireBusinessOwner, attachTier(pool), requireFeature('has_analytics_export'),
+  async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const type = req.query.type || 'views';
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+
+    const validTypes = ['views', 'subscribers', 'clicks', 'offer-views', 'code-reveals'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: 'Tip invalid. Optiuni: ' + validTypes.join(', ') });
+    }
+
+    let csvRows = [];
+    let csvHeader = '';
+    let filenameType = type;
+
+    switch (type) {
+      case 'views': {
+        csvHeader = 'Data,Vizualizari';
+        const result = await pool.query(
+          `SELECT DATE(viewed_at) as date, COUNT(*) as cnt
+           FROM business_views
+           WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '1 day' * $2
+           GROUP BY DATE(viewed_at)
+           ORDER BY date ASC`,
+          [businessId, days]
+        );
+        csvRows = fillMissingDays(result.rows, days, 'cnt');
+        break;
+      }
+
+      case 'subscribers': {
+        csvHeader = 'Data,Abonati noi';
+        const result = await pool.query(
+          `SELECT DATE(created_at) as date, COUNT(*) as cnt
+           FROM followed_businesses
+           WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2
+           GROUP BY DATE(created_at)
+           ORDER BY date ASC`,
+          [businessId, days]
+        );
+        csvRows = fillMissingDays(result.rows, days, 'cnt');
+        break;
+      }
+
+      case 'clicks': {
+        const validActionTypes = ['phone', 'whatsapp', 'navigate', 'booking_url'];
+        const actionType = validActionTypes.includes(req.query.action_type)
+          ? req.query.action_type : null;
+
+        csvHeader = actionType
+          ? 'Data,Click-uri (' + actionType + ')'
+          : 'Data,Click-uri (toate)';
+        filenameType = actionType ? 'clicks-' + actionType : 'clicks';
+
+        const params = actionType
+          ? [businessId, days, actionType]
+          : [businessId, days];
+        const actionFilter = actionType ? ' AND action_type = $3' : '';
+
+        const result = await pool.query(
+          `SELECT DATE(created_at) as date, COUNT(*) as cnt
+           FROM business_clicks
+           WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '1 day' * $2${actionFilter}
+           GROUP BY DATE(created_at)
+           ORDER BY date ASC`,
+          params
+        );
+        csvRows = fillMissingDays(result.rows, days, 'cnt');
+        break;
+      }
+
+      case 'offer-views': {
+        const offerId = parseInt(req.query.offer_id);
+        if (!offerId || isNaN(offerId)) {
+          return res.status(400).json({ message: 'offer_id este obligatoriu pentru tip offer-views' });
+        }
+        const ownerCheck = await pool.query(
+          'SELECT id, title FROM offers WHERE id = $1 AND business_id = $2',
+          [offerId, businessId]
+        );
+        if (ownerCheck.rows.length === 0) {
+          return res.status(404).json({ message: 'Oferta nu a fost gasita' });
+        }
+
+        csvHeader = 'Data,Vizualizari oferta';
+        filenameType = 'offer-views-' + offerId;
+
+        const result = await pool.query(
+          `SELECT DATE(viewed_at) as date, COUNT(*) as cnt
+           FROM offer_views
+           WHERE offer_id = $1 AND viewed_at >= NOW() - INTERVAL '1 day' * $2
+           GROUP BY DATE(viewed_at)
+           ORDER BY date ASC`,
+          [offerId, days]
+        );
+        csvRows = fillMissingDays(result.rows, days, 'cnt');
+        break;
+      }
+
+      case 'code-reveals': {
+        csvHeader = 'Data,Coduri dezvaluite';
+        const result = await pool.query(
+          `SELECT DATE(cr.revealed_at) as date, COUNT(*) as cnt
+           FROM code_reveals cr
+           JOIN offers o ON cr.offer_id = o.id
+           WHERE o.business_id = $1 AND cr.revealed_at >= NOW() - INTERVAL '1 day' * $2
+           GROUP BY DATE(cr.revealed_at)
+           ORDER BY date ASC`,
+          [businessId, days]
+        );
+        csvRows = fillMissingDays(result.rows, days, 'cnt');
+        break;
+      }
+    }
+
+    // Build CSV string with BOM for Excel Romanian diacritics
+    const today = new Date().toISOString().split('T')[0];
+    const filename = `analytics-${filenameType}-${today}.csv`;
+    const BOM = '\uFEFF';
+    let csv = BOM + csvHeader + '\r\n';
+    for (const row of csvRows) {
+      csv += row.date + ',' + row.value + '\r\n';
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(csv);
+
+  } catch (err) {
+    console.error('[Web API] Analytics export error:', err);
+    res.status(500).json({ message: 'Eroare la export' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// COMPETITIVE INSIGHTS (Premium only)
+// ═══════════════════════════════════════════════════════
+
+// Competitive insights cache (24h TTL)
+const competitiveCache = new Map();
+const COMPETITIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+router.get("/api/web/portal/:businessId/analytics/competitive",
+  requireBusinessOwner, attachTier(pool), requireFeature('has_competitive_insights'),
+  async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    // Check cache
+    const cacheKey = `comp_${businessId}`;
+    const cached = competitiveCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < COMPETITIVE_CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
+    // Get business city_id and category_id
+    const bizRes = await pool.query(
+      'SELECT city_id, category_id FROM businesses WHERE id = $1',
+      [businessId]
+    );
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Business negasit' });
+    }
+    const { city_id, category_id } = bizRes.rows[0];
+
+    if (!city_id || !category_id) {
+      return res.json({
+        available: false,
+        reason: 'Business-ul nu are oras sau categorie setata.',
+      });
+    }
+
+    // Count peers in same city+category (excluding self)
+    const peersCountRes = await pool.query(
+      `SELECT COUNT(*) as cnt FROM businesses
+       WHERE city_id = $1 AND category_id = $2 AND id != $3`,
+      [city_id, category_id, businessId]
+    );
+    const peersCount = parseInt(peersCountRes.rows[0].cnt) || 0;
+
+    if (peersCount < 3) {
+      return res.json({
+        available: false,
+        reason: 'Insuficiente date. Trebuie cel putin 3 business-uri similare in orasul tau pentru comparatie.',
+        peersCount,
+      });
+    }
+
+    // Get YOUR metrics
+    const [myViewsRes, mySubsRes, myOffersRes, myReviewsRes] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*) as cnt FROM business_views
+         WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '30 days'`,
+        [businessId]
+      ),
+      pool.query(
+        'SELECT COUNT(*) as cnt FROM followed_businesses WHERE business_id = $1',
+        [businessId]
+      ),
+      pool.query(
+        `SELECT COUNT(*) as cnt FROM offers
+         WHERE business_id = $1 AND is_active = true AND end_date >= CURRENT_DATE`,
+        [businessId]
+      ),
+      pool.query(
+        `SELECT COUNT(*) as review_count, COALESCE(AVG(rating), 0) as avg_rating
+         FROM reviews WHERE business_id = $1`,
+        [businessId]
+      ),
+    ]);
+
+    const myMetrics = {
+      views30d: parseInt(myViewsRes.rows[0].cnt) || 0,
+      subscribers: parseInt(mySubsRes.rows[0].cnt) || 0,
+      activeOffers: parseInt(myOffersRes.rows[0].cnt) || 0,
+      avgRating: parseFloat(parseFloat(myReviewsRes.rows[0].avg_rating).toFixed(1)) || 0,
+      reviewCount: parseInt(myReviewsRes.rows[0].review_count) || 0,
+    };
+
+    // Get PEER AVERAGES (same city + category, excluding self)
+    const peerRes = await pool.query(`
+      SELECT
+        (SELECT COALESCE(AVG(v_cnt), 0) FROM (
+          SELECT COUNT(*) as v_cnt
+          FROM businesses b2
+          LEFT JOIN business_views bv ON bv.business_id = b2.id
+            AND bv.viewed_at >= NOW() - INTERVAL '30 days'
+          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+          GROUP BY b2.id
+        ) sub_views) as avg_views_30d,
+
+        (SELECT COALESCE(AVG(s_cnt), 0) FROM (
+          SELECT COUNT(*) as s_cnt
+          FROM businesses b2
+          LEFT JOIN followed_businesses fb ON fb.business_id = b2.id
+          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+          GROUP BY b2.id
+        ) sub_subs) as avg_subscribers,
+
+        (SELECT COALESCE(AVG(o_cnt), 0) FROM (
+          SELECT COUNT(*) as o_cnt
+          FROM businesses b2
+          LEFT JOIN offers o ON o.business_id = b2.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+          GROUP BY b2.id
+        ) sub_offers) as avg_active_offers,
+
+        (SELECT COALESCE(AVG(b_avg), 0) FROM (
+          SELECT AVG(r.rating) as b_avg
+          FROM businesses b2
+          JOIN reviews r ON r.business_id = b2.id
+          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+          GROUP BY b2.id
+          HAVING COUNT(r.id) >= 1
+        ) sub_rating) as avg_rating,
+
+        (SELECT COALESCE(AVG(r_cnt), 0) FROM (
+          SELECT COUNT(*) as r_cnt
+          FROM businesses b2
+          LEFT JOIN reviews r ON r.business_id = b2.id
+          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+          GROUP BY b2.id
+        ) sub_review_count) as avg_review_count
+    `, [city_id, category_id, businessId]);
+
+    const peer = peerRes.rows[0];
+    const peerAvg = {
+      views30d: parseFloat(parseFloat(peer.avg_views_30d).toFixed(1)),
+      subscribers: parseFloat(parseFloat(peer.avg_subscribers).toFixed(1)),
+      activeOffers: parseFloat(parseFloat(peer.avg_active_offers).toFixed(1)),
+      avgRating: parseFloat(parseFloat(peer.avg_rating).toFixed(1)),
+      reviewCount: parseFloat(parseFloat(peer.avg_review_count).toFixed(1)),
+    };
+
+    // Calculate percentage differences
+    function pctDiff(mine, avg) {
+      if (avg === 0) return mine > 0 ? 100 : 0;
+      return Math.round(((mine - avg) / avg) * 100);
+    }
+
+    const insights = [
+      { metric: 'Vizualizari (30 zile)', yours: myMetrics.views30d, categoryAvg: peerAvg.views30d, diff: pctDiff(myMetrics.views30d, peerAvg.views30d) },
+      { metric: 'Abonati', yours: myMetrics.subscribers, categoryAvg: peerAvg.subscribers, diff: pctDiff(myMetrics.subscribers, peerAvg.subscribers) },
+      { metric: 'Oferte active', yours: myMetrics.activeOffers, categoryAvg: peerAvg.activeOffers, diff: pctDiff(myMetrics.activeOffers, peerAvg.activeOffers) },
+      { metric: 'Rating', yours: myMetrics.avgRating, categoryAvg: peerAvg.avgRating, diff: pctDiff(myMetrics.avgRating, peerAvg.avgRating) },
+      { metric: 'Recenzii', yours: myMetrics.reviewCount, categoryAvg: peerAvg.reviewCount, diff: pctDiff(myMetrics.reviewCount, peerAvg.reviewCount) },
+    ];
+
+    const responseData = { available: true, peersCount, insights };
+    competitiveCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+    res.json(responseData);
+
+  } catch (err) {
+    console.error('[Web API] Competitive insights error:', err);
+    res.status(500).json({ message: 'Eroare la analiza competitiva' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// CUSTOM PUSH NOTIFICATIONS (Premium only)
+// ═══════════════════════════════════════════════════════
+
+router.post("/api/web/portal/:businessId/notifications/send",
+  requireBusinessOwner, attachTier(pool), requireFeature('has_custom_push'),
+  async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const userId = req.webUser.id;
+
+    // Validate input
+    let { title, message } = req.body;
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(400).json({ message: 'Titlul este obligatoriu' });
+    }
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return res.status(400).json({ message: 'Mesajul este obligatoriu' });
+    }
+
+    title = title.trim().substring(0, 100);
+    message = message.trim().substring(0, 300);
+
+    // Rate limit: max 2 custom pushes per week per business
+    const rateLimitRes = await pool.query(
+      `SELECT COUNT(*) as cnt FROM business_push_log
+       WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '7 days'`,
+      [businessId]
+    );
+    const pushesThisWeek = parseInt(rateLimitRes.rows[0].cnt) || 0;
+
+    if (pushesThisWeek >= 2) {
+      return res.status(429).json({
+        message: 'Ai atins limita de 2 notificari pe saptamana. Incearca din nou saptamana viitoare.',
+        limit: 2,
+        used: pushesThisWeek,
+      });
+    }
+
+    // Get business name for notification title
+    const bizRes = await pool.query(
+      'SELECT name FROM businesses WHERE id = $1',
+      [businessId]
+    );
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ message: 'Business negasit' });
+    }
+    const businessName = bizRes.rows[0].name;
+
+    // Push title = business name, body = owner's title + message
+    const fullTitle = businessName;
+    const fullBody = title + (message !== title ? '\n' + message : '');
+
+    // Send push notification to all business followers
+    const result = await pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
+      title: fullTitle,
+      body: fullBody,
+      data: {
+        type: 'business_custom_push',
+        businessId: String(businessId),
+        screen: 'business_detail',
+      },
+    });
+
+    // Log the push
+    await pool.query(
+      `INSERT INTO business_push_log
+        (business_id, sent_by, title, message, recipients_count, success_count, failure_count)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        businessId,
+        userId,
+        title,
+        message,
+        (result.sent || 0) + (result.failed || 0),
+        result.sent || 0,
+        result.failed || 0,
+      ]
+    );
+
+    res.json({
+      success: true,
+      sent: result.sent || 0,
+      failed: result.failed || 0,
+      remaining: Math.max(0, 2 - pushesThisWeek - 1),
+    });
+
+  } catch (err) {
+    console.error('[Web API] Custom push error:', err);
+    res.status(500).json({ message: 'Eroare la trimiterea notificarii' });
+  }
+});
+
+router.get("/api/web/portal/:businessId/notifications/history",
+  requireBusinessOwner, attachTier(pool), requireFeature('has_custom_push'),
+  async (req, res) => {
+  try {
+    const { businessId } = req.params;
+
+    const historyRes = await pool.query(
+      `SELECT id, title, message, recipients_count, success_count, failure_count, created_at
+       FROM business_push_log
+       WHERE business_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [businessId]
+    );
+
+    const rateLimitRes = await pool.query(
+      `SELECT COUNT(*) as cnt FROM business_push_log
+       WHERE business_id = $1 AND created_at >= NOW() - INTERVAL '7 days'`,
+      [businessId]
+    );
+    const pushesThisWeek = parseInt(rateLimitRes.rows[0].cnt) || 0;
+
+    res.json({
+      history: historyRes.rows.map(row => ({
+        id: row.id,
+        title: row.title,
+        message: row.message,
+        recipientsCount: row.recipients_count,
+        successCount: row.success_count,
+        failureCount: row.failure_count,
+        createdAt: row.created_at,
+      })),
+      rateLimit: {
+        limit: 2,
+        used: pushesThisWeek,
+        remaining: Math.max(0, 2 - pushesThisWeek),
+      },
+    });
+
+  } catch (err) {
+    console.error('[Web API] Push history error:', err);
+    res.status(500).json({ message: 'Eroare la istoricul notificarilor' });
   }
 });
 
@@ -3123,6 +3731,31 @@ router.delete("/api/web/account/profile-picture", requireWebAuth, async (req, re
   } catch (err) {
     console.error("[Web API] Profile picture delete error:", err);
     res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// PRICING PAGE
+// ═══════════════════════════════════════════════════════
+router.get('/preturi', async (req, res) => {
+  try {
+    const { rows: plans } = await pool.query(
+      'SELECT * FROM subscription_plans ORDER BY sort_order ASC'
+    );
+
+    res.render('public/pricing', {
+      pageTitle: 'Preturi - OFAI',
+      activePage: 'preturi',
+      plans,
+      webUser: req.webUser || null,
+    });
+  } catch (err) {
+    console.error('[Web] Pricing page error:', err);
+    res.status(500).render('public/404', {
+      pageTitle: 'Eroare',
+      activePage: '',
+      webUser: req.webUser || null,
+    });
   }
 });
 

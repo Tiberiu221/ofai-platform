@@ -18,6 +18,7 @@ import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/animated_toggle_fab.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/subscription_badge.dart';
 import '../../services/analytics_service.dart';
 import 'package:go_router/go_router.dart';
 
@@ -131,12 +132,12 @@ class BusinessDetailScreen extends ConsumerWidget {
                               Expanded(
                                 child: Text(business.name, style: AppTypography.headlineLarge),
                               ),
-                              if (business.isVerified)
+                              if (business.hasBadge)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 6),
                                   child: GestureDetector(
-                                    onTap: () => _showVerifiedInfo(context),
-                                    child: Icon(Icons.verified, color: AppColors.accent, size: 24),
+                                    onTap: () => _showBadgeInfo(context, business.badgeType!),
+                                    child: SubscriptionBadge(badgeType: business.badgeType, size: 24),
                                   ),
                                 ),
                             ],
@@ -621,7 +622,14 @@ class BusinessDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _showVerifiedInfo(BuildContext context) {
+  void _showBadgeInfo(BuildContext context, String badgeType) {
+    final isPremium = badgeType == 'premium';
+    final badgeColor = isPremium ? AppColors.premiumPurple : AppColors.accent;
+    final title = isPremium ? 'Business Premium' : 'Business Verificat';
+    final description = isPremium
+        ? 'Acest business are un abonament Premium OFAI. Beneficiază de vizibilitate sporită, analize avansate și suport prioritar.'
+        : 'Acest business a fost verificat de echipa OFAI. Verificăm identitatea, locația și calitatea serviciilor pentru a asigura o experiență de încredere.';
+
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgSecondary,
@@ -636,12 +644,12 @@ class BusinessDetailScreen extends ConsumerWidget {
             children: [
               Container(width: 32, height: 4, decoration: BoxDecoration(color: AppColors.textTertiary, borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: AppSpacing.xxl),
-              Icon(Icons.verified, color: AppColors.accent, size: 48),
+              Icon(Icons.verified, color: badgeColor, size: 48),
               const SizedBox(height: AppSpacing.lg),
-              Text('Business Verificat', style: AppTypography.headlineSmall),
+              Text(title, style: AppTypography.headlineSmall),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Acest business a fost verificat de echipa OFAI. Verificăm identitatea, locația și calitatea serviciilor pentru a asigura o experiență de încredere.',
+                description,
                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
