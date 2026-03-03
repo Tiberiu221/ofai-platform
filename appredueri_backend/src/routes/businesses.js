@@ -110,7 +110,7 @@ router.get("/", optionalAuth, async (req, res) => {
         SELECT
           business_id,
           COUNT(*) FILTER (
-            WHERE is_active = TRUE AND end_date >= CURRENT_DATE
+            WHERE is_active = TRUE AND (end_date IS NULL OR end_date >= CURRENT_DATE)
           ) AS active_offers_count
         FROM offers
         GROUP BY business_id

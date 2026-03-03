@@ -843,7 +843,8 @@
               </div>
             <% }); %>
           <% } %>
-          <% if (!business.images || business.images.length < 8) { %>
+          <% const galleryMax = (tier && tier.plan && tier.plan.max_gallery_images) || 8;
+             if (!business.images || business.images.length < galleryMax) { %>
             <label class="gallery-upload-add" id="gallery-add-btn">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>Adaugă</span>
@@ -1537,7 +1538,7 @@
       hasAiSummary: !!tier.plan.has_ai_summary,
       analyticsDays: tier.plan.analytics_days || 7,
     } : {}
-  }) %>;
+  }).replace(/<\//g, '<\\/') %>;
 
   /* ── Toast ── */
   function showToast(message, type) {
@@ -1752,7 +1753,8 @@
 
           currentCount++;
           // Hide add button if at limit
-          if (currentCount >= 8 && addBtn) {
+          var galleryLimit = _serverTier && _serverTier.plan ? _serverTier.plan.maxGalleryImages : 8;
+          if (galleryLimit !== null && currentCount >= galleryLimit && addBtn) {
             addBtn.style.display = 'none';
           }
 
@@ -1861,8 +1863,9 @@
     if (gallerySection) {
       var maxImages = plan.maxGalleryImages;
       var limitP = gallerySection.querySelector('.section-title');
-      if (limitP && maxImages !== null && maxImages !== undefined) {
-        limitP.innerHTML = 'Galerie foto <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-tertiary);">(' + (maxImages === null ? 'nelimitat' : 'max ' + maxImages) + ')</span>';
+      if (limitP) {
+        var galleryText = (maxImages === null || maxImages === undefined) ? 'nelimitat' : 'max ' + maxImages;
+        limitP.innerHTML = 'Galerie foto <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-tertiary);">(' + galleryText + ')</span>';
       }
     }
 
@@ -2779,7 +2782,7 @@
 
   // On page load: mark already-nominated offers and disable if rate-limited
   (function initNominations() {
-    var nominations = <%- JSON.stringify(nominations || []) %>;
+    var nominations = <%- JSON.stringify(nominations || []).replace(/<\//g, '<\\/') %>;
     var canNominate = <%= canNominate ? 'true' : 'false' %>;
 
     nominations.forEach(function(nom) {

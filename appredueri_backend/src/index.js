@@ -285,7 +285,7 @@ app.get('/sitemap.xml', async (req, res) => {
     ];
 
     const offers = await pool.query(
-      "SELECT id FROM offers WHERE is_active = true AND end_date >= CURRENT_DATE ORDER BY id DESC LIMIT 5000"
+      "SELECT id FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
     );
     const businesses = await pool.query(
       "SELECT id FROM businesses ORDER BY id DESC LIMIT 5000"

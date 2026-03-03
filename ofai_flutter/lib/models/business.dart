@@ -25,7 +25,6 @@ class Business {
   final int? offerRequestCount;
   final bool? showPinchFlag;
   final bool isVerified;
-  final String? subscriptionBadgeType; // null, 'verified', 'premium'
   final String? badgeType;             // effective badge: subscription badge || is_verified fallback
   final bool isPromoted;
   // Platform polish fields
@@ -55,7 +54,6 @@ class Business {
     this.offerRequestCount,
     this.showPinchFlag,
     this.isVerified = false,
-    this.subscriptionBadgeType,
     this.badgeType,
     this.isPromoted = false,
     this.followerCount,

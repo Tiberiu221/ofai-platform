@@ -101,7 +101,7 @@ router.get("/", optionalAuth, async (req, res) => {
             values.push(blockBizId);
             idx++;
           }
-        } catch (e) { /* fail open */ }
+        } catch (e) { console.error('[Offers] Competitor blocking check error:', e.message); }
       }
     }
 
@@ -184,6 +184,10 @@ router.get("/", optionalAuth, async (req, res) => {
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN business_subscriptions bsub
+        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+      LEFT JOIN subscription_plans splan
+        ON splan.id = bsub.plan_id
       ${whereClause}
     `;
     // values fara ultimele 2 (limit, offset)

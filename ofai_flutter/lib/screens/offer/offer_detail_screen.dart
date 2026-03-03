@@ -60,7 +60,9 @@ class OfferDetailScreen extends ConsumerWidget {
                         icon: const Icon(Icons.share_outlined),
                         onPressed: () {
                           Launchers.shareOffer(offer.title, offer.id);
-                          AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'share');
+                          if (offer.business != null) {
+                            AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'share');
+                          }
                         },
                       ),
                     ],
@@ -613,7 +615,9 @@ class OfferDetailScreen extends ConsumerWidget {
                                 offer.gallery!.map((g) => g.url).toList(),
                                 initialIndex: i,
                               );
-                              AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'gallery');
+                              if (offer.business != null) {
+                                AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'gallery');
+                              }
                             },
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
@@ -665,7 +669,7 @@ class OfferDetailScreen extends ConsumerWidget {
                             top: BorderSide(color: AppColors.borderLight, width: 0.5),
                           ),
                         ),
-                        child: _BookingCTA(booking: booking),
+                        child: _BookingCTA(booking: booking, offerId: offer.id, businessId: offer.business?.id),
                       ),
                     ),
                   ),
@@ -764,8 +768,10 @@ class _ActionChip extends StatelessWidget {
 
 class _BookingCTA extends StatelessWidget {
   final Booking booking;
+  final int offerId;
+  final int? businessId;
 
-  const _BookingCTA({required this.booking});
+  const _BookingCTA({required this.booking, required this.offerId, this.businessId});
 
   @override
   Widget build(BuildContext context) {
@@ -777,15 +783,24 @@ class _BookingCTA extends StatelessWidget {
     if (booking.phone != null) {
       icon = Icons.phone;
       label = 'Suna acum';
-      onTap = () => Launchers.call(booking.phone!);
+      onTap = () {
+        Launchers.call(booking.phone!);
+        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'booking_phone');
+      };
     } else if (booking.whatsapp != null) {
       icon = Icons.message;
       label = 'WhatsApp';
-      onTap = () => Launchers.whatsApp(booking.whatsapp!);
+      onTap = () {
+        Launchers.whatsApp(booking.whatsapp!);
+        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'booking_whatsapp');
+      };
     } else if (booking.url != null) {
       icon = Icons.language;
       label = 'Rezerva online';
-      onTap = () => Launchers.website(booking.url!);
+      onTap = () {
+        Launchers.website(booking.url!);
+        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'booking_url');
+      };
     } else {
       return const SizedBox.shrink();
     }

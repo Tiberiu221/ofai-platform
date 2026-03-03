@@ -71,6 +71,7 @@ async function createOffer(pool, params) {
     if (promoCodes && Array.isArray(promoCodes)) {
       const validCodes = promoCodes.filter(pc => pc.code && pc.code.trim());
       if (validCodes.length > 0) {
+        // TODO: getBusinessTier reads from pool, not from the tx client — acceptable for limit check (read-only)
         const { plan } = await getBusinessTier(pool, businessId);
         const promoLimit = plan.max_promo_codes_per_offer;
         if (promoLimit !== null && validCodes.length > promoLimit) {
@@ -106,7 +107,7 @@ async function createOffer(pool, params) {
       title,
       description || null,
       discountType || null,
-      discountValue || null,
+      discountValue ?? null,
       conditions || null,
       startDate || null,
       endDate || null,
@@ -117,7 +118,7 @@ async function createOffer(pool, params) {
       bookingWhatsapp || null,
       bookingUrl || null,
       bookingInstructions || null,
-      maxReveals || null,
+      maxReveals ?? null,
     ]);
 
     offerId = result.rows[0].id;

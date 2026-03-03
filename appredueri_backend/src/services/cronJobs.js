@@ -90,11 +90,16 @@ function initCronJobs() {
     const { syncBadgeType } = require('../helpers/tiers');
 
     try {
-      // Get free plan ID (needed for downgrades)
+      // Get free plan (needed for downgrades)
       const freePlanResult = await pool.query(
-        "SELECT id FROM subscription_plans WHERE slug = 'free'"
+        "SELECT id, badge_type FROM subscription_plans WHERE slug = 'free'"
       );
+      if (!freePlanResult.rows[0]) {
+        console.error('[Cron] CRITICAL: free plan not found in subscription_plans');
+        return;
+      }
       const freePlanId = freePlanResult.rows[0].id;
+      const freeBadgeType = freePlanResult.rows[0].badge_type;
 
       // ── Expire trials that have ended ──
       const trialResult = await pool.query(`
@@ -105,20 +110,28 @@ function initCronJobs() {
         RETURNING business_id, plan_id
       `);
 
-      // Downgrade expired trials to free + clear badge
+      // Downgrade expired trials to free + sync badge (per-business transaction)
       for (const row of trialResult.rows) {
-        await pool.query(`
-          INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-          VALUES ($1, $2, 'active', 'none')
-        `, [row.business_id, freePlanId]);
-
-        await pool.query(`
-          INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-          VALUES ($1, $2, $3, 'trial_expired', 'Trial period ended')
-        `, [row.business_id, row.plan_id, freePlanId]);
-
-        // R5 FIX: Clear badge
-        await syncBadgeType(pool, row.business_id, null);
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          await client.query(`
+            INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+            VALUES ($1, $2, 'active', 'none')
+            ON CONFLICT DO NOTHING
+          `, [row.business_id, freePlanId]);
+          await client.query(`
+            INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
+            VALUES ($1, $2, $3, 'trial_expired', 'Trial period ended')
+          `, [row.business_id, row.plan_id, freePlanId]);
+          await syncBadgeType(client, row.business_id, freeBadgeType);
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK');
+          console.error(`[Cron] Trial downgrade tx failed for business ${row.business_id}:`, txErr.message);
+        } finally {
+          client.release();
+        }
       }
 
       // ── Expire paid subscriptions past period_end ──
@@ -133,20 +146,28 @@ function initCronJobs() {
         RETURNING business_id, plan_id
       `);
 
-      // R6 FIX: Downgrade expired paid subs to free + clear badge + log history
+      // Downgrade expired paid subs to free + sync badge + log history
       for (const row of paidResult.rows) {
-        await pool.query(`
-          INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-          VALUES ($1, $2, 'active', 'none')
-        `, [row.business_id, freePlanId]);
-
-        await pool.query(`
-          INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-          VALUES ($1, $2, $3, 'expired', 'Paid subscription period ended without renewal')
-        `, [row.business_id, row.plan_id, freePlanId]);
-
-        // Clear badge
-        await syncBadgeType(pool, row.business_id, null);
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          await client.query(`
+            INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+            VALUES ($1, $2, 'active', 'none')
+            ON CONFLICT DO NOTHING
+          `, [row.business_id, freePlanId]);
+          await client.query(`
+            INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
+            VALUES ($1, $2, $3, 'expired', 'Paid subscription period ended without renewal')
+          `, [row.business_id, row.plan_id, freePlanId]);
+          await syncBadgeType(client, row.business_id, freeBadgeType);
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK');
+          console.error(`[Cron] Paid downgrade tx failed for business ${row.business_id}:`, txErr.message);
+        } finally {
+          client.release();
+        }
       }
 
       const total = trialResult.rows.length + paidResult.rows.length;

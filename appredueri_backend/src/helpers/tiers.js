@@ -8,26 +8,33 @@ const TIERS = {
 // Cache plans in memory (refresh on server start + every 1h)
 let plansCache = null;
 let cacheTimestamp = 0;
+let cachePromise = null;
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 async function getPlans(pool) {
   if (plansCache && Date.now() - cacheTimestamp < CACHE_TTL) {
     return plansCache;
   }
-  const { rows } = await pool.query(
-    'SELECT * FROM subscription_plans ORDER BY sort_order'
-  );
-  plansCache = {};
-  for (const row of rows) {
-    plansCache[row.slug] = row;
-  }
-  cacheTimestamp = Date.now();
-  return plansCache;
+  // Dedup: concurrent requests share the same in-flight DB query
+  if (cachePromise) return cachePromise;
+  cachePromise = (async () => {
+    const { rows } = await pool.query(
+      'SELECT * FROM subscription_plans ORDER BY sort_order'
+    );
+    plansCache = {};
+    for (const row of rows) {
+      plansCache[row.slug] = row;
+    }
+    cacheTimestamp = Date.now();
+    return plansCache;
+  })().finally(() => { cachePromise = null; });
+  return cachePromise;
 }
 
 function invalidateCache() {
   plansCache = null;
   cacheTimestamp = 0;
+  cachePromise = null;
 }
 
 /**
@@ -83,6 +90,8 @@ async function getBusinessTier(pool, businessId) {
     JOIN subscription_plans sp ON sp.id = bs.plan_id
     WHERE bs.business_id = $1
       AND bs.status IN ('active', 'trial')
+    ORDER BY CASE bs.status WHEN 'active' THEN 0 WHEN 'trial' THEN 1 END,
+             sp.sort_order DESC
     LIMIT 1
   `, [businessId]);
 
@@ -142,6 +151,10 @@ async function getBusinessTier(pool, businessId) {
 
   // Fallback: free tier
   const plans = await getPlans(pool);
+  if (!plans.free) {
+    console.error('[Tiers] CRITICAL: free plan not found in subscription_plans');
+    throw new Error('Free plan missing from subscription_plans');
+  }
   return {
     subscription: null,
     plan: plans.free,

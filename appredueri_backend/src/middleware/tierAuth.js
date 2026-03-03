@@ -1,19 +1,21 @@
 const { getBusinessTier } = require('../helpers/tiers');
+const pool = require('../db');
 
 /**
  * Middleware: attach tier info to req
- * Usage: router.use('/:businessId', attachTier(pool))
+ * Usage: router.use('/:businessId', attachTier())
  * Sets req.tier = { subscription, plan, tier, isTrial }
  */
-function attachTier(pool) {
+function attachTier() {
   return async (req, res, next) => {
-    const businessId = req.params.businessId || req.params.bid;
-    if (!businessId) return next();
+    const businessId = parseInt(req.params.businessId || req.params.bid);
+    if (!businessId || isNaN(businessId)) return next();
     try {
-      req.tier = await getBusinessTier(pool, parseInt(businessId));
+      req.tier = await getBusinessTier(pool, businessId);
       next();
     } catch (err) {
       console.error('Tier lookup error:', err);
+      req.tier = null;
       next(); // fail open — don't block on tier errors
     }
   };
@@ -52,9 +54,10 @@ function requireLimit(limitKey, countFn) {
     if (process.env.TIER_GATING_ENABLED !== 'true') return next();
 
     if (!req.tier) return res.status(500).json({ error: 'Tier info missing' });
-    const businessId = req.params.businessId || req.params.bid;
+    const businessId = parseInt(req.params.businessId || req.params.bid);
+    if (isNaN(businessId)) return res.status(400).json({ error: 'Invalid business ID' });
     try {
-      const count = await countFn(req.app.get('pool'), parseInt(businessId));
+      const count = await countFn(pool, businessId);
       const limit = req.tier.plan[limitKey];
       const allowed = limit === null || count < limit;
       if (!allowed) {

@@ -161,7 +161,7 @@ router.get("/dashboard", async (req, res) => {
       recentReviews
     ] = await Promise.all([
       pool.query("SELECT COUNT(*) FROM businesses"),
-      pool.query("SELECT COUNT(*) FROM offers WHERE is_active = true AND end_date >= CURRENT_DATE"),
+      pool.query("SELECT COUNT(*) FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
       pool.query("SELECT COUNT(*) FROM users"),
       pool.query("SELECT COUNT(*) FROM business_requests WHERE status = 'pending'"),
       pool.query("SELECT COUNT(*) FROM reviews WHERE created_at >= NOW() - INTERVAL '30 days'"),

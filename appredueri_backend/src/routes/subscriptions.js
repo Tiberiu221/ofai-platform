@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
   LEFT JOIN offers o
     ON o.business_id = b.id
    AND o.is_active = TRUE
-   AND o.end_date >= CURRENT_DATE
+   AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
   LEFT JOIN reviews rev ON rev.business_id = b.id
   WHERE f.user_id = $1
   GROUP BY

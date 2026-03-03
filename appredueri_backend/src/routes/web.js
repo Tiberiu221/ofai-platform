@@ -75,7 +75,7 @@ router.get("/", async (req, res) => {
   try {
     const [bizCount, offerCount, cityCount, recentOffers] = await Promise.all([
       pool.query("SELECT COUNT(*) as total FROM businesses"),
-      pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND end_date >= CURRENT_DATE"),
+      pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
       pool.query("SELECT COUNT(*) as total FROM cities"),
       pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
     ]);
@@ -84,7 +84,7 @@ router.get("/", async (req, res) => {
       SELECT c.id, c.name, COUNT(DISTINCT o.id) as offer_count
       FROM categories c
       LEFT JOIN businesses b ON b.category_id = c.id
-      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
       GROUP BY c.id, c.name
       ORDER BY offer_count DESC
     `);
@@ -138,7 +138,7 @@ router.get("/", async (req, res) => {
     } catch (e) { /* silently fail — deal of day is optional */ }
 
     // Build dynamic WHERE clause based on preferences
-    const featuredWhere = ["o.is_active = true", "o.end_date >= CURRENT_DATE"];
+    const featuredWhere = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"];
     const featuredParams = [];
     let paramIdx = 1;
 
@@ -214,7 +214,7 @@ router.get("/", async (req, res) => {
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
-      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
       LEFT JOIN business_subscriptions bsub
         ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
       LEFT JOIN subscription_plans splan
@@ -228,6 +228,12 @@ router.get("/", async (req, res) => {
     // Promoted offers (dedicated section for Premium businesses)
     let promotedOffers = [];
     try {
+      const promotedParams = [];
+      let promotedExclude = '';
+      if (dealOfDay) {
+        promotedParams.push(parseInt(dealOfDay.id));
+        promotedExclude = `AND o.id != $1`;
+      }
       const promotedResult = await pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name as business_name, b.logo_url as business_logo,
@@ -247,14 +253,14 @@ router.get("/", async (req, res) => {
         LEFT JOIN cities ci ON b.city_id = ci.id
         LEFT JOIN categories cat ON b.category_id = cat.id
         LEFT JOIN reviews r ON r.business_id = b.id
-        WHERE o.is_active = TRUE AND o.end_date >= CURRENT_DATE
-          ${dealOfDay ? `AND o.id != ${parseInt(dealOfDay.id)}` : ''}
+        WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          ${promotedExclude}
         GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                  b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                  ci.name, cat.name, o.logo_url
         ORDER BY RANDOM()
         LIMIT 3
-      `);
+      `, promotedParams);
       promotedOffers = promotedResult.rows;
     } catch (e) { /* promoted section is non-critical */ }
 
@@ -275,7 +281,7 @@ router.get("/", async (req, res) => {
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         JOIN followed_businesses fb ON fb.business_id = b.id AND fb.user_id = $1
-        WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
+        WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND o.start_date >= CURRENT_DATE - INTERVAL '7 days'
         ORDER BY o.id DESC
         LIMIT 6
@@ -641,7 +647,7 @@ router.get("/business-uri", async (req, res) => {
        LEFT JOIN cities ci ON b.city_id = ci.id
        LEFT JOIN categories cat ON b.category_id = cat.id
        LEFT JOIN reviews r ON r.business_id = b.id
-       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+       LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
        LEFT JOIN business_subscriptions bsub
          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
        LEFT JOIN subscription_plans splan
@@ -1088,7 +1094,7 @@ router.get("/business/:id", async (req, res) => {
              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
       FROM offers o
       JOIN businesses b2 ON o.business_id = b2.id
-      WHERE o.business_id = $1 AND o.is_active = true AND o.end_date >= CURRENT_DATE
+      WHERE o.business_id = $1 AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
       ORDER BY o.discount_value DESC
       LIMIT 50
     `, [id]);
@@ -1194,6 +1200,7 @@ router.get("/business/:id", async (req, res) => {
       cover_image: coverImage,
       is_verified: !!b.is_verified,
       subscription_badge_type: b.subscription_badge_type || null,
+      // Legacy fallback: businesses verified before subscription system keep 'verified' badge
       badge_type: b.subscription_badge_type || (b.is_verified ? 'verified' : null),
       city: { id: b.city_id, name: b.city_name },
       category: { id: b.cat_id, name: b.cat_name },
@@ -1573,7 +1580,7 @@ router.get("/categorii", async (req, res) => {
       SELECT c.id, c.name, COUNT(DISTINCT o.id) as offer_count
       FROM categories c
       LEFT JOIN businesses b ON b.category_id = c.id
-      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
       GROUP BY c.id, c.name
       ORDER BY c.name
     `);
@@ -1715,7 +1722,7 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
       JOIN businesses b ON b.id = f.business_id
       LEFT JOIN cities c ON c.id = b.city_id
       LEFT JOIN categories cat ON cat.id = b.category_id
-      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
       LEFT JOIN reviews rev ON rev.business_id = b.id
       WHERE f.user_id = $1 ${subCategoryFilter}
       GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, c.name, cat.name
@@ -1824,7 +1831,7 @@ router.get("/onboarding", requireWebAuth, async (req, res) => {
 // ═══════════════════════════════════════════════════════
 
 // Attach tier info for all portal routes that carry a :businessId param
-router.use('/api/web/portal/:businessId', attachTier(pool));
+router.use('/api/web/portal/:businessId', attachTier());
 
 // Portal Dashboard — lista de business-uri
 router.get("/portal", requireWebAuth, async (req, res) => {
@@ -1838,7 +1845,7 @@ router.get("/portal", requireWebAuth, async (req, res) => {
       businesses = await pool.query(`
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                c.name as city_name, cat.name as category_name,
-               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND end_date >= CURRENT_DATE) as active_offers
+               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_offers
         FROM businesses b
         LEFT JOIN cities c ON b.city_id = c.id
         LEFT JOIN categories cat ON b.category_id = cat.id
@@ -1848,7 +1855,7 @@ router.get("/portal", requireWebAuth, async (req, res) => {
       businesses = await pool.query(`
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                c.name as city_name, cat.name as category_name,
-               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND end_date >= CURRENT_DATE) as active_offers
+               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_offers
         FROM businesses b
         JOIN user_businesses ub ON ub.business_id = b.id AND ub.user_id = $1
         LEFT JOIN cities c ON b.city_id = c.id
@@ -1869,7 +1876,7 @@ router.get("/portal", requireWebAuth, async (req, res) => {
 });
 
 // Portal — manage business page (tabs: Info / Oferte / Recenzii / Statistici)
-router.get("/portal/:businessId", requireBusinessOwner, attachTier(pool), async (req, res) => {
+router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req, res) => {
   try {
     const { businessId } = req.params;
 
@@ -1935,7 +1942,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(pool), async 
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE business_id = $1", [businessId]),
       pool.query("SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating FROM reviews WHERE business_id = $1", [businessId]),
       pool.query(`SELECT COUNT(*) as total,
-                  COUNT(*) FILTER (WHERE is_active = true AND end_date >= CURRENT_DATE) as active
+                  COUNT(*) FILTER (WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active
                   FROM offers WHERE business_id = $1`, [businessId]),
       pool.query("SELECT rating, COUNT(*) as count FROM reviews WHERE business_id = $1 GROUP BY rating ORDER BY rating DESC", [businessId]),
       pool.query(`SELECT COALESCE(COUNT(*), 0) as total FROM offer_views
@@ -2008,7 +2015,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(pool), async 
     // Performance Score
     const [scoreImgRes, scoreOffRes, scoreRevRes, scoreRespRes, scoreSubRes] = await Promise.all([
       pool.query("SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1", [businessId]),
-      pool.query("SELECT COUNT(*) as cnt FROM offers WHERE business_id = $1 AND is_active = true AND end_date >= CURRENT_DATE", [businessId]),
+      pool.query("SELECT COUNT(*) as cnt FROM offers WHERE business_id = $1 AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)", [businessId]),
       pool.query("SELECT COUNT(*) as total, COALESCE(AVG(rating), 0) as avg_rating FROM reviews WHERE business_id = $1", [businessId]),
       pool.query(`SELECT (SELECT COUNT(*) FROM reviews WHERE business_id = $1) as total_reviews,
                          (SELECT COUNT(*) FROM review_responses WHERE business_id = $1) as total_responses`, [businessId]),
@@ -2908,7 +2915,7 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
       ),
       pool.query(
         `SELECT COUNT(*) as cnt FROM offers
-         WHERE business_id = $1 AND is_active = true AND end_date >= CURRENT_DATE`,
+         WHERE business_id = $1 AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)`,
         [businessId]
       ),
       pool.query(
@@ -2949,7 +2956,7 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
         (SELECT COALESCE(AVG(o_cnt), 0) FROM (
           SELECT COUNT(*) as o_cnt
           FROM businesses b2
-          LEFT JOIN offers o ON o.business_id = b2.id AND o.is_active = true AND o.end_date >= CURRENT_DATE
+          LEFT JOIN offers o ON o.business_id = b2.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
           GROUP BY b2.id
         ) sub_offers) as avg_active_offers,
@@ -3159,7 +3166,7 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
                b.name as business_name
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
-        WHERE o.is_active = true AND o.end_date >= CURRENT_DATE
+        WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND (o.title ILIKE $1 OR b.name ILIKE $1)
         ORDER BY o.discount_value DESC
         LIMIT 5
@@ -3751,11 +3758,7 @@ router.get('/preturi', async (req, res) => {
     });
   } catch (err) {
     console.error('[Web] Pricing page error:', err);
-    res.status(500).render('public/404', {
-      pageTitle: 'Eroare',
-      activePage: '',
-      webUser: req.webUser || null,
-    });
+    res.status(500).send('Eroare la incarcarea paginii de preturi.');
   }
 });
 

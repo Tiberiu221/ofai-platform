@@ -14,6 +14,14 @@ const FROM_EMAIL = process.env.FROM_EMAIL || "OFAI <noreply@ofai.ro>";
 const APP_NAME = "OFAI";
 
 /**
+ * Escape HTML entities to prevent XSS in email templates
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
  * Trimite email de bun venit după înregistrare
  */
 async function sendWelcomeEmail(to, firstName) {
@@ -74,7 +82,7 @@ async function sendWelcomeEmail(to, firstName) {
               <h1 style="margin: 32px 0 0 0; font-family: 'DM Serif Display', Georgia, 'Times New Roman', serif; font-size: 28px; font-weight: 400; color: #fafafa; text-align: center; line-height: 1.3;">Bine ai venit! &#127881;</h1>
 
               <!-- Greeting -->
-              <p style="margin: 24px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; color: #a1a1aa; line-height: 1.6;">Salut${firstName ? ` <span style="color: #fafafa; font-weight: 600;">${firstName}</span>` : ""},</p>
+              <p style="margin: 24px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; color: #a1a1aa; line-height: 1.6;">Salut${firstName ? ` <span style="color: #fafafa; font-weight: 600;">${escapeHtml(firstName)}</span>` : ""},</p>
 
               <!-- Message -->
               <p style="margin: 12px 0 0 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 16px; color: #a1a1aa; line-height: 1.6;">Contul t&#259;u <span style="color: #fb923c; font-weight: 600;">OFAI</span> a fost creat cu succes! Iat&#259; ce po&#539;i face:</p>
@@ -205,7 +213,7 @@ async function sendPasswordResetEmail(to, resetCode, firstName) {
   // Skip dacă nu avem API key configurat
   if (!resend) {
     console.log(`[Email] Skipping reset email (no API key configured): ${to}`);
-    console.log(`[Email] Reset code would be: ${resetCode}`);
+    if (process.env.NODE_ENV !== 'production') console.log(`[Email] Reset code would be: ${resetCode}`);
     return { success: false, reason: "no_api_key" };
   }
 
@@ -226,14 +234,14 @@ async function sendPasswordResetEmail(to, resetCode, firstName) {
             <h1 style="color: #2563eb; margin: 0;">🔐 Resetare parolă</h1>
           </div>
           
-          <p>Salut${firstName ? ` ${firstName}` : ""},</p>
-          
+          <p>Salut${firstName ? ` ${escapeHtml(firstName)}` : ""},</p>
+
           <p>Am primit o cerere de resetare a parolei pentru contul tău ${APP_NAME}.</p>
           
           <div style="background: #f3f4f6; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
             <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">Codul tău de resetare:</p>
             <p style="margin: 0; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">
-              ${resetCode}
+              ${escapeHtml(resetCode)}
             </p>
           </div>
           
@@ -314,7 +322,7 @@ async function sendBusinessApprovedEmail(to, firstName, businessName) {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [to],
-      subject: `Business-ul tau "${businessName}" a fost aprobat! - ${APP_NAME}`,
+      subject: `Business-ul tau "${escapeHtml(businessName)}" a fost aprobat! - ${APP_NAME}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -327,9 +335,9 @@ async function sendBusinessApprovedEmail(to, firstName, businessName) {
             <h1 style="color: #16a34a; margin: 0;">Business aprobat!</h1>
           </div>
 
-          <p>Salut${firstName ? ` ${firstName}` : ""},</p>
+          <p>Salut${firstName ? ` ${escapeHtml(firstName)}` : ""},</p>
 
-          <p>Cererea ta pentru business-ul <strong>${businessName}</strong> a fost <span style="color: #16a34a; font-weight: bold;">aprobata</span>!</p>
+          <p>Cererea ta pentru business-ul <strong>${escapeHtml(businessName)}</strong> a fost <span style="color: #16a34a; font-weight: bold;">aprobata</span>!</p>
 
           <p>Ce poti face acum:</p>
           <ul>
@@ -385,7 +393,7 @@ async function sendBusinessRejectedEmail(to, firstName, businessName, reason) {
     ? `
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
         <p style="margin: 0 0 4px 0; font-weight: 600; color: #991b1b;">Motivul respingerii:</p>
-        <p style="margin: 0; color: #7f1d1d;">${reason}</p>
+        <p style="margin: 0; color: #7f1d1d;">${escapeHtml(reason)}</p>
       </div>
     `
     : `
@@ -396,7 +404,7 @@ async function sendBusinessRejectedEmail(to, firstName, businessName, reason) {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [to],
-      subject: `Cererea pentru "${businessName}" nu a fost aprobata - ${APP_NAME}`,
+      subject: `Cererea pentru "${escapeHtml(businessName)}" nu a fost aprobata - ${APP_NAME}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -409,9 +417,9 @@ async function sendBusinessRejectedEmail(to, firstName, businessName, reason) {
             <h1 style="color: #dc2626; margin: 0;">Cerere respinsa</h1>
           </div>
 
-          <p>Salut${firstName ? ` ${firstName}` : ""},</p>
+          <p>Salut${firstName ? ` ${escapeHtml(firstName)}` : ""},</p>
 
-          <p>Din pacate, cererea ta pentru business-ul <strong>${businessName}</strong> nu a fost aprobata.</p>
+          <p>Din pacate, cererea ta pentru business-ul <strong>${escapeHtml(businessName)}</strong> nu a fost aprobata.</p>
 
           ${reasonBlock}
 
@@ -469,7 +477,7 @@ async function sendPremiumSupportWelcome(to, firstName, businessName) {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [to],
-      subject: `Suport Prioritar activat pentru "${businessName}" - ${APP_NAME}`,
+      subject: `Suport Prioritar activat pentru "${escapeHtml(businessName)}" - ${APP_NAME}`,
       html: `
         <!DOCTYPE html>
         <html lang="ro">
@@ -488,10 +496,10 @@ async function sendPremiumSupportWelcome(to, firstName, businessName) {
                     <td style="background-color: #0d0d12; border-left: 1px solid rgba(167, 139, 250, 0.15); border-right: 1px solid rgba(167, 139, 250, 0.15); padding: 0 32px 32px;">
                       <h1 style="font-family: 'DM Serif Display', Georgia, serif; font-size: 24px; font-weight: 400; color: #fafafa; text-align: center; margin: 32px 0 16px;">Suport Prioritar Activat</h1>
                       <p style="font-size: 15px; color: #a1a1aa; line-height: 1.6;">
-                        Salut${firstName ? ` <strong style="color: #fafafa;">${firstName}</strong>` : ''},
+                        Salut${firstName ? ` <strong style="color: #fafafa;">${escapeHtml(firstName)}</strong>` : ''},
                       </p>
                       <p style="font-size: 15px; color: #a1a1aa; line-height: 1.6;">
-                        Business-ul <strong style="color: #a78bfa;">${businessName}</strong> beneficiaza acum de suport prioritar. Iata cum ne poti contacta:
+                        Business-ul <strong style="color: #a78bfa;">${escapeHtml(businessName)}</strong> beneficiaza acum de suport prioritar. Iata cum ne poti contacta:
                       </p>
                       <table role="presentation" width="100%" style="margin: 24px 0;">
                         <tr>
