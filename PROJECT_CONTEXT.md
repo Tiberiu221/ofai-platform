@@ -91,7 +91,7 @@ OFAI/
 │   │   │   ├── css/main.css      # Complete design system (~4000+ lines)
 │   │   │   ├── js/main.js        # Client JS (~660 lines)
 │   │   │   └── images/           # OG fallback SVG
-│   │   └── migrations/           # SQL migrations 006-032
+│   │   └── migrations/           # SQL migrations 006-040
 │   ├── scripts/
 │   │   ├── scraping/             # 5-phase pipeline (01-scrape → 05-assign-images)
 │   │   ├── seed-businesses.js    # Test data seeder
@@ -196,9 +196,10 @@ OFAI/
 - **cities** — id, name
 - **categories** — id, name, icon
 
-### Migrations (006-032)
-Latest: `032_missing_schema.sql`. Gap at 030 (skipped). All run on production.
-Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (preferred_city_ids[]), 025 (Google OAuth), 026 (verified badge), 027 (badges), 028 (analytics tables), 029 (FK CASCADE).
+### Migrations (006-040)
+Latest: `040_deal_nominations.sql`. Gap at 030 (skipped). All run on production.
+Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (preferred_city_ids[]), 025 (Google OAuth), 026 (verified badge), 027 (badges), 028 (analytics tables), 029 (FK CASCADE), 032 (missing_schema), 033 (subscription_plans), 034 (business_subscriptions), 035 (subscription_history), 036 (subscription_badge_type), 037 (business_push_log), 038 (competitor_blocking), 039 (subscription_indexes), 040 (deal_nominations).
+**WARNING:** Two migration directories exist — `appredueri_backend/migrations/` (legacy) and `appredueri_backend/src/migrations/` (current). Only use `src/migrations/`.
 
 ---
 
@@ -498,6 +499,9 @@ SENTRY_DSN=REDACTED
 ANTHROPIC_API_KEY=sk-ant-...      # Claude Haiku for summaries
 N8N_WEBHOOK_URL=https://n8n-...
 OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
+STRIPE_SECRET_KEY=sk_...          # Stripe payment processing
+STRIPE_WEBHOOK_SECRET=whsec_...   # Stripe webhook signature verification
+TIER_GATING_ENABLED=true          # Enable/disable subscription tier gating
 ```
 
 ---
@@ -609,7 +613,7 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 - **Scraping Phase 3-5:** Verify, cleanup, image assignment
 - **iOS build:** Requires macOS (not tested on Windows dev machine)
 - **Play Store publication:** Signing done, store listing not submitted
-- **Monetization:** Stripe + pricing tiers (49/99/199 RON/month)
+- **Monetization:** Stripe integration partially built (checkout, portal, tiers.js, tierAuth.js, billing.js, pricing.ejs) but **webhook handlers are empty stubs** — subscriptions not created on payment. Needs: implement webhook logic, badge sync, cron expiry, test end-to-end
 - **n8n WF3-6:** Daily digest, review reminder, welcome series, admin alerts
 - **Rate limiter persistence:** Currently in-memory, resets on deploy (needs Redis/PG store)
 - **Migrations 001-005:** Missing from repo (need pg_dump from production)
@@ -624,6 +628,16 @@ OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 - Gamification point manipulation (follow/unfollow toggling for infinite points, no dedup)
 - Review delete doesn't reverse gamification points (user earns 10pt on write, keeps them on delete, can re-earn on rewrite)
 - Streak timezone (UTC vs Romania UTC+2/3 can break streaks at 11 PM local)
+- **[Audit #8]** Stripe webhook stubs — payments collected but no DB subscription created
+- **[Audit #8]** X-Client: mobile CSRF bypass — any browser request can skip CSRF
+- **[Audit #8]** showToast innerHTML XSS — reflected error messages can execute JS
+- **[Audit #8]** Banned users retain full mobile API access (no banned_at check)
+- **[Audit #8]** Open redirect via unvalidated returnTo parameter
+- **[Audit #8]** 4 missing CREATE TABLE migrations (user_points, favorite_offers, followed_businesses, offer_locations)
+- **[Audit #8]** Two conflicting migration directories with number collisions
+- **[Audit #8]** Flutter offer.business! force-unwrap crash in booking callbacks
+- **[Audit #8]** Flutter auth check logs out offline users (network error = unauthenticated)
+- **[Audit #8]** Hardcoded Google Client ID + n8n URL in source code
 
 ---
 
@@ -711,9 +725,17 @@ All in-memory (reset on deploy). Persistence needs Redis/PG store.
 | #5 | 23 Feb | 20 issues (7C/8W/5S) | 14 fixed, 6 remaining |
 | #6 (mobile) | 24 Feb | 5 issues | ALL FIXED |
 | #7 (parity v2) | 24 Feb | 6 issues (0C/2W/4minor) | 2W fixed, 4 by-design |
+| #8 (full) | 3 Mar | 171 issues (27C/44H/57M/43L) | Pending |
 
 **Session 24 Feb fixes:** CSRF mobile skip, exact offers count, countdown ≤7d gate, Clip.hardEdge cards, horizontal card overflow (home + offer detail)
 **Session 24 Feb v2:** Review delete (full stack), pinch on expired offers, animated counters, interleaving, geo banner, distance sort (explore+collection), per-location booking
+
+**Audit #8 (3 Mar) — Full Project Audit (6 parallel agents):**
+- **Scope:** Backend + Flutter + Web Frontend + Database + Config & Infra + Subscription & Billing
+- **27 CRITICAL:** Stripe webhook stubs (payments collected, no subscription created), X-Client CSRF bypass, 3x XSS (showToast innerHTML, onclick injection, competitive insights), open redirect, banned user mobile bypass, tier fail-open, 4 missing CREATE TABLE migrations, hardcoded credentials (n8n URL, Google Client ID), Flutter force-unwrap crash, gallery/offer limit bypass
+- **44 HIGH:** In-memory rate limiters, duplicate offer logic drift, Flutter StateNotifier races (fetch in constructor), GPS battery drain (autoDispose + keepAlive), auth check logs out offline users, Chart.js memory leak, missing DB indexes, Stripe IDOR, webhook gaps
+- **57 MEDIUM:** Flutter raw e.toString() in UI, provider not cleared on logout, router loading state, badge type fallthrough, CSS dead rules, responsive gaps, migration naming, missing .env.example
+- **43 LOW:** Hardcoded theme colors, missing diacritics, BackdropFilter artifacts, inconsistent API path prefixes
 
 **Still unfixed from all audits:**
 - Rate limiter persistence (needs Redis/PG store)
@@ -722,3 +744,10 @@ All in-memory (reset on deploy). Persistence needs Redis/PG store.
 - Gallery image race condition (count not atomic)
 - Feed endpoint format mismatch (backend array vs Flutter paginated)
 - Gamification point dedup (follow/unfollow manipulation)
+- **Stripe webhook handlers are empty stubs** (critical — revenue loss)
+- **X-Client CSRF bypass** (critical — any browser can skip CSRF)
+- **showToast innerHTML XSS** (critical — reflected XSS)
+- **4 missing CREATE TABLE migrations** (critical — schema gaps)
+- **Two conflicting migration directories** (high — deployment risk)
+- **Flutter force-unwrap crash in booking callbacks** (critical)
+- **Hardcoded Google Client ID + n8n URL in source** (critical — credential exposure)
