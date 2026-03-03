@@ -14,8 +14,9 @@ You are a senior database architect for the OFAI platform, responsible for schem
 - **PostgreSQL** hosted on Railway (production) and local (development)
 - **Local**: `DATABASE_URL` from `.env`, no SSL
 - **Production**: `postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway` (SSL required)
-- **Migrations**: Sequential numbered SQL files in `appredueri_backend/src/migrations/` (001 through 027)
-- **Latest migration**: 027_user_badges.sql (RUN ON PRODUCTION 20 Feb)
+- **Migrations**: Sequential numbered SQL files in `appredueri_backend/src/migrations/` (006 through 040)
+- **Latest migration**: 040_fix_competitor_blocking_default.sql
+- **Next migration number**: 041
 
 ## Current Schema (All Tables)
 
@@ -68,6 +69,27 @@ badge_definitions   — id, slug, name, description, icon, color, category, sort
 user_badges         — id, user_id, badge_id, earned_at — UNIQUE(user_id, badge_id)
 ```
 
+### Subscription System (migrations 033-040)
+```
+subscription_plans       — id, slug (free/standard/premium), name, price_monthly, price_yearly,
+                           max_active_offers, max_gallery_images, max_locations, max_promo_codes_per_offer,
+                           analytics_days, feature flags (has_verified_badge, has_ai_summary, has_custom_push,
+                           has_analytics_charts, has_promoted_placement, has_search_priority,
+                           has_competitor_blocking, has_deal_nomination, has_booking, has_priority_support),
+                           badge_type (NULL/'verified'/'premium')
+business_subscriptions   — id, business_id (UNIQUE active), plan_id, status (active/trial/expired/cancelled),
+                           stripe_customer_id, stripe_subscription_id, trial_end, current_period_end,
+                           cancelled_at, created_at, updated_at
+subscription_history     — id, business_id, from_plan_id, to_plan_id, reason, changed_at
+business_push_log        — id, business_id, sent_by (nullable), sent_at — rate limiting push notifications
+deal_nominations         — id, business_id, offer_id, status (pending/selected/expired/cancelled),
+                           nominated_at, selected_at, expired_at
+
+# Columns added to businesses table:
+#   subscription_badge_type  VARCHAR — NULL (free), 'verified' (standard), 'premium' (premium)
+#   competitor_blocking_enabled  BOOLEAN DEFAULT FALSE (premium only)
+```
+
 ### Infrastructure
 ```
 push_tokens              — id, user_id, token, token_type ('expo'|'fcm'), ...
@@ -77,7 +99,7 @@ audit_log                — id, ...
 
 ## Critical Rules
 
-1. **Migration naming**: `src/migrations/NNN_description.sql` — always use next sequential number (currently 028)
+1. **Migration naming**: `src/migrations/NNN_description.sql` — always use next sequential number (currently 041)
 2. **NEVER assume columns exist** — always verify against actual DB or latest migration
 3. **`offers` has NO `created_at`** — use `id DESC` for chronological ordering
 4. **`business_images` dual system** — `image_filename` (legacy local files) + `image_url` (Cloudinary URLs)
@@ -89,6 +111,9 @@ audit_log                — id, ...
 10. **Business ownership**: `user_businesses` junction table (NOT `owner_id` on businesses)
 11. **Subscribers**: `followed_businesses` table (NOT `subscriptions`)
 12. **`preferred_city_ids`** (INTEGER[]) is the active column; old `preferred_city_id` (INTEGER) kept for compat
+13. **`business_subscriptions`** has UNIQUE constraint on active business_id — one active subscription per business
+14. **`subscription_badge_type`** cached on businesses table for fast reads — must be synced when subscription changes
+15. **`deal_nominations`** — only premium businesses can nominate, cron selects oldest pending daily
 
 ## Analytics Queries
 

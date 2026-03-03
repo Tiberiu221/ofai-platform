@@ -37,6 +37,9 @@ You are a DevOps engineer managing the OFAI platform infrastructure, deployments
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — image uploads
 - `RESEND_API_KEY` — transactional email
 - `OPENROUTER_KEY` — LLM enrichment (scraping only)
+- `STRIPE_SECRET_KEY` — Stripe payment processing
+- `STRIPE_WEBHOOK_SECRET` — Stripe webhook signature verification
+- `TIER_GATING_ENABLED` — Feature flag to enable/disable subscription gating
 
 ## Key Files
 
@@ -45,11 +48,12 @@ appredueri_backend/
 ├── src/
 │   ├── index.js              # Express setup, listen port, cron init
 │   ├── db.js                 # PostgreSQL pool (SSL in prod)
-│   ├── routes/               # All route files (web.js, auth.js, offers.js, etc.)
-│   ├── middleware/            # Auth, CSRF, rate limiting
-│   ├── services/             # Cloudinary, push, email, cron, badges
-│   ├── migrations/           # Sequential SQL (001-027)
-│   └── views/                # EJS templates
+│   ├── routes/               # All route files (web.js, auth.js, offers.js, billing.js, etc.)
+│   ├── middleware/            # Auth, CSRF, rate limiting, tierAuth
+│   ├── helpers/              # JWT, validation, tiers (subscription system)
+│   ├── services/             # Cloudinary, push, email, cron, badges, stripe
+│   ├── migrations/           # Sequential SQL (006-040)
+│   └── views/                # EJS templates (incl. pricing.ejs)
 ├── package.json              # Scripts: start, dev
 └── .env                      # Local environment (gitignored)
 

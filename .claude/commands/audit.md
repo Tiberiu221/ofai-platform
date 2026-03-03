@@ -7,13 +7,16 @@ Lanseaza un audit complet al intregului proiect OFAI. Citeste mai intai memory f
 ### 1. Backend Audit (code-reviewer agent, model: sonnet)
 Audiaza toate fisierele din `appredueri_backend/src/`:
 - **Routes** (src/routes/) — bugs, security, SQL injection, dead code, duplicate logic (web.js vs business-portal.js), missing auth middleware
-- **Middleware** (src/middleware/) — auth edge cases, missing checks, optionalAuth usage
-- **Services** (src/services/) — email, push, cloudinary, badges, cron, offerService
-- **Helpers** (src/helpers/) — validation gaps, JWT issues
+- **Routes noi** — billing.js (Stripe checkout/portal/webhooks), subscription features in web.js + business-portal.js
+- **Middleware** (src/middleware/) — auth edge cases, missing checks, optionalAuth usage, tierAuth.js gating
+- **Services** (src/services/) — email, push, cloudinary, badges, cron, offerService, stripe.js
+- **Helpers** (src/helpers/) — validation gaps, JWT issues, tiers.js (getBusinessTier, hasFeature, checkLimit)
 - **Config** — index.js setup, environment handling, CSRF config
 - Verifica: offers table NU are created_at, business_images are BOTH image_filename si image_url
 - Verifica: business ownership via user_businesses (NU owner_id), followed_businesses (NU subscriptions)
 - Verifica: analytics endpoints (offer-views, clicks with action_type) au auth + ownership check
+- Verifica: tier gating corect pe TOATE rutele care necesita subscription (gallery limits, offer limits, promo codes, push, deal nominations)
+- Verifica: Stripe webhook signature verification, badge sync pe subscription change, cron jobs subscription expiry
 
 ### 2. Flutter Audit (code-reviewer agent, model: sonnet)
 Audiaza toate fisierele din `ofai_flutter/lib/`:
@@ -34,20 +37,35 @@ Audiaza toate fisierele din `appredueri_backend/src/views/` + `src/public/`:
 
 ### 4. Database Audit (code-reviewer agent, model: sonnet)
 Audiaza toate fisierele din `appredueri_backend/src/migrations/`:
-- ALL migrations (001-027) — missing indexes, FK constraints, naming conventions
+- ALL migrations (006-040) — missing indexes, FK constraints, naming conventions
 - Cross-reference SQL queries in routes cu schema-ul real
 - Connection pool settings, SSL, statement timeout
 - Orphaned tables/columns
 - Analytics tables: business_views, offer_views, business_clicks — index coverage
+- Subscription tables: subscription_plans, business_subscriptions, subscription_history, deal_nominations — integrity
+- Badge sync: subscription_badge_type on businesses vs actual subscription status
+- New columns: competitor_blocking_enabled defaults, subscription indexes
 
 ### 5. Config & Infrastructure Audit (code-reviewer agent, model: sonnet)
 Audiaza configuratii din intregul proiect:
-- **package.json** (backend) — outdated/unused/missing deps
+- **package.json** (backend) — outdated/unused/missing deps (incl. stripe dependency)
 - **pubspec.yaml** (Flutter) — outdated deps, version constraints
 - **Android config** — build.gradle, AndroidManifest, google-services.json
 - **.gitignore** — missing entries, sensitive files
 - **Scripts** (scraping, seed) — hardcoded credentials, error handling
-- **Environment vars** — JWT_SECRET, FIREBASE_ADMINSDK_JSON, GOOGLE_CLIENT_ID presence
+- **Environment vars** — JWT_SECRET, FIREBASE_ADMINSDK_JSON, GOOGLE_CLIENT_ID, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, TIER_GATING_ENABLED presence
+
+### 6. Subscription & Billing Audit (code-reviewer agent, model: sonnet)
+Audiaza complet sistemul de subscriptii:
+- **tiers.js** — plan definitions, feature flags, limit enforcement, cache TTL
+- **tierAuth.js** — middleware gating, TIER_GATING_ENABLED bypass, error responses
+- **billing.js** — Stripe checkout flow, webhook handler completeness, customer management
+- **stripe.js** — price_data correctness, customer creation IDOR, error handling
+- **cronJobs.js** — subscription expiry logic, deal nomination cron, stale nomination cleanup
+- **offerService.js** — promo code limit enforcement within transactions
+- **business-portal.js** — tier-gated features (gallery, offers, push, analytics)
+- **web.js** — subscription display, pricing page data, portal subscription tab
+- Cross-check: toate feature flags din subscription_plans sunt verificate in cod
 
 ## Dupa ce termina TOTI agentii
 

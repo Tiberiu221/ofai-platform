@@ -45,7 +45,7 @@ ofai_flutter/
 │   │   ├── offer/             # OfferDetailScreen (gallery, share, booking)
 │   │   ├── business/          # BusinessDetailScreen (gallery, share, reviews)
 │   │   └── onboarding/        # OnboardingScreen (3-page welcome flow)
-│   ├── widgets/               # OfferCard, BusinessCard, CategoryChip, SkeletonLoader, EmptyState, ErrorState, FullscreenGallery
+│   ├── widgets/               # OfferCard, BusinessCard, CategoryChip, SubscriptionBadge, SkeletonLoader, EmptyState, ErrorState, FullscreenGallery
 │   ├── app.dart               # GoRouter (routes, shell, transitions, onboarding redirect)
 │   └── main.dart              # ProviderScope + OFAIApp entry point
 ├── android/                   # Android config (deep linking intent filters, signing)
@@ -87,8 +87,8 @@ ofai_flutter/
 
 ## Models
 
-- **Offer** — includes `OfferBusiness` with `isVerified` field
-- **Business** — has `isVerified` field for verified badge display
+- **Offer** — includes `OfferBusiness` with `isVerified` and `badgeType` fields; getters: `hasBadge`, `isPremium`
+- **Business** — has `isVerified`, `badgeType`, `isPromoted`, `followerCount`, `ratingDistribution` fields; getters: `hasBadge`, `isPremium`, `isStandardVerified`
 - **User** — `preferredCityIds`, `preferredCategoryIds`, `profilePictureUrl`, `showPictureInReviews`
 - **UserBadge** — `slug`, `name`, `description`, `icon`, `color`, `earnedAt`
 - **Review** — includes reviewer `profilePictureUrl` + `showPictureInReviews`
@@ -103,9 +103,14 @@ ofai_flutter/
 
 ## Key Features
 
-### Verified Badge
-- `Icons.verified` (accent color) on BusinessDetailScreen, BusinessCard, OfferCard
-- `isVerified` field from API on both Business and OfferBusiness models
+### Subscription Badges (3-tier system)
+- **SubscriptionBadge widget** (`widgets/subscription_badge.dart`) — renders based on `badgeType`:
+  - `null` → no badge (free tier)
+  - `'verified'` → orange checkmark (standard tier, 49 RON/mo)
+  - `'premium'` → purple checkmark with glow effect (premium tier, 199 RON/mo)
+- Replaces old simple `isVerified` check — now uses `badgeType` with `isVerified` fallback
+- Displayed on BusinessDetailScreen, BusinessCard, OfferCard
+- **Promoted offers** shown on HomeScreen for premium businesses
 
 ### User Badges / Gamification
 - `UserBadge` model, `_BadgeChip` widget in AccountScreen (Wrap layout)

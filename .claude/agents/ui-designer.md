@@ -96,9 +96,12 @@ pageH / pagePadding — consistent page-level EdgeInsets
 - Flutter: `shimmer` package with surface/surfaceElevated shimmer colors
 - Web: CSS shimmer animation
 
-### Verified Badge
-- Orange checkmark SVG (web) / `Icons.verified` accent color (Flutter)
-- Displayed next to business name on detail + list pages
+### Subscription Badges (3-tier system)
+- **Free**: No badge
+- **Standard** (`subscription_badge_type = 'verified'`): Orange checkmark SVG (web) / `Icons.verified` accent color (Flutter)
+- **Premium** (`subscription_badge_type = 'premium'`): Purple checkmark with glow effect (Flutter `SubscriptionBadge` widget)
+- Displayed next to business name on detail + list + offer cards
+- **Pricing page** (`pricing.ejs`): 3-tier layout with monthly/yearly toggle, feature comparison grid, FAQ section
 
 ## Accessibility Checklist
 
@@ -121,6 +124,8 @@ pageH / pagePadding — consistent page-level EdgeInsets
 6. **Search bars styled identically** across all screens
 7. **Dark mode only**: never add light theme styles
 8. **Profile pictures**: Circle avatar with initials fallback (both web + Flutter)
+9. **Subscription badge colors**: Standard = accent orange `#fb923c`, Premium = purple with glow
+10. **Pricing page**: Must match dark glassmorphic design language, tier cards with feature checklists
 
 ## When Working
 
