@@ -4754,6 +4754,24 @@ ul, ol { list-style: none; }
   font-weight: 500;
 }
 .premium-badge-wrap:hover .premium-tooltip { display: block; }
+
+.verified-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  font-weight: 400;
+}
 .verified-badge-wrap:hover .verified-tooltip { display: block; }
 
 /* Badge on cards (small) */

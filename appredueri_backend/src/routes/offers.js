@@ -108,6 +108,8 @@ router.get("/", optionalAuth, async (req, res) => {
     let orderBy = "o.id DESC";
     if (sort === "discount_desc") orderBy = "o.discount_value DESC";
     if (sort === "ending_soon") orderBy = "o.end_date ASC";
+    // splan.slug is NULL when business has no active subscription (LEFT JOIN);
+    // NULL comparisons fall through to ELSE 0 — free businesses get no boost.
     if (sort === "popular") orderBy = `(
       (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id)
       + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END

@@ -315,7 +315,7 @@ class OfferCard extends ConsumerWidget {
     final biz = offer.business!;
     final dist = _distanceText(ref);
     final hasDistance = dist != null;
-    final locationLabel = hasDistance ? '$dist distanta' : biz.city;
+    final locationLabel = hasDistance ? '$dist distanță' : biz.city;
     final hasLocation = locationLabel != null && locationLabel.isNotEmpty;
     final hasCategory = biz.category != null && biz.category!.isNotEmpty;
     final hasSaves = offer.saveCount != null && offer.saveCount! >= 3;

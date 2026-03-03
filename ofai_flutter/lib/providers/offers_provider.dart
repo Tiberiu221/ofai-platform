@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -258,8 +259,9 @@ final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
     });
     final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
     return _interleaveOffers(paginated.data);
-  } catch (_) {
+  } catch (e) {
     // Fall back to popular offers if feed fails (e.g. not authenticated)
+    debugPrint('[feedProvider] Feed failed, falling back to popular: $e');
     final response = await ApiClient().dio.get(ApiEndpoints.offers, queryParameters: {
       'sort': 'popular',
       'limit': 10,

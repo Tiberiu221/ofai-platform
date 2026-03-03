@@ -32,8 +32,8 @@ class AppColors {
   static const info = Color(0xFF3B82F6);
 
   // Premium purple (Tailwind violet-400)
-  static const premiumPurple = Color(0xFFa78bfa);
-  static const premiumPurpleGlow = Color(0x40a78bfa);
+  static const premiumPurple = Color(0xFFA78BFA);
+  static const premiumPurpleGlow = Color(0x40A78BFA);
 
   // Gradients
   static const accentGradient = [Color(0xFFFB923C), Color(0xFFF97316)];

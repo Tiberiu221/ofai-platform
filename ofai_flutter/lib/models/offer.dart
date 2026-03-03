@@ -148,6 +148,10 @@ class OfferBusiness {
       categoryId: json['category_id'] as int?,
     );
   }
+
+  bool get hasBadge => badgeType != null;
+  bool get isPremium => badgeType == 'premium';
+  String get categoryName => category ?? '';
 }
 
 class OfferLocation {

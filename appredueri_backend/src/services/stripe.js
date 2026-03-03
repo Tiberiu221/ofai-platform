@@ -74,6 +74,9 @@ async function createCheckoutSession(pool, { userId, businessId, planSlug, billi
   if (!plan) throw new Error('Plan not found');
 
   const amount = billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly;
+  if (!amount || amount <= 0) {
+    throw new Error('Cannot create checkout for plan with zero price');
+  }
   const interval = billingCycle === 'yearly' ? 'year' : 'month';
 
   // TODO: Replace with saved Stripe Price IDs in production

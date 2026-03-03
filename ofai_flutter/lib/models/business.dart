@@ -114,7 +114,6 @@ class Business {
           : json['offerRequestCount'] as int?,
       showPinchFlag: json['showPinch'] as bool?,
       isVerified: json['is_verified'] as bool? ?? false,
-      subscriptionBadgeType: json['subscription_badge_type'] as String?,
       badgeType: json['badge_type'] as String?
           ?? json['subscription_badge_type'] as String?
           ?? ((json['is_verified'] as bool? ?? false) ? 'verified' : null),

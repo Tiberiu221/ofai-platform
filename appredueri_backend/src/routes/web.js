@@ -2705,7 +2705,7 @@ function fillMissingDays(rows, days, valueKey) {
 }
 
 router.get("/api/web/portal/:businessId/analytics/export",
-  requireBusinessOwner, attachTier(pool), requireFeature('has_analytics_export'),
+  requireBusinessOwner, requireFeature('has_analytics_export'),
   async (req, res) => {
   try {
     const { businessId } = req.params;
@@ -2850,7 +2850,7 @@ const competitiveCache = new Map();
 const COMPETITIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
 
 router.get("/api/web/portal/:businessId/analytics/competitive",
-  requireBusinessOwner, attachTier(pool), requireFeature('has_competitive_insights'),
+  requireBusinessOwner, requireFeature('has_competitive_insights'),
   async (req, res) => {
   try {
     const { businessId } = req.params;
@@ -3010,7 +3010,7 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
 // ═══════════════════════════════════════════════════════
 
 router.post("/api/web/portal/:businessId/notifications/send",
-  requireBusinessOwner, attachTier(pool), requireFeature('has_custom_push'),
+  requireBusinessOwner, requireFeature('has_custom_push'),
   async (req, res) => {
   try {
     const { businessId } = req.params;
@@ -3099,7 +3099,7 @@ router.post("/api/web/portal/:businessId/notifications/send",
 });
 
 router.get("/api/web/portal/:businessId/notifications/history",
-  requireBusinessOwner, attachTier(pool), requireFeature('has_custom_push'),
+  requireBusinessOwner, requireFeature('has_custom_push'),
   async (req, res) => {
   try {
     const { businessId } = req.params;

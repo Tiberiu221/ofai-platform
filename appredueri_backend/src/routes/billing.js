@@ -23,7 +23,7 @@ router.post('/:businessId/checkout', requireBusinessOwner, async (req, res) => {
 
     const { url } = await stripeService.createCheckoutSession(pool, {
       userId: req.webUser.id,
-      businessId: req.params.businessId,
+      businessId: parseInt(req.params.businessId, 10),
       planSlug,
       billingCycle,
     });

@@ -71,7 +71,7 @@ async function createOffer(pool, params) {
     if (promoCodes && Array.isArray(promoCodes)) {
       const validCodes = promoCodes.filter(pc => pc.code && pc.code.trim());
       if (validCodes.length > 0) {
-        const { plan } = await getBusinessTier(client, businessId);
+        const { plan } = await getBusinessTier(pool, businessId);
         const promoLimit = plan.max_promo_codes_per_offer;
         if (promoLimit !== null && validCodes.length > promoLimit) {
           await client.query("ROLLBACK");
