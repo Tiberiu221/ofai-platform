@@ -346,9 +346,21 @@ router.post("/:businessId/images", businessAuth, requireLimit('max_gallery_image
       [businessId]
     );
 
-    if (parseInt(countRes.rows[0].cnt) >= 8) {
+    const currentCount = parseInt(countRes.rows[0].cnt);
+
+    // Get tier-based gallery limit
+    const { getBusinessTier } = require('../helpers/tiers');
+    const { plan } = await getBusinessTier(pool, parseInt(businessId));
+    const galleryLimit = plan.max_gallery_images; // null = unlimited
+
+    if (galleryLimit !== null && currentCount >= galleryLimit) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ message: "Maximum 8 imagini permise" });
+      return res.status(400).json({
+        message: `Ai atins limita de ${galleryLimit} imagini pentru planul ${plan.name}. Upgradeaza pentru mai multe.`,
+        error: 'limit_reached',
+        limit: galleryLimit,
+        current: currentCount,
+      });
     }
 
     // Upload pe Cloudinary cu rezoluție specifică pentru galerie (1200x800)
@@ -1353,12 +1365,15 @@ router.post('/:businessId/subscription/cancel', businessAuth, async (req, res) =
     }
 
     // Log to history
+    const freePlan = await pool.query(
+      "SELECT id FROM subscription_plans WHERE slug = 'free'"
+    );
     await pool.query(`
       INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-      SELECT bs.plan_id, bs.plan_id, bs.plan_id, 'cancelled', 'User requested cancellation'
+      SELECT bs.business_id, bs.plan_id, $2, 'cancelled', 'User requested cancellation'
       FROM business_subscriptions bs
       WHERE bs.id = $1
-    `, [result.rows[0].id]);
+    `, [result.rows[0].id, freePlan.rows[0].id]);
 
     console.log(`[BusinessPortal] Subscription cancelled for business ${businessId}, active until ${result.rows[0].current_period_end}`);
 

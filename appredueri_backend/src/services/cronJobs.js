@@ -87,45 +87,71 @@ function initCronJobs() {
 
   // 7. Check subscription expirations — Daily 04:00 UTC
   cron.schedule('0 4 * * *', async () => {
+    const { syncBadgeType } = require('../helpers/tiers');
+
     try {
-      // Expire trials that have ended
+      // Get free plan ID (needed for downgrades)
+      const freePlanResult = await pool.query(
+        "SELECT id FROM subscription_plans WHERE slug = 'free'"
+      );
+      const freePlanId = freePlanResult.rows[0].id;
+
+      // ── Expire trials that have ended ──
       const trialResult = await pool.query(`
         UPDATE business_subscriptions
         SET status = 'expired', updated_at = NOW()
         WHERE status = 'trial'
           AND trial_end < NOW()
-        RETURNING business_id
+        RETURNING business_id, plan_id
       `);
 
-      // Downgrade expired trials to free
-      if (trialResult.rows.length > 0) {
-        const freePlan = await pool.query(
-          "SELECT id FROM subscription_plans WHERE slug = 'free'"
-        );
-        for (const row of trialResult.rows) {
-          await pool.query(`
-            INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-            VALUES ($1, $2, 'active', 'none')
-          `, [row.business_id, freePlan.rows[0].id]);
-          await pool.query(`
-            INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-            VALUES ($1, NULL, $2, 'trial_expired', 'Trial period ended')
-          `, [row.business_id, freePlan.rows[0].id]);
-        }
+      // Downgrade expired trials to free + clear badge
+      for (const row of trialResult.rows) {
+        await pool.query(`
+          INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+          VALUES ($1, $2, 'active', 'none')
+        `, [row.business_id, freePlanId]);
+
+        await pool.query(`
+          INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
+          VALUES ($1, $2, $3, 'trial_expired', 'Trial period ended')
+        `, [row.business_id, row.plan_id, freePlanId]);
+
+        // R5 FIX: Clear badge
+        await syncBadgeType(pool, row.business_id, null);
       }
 
-      // Expire paid subscriptions past period_end (if not renewed by Stripe webhook)
-      await pool.query(`
+      // ── Expire paid subscriptions past period_end ──
+      // (only those without Stripe — Stripe-managed subs are renewed via webhook)
+      const paidResult = await pool.query(`
         UPDATE business_subscriptions
         SET status = 'expired', updated_at = NOW()
         WHERE status = 'active'
           AND billing_cycle != 'none'
           AND current_period_end < NOW()
           AND stripe_subscription_id IS NULL
+        RETURNING business_id, plan_id
       `);
 
-      if (trialResult.rows.length > 0) {
-        console.log(`[Cron] Subscription check: ${trialResult.rows.length} trials expired`);
+      // R6 FIX: Downgrade expired paid subs to free + clear badge + log history
+      for (const row of paidResult.rows) {
+        await pool.query(`
+          INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+          VALUES ($1, $2, 'active', 'none')
+        `, [row.business_id, freePlanId]);
+
+        await pool.query(`
+          INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
+          VALUES ($1, $2, $3, 'expired', 'Paid subscription period ended without renewal')
+        `, [row.business_id, row.plan_id, freePlanId]);
+
+        // Clear badge
+        await syncBadgeType(pool, row.business_id, null);
+      }
+
+      const total = trialResult.rows.length + paidResult.rows.length;
+      if (total > 0) {
+        console.log(`[Cron] Subscription check: ${trialResult.rows.length} trials + ${paidResult.rows.length} paid expired, downgraded to free`);
       }
     } catch (err) {
       console.error('[Cron] Subscription expiry check error:', err.message);

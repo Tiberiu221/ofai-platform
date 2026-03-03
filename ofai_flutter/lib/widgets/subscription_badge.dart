@@ -21,12 +21,14 @@ class SubscriptionBadge extends StatelessWidget {
 
     if (badgeType == 'premium') {
       return Container(
-        decoration: const BoxDecoration(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
               color: AppColors.premiumPurpleGlow,
-              blurRadius: 8,
-              spreadRadius: 1,
+              blurRadius: 10,
+              spreadRadius: 2,
             ),
           ],
         ),

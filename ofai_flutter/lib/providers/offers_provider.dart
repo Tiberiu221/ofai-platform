@@ -246,7 +246,7 @@ final promotedOffersProvider = FutureProvider.autoDispose<List<Offer>>((ref) asy
     'promoted_only': '1',
   });
   final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
-  return paginated.data.where((o) => o.isPromoted).take(3).toList();
+  return paginated.data; // Backend already filters via promoted_only param
 });
 
 // Personalized feed for home screen (authenticated users)

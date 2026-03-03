@@ -832,7 +832,7 @@
       <div class="glass-card" id="gallery-section" style="margin-top: 16px;">
         <h3 class="section-title">Galerie foto</h3>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
-          Maximum 8 imagini. Recomandat: format landscape, minim 1200x800px.
+          Maximum <%= tier && tier.plan && tier.plan.max_gallery_images ? tier.plan.max_gallery_images : 8 %> imagini. Recomandat: format landscape, minim 1200x800px.
         </p>
         <div class="gallery-upload-grid" id="gallery-grid">
           <% if (business.images && business.images.length > 0) { %>
@@ -943,6 +943,9 @@
         </div>
       </div>
       <% } %>
+
+    </div>
+    <!-- /#tab-info -->
 
     <!-- ═══════════════════════════════════════
          TAB 2: OFERTE
@@ -1568,6 +1571,10 @@
     if (!(options.body instanceof FormData)) {
       if (typeof options.headers === 'object' && !Array.isArray(options.headers)) {
         options.headers['X-CSRF-Token'] = csrfToken ? csrfToken.getAttribute('content') : '';
+        // Auto-set Content-Type for JSON bodies
+        if (typeof options.body === 'string' && !options.headers['Content-Type']) {
+          options.headers['Content-Type'] = 'application/json';
+        }
       }
     } else {
       // For FormData, we need to set headers differently
@@ -1703,9 +1710,10 @@
     var grid = document.getElementById('gallery-grid');
     var currentCount = grid.querySelectorAll('.gallery-upload-item').length;
 
-    // Check total limit
-    if (currentCount + files.length > 8) {
-      showToast('Maximum 8 imagini. Poți adăuga încă ' + (8 - currentCount) + '.', 'error');
+    // Check total limit (tier-based; null = unlimited for Premium)
+    var galleryLimit = <%= tier && tier.plan && tier.plan.max_gallery_images != null ? tier.plan.max_gallery_images : 'null' %>;
+    if (galleryLimit !== null && currentCount + files.length > galleryLimit) {
+      showToast('Maximum ' + galleryLimit + ' imagini. Poți adăuga încă ' + (galleryLimit - currentCount) + '.', 'error');
       input.value = '';
       return;
     }

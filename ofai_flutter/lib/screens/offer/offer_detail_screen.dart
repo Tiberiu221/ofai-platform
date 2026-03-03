@@ -17,6 +17,7 @@ import '../../widgets/error_state.dart' as w;
 import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/offer_card.dart';
 import '../../widgets/animated_toggle_fab.dart';
+import '../../widgets/subscription_badge.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
@@ -404,7 +405,24 @@ class OfferDetailScreen extends ConsumerWidget {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text(offer.business!.name, style: AppTypography.labelLarge),
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  offer.business!.name,
+                                                  style: AppTypography.labelLarge,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              if (offer.business!.badgeType != null) ...[
+                                                const SizedBox(width: 4),
+                                                SubscriptionBadge(
+                                                  badgeType: offer.business!.badgeType,
+                                                  size: 16,
+                                                ),
+                                              ],
+                                            ],
+                                          ),
                                           if (offer.business!.city != null || offer.business!.category != null)
                                             Text(
                                               [offer.business!.category, offer.business!.city]
