@@ -173,8 +173,14 @@
 }
 
 .onboarding-pill-icon {
-  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent, #fb923c);
   line-height: 1;
+}
+
+.onboarding-pill.selected .onboarding-pill-icon {
+  color: var(--bg-primary, #06060a);
 }
 
 /* ─── Action buttons ────────────────────────────────────── */

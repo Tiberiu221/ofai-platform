@@ -49,13 +49,13 @@
             <a href="/oferte<%= (typeof prefsActive !== 'undefined' && prefsActive) ? (typeof query !== 'undefined' && query ? '?q=' + encodeURIComponent(query) : '') : '?prefs=1' + (typeof query !== 'undefined' && query ? '&q=' + encodeURIComponent(query) : '') %>"
                class="filter-pill filter-pill-prefs<%= (typeof prefsActive !== 'undefined' && prefsActive) ? ' active' : '' %>"
                title="<%= (typeof userPrefsCityNames !== 'undefined' ? userPrefsCityNames : []).concat(typeof userPrefsCategoryNames !== 'undefined' ? userPrefsCategoryNames : []).join(', ') %>">
-              🎯 Preferințe
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Preferințe
             </a>
           <% } else { %>
             <a href="/preferinte?returnTo=<%= encodeURIComponent('/oferte' + (typeof query !== 'undefined' && query ? '?q=' + encodeURIComponent(query) : '')) %>"
                class="filter-pill filter-pill-prefs filter-pill-disabled"
                title="Setează preferințele din Cont">
-              🎯 Preferințe
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> Preferințe
             </a>
           <% } %>
         <% } %>
@@ -78,22 +78,22 @@
     <div class="sort-chips">
       <a href="/oferte?sort=newest<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
          class="filter-pill filter-pill-sort<%= selectedSort === 'newest' ? ' active' : '' %>">
-        🕐 Noi
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Noi
       </a>
       <a href="/oferte?sort=popular<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
          class="filter-pill filter-pill-sort<%= selectedSort === 'popular' ? ' active' : '' %>">
-        🔥 Populare
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Populare
       </a>
       <a href="/oferte?sort=discount<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
          class="filter-pill filter-pill-sort<%= selectedSort === 'discount' ? ' active' : '' %>">
-        ↓% Reducere
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><path d="M7.5 16.5 16.5 7.5"/></svg> Reducere
       </a>
       <a href="/oferte?sort=ending_soon<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
          class="filter-pill filter-pill-sort<%= selectedSort === 'ending_soon' ? ' active' : '' %>">
-        ⏰ Expiră
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M10 2h4"/><path d="M12 14v-4"/><circle cx="12" cy="14" r="8"/></svg> Expiră
       </a>
       <button type="button" class="filter-pill filter-pill-sort" id="sort-distance-btn" onclick="sortByDistance()" style="opacity: 0.5;" title="Activează locația">
-        📍 Distanță
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Distanță
       </button>
     </div>
 
@@ -103,7 +103,7 @@
     <% } %>
 
     <div class="filter-city-escape">
-      📍 <%= typeof selectedCityName !== 'undefined' && selectedCityName ? selectedCityName : 'Toate orașele' %>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> <%= typeof selectedCityName !== 'undefined' && selectedCityName ? selectedCityName : 'Toate orașele' %>
       · <a href="/preferinte?returnTo=<%= encodeURIComponent('/oferte') %>">Schimbă</a>
     </div>
   </div>
