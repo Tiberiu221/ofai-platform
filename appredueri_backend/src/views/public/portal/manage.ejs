@@ -1492,7 +1492,7 @@
           <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 6px;">Disponibil cu planul <strong style="color: #a78bfa;">Premium</strong></p>
           <p style="color: var(--text-tertiary); font-size: 0.8125rem; margin: 0 0 28px;">Raspuns in maxim 4 ore, contact dedicat prin email si WhatsApp.</p>
           <p style="color: var(--text-tertiary); font-size: 0.75rem; margin: 0 0 20px;">Planul tau actual: <strong style="color: var(--accent);"><%= tier && tier.plan ? tier.plan.name : 'Gratuit' %></strong></p>
-          <a href="/preturi" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">
+          <a href="/pentru-business#preturi" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             Upgrade la Premium
           </a>
@@ -1846,7 +1846,7 @@
       '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="' + (requiredTier === 'Premium' ? '#a78bfa' : '#fb923c') + '" stroke-width="1.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
       '<p style="font-size: 0.9375rem; font-weight: 600; color: var(--text-primary); margin: 8px 0 4px;">' + featureName + '</p>' +
       '<p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 0 16px;">Disponibil cu planul ' + requiredTier + '+</p>' +
-      '<a href="/preturi" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; background: ' + (requiredTier === 'Premium' ? 'linear-gradient(135deg, #a78bfa, #8b5cf6)' : 'linear-gradient(135deg, #f97316, #fb923c)') + '; color: ' + (requiredTier === 'Premium' ? '#fff' : '#06060a') + '; border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 600; text-decoration: none;">Upgrade &rarr;</a>' +
+      '<a href="/pentru-business#preturi" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 24px; background: ' + (requiredTier === 'Premium' ? 'linear-gradient(135deg, #a78bfa, #8b5cf6)' : 'linear-gradient(135deg, #f97316, #fb923c)') + '; color: ' + (requiredTier === 'Premium' ? '#fff' : '#06060a') + '; border-radius: var(--radius-full); font-size: 0.875rem; font-weight: 600; text-decoration: none;">Upgrade &rarr;</a>' +
     '</div>';
 
     section.appendChild(overlay);
@@ -1926,7 +1926,7 @@
       html += '<p style="color: #ef4444; font-size: 0.8125rem; margin: 4px 0 0;">Se anuleaza la ' + new Date(periodEnd).toLocaleDateString('ro-RO') + '</p>';
     }
     html += '</div>';
-    html += '<a href="/preturi" style="color: var(--accent); font-size: 0.875rem; text-decoration: none; font-weight: 500;">Vezi toate planurile &rarr;</a>';
+    html += '<a href="/pentru-business#preturi" style="color: var(--accent); font-size: 0.875rem; text-decoration: none; font-weight: 500;">Vezi toate planurile &rarr;</a>';
     html += '</div>';
 
     // Plan features summary (compact)
@@ -1949,10 +1949,10 @@
     html += '<div style="display: flex; gap: 12px; flex-wrap: wrap;">';
 
     if (tier === 'free') {
-      html += '<a href="/preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Alege Standard</a>';
-      html += '<a href="/preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Alege Premium</a>';
+      html += '<a href="/pentru-business#preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Alege Standard</a>';
+      html += '<a href="/pentru-business#preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Alege Premium</a>';
     } else if (tier === 'standard') {
-      html += '<a href="/preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Upgrade la Premium</a>';
+      html += '<a href="/pentru-business#preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Upgrade la Premium</a>';
       if (!cancelAtEnd && !isTrial) {
         html += '<button onclick="handleCancelSubscription()" style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); color: var(--text-tertiary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Anuleaza abonament</button>';
       }

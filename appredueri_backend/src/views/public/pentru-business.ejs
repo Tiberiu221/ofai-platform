@@ -660,6 +660,213 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
 </style>
 <% } %>
 
+<% if (typeof plans !== 'undefined' && plans && plans.length > 0) { %>
+<!-- Pricing Section -->
+<section class="section" id="preturi" style="background: var(--bg-secondary);">
+  <div class="pricing-container">
+    <div class="pricing-header reveal">
+      <div class="section-label">Planuri & Prețuri</div>
+      <h2 class="pricing-title">Crește-ți vizibilitatea</h2>
+      <p class="pricing-subtitle">Alege planul potrivit și atrage mai mulți clienți cu instrumentele de care ai nevoie.</p>
+
+      <div class="billing-toggle">
+        <span class="billing-label" id="billing-monthly-label">Lunar</span>
+        <button class="billing-switch" id="billing-switch" onclick="toggleBilling()" aria-label="Comuta intre lunar si anual">
+          <span class="billing-switch-thumb" id="billing-thumb"></span>
+        </button>
+        <span class="billing-label" id="billing-yearly-label">
+          Anual
+          <span class="billing-save-badge">-17%</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="pricing-grid">
+      <% plans.forEach(function(plan) { %>
+        <div class="pricing-card<%= plan.slug === 'premium' ? ' pricing-card--premium' : '' %><%= plan.slug === 'standard' ? ' pricing-card--popular' : '' %>" data-plan="<%= plan.slug %>">
+
+          <% if (plan.slug === 'standard') { %>
+            <div class="pricing-popular-badge">Cel mai popular</div>
+          <% } %>
+          <% if (plan.slug === 'premium') { %>
+            <div class="pricing-premium-badge">Premium</div>
+          <% } %>
+
+          <div class="pricing-card-header">
+            <h3 class="pricing-plan-name"><%= plan.name %></h3>
+            <div class="pricing-price">
+              <span class="pricing-amount" data-monthly="<%= plan.price_monthly %>" data-yearly="<%= plan.price_yearly %>">
+                <%= plan.price_monthly === 0 ? '0' : (plan.price_monthly / 100).toFixed(0) %>
+              </span>
+              <div class="pricing-price-meta">
+                <span class="pricing-currency">RON</span>
+                <span class="pricing-period">/luna</span>
+              </div>
+            </div>
+            <% if (plan.price_monthly > 0) { %>
+              <p class="pricing-yearly-note" id="yearly-note-<%= plan.slug %>" style="display: none;">
+                Facturat <strong><%= (plan.price_yearly / 100).toFixed(0) %> RON</strong>/an
+              </p>
+            <% } %>
+          </div>
+
+          <div class="pricing-card-body">
+            <ul class="pricing-features">
+              <li class="pricing-feature">
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><%= plan.max_active_offers === null ? 'Oferte nelimitate' : plan.max_active_offers + ' oferte active' %></span>
+              </li>
+              <li class="pricing-feature">
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><%= plan.max_gallery_images === null ? 'Galerie nelimitata' : plan.max_gallery_images + ' imagini galerie' %></span>
+              </li>
+              <li class="pricing-feature">
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><%= plan.max_locations === null ? 'Locatii nelimitate' : plan.max_locations + (plan.max_locations === 1 ? ' locatie' : ' locatii') %></span>
+              </li>
+              <li class="pricing-feature">
+                <% if (plan.max_promo_codes_per_offer > 0 || plan.max_promo_codes_per_offer === null) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span><%= plan.max_promo_codes_per_offer === null ? 'Coduri promo nelimitate' : plan.max_promo_codes_per_offer + ' coduri promo/oferta' %></span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Coduri promo</span>
+                <% } %>
+              </li>
+              <li class="pricing-feature">
+                <% if (plan.can_upload_logo) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Upload logo</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Upload logo</span>
+                <% } %>
+              </li>
+              <li class="pricing-feature">
+                <% if (plan.can_upload_cover) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Upload cover</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Upload cover</span>
+                <% } %>
+              </li>
+              <li class="pricing-feature">
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Statistici (<%= plan.analytics_days %> zile)</span>
+              </li>
+              <li class="pricing-feature">
+                <% if (plan.badge_type === 'premium') { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span style="color: #a78bfa;">Badge Premium</span>
+                <% } else if (plan.badge_type === 'verified') { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Badge Verificat</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Badge verificare</span>
+                <% } %>
+              </li>
+              <li class="pricing-feature">
+                <% if (plan.can_respond_reviews) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Raspunsuri la recenzii</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Raspunsuri la recenzii</span>
+                <% } %>
+              </li>
+              <li class="pricing-feature">
+                <% if (plan.has_ai_summary) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Rezumat AI recenzii</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Rezumat AI recenzii</span>
+                <% } %>
+              </li>
+              <% if (plan.has_priority_support) { %>
+                <li class="pricing-feature">
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span style="color: #a78bfa;">Suport prioritar</span>
+                </li>
+              <% } %>
+            </ul>
+          </div>
+
+          <div class="pricing-card-footer">
+            <% if (plan.slug === 'free') { %>
+              <a href="#adauga-business" class="pricing-cta pricing-cta--free">Incepe gratuit</a>
+            <% } else if (plan.slug === 'standard') { %>
+              <a href="<%= webUser ? '/portal' : '/register?returnTo=/pentru-business' %>" class="pricing-cta pricing-cta--standard">
+                Alege Standard
+              </a>
+            <% } else { %>
+              <a href="<%= webUser ? '/portal' : '/register?returnTo=/pentru-business' %>" class="pricing-cta pricing-cta--premium">
+                Alege Premium
+              </a>
+            <% } %>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+
+    <div class="pricing-faq">
+      <h2 class="pricing-faq-title">Intrebari frecvente</h2>
+      <div class="pricing-faq-grid">
+        <div class="pricing-faq-item">
+          <h3>Pot schimba planul oricand?</h3>
+          <p>Da, poti face upgrade sau downgrade oricand. La upgrade, platesti diferenta pro-rata. La downgrade, pastrezi beneficiile pana la sfarsitul perioadei platite.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Cum functioneaza facturarea anuala?</h3>
+          <p>Platesti o singura data pe an si economisesti ~17% fata de plata lunara. Factura se emite automat la inceputul perioadei.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce se intampla cu datele mele la downgrade?</h3>
+          <p>Datele tale raman in siguranta. Nu stergem niciodata continutul existent. Doar optiunile noi vor fi limitate conform planului ales.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Pot anula abonamentul?</h3>
+          <p>Da, poti anula oricand din Business Portal. Beneficiile raman active pana la sfarsitul perioadei platite.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function() {
+  var isYearly = false;
+
+  window.toggleBilling = function() {
+    isYearly = !isYearly;
+    var thumb = document.getElementById('billing-thumb');
+    var monthlyLabel = document.getElementById('billing-monthly-label');
+    var yearlyLabel = document.getElementById('billing-yearly-label');
+
+    thumb.style.transform = isYearly ? 'translateX(24px)' : 'translateX(0)';
+    monthlyLabel.style.color = isYearly ? 'var(--text-tertiary)' : 'var(--text-primary)';
+    yearlyLabel.style.color = isYearly ? 'var(--text-primary)' : 'var(--text-tertiary)';
+
+    document.querySelectorAll('.pricing-amount').forEach(function(el) {
+      var monthly = parseInt(el.dataset.monthly);
+      var yearly = parseInt(el.dataset.yearly);
+      if (isYearly && yearly > 0) {
+        el.textContent = Math.round(yearly / 12 / 100);
+      } else {
+        el.textContent = monthly === 0 ? '0' : Math.round(monthly / 100);
+      }
+    });
+
+    document.querySelectorAll('[id^="yearly-note-"]').forEach(function(el) {
+      el.style.display = isYearly ? 'block' : 'none';
+    });
+  };
+})();
+</script>
+<% } %>
+
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
