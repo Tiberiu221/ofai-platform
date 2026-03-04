@@ -3327,17 +3327,15 @@ router.get("/ajutor", (req, res) => {
 
 router.get("/pentru-business", async (req, res) => {
   try {
-    const [citiesResult, categoriesResult, plansResult] = await Promise.all([
+    const [citiesResult, categoriesResult] = await Promise.all([
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
-      pool.query("SELECT * FROM subscription_plans ORDER BY sort_order ASC"),
     ]);
     res.render("public/pentru-business", {
       activePage: null,
       webUser: req.webUser,
       cities: citiesResult.rows,
       categories: categoriesResult.rows,
-      plans: plansResult.rows,
     });
   } catch (err) {
     console.error("[Web] Pentru-business error:", err.message);
@@ -3346,7 +3344,6 @@ router.get("/pentru-business", async (req, res) => {
       webUser: req.webUser,
       cities: [],
       categories: [],
-      plans: [],
     });
   }
 });
