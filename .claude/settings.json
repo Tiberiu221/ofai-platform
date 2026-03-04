@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /c/Users/tiber/Desktop/AppReduceri/ofai_flutter && export PATH=\"/c/dev/flutter/bin:$PATH\" && flutter analyze --no-pub 2>&1 | grep -E '(error|warning|No issues)' | head -20",
+            "command": "cd /e/Projects/OFAI/ofai_flutter && export PATH=\"/c/dev/flutter/bin:$PATH\" && flutter analyze --no-pub 2>&1 | grep -E '(error|warning|No issues)' | head -20",
             "timeout": 30,
             "statusMessage": "Analyzing Flutter code..."
           }

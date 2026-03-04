@@ -204,24 +204,56 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               // Badges section (selectable for review display)
               if (user?.badges != null && user!.badges!.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                Text('Insigne', style: AppTypography.labelLarge),
-                Text('Selectează una pentru a o afișa în recenzii', style: AppTypography.captionMuted),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                Row(
                   children: [
-                    _BadgeChip(
-                      badge: null,
-                      isSelected: user!.displayBadgeId == null,
-                      onTap: () => _updateDisplayBadge(ref, null),
+                    Text('Insigne câștigate', style: AppTypography.labelLarge),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${user!.badges!.length}',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    ...user!.badges!.map((badge) => _BadgeChip(
-                      badge: badge,
-                      isSelected: user!.displayBadgeId == badge.id,
-                      onTap: () => _updateDisplayBadge(ref, badge.id),
-                    )),
                   ],
+                ),
+                Text('Glisează și selectează pentru recenzii', style: AppTypography.captionMuted),
+                const SizedBox(height: AppSpacing.md),
+                SizedBox(
+                  height: 88,
+                  child: ShaderMask(
+                    shaderCallback: (Rect bounds) {
+                      return LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.transparent,
+                          Colors.white,
+                          Colors.white,
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.03, 0.97, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      children: [
+                        _BadgeChip(
+                          badge: null,
+                          isSelected: user!.displayBadgeId == null,
+                          onTap: () => _updateDisplayBadge(ref, null),
+                        ),
+                        ...user!.badges!.map((badge) => _BadgeChip(
+                          badge: badge,
+                          isSelected: user!.displayBadgeId == badge.id,
+                          onTap: () => _updateDisplayBadge(ref, badge.id),
+                        )),
+                      ],
+                    ),
+                  ),
                 ),
               ],
 
@@ -503,63 +535,73 @@ class _BadgeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // "Niciuna" chip when badge is null
-    if (badge == null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.accent.withValues(alpha: 0.15) : AppColors.bgSecondary,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.close, size: 14, color: isSelected ? AppColors.accent : AppColors.textTertiary),
-              const SizedBox(width: 4),
-              Text(
-                'Niciuna',
-                style: AppTypography.caption.copyWith(
-                  color: isSelected ? AppColors.accent : AppColors.textTertiary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final color = badge != null ? _parseColor(badge!.color) : AppColors.textTertiary;
+    final label = badge?.name ?? 'Niciuna';
+    final icon = badge == null
+        ? Icons.close
+        : (isSelected ? Icons.star_rounded : Icons.verified_rounded);
 
-    final color = _parseColor(badge!.color);
     return GestureDetector(
       onTap: onTap,
       child: Tooltip(
-        message: badge!.description ?? badge!.name,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? color.withValues(alpha: 0.2) : color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected ? color : color.withValues(alpha: 0.3),
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(isSelected ? Icons.star : Icons.verified, size: 14, color: color),
-              const SizedBox(width: 4),
-              Text(
-                badge!.name,
-                style: AppTypography.caption.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
+        message: badge?.description ?? label,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: SizedBox(
+            width: 64,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated circle
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  width: isSelected ? 52 : 46,
+                  height: isSelected ? 52 : 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected
+                        ? color.withValues(alpha: 0.2)
+                        : color.withValues(alpha: 0.08),
+                    border: Border.all(
+                      color: isSelected ? color : color.withValues(alpha: 0.25),
+                      width: isSelected ? 2.5 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      icon,
+                      key: ValueKey('$label-$isSelected'),
+                      size: isSelected ? 24 : 20,
+                      color: isSelected ? color : color.withValues(alpha: 0.7),
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                // Label
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.caption.copyWith(
+                    fontSize: 10.5,
+                    color: isSelected ? color : AppColors.textTertiary,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
