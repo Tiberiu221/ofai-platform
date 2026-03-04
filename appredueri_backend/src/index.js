@@ -185,8 +185,11 @@ function csrfMiddleware(req, res, next) {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     return next();
   }
-  // Skip for mobile app requests (CSRF is browser-only; mobile uses Bearer tokens, not cookies)
-  if (req.headers['x-client'] === 'mobile') {
+  // Skip for mobile auth endpoints that don't use cookies (not CSRF-vulnerable)
+  // Mobile app sends X-Client: mobile but has no Bearer token on auth routes
+  if (req.headers['x-client'] === 'mobile' && req.method === 'POST' &&
+      ['/auth/login', '/auth/register', '/auth/google', '/auth/refresh',
+       '/auth/forgot-password', '/auth/verify-reset-code', '/auth/reset-password'].includes(req.path)) {
     return next();
   }
   // Skip for anonymous click tracking endpoint

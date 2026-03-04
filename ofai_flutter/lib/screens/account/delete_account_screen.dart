@@ -28,8 +28,13 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     super.dispose();
   }
 
+  bool get _needsPassword {
+    final user = ref.read(authProvider).user;
+    return user?.hasPassword ?? true;
+  }
+
   Future<void> _deleteAccount() async {
-    if (_passwordCtrl.text.isEmpty) {
+    if (_needsPassword && _passwordCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Introdu parola pentru confirmare'),
@@ -74,7 +79,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
     try {
       await ApiClient().dio.delete(ApiEndpoints.userDelete, data: {
-        'password': _passwordCtrl.text,
+        'password': _needsPassword ? _passwordCtrl.text : 'google-oauth-delete',
       });
       await SecureStorage.clearAll();
       if (mounted) {
@@ -147,23 +152,30 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
 
             const SizedBox(height: AppSpacing.xxxl),
 
-            // Password confirmation
-            Text('Confirmă cu parola', style: AppTypography.labelMedium),
-            const SizedBox(height: AppSpacing.sm),
-            TextFormField(
-              controller: _passwordCtrl,
-              obscureText: _obscure,
-              decoration: InputDecoration(
-                hintText: 'Introdu parola contului',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure ? Icons.visibility_off : Icons.visibility,
-                    color: AppColors.textTertiary,
+            // Password confirmation (or Google info)
+            if (_needsPassword) ...[
+              Text('Confirmă cu parola', style: AppTypography.labelMedium),
+              const SizedBox(height: AppSpacing.sm),
+              TextFormField(
+                controller: _passwordCtrl,
+                obscureText: _obscure,
+                decoration: InputDecoration(
+                  hintText: 'Introdu parola contului',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscure ? Icons.visibility_off : Icons.visibility,
+                      color: AppColors.textTertiary,
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
                   ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
-            ),
+            ] else ...[
+              Text(
+                'Contul tău este conectat prin Google. Apasă butonul de mai jos pentru a confirma ștergerea.',
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
 
             const SizedBox(height: AppSpacing.xxxl),
 

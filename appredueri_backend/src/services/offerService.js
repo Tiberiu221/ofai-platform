@@ -160,20 +160,27 @@ async function createOffer(pool, params) {
     });
   }
 
-  // Push notification to subscribers (fire-and-forget)
-  let discountText = "";
-  if (discountValue) {
-    discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;
+  // Push notification to subscribers (gated by has_push_on_offer tier feature)
+  try {
+    const { plan } = await getBusinessTier(pool, businessId);
+    if (process.env.TIER_GATING_ENABLED !== 'true' || plan.has_push_on_offer) {
+      let discountText = "";
+      if (discountValue) {
+        discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;
+      }
+      pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
+        title: `${bizName} are o ofertă nouă!`,
+        body: `${title}${discountText}`,
+        data: {
+          type: "new_offer",
+          offerId: String(offerId),
+          businessId: String(businessId),
+        },
+      }).catch(err => console.error("[Push] New offer push error:", err));
+    }
+  } catch (err) {
+    console.error("[Push] Tier check for push_on_offer failed:", err.message);
   }
-  pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
-    title: `${bizName} are o ofertă nouă!`,
-    body: `${title}${discountText}`,
-    data: {
-      type: "new_offer",
-      offerId: String(offerId),
-      businessId: String(businessId),
-    },
-  }).catch(err => console.error("[Push] New offer push error:", err));
 
   return offerId;
 }

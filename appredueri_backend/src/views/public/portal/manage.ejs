@@ -1809,7 +1809,7 @@
   var _subscriptionLoaded = false;
 
   function loadSubscription() {
-    apiFetch('/my-businesses/' + businessId + '/subscription')
+    apiFetch('/api/web/portal/' + businessId + '/subscription')
     .then(function(res) { return res.json(); })
     .then(function(data) {
       renderSubscriptionSection(data);
@@ -1975,7 +1975,7 @@
   window.handleCancelSubscription = function() {
     if (!confirm('Esti sigur ca vrei sa anulezi abonamentul? Vei pastra beneficiile pana la sfarsitul perioadei platite.')) return;
 
-    apiFetch('/my-businesses/' + businessId + '/subscription/cancel', {
+    apiFetch('/api/web/portal/' + businessId + '/subscription/cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })

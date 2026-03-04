@@ -22,7 +22,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
 import '../../providers/offer_requests_provider.dart';
-import '../../providers/subscriptions_provider.dart';
+import '../../providers/followed_businesses_provider.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -469,7 +469,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                 onTap: loc.lat != null && loc.lng != null
                                     ? () {
                                         Launchers.maps(loc.lat!, loc.lng!, address: loc.address);
-                                        AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'navigate');
+                                        if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'navigate');
                                       }
                                     : null,
                                 child: Container(
@@ -525,7 +525,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                     label: 'Telefon',
                                     onTap: () {
                                       Launchers.call(booking.phone!);
-                                      AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'phone');
+                                      if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'phone');
                                     },
                                   ),
                                 if (booking.whatsapp != null)
@@ -534,7 +534,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                     label: 'WhatsApp',
                                     onTap: () {
                                       Launchers.whatsApp(booking.whatsapp!);
-                                      AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'whatsapp');
+                                      if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'whatsapp');
                                     },
                                   ),
                                 if (booking.url != null)
@@ -543,7 +543,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                     label: 'Online',
                                     onTap: () {
                                       Launchers.website(booking.url!);
-                                      AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'booking_url');
+                                      if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'booking_url');
                                     },
                                   ),
                               ],
@@ -785,14 +785,14 @@ class _BookingCTA extends StatelessWidget {
       label = 'Suna acum';
       onTap = () {
         Launchers.call(booking.phone!);
-        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'booking_phone');
+        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'phone');
       };
     } else if (booking.whatsapp != null) {
       icon = Icons.message;
       label = 'WhatsApp';
       onTap = () {
         Launchers.whatsApp(booking.whatsapp!);
-        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'booking_whatsapp');
+        if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'whatsapp');
       };
     } else if (booking.url != null) {
       icon = Icons.language;
@@ -1180,9 +1180,9 @@ class _OfferDetailPinchCardState extends ConsumerState<_OfferDetailPinchCard>
         .submitRequest();
     if (success && mounted) {
       // Auto-follow the business
-      final subsState = ref.read(subscriptionsProvider);
-      if (!subsState.subscribedIds.contains(widget.businessId)) {
-        ref.read(subscriptionsProvider.notifier).toggleSubscription(widget.businessId);
+      final subsState = ref.read(followedBusinessesProvider);
+      if (!subsState.followedIds.contains(widget.businessId)) {
+        ref.read(followedBusinessesProvider.notifier).toggleFollow(widget.businessId);
       }
 
       setState(() => _showSuccess = true);

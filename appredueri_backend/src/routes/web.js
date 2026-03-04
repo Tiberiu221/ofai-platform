@@ -17,7 +17,7 @@ const { sanitizeString, createImageFilter, validatePassword } = require("../help
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier, requireFeature, requireLimit } = require('../middleware/tierAuth');
-const { countActiveOffers, countGalleryImages } = require('../helpers/tiers');
+const { countActiveOffers, countGalleryImages, getBusinessTier } = require('../helpers/tiers');
 const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
 const { deleteUserAccount } = require("../services/accountDeletion");
 const multer = require("multer");
@@ -2299,22 +2299,37 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
     const { businessId } = req.params;
     const { name, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
 
-    await pool.query(`
-      UPDATE businesses SET
-        name = COALESCE($1, name),
-        address = COALESCE($2, address),
-        phone = COALESCE($3, phone),
-        website = COALESCE($4, website),
-        city_id = COALESCE($5, city_id),
-        category_id = COALESCE($6, category_id),
-        booking_type = COALESCE($7, booking_type),
-        booking_phone = $8,
-        booking_whatsapp = $9,
-        booking_url = $10,
-        booking_instructions = $11
-      WHERE id = $12
-    `, [name, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
-        booking_type, booking_phone || null, booking_whatsapp || null, booking_url || null, booking_instructions || null, businessId]);
+    const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
+
+    if (bookingGated) {
+      await pool.query(`
+        UPDATE businesses SET
+          name = COALESCE($1, name),
+          address = COALESCE($2, address),
+          phone = COALESCE($3, phone),
+          website = COALESCE($4, website),
+          city_id = COALESCE($5, city_id),
+          category_id = COALESCE($6, category_id)
+        WHERE id = $7
+      `, [name, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null, businessId]);
+    } else {
+      await pool.query(`
+        UPDATE businesses SET
+          name = COALESCE($1, name),
+          address = COALESCE($2, address),
+          phone = COALESCE($3, phone),
+          website = COALESCE($4, website),
+          city_id = COALESCE($5, city_id),
+          category_id = COALESCE($6, category_id),
+          booking_type = COALESCE($7, booking_type),
+          booking_phone = $8,
+          booking_whatsapp = $9,
+          booking_url = $10,
+          booking_instructions = $11
+        WHERE id = $12
+      `, [name, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
+          booking_type, booking_phone || null, booking_whatsapp || null, booking_url || null, booking_instructions || null, businessId]);
+    }
 
     res.json({ success: true, message: "Business actualizat!" });
   } catch (err) {
@@ -3147,6 +3162,113 @@ router.get("/api/web/portal/:businessId/notifications/history",
   } catch (err) {
     console.error('[Web API] Push history error:', err);
     res.status(500).json({ message: 'Eroare la istoricul notificarilor' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+// SUBSCRIPTION INFO + CANCEL (web portal)
+// ═══════════════════════════════════════════════════════
+
+// GET subscription info for web portal (manage.ejs subscription tab)
+router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.businessId);
+    const tierInfo = await getBusinessTier(pool, businessId);
+    const { plan, tier, isTrial, subscription } = tierInfo;
+
+    res.json({
+      tier,
+      plan: {
+        slug: plan.slug,
+        name: plan.name,
+        priceMonthly: plan.price_monthly,
+        priceYearly: plan.price_yearly,
+        maxActiveOffers: plan.max_active_offers,
+        maxGalleryImages: plan.max_gallery_images,
+        maxLocations: plan.max_locations,
+        maxPromoCodesPerOffer: plan.max_promo_codes_per_offer,
+        analyticsDays: plan.analytics_days,
+        canRespondReviews: plan.can_respond_reviews,
+        canUploadLogo: plan.can_upload_logo,
+        canUploadCover: plan.can_upload_cover,
+        hasVerifiedBadge: plan.has_verified_badge,
+        hasAiSummary: plan.has_ai_summary,
+        hasPushOnOffer: plan.has_push_on_offer,
+        hasCustomPush: plan.has_custom_push,
+        hasAnalyticsCharts: plan.has_analytics_charts,
+        hasAnalyticsExport: plan.has_analytics_export,
+        hasCompetitiveInsights: plan.has_competitive_insights,
+        hasPromotedPlacement: plan.has_promoted_placement,
+        hasSearchPriority: plan.has_search_priority,
+        hasCompetitorBlocking: plan.has_competitor_blocking,
+        hasDealNomination: plan.has_deal_nomination,
+        hasBooking: plan.has_booking,
+        hasPrioritySupport: plan.has_priority_support,
+        badgeType: plan.badge_type,
+      },
+      isTrial,
+      trialEnd: subscription?.trial_end || null,
+      periodEnd: subscription?.current_period_end || null,
+      cancelAtPeriodEnd: subscription?.cancel_at_period_end || false,
+    });
+  } catch (err) {
+    console.error('[Web API] Subscription info error:', err);
+    res.status(500).json({ error: 'Eroare server' });
+  }
+});
+
+// POST cancel subscription for web portal
+router.post("/api/web/portal/:businessId/subscription/cancel", requireBusinessOwner, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const businessId = parseInt(req.params.businessId);
+    await client.query('BEGIN');
+
+    const result = await client.query(`
+      UPDATE business_subscriptions
+      SET cancel_at_period_end = TRUE, updated_at = NOW()
+      WHERE business_id = $1
+        AND status IN ('active')
+        AND billing_cycle != 'none'
+      RETURNING id, current_period_end
+    `, [businessId]);
+
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'Nu exista un abonament activ de anulat.',
+      });
+    }
+
+    const freePlan = await client.query(
+      "SELECT id FROM subscription_plans WHERE slug = 'free'"
+    );
+    if (!freePlan.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(500).json({ success: false, message: 'Eroare configurare plan.' });
+    }
+    await client.query(`
+      INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
+      SELECT bs.business_id, bs.plan_id, $2, 'cancelled', 'User requested cancellation (web)'
+      FROM business_subscriptions bs
+      WHERE bs.id = $1
+    `, [result.rows[0].id, freePlan.rows[0].id]);
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Abonamentul a fost anulat. Beneficiile raman active pana la ' +
+        new Date(result.rows[0].current_period_end).toLocaleDateString('ro-RO') + '.',
+      activeUntil: result.rows[0].current_period_end,
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[Web API] Cancel subscription error:', err);
+    res.status(500).json({ success: false, message: 'Eroare la anularea abonamentului.' });
+  } finally {
+    client.release();
   }
 });
 

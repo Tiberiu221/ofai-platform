@@ -36,6 +36,14 @@ You are a senior code reviewer ensuring quality, security, and consistency acros
 - **Chart.js**: Destroy instances before recreate (`chartInstances = {}` pattern)
 - **Click tracking**: `trackClick()` calls use correct action_type strings
 
+### Subscription System
+- **Tier gating**: All tier-gated routes use `requireFeature()` / `requireLimit()` from `tierAuth.js`
+- **Badge sync**: `subscription_badge_type` on businesses table stays in sync with actual subscription
+- **Stripe**: Webhook signature verification, proper error handling, idempotency
+- **Cron jobs**: Subscription expiry, deal nomination selection, stale nomination cleanup
+- **Limits**: `tiers.js` limits enforced in `offerService.js` (promo codes) and `business-portal.js` (offers, gallery)
+- **Feature flags**: `TIER_GATING_ENABLED` properly gates all tier checks
+
 ### Cross-cutting
 - **Consistency**: Naming conventions, file structure patterns, code style
 - **Dead code**: Unused imports, unreachable code, commented-out blocks
@@ -46,9 +54,10 @@ You are a senior code reviewer ensuring quality, security, and consistency acros
 ## Key Files
 
 ```
-Backend routes:     src/routes/web.js (~2300 lines), auth.js, offers.js, businesses.js, admin.js, business-portal.js, reviews.js, favorites.js, subscriptions.js, users.js
-Backend middleware:  src/middleware/auth.js, webAuth.js, businessWebAuth.js, adminAuth.js, rateLimiter.js
-Backend services:   src/services/badgeService.js, cloudinary.js, pushNotifications.js, cronJobs.js, offerService.js
+Backend routes:     src/routes/web.js (~3700 lines), auth.js, offers.js, businesses.js, admin.js, business-portal.js (~1450 lines), billing.js, reviews.js, favorites.js, subscriptions.js, users.js
+Backend middleware:  src/middleware/auth.js, webAuth.js, businessWebAuth.js, adminAuth.js, tierAuth.js, rateLimiter.js
+Backend services:   src/services/badgeService.js, cloudinary.js, pushNotifications.js, cronJobs.js, offerService.js, stripe.js
+Backend helpers:    src/helpers/jwt.js, validate.js, tiers.js
 Frontend models:    lib/models/ (offer.dart, business.dart, user.dart, review.dart)
 Frontend providers: lib/providers/ (auth, offers, businesses, favorites, subscriptions)
 Frontend screens:   lib/screens/ (explore, home, account, auth, business, offer)

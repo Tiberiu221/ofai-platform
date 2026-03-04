@@ -115,7 +115,7 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
       );
       return true;
     } catch (e) {
-      debugPrint('deleteReview error: $e');
+      print('deleteReview error: $e');
       return false;
     }
   }

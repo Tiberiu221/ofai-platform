@@ -9,7 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
-import '../../providers/subscriptions_provider.dart';
+import '../../providers/followed_businesses_provider.dart';
 import '../../providers/business_requests_provider.dart';
 import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
@@ -32,7 +32,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     if (auth.status == AuthStatus.authenticated && !_didFetch) {
       _didFetch = true;
       ref.read(favoritesProvider.notifier).fetch();
-      ref.read(subscriptionsProvider.notifier).fetch();
+      ref.read(followedBusinessesProvider.notifier).fetch();
       ref.read(businessRequestsProvider.notifier).fetchMyRequests();
       ref.read(gamificationProvider.notifier).fetch();
     }
@@ -109,7 +109,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     }
 
     final favState = ref.watch(favoritesProvider);
-    final subState = ref.watch(subscriptionsProvider);
+    final subState = ref.watch(followedBusinessesProvider);
     final bizReqState = ref.watch(businessRequestsProvider);
     final gamState = ref.watch(gamificationProvider);
 
@@ -194,7 +194,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   Expanded(
                     child: _StatCard(
                       icon: Icons.notifications_none,
-                      value: '${subState.subscribedIds.length}',
+                      value: '${subState.followedIds.length}',
                       label: 'Urmariri',
                     ),
                   ),

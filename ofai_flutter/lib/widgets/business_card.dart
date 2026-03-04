@@ -10,7 +10,7 @@ import '../core/utils/distance.dart';
 import '../models/business.dart';
 import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
-import '../providers/subscriptions_provider.dart';
+import '../providers/followed_businesses_provider.dart';
 import 'subscription_badge.dart';
 import 'tap_scale.dart';
 
@@ -188,7 +188,7 @@ class BusinessCard extends ConsumerWidget {
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
     final isFollowing = isLoggedIn
-        ? ref.watch(subscriptionsProvider.select((s) => s.subscribedIds.contains(business.id)))
+        ? ref.watch(followedBusinessesProvider.select((s) => s.followedIds.contains(business.id)))
         : false;
 
     return Positioned(
@@ -205,7 +205,7 @@ class BusinessCard extends ConsumerWidget {
               GoRouter.of(context).push('/login');
               return;
             }
-            ref.read(subscriptionsProvider.notifier).toggleSubscription(business.id);
+            ref.read(followedBusinessesProvider.notifier).toggleFollow(business.id);
           },
           child: Container(
             width: 36,

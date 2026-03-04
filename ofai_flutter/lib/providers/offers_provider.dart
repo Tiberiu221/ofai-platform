@@ -261,7 +261,7 @@ final feedProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
     return _interleaveOffers(paginated.data);
   } catch (e) {
     // Fall back to popular offers if feed fails (e.g. not authenticated)
-    debugPrint('[feedProvider] Feed failed, falling back to popular: $e');
+    print('[feedProvider] Feed failed, falling back to popular: $e');
     final response = await ApiClient().dio.get(ApiEndpoints.offers, queryParameters: {
       'sort': 'popular',
       'limit': 10,

@@ -31,12 +31,13 @@ appredueri_backend/
 │   ├── index.js                # Express setup, Helmet, CORS, trust proxy, cron init
 │   ├── db.js                   # PostgreSQL pool (SSL in prod, no SSL local)
 │   ├── routes/
-│   │   ├── web.js              # ~2300+ lines — ALL web routes + AJAX + portal analytics
+│   │   ├── web.js              # ~3700+ lines — ALL web routes + AJAX + portal analytics + subscription features
 │   │   ├── auth.js             # Mobile auth API (login, register, refresh, google, logout)
-│   │   ├── offers.js           # Mobile offers API (feed, detail, search, prefs filtering)
-│   │   ├── businesses.js       # Mobile businesses API (list, detail, search, prefs filtering)
-│   │   ├── admin.js            # Admin panel CRUD routes
-│   │   ├── business-portal.js  # Mobile business API (Bearer auth, offer CRUD)
+│   │   ├── offers.js           # Mobile offers API (feed, detail, search, prefs filtering, promoted offers)
+│   │   ├── businesses.js       # Mobile businesses API (list, detail, search, prefs filtering, badge type)
+│   │   ├── admin.js            # Admin panel CRUD routes + subscription management
+│   │   ├── business-portal.js  # ~1450 lines — Mobile business API (Bearer auth, offer CRUD, tier-gated features)
+│   │   ├── billing.js          # Stripe billing (checkout, portal, webhooks)
 │   │   ├── businessRequests.js # Business request submit + track
 │   │   ├── reviews.js          # Review CRUD + badge triggers
 │   │   ├── favorites.js        # Favorites toggle + badge triggers
@@ -47,17 +48,20 @@ appredueri_backend/
 │   │   ├── webAuth.js          # Cookie JWT: optionalWebAuth / requireWebAuth + transparent refresh
 │   │   ├── businessWebAuth.js  # Cookie + ownership via user_businesses table + admin bypass
 │   │   ├── adminAuth.js        # HTTP Basic auth (timing-safe)
+│   │   ├── tierAuth.js         # attachTier(), requireFeature(key), requireLimit(key, countFn) — subscription gating
 │   │   └── rateLimiter.js      # Rate limiting (click, search, reveal, auth)
 │   ├── helpers/
 │   │   ├── jwt.js              # generateAccessToken (24h), generateRefreshToken (30d), verifyToken
-│   │   └── validate.js         # Input validation + MIME whitelist
+│   │   ├── validate.js         # Input validation + MIME whitelist
+│   │   └── tiers.js            # 3-tier subscription system (free/standard/premium), getBusinessTier(), hasFeature(), checkLimit()
 │   ├── services/
 │   │   ├── cloudinary.js       # Image upload/delete (gallery, profile, logo)
 │   │   ├── pushNotifications.js # Dual Expo + FCM push
-│   │   ├── email.js            # Resend transactional emails
-│   │   ├── cronJobs.js         # Scheduled cleanup (tokens, clicks, audit_log)
+│   │   ├── email.js            # Resend transactional emails (welcome, reset, business, premium support)
+│   │   ├── cronJobs.js         # 10 scheduled jobs (cleanup, offer expiry, subscription expiry, deal-of-day, nominations)
 │   │   ├── badgeService.js     # Gamification: checkAndAwardBadges, getUserBadges
-│   │   └── offerService.js     # Offer CRUD with transactions
+│   │   ├── offerService.js     # Offer CRUD with transactions + tier-aware promo code limits
+│   │   └── stripe.js           # Stripe integration (checkout, portal, customer management)
 │   ├── views/
 │   │   ├── public/             # Web pages (EJS templates)
 │   │   │   ├── home.ejs, oferte.ejs, business-uri.ejs
@@ -65,15 +69,16 @@ appredueri_backend/
 │   │   │   ├── cont.ejs, setari.ejs, preferinte.ejs
 │   │   │   ├── login.ejs, register.ejs, forgot-password.ejs
 │   │   │   ├── onboarding.ejs
-│   │   │   ├── portal/         # Business portal
-│   │   │   │   ├── manage.ejs  # Dashboard + analytics (Chart.js, dropdowns)
+│   │   │   ├── pricing.ejs     # Subscription pricing page (3 tiers, monthly/yearly)
+│   │   │   ├── portal/         # Business portal (tier-gated features)
+│   │   │   │   ├── manage.ejs  # Dashboard + analytics + subscription tab (~1700 lines)
 │   │   │   │   ├── oferta-noua.ejs, editeaza-oferta.ejs
 │   │   │   │   └── ...
 │   │   │   └── partials/       # head.ejs, navbar.ejs, footer.ejs
 │   │   └── admin/              # Admin panel templates
 │   ├── public/                 # Static assets (CSS, JS, images)
 │   │   └── js/main.js          # Client-side CSRF helper, fetch wrapper, trackClick
-│   └── migrations/             # Sequential SQL (001-027)
+│   └── migrations/             # Sequential SQL (006-040)
 ├── scripts/scraping/           # Google Maps scraper + LLM enrichment
 └── package.json
 ```
@@ -110,20 +115,40 @@ user_businesses (ownership junction table)
 badge_definitions, user_badges
 push_tokens (token_type: 'expo' | 'fcm')
 audit_log, push_notifications_log
+
+# Subscription system (migrations 033-040)
+subscription_plans         — slug (free/standard/premium), prices, feature flags, limits
+business_subscriptions     — business_id, plan_id, status, stripe_subscription_id, trial/period dates
+subscription_history       — business_id, from_plan, to_plan, reason, changed_at
+business_push_log          — business push notification rate limiting
+deal_nominations           — premium business deal-of-day nominations (pending/selected/expired/cancelled)
+
+# Columns added to businesses:
+#   subscription_badge_type  — NULL (free), 'verified' (standard), 'premium' (premium)
+#   competitor_blocking_enabled — DEFAULT FALSE (premium only)
 ```
 
 ## Key API Patterns
 
-### Web Routes (web.js)
+### Web Routes (web.js ~3700 lines)
 - Server-rendered pages (EJS) for browsers
 - AJAX endpoints (`/api/web/...`) for web JS (cookie auth)
 - Portal analytics: `/api/web/portal/:businessId/analytics/views|offer-views|subscribers|clicks`
+- Subscription-related: pricing page, tier display on business/offer pages
 
 ### Mobile API Routes
-- `offers.js`: `GET /offers/feed` (with `?prefs=1` + `optionalAuth` for preference filtering)
-- `businesses.js`: `GET /businesses` (with `?prefs=1` + `optionalAuth`)
+- `offers.js`: `GET /offers/feed` (with `?prefs=1` + `optionalAuth` for preference filtering), promoted offers
+- `businesses.js`: `GET /businesses` (with `?prefs=1` + `optionalAuth`), badge_type in responses
 - `auth.js`: login, register, refresh, google, logout
 - `reviews.js`, `favorites.js`, `subscriptions.js`, `users.js`
+- `billing.js`: Stripe checkout, portal, webhooks
+
+### Subscription / Tier System
+- **3 tiers:** free (0 RON), standard (49 RON/mo), premium (199 RON/mo)
+- **Tier middleware:** `attachTier()`, `requireFeature(key)`, `requireLimit(key, countFn)`
+- **Feature gating:** `TIER_GATING_ENABLED` env flag can disable all gating
+- **Badge sync:** `subscription_badge_type` cached on businesses table for fast reads
+- **Cron:** daily subscription expiry check, deal-of-day nomination, stale nomination cleanup
 
 ### Portal Analytics (manage.ejs)
 - Dropdown selectors for Vizualizări (business page vs per-offer) and Click-uri (phone/whatsapp/navigate/booking_url)
@@ -157,7 +182,7 @@ audit_log, push_notifications_log
 
 1. Read existing route files in `src/routes/` to understand patterns before adding new ones
 2. Check `src/migrations/` to verify table schemas before writing queries
-3. When adding columns, create a new migration file with the next sequence number (currently 027)
+3. When adding columns, create a new migration file with the next sequence number (currently 041)
 4. Always handle errors with try/catch and return appropriate HTTP status codes
 5. Test that web AJAX responses match what the frontend JS expects
 6. Test that mobile API responses match Flutter model `fromJson` factories

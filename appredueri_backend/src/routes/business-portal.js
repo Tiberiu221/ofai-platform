@@ -219,31 +219,49 @@ router.put("/:businessId", businessAuth, async (req, res) => {
 
     console.log("[BusinessPortal] PUT /my-businesses/:id - ID:", businessId);
 
-    await pool.query(`
-      UPDATE businesses SET
-        name = COALESCE($1, name),
-        address = COALESCE($2, address),
-        phone = COALESCE($3, phone),
-        website = COALESCE($4, website),
-        city_id = COALESCE($5, city_id),
-        category_id = COALESCE($6, category_id),
-        lat = COALESCE($7, lat),
-        lng = COALESCE($8, lng),
-        booking_type = COALESCE($9, booking_type),
-        booking_phone = $10,
-        booking_whatsapp = $11,
-        booking_url = $12,
-        booking_instructions = $13
-      WHERE id = $14
-    `, [
-      name, address, phone, website, city_id, category_id, lat, lng,
-      booking_type || 'none',
-      booking_phone || null,
-      booking_whatsapp || null,
-      booking_url || null,
-      booking_instructions || null,
-      businessId
-    ]);
+    const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
+
+    if (bookingGated) {
+      // Update without touching booking columns (preserves existing data)
+      await pool.query(`
+        UPDATE businesses SET
+          name = COALESCE($1, name),
+          address = COALESCE($2, address),
+          phone = COALESCE($3, phone),
+          website = COALESCE($4, website),
+          city_id = COALESCE($5, city_id),
+          category_id = COALESCE($6, category_id),
+          lat = COALESCE($7, lat),
+          lng = COALESCE($8, lng)
+        WHERE id = $9
+      `, [name, address, phone, website, city_id, category_id, lat, lng, businessId]);
+    } else {
+      await pool.query(`
+        UPDATE businesses SET
+          name = COALESCE($1, name),
+          address = COALESCE($2, address),
+          phone = COALESCE($3, phone),
+          website = COALESCE($4, website),
+          city_id = COALESCE($5, city_id),
+          category_id = COALESCE($6, category_id),
+          lat = COALESCE($7, lat),
+          lng = COALESCE($8, lng),
+          booking_type = COALESCE($9, booking_type),
+          booking_phone = $10,
+          booking_whatsapp = $11,
+          booking_url = $12,
+          booking_instructions = $13
+        WHERE id = $14
+      `, [
+        name, address, phone, website, city_id, category_id, lat, lng,
+        booking_type || 'none',
+        booking_phone || null,
+        booking_whatsapp || null,
+        booking_url || null,
+        booking_instructions || null,
+        businessId
+      ]);
+    }
 
     res.json({ success: true, message: "Business actualizat" });
   } catch (err) {

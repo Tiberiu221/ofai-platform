@@ -9,7 +9,7 @@ import '../../core/utils/launchers.dart';
 import '../../models/business.dart' show BusinessLocation;
 import '../../models/offer.dart' show Booking;
 import '../../providers/businesses_provider.dart';
-import '../../providers/subscriptions_provider.dart';
+import '../../providers/followed_businesses_provider.dart';
 import '../../providers/reviews_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/offer_requests_provider.dart';
@@ -30,7 +30,7 @@ class BusinessDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final businessAsync = ref.watch(businessDetailProvider(businessId));
-    final subsState = ref.watch(subscriptionsProvider);
+    final subsState = ref.watch(followedBusinessesProvider);
     final reviewsState = ref.watch(businessReviewsProvider(businessId));
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
@@ -38,7 +38,7 @@ class BusinessDetailScreen extends ConsumerWidget {
     return Scaffold(
       body: businessAsync.when(
         data: (business) {
-          final isSub = subsState.subscribedIds.contains(business.id);
+          final isSub = subsState.followedIds.contains(business.id);
           final coverUrl = business.coverImage ??
               (business.images != null && business.images!.isNotEmpty ? business.images!.first.url : null) ??
               business.logoUrl;
@@ -600,7 +600,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                   right: AppSpacing.pagePadding,
                   child: AnimatedToggleFab(
                     isActive: isSub,
-                    onTap: () => ref.read(subscriptionsProvider.notifier).toggleSubscription(business.id),
+                    onTap: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(business.id),
                     activeIcon: Icons.notifications_active,
                     inactiveIcon: Icons.notifications_none,
                     activeLabel: 'Urmarit',
@@ -1015,9 +1015,9 @@ class _PinchRequestCardState extends ConsumerState<_PinchRequestCard>
         .submitRequest();
     if (success && mounted) {
       // Auto-follow: subscribe if not already following
-      final subsState = ref.read(subscriptionsProvider);
-      if (!subsState.subscribedIds.contains(widget.businessId)) {
-        ref.read(subscriptionsProvider.notifier).toggleSubscription(widget.businessId);
+      final subsState = ref.read(followedBusinessesProvider);
+      if (!subsState.followedIds.contains(widget.businessId)) {
+        ref.read(followedBusinessesProvider.notifier).toggleFollow(widget.businessId);
       }
 
       setState(() => _showSuccess = true);

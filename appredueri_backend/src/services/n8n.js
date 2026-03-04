@@ -2,7 +2,7 @@
  * n8n Webhook Helper
  * Fire-and-forget pattern for triggering n8n workflows
  */
-const N8N_BASE_URL = process.env.N8N_WEBHOOK_URL || "https://n8n-production-d2f4.up.railway.app";
+const N8N_BASE_URL = process.env.N8N_WEBHOOK_URL || "";
 
 /**
  * Trigger an n8n webhook (non-blocking, fire-and-forget)
@@ -10,6 +10,7 @@ const N8N_BASE_URL = process.env.N8N_WEBHOOK_URL || "https://n8n-production-d2f4
  * @param {object} payload - JSON data to send
  */
 function triggerWebhook(webhookPath, payload) {
+  if (!N8N_BASE_URL) return; // No n8n URL configured — skip silently
   const url = `${N8N_BASE_URL}${webhookPath}`;
 
   fetch(url, {
