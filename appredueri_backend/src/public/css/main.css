@@ -4848,61 +4848,121 @@ ul, ol { list-style: none; }
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px 0 20px 20px;
   margin-bottom: 24px;
+}
+.badges-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 20px;
 }
 .badges-title {
   font-size: 0.95rem;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin: 0;
 }
-.badges-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 12px;
+.badges-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-muted);
+  padding: 2px 8px;
+  border-radius: 100px;
 }
+.badges-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin: 4px 20px 14px 0;
+}
+.badges-strip-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+.badges-strip-wrapper::before,
+.badges-strip-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.badges-strip-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-card), transparent);
+  opacity: 0;
+}
+.badges-strip-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-card), transparent);
+}
+.badges-strip-wrapper.scrolled-start::before { opacity: 1; }
+.badges-strip-wrapper.scrolled-end::after { opacity: 0; }
+.badges-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 20px 4px 0;
+}
+.badges-strip::-webkit-scrollbar { display: none; }
 .badge-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   text-align: center;
-  padding: 8px 4px;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 12px;
+  flex-shrink: 0;
+  width: 72px;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 .badge-icon {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid;
-  transition: transform 0.2s;
+  border: 1.5px solid;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s cubic-bezier(.4,0,.2,1), width 0.25s, height 0.25s, border-width 0.25s;
 }
 .badge-item:hover .badge-icon {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 .badge-name {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--text-secondary);
   line-height: 1.2;
-}
-.badge-item {
-  cursor: pointer;
-  border-radius: 12px;
-  transition: background 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  transition: color 0.2s;
 }
 .badge-item:hover {
   background: rgba(255,255,255,0.04);
 }
 .badge-item.badge-selected {
   background: var(--accent-muted);
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+}
+.badge-item.badge-selected .badge-icon {
+  width: 52px;
+  height: 52px;
+  border-width: 2.5px;
+  box-shadow: 0 0 12px 2px var(--badge-glow, rgba(249,115,22,0.35));
 }
 .badge-item.badge-selected .badge-name {
   color: var(--accent);
+  font-weight: 700;
 }
 
 /* ─── DETAIL CARDS (shared) ─── */
