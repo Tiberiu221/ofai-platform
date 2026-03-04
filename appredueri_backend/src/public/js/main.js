@@ -240,7 +240,16 @@ window.showToast = function(message, type = 'info', duration = 3500) {
     info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
   };
 
-  toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-msg">${message}</span><div class="toast-progress" style="--toast-dur:${duration}ms"></div>`;
+  const iconSpan = document.createElement('span');
+  iconSpan.className = 'toast-icon';
+  iconSpan.innerHTML = icons[type] || icons.info; // SVG hardcoded — safe
+  const msgSpan = document.createElement('span');
+  msgSpan.className = 'toast-msg';
+  msgSpan.textContent = message; // textContent — XSS safe
+  const progress = document.createElement('div');
+  progress.className = 'toast-progress';
+  progress.style.setProperty('--toast-dur', duration + 'ms');
+  toast.append(iconSpan, msgSpan, progress);
   container.appendChild(toast);
 
   requestAnimationFrame(() => toast.classList.add('visible'));

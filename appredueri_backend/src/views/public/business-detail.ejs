@@ -121,7 +121,7 @@
             <span style="font-size: 0.8125rem; color: var(--text-secondary);"><%= business.follower_count %> urmăritori</span>
           <% } %>
         </div>
-        <button class="bd-share-btn btn btn-secondary" onclick="trackClick(<%= business.id %>,'share'); window.shareOffer('<%= business.name %>', '')" aria-label="Distribuie business-ul">
+        <button class="bd-share-btn btn btn-secondary" data-share-name="<%= business.name %>" data-track-bid="<%= business.id %>" aria-label="Distribuie business-ul">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           Distribuie
         </button>
@@ -584,6 +584,17 @@
      ═══════════════════════════════════════════════════════ -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  /* ─── Share button (safe — uses dataset instead of inline JS) ── */
+  var shareBtn = document.querySelector('.bd-share-btn[data-share-name]');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', function() {
+      var name = this.dataset.shareName;
+      var bid = parseInt(this.dataset.trackBid);
+      trackClick(bid, 'share');
+      window.shareOffer(name, '');
+    });
+  }
+
   /* ─── Toggle review form ──────────────────────────────── */
   var toggleBtn = document.getElementById('toggle-review-form');
   var reviewForm = document.getElementById('review-form');

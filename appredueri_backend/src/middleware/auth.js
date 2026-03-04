@@ -19,12 +19,16 @@ async function authenticateToken(req, res, next) {
 
     // Ia detaliile complete ale userului din DB
     const { rows } = await pool.query(
-      "SELECT id, email, role FROM users WHERE id = $1",
+      "SELECT id, email, role, banned_at FROM users WHERE id = $1",
       [decoded.id]
     );
 
     if (rows.length === 0) {
       return res.status(401).json({ message: "Utilizator negăsit" });
+    }
+
+    if (rows[0].banned_at) {
+      return res.status(403).json({ message: "Contul tău a fost suspendat" });
     }
 
     req.user = rows[0];
@@ -83,9 +87,9 @@ function optionalAuth(req, res, next) {
   const token = authHeader.split(" ")[1];
   try {
     const decoded = verifyToken(token);
-    pool.query("SELECT id, email, role FROM users WHERE id = $1", [decoded.id])
+    pool.query("SELECT id, email, role, banned_at FROM users WHERE id = $1", [decoded.id])
       .then(({ rows }) => {
-        req.user = rows.length > 0 ? rows[0] : null;
+        req.user = (rows.length > 0 && !rows[0].banned_at) ? rows[0] : null;
         if (req.user) {
           const { updateStreak } = require("../services/gamification");
           updateStreak(req.user.id).catch(() => {});

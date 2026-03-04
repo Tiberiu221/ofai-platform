@@ -62,6 +62,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       PushNotificationService().initialize().catchError((e) {
         print('[Push] Init failed: $e');
       });
+    } on DioException catch (e) {
+      // Only log out on auth errors (401/403). Network errors keep current state.
+      final code = e.response?.statusCode;
+      if (code == 401 || code == 403) {
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+      // Network error, timeout etc. — don't log out (user may be offline)
     } catch (_) {
       state = const AuthState(status: AuthStatus.unauthenticated);
     }

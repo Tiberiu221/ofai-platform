@@ -10,7 +10,7 @@ void main() async {
   try {
     await Firebase.initializeApp();
   } catch (e) {
-    debugPrint('Firebase init failed: $e');
+    print('Firebase init failed: $e');
   }
   await initializeDateFormatting('ro');
 
