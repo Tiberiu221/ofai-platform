@@ -648,6 +648,15 @@ ul, ol { list-style: none; }
 
 .cta-benefit-icon {
   font-size: 1.25rem;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(251, 146, 60, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(251, 146, 60, 0.08);
+  flex-shrink: 0;
 }
 
 .cta-guarantee {
@@ -752,8 +761,14 @@ ul, ol { list-style: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  background: rgba(251, 146, 60, 0.1);
+  box-shadow: 0 0 24px rgba(251, 146, 60, 0.08);
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s;
+}
+.category-card:hover .category-icon {
+  transform: scale(1.08);
+  box-shadow: 0 0 32px rgba(251, 146, 60, 0.15);
 }
 
 .category-name {
