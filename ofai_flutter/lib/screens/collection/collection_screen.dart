@@ -8,7 +8,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/distance.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
-import '../../providers/subscriptions_provider.dart';
+import '../../providers/followed_businesses_provider.dart';
 import '../../widgets/offer_card.dart';
 import '../../widgets/business_card.dart';
 import '../../widgets/empty_state.dart';
@@ -51,7 +51,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
     if (auth.status == AuthStatus.authenticated && !_didFetch) {
       _didFetch = true;
       ref.read(favoritesProvider.notifier).fetch();
-      ref.read(subscriptionsProvider.notifier).fetch();
+      ref.read(followedBusinessesProvider.notifier).fetch();
     }
   }
 
@@ -74,7 +74,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
   void _onSubScroll() {
     if (_subScrollController.position.pixels >=
         _subScrollController.position.maxScrollExtent - 200) {
-      ref.read(subscriptionsProvider.notifier).loadMore();
+      ref.read(followedBusinessesProvider.notifier).loadMore();
     }
   }
 
@@ -450,7 +450,7 @@ class _SubscriptionsTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(subscriptionsProvider);
+    final state = ref.watch(followedBusinessesProvider);
 
     if (state.isLoading) {
       return Padding(
@@ -467,7 +467,7 @@ class _SubscriptionsTab extends ConsumerWidget {
             Text('Eroare la încărcare', style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton(
-              onPressed: () => ref.read(subscriptionsProvider.notifier).fetch(),
+              onPressed: () => ref.read(followedBusinessesProvider.notifier).fetch(),
               child: const Text('Reîncearcă'),
             ),
           ],
@@ -518,7 +518,7 @@ class _SubscriptionsTab extends ConsumerWidget {
 
     return RefreshIndicator(
       color: AppColors.accent,
-      onRefresh: () => ref.read(subscriptionsProvider.notifier).fetch(),
+      onRefresh: () => ref.read(followedBusinessesProvider.notifier).fetch(),
       child: ListView.separated(
         controller: scrollController,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding, vertical: AppSpacing.sm),
@@ -548,7 +548,7 @@ class _SubscriptionsTab extends ConsumerWidget {
             ),
             confirmDismiss: (_) async {
               try {
-                await ref.read(subscriptionsProvider.notifier).toggleSubscription(biz.id);
+                await ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -557,7 +557,7 @@ class _SubscriptionsTab extends ConsumerWidget {
                       action: SnackBarAction(
                         label: 'Anuleaza',
                         textColor: AppColors.accent,
-                        onPressed: () => ref.read(subscriptionsProvider.notifier).toggleSubscription(biz.id),
+                        onPressed: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id),
                       ),
                     ),
                   );

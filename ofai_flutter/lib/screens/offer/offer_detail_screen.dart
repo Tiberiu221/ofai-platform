@@ -22,7 +22,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
 import '../../providers/offer_requests_provider.dart';
-import '../../providers/subscriptions_provider.dart';
+import '../../providers/followed_businesses_provider.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -1180,9 +1180,9 @@ class _OfferDetailPinchCardState extends ConsumerState<_OfferDetailPinchCard>
         .submitRequest();
     if (success && mounted) {
       // Auto-follow the business
-      final subsState = ref.read(subscriptionsProvider);
-      if (!subsState.subscribedIds.contains(widget.businessId)) {
-        ref.read(subscriptionsProvider.notifier).toggleSubscription(widget.businessId);
+      final subsState = ref.read(followedBusinessesProvider);
+      if (!subsState.followedIds.contains(widget.businessId)) {
+        ref.read(followedBusinessesProvider.notifier).toggleFollow(widget.businessId);
       }
 
       setState(() => _showSuccess = true);

@@ -105,9 +105,10 @@ router.get("/", optionalAuth, async (req, res) => {
       }
     }
 
-    let orderBy = "o.id DESC";
-    if (sort === "discount_desc") orderBy = "o.discount_value DESC";
-    if (sort === "ending_soon") orderBy = "o.end_date ASC";
+    const searchBoost = "CASE WHEN COALESCE(splan.has_search_priority, FALSE) THEN 0 ELSE 1 END, ";
+    let orderBy = searchBoost + "o.id DESC";
+    if (sort === "discount_desc") orderBy = searchBoost + "o.discount_value DESC";
+    if (sort === "ending_soon") orderBy = searchBoost + "o.end_date ASC";
     // splan.slug is NULL when business has no active subscription (LEFT JOIN);
     // NULL comparisons fall through to ELSE 0 — free businesses get no boost.
     if (sort === "popular") orderBy = `(

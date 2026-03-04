@@ -8,7 +8,7 @@ import '../core/storage/secure_storage.dart';
 import '../models/user.dart';
 import '../services/push_notification_service.dart';
 import 'favorites_provider.dart';
-import 'subscriptions_provider.dart';
+import 'followed_businesses_provider.dart';
 
 // Auth state
 enum AuthStatus { initial, authenticated, unauthenticated, loading }
@@ -93,7 +93,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Invalidate stale favorites/subscriptions from any previous session
       _ref.invalidate(favoritesProvider);
-      _ref.invalidate(subscriptionsProvider);
+      _ref.invalidate(followedBusinessesProvider);
 
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
@@ -138,7 +138,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Invalidate stale favorites/subscriptions from any previous session
       _ref.invalidate(favoritesProvider);
-      _ref.invalidate(subscriptionsProvider);
+      _ref.invalidate(followedBusinessesProvider);
 
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
@@ -184,7 +184,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Invalidate stale favorites/subscriptions from any previous session
       _ref.invalidate(favoritesProvider);
-      _ref.invalidate(subscriptionsProvider);
+      _ref.invalidate(followedBusinessesProvider);
 
       PushNotificationService().initialize().catchError((e) {
         print('[Push] Init failed: $e');
@@ -215,7 +215,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     // Clear cached data from other providers
     _ref.read(favoritesProvider.notifier).clear();
-    _ref.read(subscriptionsProvider.notifier).clear();
+    _ref.read(followedBusinessesProvider.notifier).clear();
 
     state = const AuthState(status: AuthStatus.unauthenticated);
   }

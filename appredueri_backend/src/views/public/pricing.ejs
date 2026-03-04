@@ -144,11 +144,11 @@
             <% if (plan.slug === 'free') { %>
               <a href="/pentru-business" class="pricing-cta pricing-cta--free">Incepe gratuit</a>
             <% } else if (plan.slug === 'standard') { %>
-              <a href="<%= webUser ? '/cont#portal' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
+              <a href="<%= webUser ? '/portal' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
                 Alege Standard
               </a>
             <% } else { %>
-              <a href="<%= webUser ? '/cont#portal' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
+              <a href="<%= webUser ? '/portal' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
                 Alege Premium
               </a>
             <% } %>

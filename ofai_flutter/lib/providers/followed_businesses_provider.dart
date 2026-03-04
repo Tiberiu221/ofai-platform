@@ -6,18 +6,18 @@ import '../models/business.dart';
 import '../models/pagination.dart';
 import '../services/analytics_service.dart';
 
-class SubscriptionsState {
+class FollowedBusinessesState {
   final List<Business> businesses;
-  final Set<int> subscribedIds;
+  final Set<int> followedIds;
   final bool isLoading;
   final bool isLoadingMore;
   final String? error;
   final int page;
   final bool hasMore;
 
-  const SubscriptionsState({
+  const FollowedBusinessesState({
     this.businesses = const [],
-    this.subscribedIds = const {},
+    this.followedIds = const {},
     this.isLoading = false,
     this.isLoadingMore = false,
     this.error,
@@ -25,9 +25,9 @@ class SubscriptionsState {
     this.hasMore = true,
   });
 
-  SubscriptionsState copyWith({
+  FollowedBusinessesState copyWith({
     List<Business>? businesses,
-    Set<int>? subscribedIds,
+    Set<int>? followedIds,
     bool? isLoading,
     bool? isLoadingMore,
     String? error,
@@ -35,9 +35,9 @@ class SubscriptionsState {
     bool? hasMore,
     bool clearError = false,
   }) {
-    return SubscriptionsState(
+    return FollowedBusinessesState(
       businesses: businesses ?? this.businesses,
-      subscribedIds: subscribedIds ?? this.subscribedIds,
+      followedIds: followedIds ?? this.followedIds,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       error: clearError ? null : (error ?? this.error),
@@ -47,10 +47,10 @@ class SubscriptionsState {
   }
 }
 
-class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
+class FollowedBusinessesNotifier extends StateNotifier<FollowedBusinessesState> {
   final ApiClient _api;
 
-  SubscriptionsNotifier(this._api) : super(const SubscriptionsState());
+  FollowedBusinessesNotifier(this._api) : super(const FollowedBusinessesState());
 
   Future<void> fetch() async {
     state = state.copyWith(isLoading: true, clearError: true);
@@ -63,7 +63,7 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
       final ids = paginated.data.map((b) => b.id).toSet();
       state = state.copyWith(
         businesses: paginated.data,
-        subscribedIds: ids,
+        followedIds: ids,
         isLoading: false,
         page: 1,
         hasMore: paginated.hasMore,
@@ -87,7 +87,7 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
       final ids = newList.map((b) => b.id).toSet();
       state = state.copyWith(
         businesses: newList,
-        subscribedIds: ids,
+        followedIds: ids,
         isLoadingMore: false,
         page: nextPage,
         hasMore: paginated.hasMore,
@@ -98,32 +98,32 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
   }
 
   void clear() {
-    state = const SubscriptionsState();
+    state = const FollowedBusinessesState();
   }
 
-  bool isSubscribed(int businessId) => state.subscribedIds.contains(businessId);
+  bool isFollowed(int businessId) => state.followedIds.contains(businessId);
 
-  Future<void> toggleSubscription(int businessId) async {
-    final wasSubscribed = state.subscribedIds.contains(businessId);
+  Future<void> toggleFollow(int businessId) async {
+    final wasFollowed = state.followedIds.contains(businessId);
 
     // Snapshot full state for complete rollback on failure
     final previousState = state;
 
     // Optimistic update
-    final newIds = Set<int>.from(state.subscribedIds);
-    if (wasSubscribed) {
+    final newIds = Set<int>.from(state.followedIds);
+    if (wasFollowed) {
       newIds.remove(businessId);
       state = state.copyWith(
-        subscribedIds: newIds,
+        followedIds: newIds,
         businesses: state.businesses.where((b) => b.id != businessId).toList(),
       );
     } else {
       newIds.add(businessId);
-      state = state.copyWith(subscribedIds: newIds);
+      state = state.copyWith(followedIds: newIds);
     }
 
     try {
-      if (wasSubscribed) {
+      if (wasFollowed) {
         await _api.dio.delete(ApiEndpoints.deleteSubscription(businessId));
       } else {
         await _api.dio.post(ApiEndpoints.subscriptions, data: {'business_id': businessId});
@@ -132,7 +132,7 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
       // Track follow/unfollow action
       AnalyticsService.trackClick(
         businessId: businessId,
-        actionType: wasSubscribed ? 'unfollow' : 'follow',
+        actionType: wasFollowed ? 'unfollow' : 'follow',
       );
     } catch (e) {
       // Full rollback to pre-optimistic state
@@ -141,6 +141,6 @@ class SubscriptionsNotifier extends StateNotifier<SubscriptionsState> {
   }
 }
 
-final subscriptionsProvider = StateNotifierProvider<SubscriptionsNotifier, SubscriptionsState>((ref) {
-  return SubscriptionsNotifier(ApiClient());
+final followedBusinessesProvider = StateNotifierProvider<FollowedBusinessesNotifier, FollowedBusinessesState>((ref) {
+  return FollowedBusinessesNotifier(ApiClient());
 });
