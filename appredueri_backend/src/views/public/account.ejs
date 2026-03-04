@@ -100,8 +100,16 @@
       <div class="badges-header">
         <h3 class="badges-title">Insigne câștigate</h3>
         <span class="badges-count"><%= userBadges.length %></span>
+        <div class="badges-nav">
+          <button class="badges-nav-btn" id="badges-prev" aria-label="Anterior" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="badges-nav-btn" id="badges-next" aria-label="Următor">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
       </div>
-      <p class="badges-subtitle">Glisează și selectează pentru recenzii</p>
+      <p class="badges-subtitle">Selectează pentru recenzii</p>
       <div class="badges-strip-wrapper" id="badges-strip-wrapper">
         <div class="badges-strip" id="badges-strip">
           <div class="badge-item badge-none<%= !webUser.display_badge_id ? ' badge-selected' : '' %>" title="Fără insignă" onclick="selectDisplayBadge(null)">
@@ -125,18 +133,42 @@
     (function() {
       var strip = document.getElementById('badges-strip');
       var wrapper = document.getElementById('badges-strip-wrapper');
+      var prevBtn = document.getElementById('badges-prev');
+      var nextBtn = document.getElementById('badges-next');
       if (!strip || !wrapper) return;
+
+      var SCROLL_STEP = 200;
 
       function updateFades() {
         var sl = strip.scrollLeft;
         var maxScroll = strip.scrollWidth - strip.clientWidth;
-        if (sl > 8) wrapper.classList.add('scrolled-start');
-        else wrapper.classList.remove('scrolled-start');
-        if (sl >= maxScroll - 8) wrapper.classList.add('scrolled-end');
+        var atStart = sl <= 8;
+        var atEnd = sl >= maxScroll - 8;
+        if (atStart) wrapper.classList.remove('scrolled-start');
+        else wrapper.classList.add('scrolled-start');
+        if (atEnd) wrapper.classList.add('scrolled-end');
         else wrapper.classList.remove('scrolled-end');
+        if (prevBtn) prevBtn.disabled = atStart;
+        if (nextBtn) nextBtn.disabled = atEnd;
       }
       strip.addEventListener('scroll', updateFades, { passive: true });
-      updateFades();
+
+      if (prevBtn) prevBtn.addEventListener('click', function() {
+        strip.scrollBy({ left: -SCROLL_STEP, behavior: 'smooth' });
+      });
+      if (nextBtn) nextBtn.addEventListener('click', function() {
+        strip.scrollBy({ left: SCROLL_STEP, behavior: 'smooth' });
+      });
+
+      // Hide arrows if content fits without scrolling
+      setTimeout(function() {
+        var fits = strip.scrollWidth <= strip.clientWidth + 4;
+        if (fits && prevBtn && nextBtn) {
+          prevBtn.style.display = 'none';
+          nextBtn.style.display = 'none';
+        }
+        updateFades();
+      }, 100);
 
       // Scroll selected badge into view on load
       var selected = strip.querySelector('.badge-selected');

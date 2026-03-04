@@ -4870,6 +4870,34 @@ ul, ol { list-style: none; }
   padding: 2px 8px;
   border-radius: 100px;
 }
+.badges-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.badges-nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.2s;
+}
+.badges-nav-btn:hover:not(:disabled) {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.badges-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
 .badges-subtitle {
   font-size: 0.8125rem;
   color: var(--text-muted);
