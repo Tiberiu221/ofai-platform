@@ -757,6 +757,8 @@ function initParticles() {
   document.querySelectorAll('canvas.particle-canvas').forEach(canvas => {
     const container = canvas.parentElement;
     if (!container) return;
+    // Skip canvases claimed by WebGL shader (data-shader attr set in HTML)
+    if (canvas.dataset.shader === 'true') return;
     setupParticleCanvas(canvas, container);
   });
 }

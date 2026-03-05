@@ -5,7 +5,7 @@
      LOGIN PAGE
      ═══════════════════════════════════════════════════════ -->
 <div class="auth-page">
-  <canvas class="particle-canvas auth-particles"></canvas>
+  <canvas class="particle-canvas auth-particles" data-shader="true"></canvas>
   <div class="auth-card">
     <!-- Logo -->
     <div class="auth-logo">
@@ -181,5 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+
+<!-- WebGL shader background (THREE.js + auth-shader) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="/js/auth-shader.js?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>"></script>
 
 <%- include('partials/footer') %>

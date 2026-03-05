@@ -2071,15 +2071,21 @@ ul, ol { list-style: none; }
   align-items: center;
   justify-content: center;
   padding: 100px var(--container-px) 60px;
+  position: relative;
+  overflow: hidden;
 }
 
 .auth-card {
   width: 100%;
   max-width: 420px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: rgba(19, 19, 24, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 16px;
   padding: 40px 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .auth-logo {
@@ -4438,6 +4444,11 @@ ul, ol { list-style: none; }
 
 .auth-particles {
   opacity: 0.5;
+}
+
+/* WebGL shader canvas — more visible than particle dots */
+.auth-particles[data-shader="true"] {
+  opacity: 0.85;
 }
 
 /* ═══════════════════════════════════════════════════════════
