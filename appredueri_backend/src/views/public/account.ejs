@@ -70,30 +70,7 @@
       </div>
     </div>
 
-    <!-- Gamification Card -->
-    <%
-      const points = typeof userPoints !== 'undefined' ? userPoints : 0;
-      let level = 'Explorer';
-      let nextLevel = 'Local Hero';
-      let progress = 0;
-      let pointsNeeded = 100;
-      if (points >= 1000) { level = 'God Mode'; nextLevel = null; progress = 100; }
-      else if (points >= 500) { level = 'Legend'; nextLevel = 'God Mode'; progress = ((points - 500) / 500) * 100; pointsNeeded = 1000; }
-      else if (points >= 100) { level = 'Local Hero'; nextLevel = 'Legend'; progress = ((points - 100) / 400) * 100; pointsNeeded = 500; }
-      else { progress = (points / 100) * 100; pointsNeeded = 100; }
-    %>
-    <div class="gamification-card reveal">
-      <div class="gamification-header">
-        <span class="gamification-level"><%= level %></span>
-        <span class="gamification-points"><%= points %> puncte</span>
-      </div>
-      <div class="level-progress">
-        <div class="level-progress-bar" style="width: <%= Math.min(progress, 100) %>%"></div>
-      </div>
-      <% if (nextLevel) { %>
-        <p class="gamification-next">Încă <%= pointsNeeded - points %> puncte până la <strong><%= nextLevel %></strong></p>
-      <% } %>
-    </div>
+    <!-- Gamification card removed — badges only -->
 
     <% if (typeof userBadges !== 'undefined' && userBadges && userBadges.length > 0) { %>
     <div class="badges-card reveal">
