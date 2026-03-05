@@ -156,8 +156,10 @@ app.use(cookieParser());
 const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
   getSecret: () => process.env.CSRF_SECRET || process.env.JWT_SECRET,
   getSessionIdentifier: (req) => {
-    // Use auth cookie or IP as session identifier (ties CSRF token to session)
-    return req.cookies?.ofai_token || req.ip || "anonymous";
+    // Use auth cookie as session identifier; fall back to stable "anonymous"
+    // NOTE: req.ip is unreliable behind Railway's reverse proxy (can change
+    // between GET and POST), causing CSRF validation failures on register/login.
+    return req.cookies?.ofai_token || "anonymous";
   },
   cookieName: "__csrf",
   cookieOptions: {
