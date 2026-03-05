@@ -92,8 +92,8 @@ INSERT INTO subscription_plans
 VALUES
   -- FREE
   ('free', 'Gratuit', 0, 0, 0,
-   2, 3, 1, 0,
-   7, FALSE, FALSE, FALSE,
+   2, 3, 1, 1,
+   7, TRUE, TRUE, TRUE,
    FALSE, FALSE, FALSE, FALSE,
    FALSE, FALSE, FALSE,
    FALSE, FALSE, FALSE,
@@ -101,16 +101,16 @@ VALUES
 
   -- STANDARD
   ('standard', 'Standard', 4900, 49000, 1,
-   10, 8, 3, 3,
+   6, 8, 3, 1,
    30, TRUE, TRUE, TRUE,
    TRUE, TRUE, TRUE, FALSE,
    TRUE, FALSE, FALSE,
-   FALSE, FALSE, FALSE,
+   TRUE, FALSE, FALSE,
    FALSE, TRUE, FALSE, 'verified'),
 
   -- PREMIUM
   ('premium', 'Premium', 19900, 199000, 2,
-   NULL, NULL, NULL, NULL,
+   NULL, 32, NULL, NULL,
    90, TRUE, TRUE, TRUE,
    TRUE, TRUE, TRUE, TRUE,
    TRUE, TRUE, TRUE,
