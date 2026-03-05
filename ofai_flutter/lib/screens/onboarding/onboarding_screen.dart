@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/storage/preferences.dart';
+import '../../widgets/orange_glow_wave.dart';
 import '../../app.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -65,11 +66,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Skip button
-            Align(
+      body: Stack(
+        children: [
+          // Orange glow wave background
+          const Positioned.fill(
+            child: OrangeGlowWave(),
+          ),
+          // Content
+          SafeArea(
+            child: Column(
+              children: [
+                // Skip button
+                Align(
               alignment: Alignment.topRight,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
@@ -258,6 +266,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ),
           ],
         ),
+      ),
+        ],
       ),
     );
   }

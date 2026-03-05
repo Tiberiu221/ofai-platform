@@ -6,7 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/network/api_exceptions.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/particle_background.dart';
+import '../../widgets/orange_glow_wave.dart';
 import '../../widgets/glass_card.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -20,7 +20,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _pointerNotifier = ValueNotifier<Offset>(const Offset(-1000, -1000));
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
@@ -30,7 +29,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _pointerNotifier.dispose();
     super.dispose();
   }
 
@@ -78,20 +76,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Listener(
-        onPointerMove: (e) => _pointerNotifier.value = e.localPosition,
-        onPointerDown: (e) => _pointerNotifier.value = e.localPosition,
-        onPointerUp: (_) => _pointerNotifier.value = const Offset(-1000, -1000),
-        behavior: HitTestBehavior.translucent,
-        child: Stack(
-          children: [
-            // Particle background
-            Positioned.fill(
-              child: ParticleBackground(pointerPosition: _pointerNotifier),
-            ),
+      body: Stack(
+        children: [
+          // Orange glow wave background (matches web auth-shader.js)
+          const Positioned.fill(
+            child: OrangeGlowWave(),
+          ),
 
-            // Content
-            SafeArea(
+          // Content
+          SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.xxl),
                 child: Column(
@@ -294,7 +287,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 }
+
