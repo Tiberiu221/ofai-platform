@@ -185,8 +185,12 @@ router.post("/", authenticateToken, async (req, res) => {
         if (isNewReview) {
           try {
             const { checkAndAwardBadges } = require("../services/badgeService");
-            await checkAndAwardBadges(user_id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
-          } catch (e) { /* badge check should never block */ }
+            console.log("[badge] Checking badges for user", user_id);
+            const awarded = await checkAndAwardBadges(user_id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
+            console.log("[badge] Awarded:", awarded);
+          } catch (e) {
+            console.error("[badge] ERROR in review badge check:", e.message, e.stack);
+          }
         }
 
         console.log("=== REVIEW POST END ===");

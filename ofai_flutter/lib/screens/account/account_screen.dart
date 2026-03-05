@@ -10,7 +10,6 @@ import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
-import '../../providers/business_requests_provider.dart';
 import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
 import '../../widgets/orange_glow_wave.dart';
@@ -34,7 +33,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       _didFetch = true;
       ref.read(favoritesProvider.notifier).fetch();
       ref.read(followedBusinessesProvider.notifier).fetch();
-      ref.read(businessRequestsProvider.notifier).fetchMyRequests();
       ref.read(gamificationProvider.notifier).fetch();
     }
   }
@@ -116,7 +114,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
     final favState = ref.watch(favoritesProvider);
     final subState = ref.watch(followedBusinessesProvider);
-    final bizReqState = ref.watch(businessRequestsProvider);
     final gamState = ref.watch(gamificationProvider);
 
     return Scaffold(
@@ -325,11 +322,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 ),
               ],
 
-              // Business request status card
-              if (bizReqState.latestRequest != null) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _BusinessRequestStatusCard(request: bizReqState.latestRequest!),
-              ],
+              // Business request status card — hidden from mobile UI
+              // Status is managed via web portal only
 
               const SizedBox(height: AppSpacing.xxxl),
 
@@ -350,21 +344,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   label: 'Schimba parola',
                   onTap: () => context.push('/account/change-password'),
                 ),
-              _SwitchMenuItem(
-                icon: Icons.face_outlined,
-                label: 'Arată poza în recenzii',
-                value: user?.showPictureInReviews ?? true,
-                onChanged: (val) async {
-                  try {
-                    await ref.read(authProvider.notifier).updateShowPictureInReviews(val);
-                  } catch (_) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Eroare la salvare'), backgroundColor: AppColors.danger),
-                    );
-                  }
-                },
-              ),
               _MenuItem(
                 icon: Icons.help_outline,
                 label: 'Ajutor',
@@ -621,76 +600,6 @@ class _BadgeChip extends StatelessWidget {
   }
 }
 
-class _BusinessRequestStatusCard extends StatelessWidget {
-  final dynamic request;
-
-  const _BusinessRequestStatusCard({required this.request});
-
-  @override
-  Widget build(BuildContext context) {
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    if (request.isPending) {
-      statusColor = Colors.amber;
-      statusIcon = Icons.hourglass_top;
-      statusText = 'Cererea ta este in asteptare';
-    } else if (request.isApproved) {
-      statusColor = Colors.green;
-      statusIcon = Icons.check_circle_outline;
-      statusText = 'Business-ul tau a fost aprobat!';
-    } else {
-      statusColor = AppColors.danger;
-      statusIcon = Icons.cancel_outlined;
-      statusText = 'Cererea a fost respinsa';
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(statusIcon, color: statusColor, size: 20),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  statusText,
-                  style: AppTypography.labelMedium.copyWith(color: statusColor),
-                ),
-              ),
-            ],
-          ),
-          if (request.isRejected && request.adminNotes != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              request.adminNotes!,
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            request.name,
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -777,50 +686,6 @@ class _MenuItem extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SwitchMenuItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SwitchMenuItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.xs,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.textPrimary, size: 22),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Text(
-              label,
-              style: AppTypography.bodyLarge.copyWith(color: AppColors.textPrimary),
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: AppColors.accent,
-            activeTrackColor: AppColors.accent.withValues(alpha: 0.3),
-            inactiveThumbColor: AppColors.textTertiary,
-            inactiveTrackColor: AppColors.bgSecondary,
-          ),
-        ],
       ),
     );
   }

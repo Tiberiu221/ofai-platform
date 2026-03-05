@@ -3626,6 +3626,19 @@ router.post("/api/web/reviews", requireWebAuth, async (req, res) => {
       }
 
       await client.query("COMMIT");
+
+      // Badge check (fire-and-forget, only for new reviews)
+      if (isNewReview) {
+        try {
+          const { checkAndAwardBadges } = require("../services/badgeService");
+          console.log("[badge] Web review: checking badges for user", req.webUser.id);
+          const awarded = await checkAndAwardBadges(req.webUser.id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
+          console.log("[badge] Web review: awarded", awarded);
+        } catch (e) {
+          console.error("[badge] Web review badge error:", e.message);
+        }
+      }
+
       res.json({ success: true, review: reviewRes.rows[0], points_earned: pointsEarned, is_update: !isNewReview });
     } catch (err) {
       await client.query("ROLLBACK");

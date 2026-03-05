@@ -138,6 +138,33 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               const SizedBox(height: AppSpacing.xxl),
 
+              // Show picture in reviews toggle
+              Row(
+                children: [
+                  const Icon(Icons.face_outlined, color: AppColors.textSecondary, size: 20),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text('Arată poza în recenzii', style: AppTypography.bodyMedium),
+                  ),
+                  Switch(
+                    value: ref.watch(authProvider).user?.showPictureInReviews ?? true,
+                    activeColor: AppColors.accent,
+                    onChanged: (val) async {
+                      try {
+                        await ref.read(authProvider.notifier).updateShowPictureInReviews(val);
+                      } catch (_) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Eroare la salvare'), backgroundColor: AppColors.danger),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.xxl),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
