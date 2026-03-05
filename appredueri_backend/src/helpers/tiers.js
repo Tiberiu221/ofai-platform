@@ -38,6 +38,45 @@ function invalidateCache() {
 }
 
 /**
+ * C2: Normalise a plan row into a consistent shape.
+ * Works with both raw DB rows (from cache) and aliased JOIN rows (from getBusinessTier query).
+ * @param {Object} row - plan row (raw or aliased)
+ * @returns {Object} normalised plan object
+ */
+function normalisePlan(row) {
+  return {
+    id: row.plan_id ?? row.id,
+    slug: row.slug,
+    name: row.plan_name ?? row.name,
+    price_monthly: row.price_monthly,
+    price_yearly: row.price_yearly,
+    max_active_offers: row.max_active_offers,
+    max_gallery_images: row.max_gallery_images,
+    max_locations: row.max_locations,
+    max_promo_codes_per_offer: row.max_promo_codes_per_offer,
+    analytics_days: row.analytics_days,
+    can_respond_reviews: row.can_respond_reviews,
+    can_upload_logo: row.can_upload_logo,
+    can_upload_cover: row.can_upload_cover,
+    has_verified_badge: row.has_verified_badge,
+    has_ai_summary: row.has_ai_summary,
+    has_push_on_offer: row.has_push_on_offer,
+    has_custom_push: row.has_custom_push,
+    has_analytics_charts: row.has_analytics_charts,
+    has_analytics_export: row.has_analytics_export,
+    has_competitive_insights: row.has_competitive_insights,
+    has_promoted_placement: row.has_promoted_placement,
+    has_search_priority: row.has_search_priority,
+    has_competitor_blocking: row.has_competitor_blocking,
+    has_deal_nomination: row.has_deal_nomination,
+    has_booking: row.has_booking,
+    has_priority_support: row.has_priority_support,
+    badge_type: row.badge_type,
+    sort_order: row.sort_order,
+  };
+}
+
+/**
  * Get active subscription + plan for a business
  * Returns { subscription, plan, tier, isTrial }
  */
@@ -46,7 +85,7 @@ async function getBusinessTier(pool, businessId) {
     SELECT
       bs.id              AS sub_id,
       bs.business_id,
-      bs.plan_id,
+      bs.plan_id         AS sub_plan_id,
       bs.status          AS sub_status,
       bs.billing_cycle,
       bs.current_period_start,
@@ -101,7 +140,7 @@ async function getBusinessTier(pool, businessId) {
       subscription: {
         id: row.sub_id,
         business_id: row.business_id,
-        plan_id: row.plan_id,
+        plan_id: row.sub_plan_id,
         status: row.sub_status,
         billing_cycle: row.billing_cycle,
         current_period_start: row.current_period_start,
@@ -114,36 +153,7 @@ async function getBusinessTier(pool, businessId) {
         created_at: row.sub_created_at,
         updated_at: row.sub_updated_at,
       },
-      plan: {
-        id: row.plan_id,
-        slug: row.slug,
-        name: row.plan_name,
-        price_monthly: row.price_monthly,
-        price_yearly: row.price_yearly,
-        max_active_offers: row.max_active_offers,
-        max_gallery_images: row.max_gallery_images,
-        max_locations: row.max_locations,
-        max_promo_codes_per_offer: row.max_promo_codes_per_offer,
-        analytics_days: row.analytics_days,
-        can_respond_reviews: row.can_respond_reviews,
-        can_upload_logo: row.can_upload_logo,
-        can_upload_cover: row.can_upload_cover,
-        has_verified_badge: row.has_verified_badge,
-        has_ai_summary: row.has_ai_summary,
-        has_push_on_offer: row.has_push_on_offer,
-        has_custom_push: row.has_custom_push,
-        has_analytics_charts: row.has_analytics_charts,
-        has_analytics_export: row.has_analytics_export,
-        has_competitive_insights: row.has_competitive_insights,
-        has_promoted_placement: row.has_promoted_placement,
-        has_search_priority: row.has_search_priority,
-        has_competitor_blocking: row.has_competitor_blocking,
-        has_deal_nomination: row.has_deal_nomination,
-        has_booking: row.has_booking,
-        has_priority_support: row.has_priority_support,
-        badge_type: row.badge_type,
-        sort_order: row.sort_order,
-      },
+      plan: normalisePlan(row),
       tier: row.slug,
       isTrial: row.sub_status === 'trial',
     };
@@ -157,7 +167,7 @@ async function getBusinessTier(pool, businessId) {
   }
   return {
     subscription: null,
-    plan: plans.free,
+    plan: normalisePlan(plans.free),
     tier: TIERS.FREE,
     isTrial: false,
   };
@@ -238,12 +248,21 @@ async function countLocations(pool, businessId) {
  * @param {number} businessId
  * @param {string|null} badgeType - from subscription_plans.badge_type: null, 'verified', 'premium'
  */
+const VALID_BADGE_TYPES = [null, 'verified', 'premium'];
+
 async function syncBadgeType(db, businessId, badgeType) {
-  await db.query(
+  if (!VALID_BADGE_TYPES.includes(badgeType)) {
+    throw new Error(`[Tiers] Invalid badge type "${badgeType}" — expected one of: ${VALID_BADGE_TYPES.join(', ')}`);
+  }
+  const result = await db.query(
     'UPDATE businesses SET subscription_badge_type = $1 WHERE id = $2',
     [badgeType, businessId]
   );
-  console.log(`[Tiers] Badge synced for business ${businessId}: ${badgeType || 'none'}`);
+  if (result.rowCount === 0) {
+    console.warn(`[Tiers] Badge sync: no business found with id ${businessId} (may have been deleted)`);
+  } else {
+    console.log(`[Tiers] Badge synced for business ${businessId}: ${badgeType || 'none'}`);
+  }
 }
 
 module.exports = {

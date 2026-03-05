@@ -30,6 +30,7 @@ const { getBusinessTier } = require('../helpers/tiers');
  * @param {Array<{code: string, is_active: boolean}>} [params.promoCodes] - Array of promo codes
  * @param {number} [params.maxReveals] - Maximum number of code reveals (null = unlimited)
  * @param {boolean} [params.sendWebhook] - Whether to send n8n webhook (default: true for business portal)
+ * @param {Object} [params.tier] - Pre-fetched tier info from req.tier (avoids redundant DB query)
  * @returns {Promise<number>} - Created offer ID
  */
 async function createOffer(pool, params) {
@@ -52,6 +53,7 @@ async function createOffer(pool, params) {
     promoCodes,
     maxReveals,
     sendWebhook = false, // Only business portal triggers webhook by default
+    tier = null, // Pre-fetched tier info from middleware (avoids redundant DB query)
   } = params;
 
   // Use transaction for offer + promo codes
@@ -67,12 +69,37 @@ async function createOffer(pool, params) {
       [String(businessId)]
     );
 
+    // C4: Atomic offer limit check INSIDE transaction (after advisory lock)
+    // This prevents race conditions where two concurrent requests both pass
+    // the middleware COUNT check and then both INSERT.
+    const tierInfo = tier || await getBusinessTier(pool, businessId);
+    const plan = tierInfo.plan;
+
+    if (plan.max_active_offers !== null && (isActive !== false)) {
+      const countRes = await client.query(
+        "SELECT COUNT(*)::int AS cnt FROM offers WHERE business_id = $1 AND is_active = true",
+        [businessId]
+      );
+      if (countRes.rows[0].cnt >= plan.max_active_offers) {
+        await client.query("ROLLBACK");
+        const err = new Error('offer_limit');
+        err.statusCode = 403;
+        err.details = {
+          error: 'limit_reached',
+          message: `Ai atins limita de ${plan.max_active_offers} oferte active pentru planul ${plan.name}.`,
+          currentTier: plan.slug,
+          limit: plan.max_active_offers,
+          current: countRes.rows[0].cnt,
+          limitKey: 'max_active_offers',
+        };
+        throw err;
+      }
+    }
+
     // Promo code limit check
     if (promoCodes && Array.isArray(promoCodes)) {
       const validCodes = promoCodes.filter(pc => pc.code && pc.code.trim());
       if (validCodes.length > 0) {
-        // TODO: getBusinessTier reads from pool, not from the tx client — acceptable for limit check (read-only)
-        const { plan } = await getBusinessTier(pool, businessId);
         const promoLimit = plan.max_promo_codes_per_offer;
         if (promoLimit !== null && validCodes.length > promoLimit) {
           await client.query("ROLLBACK");
@@ -162,8 +189,9 @@ async function createOffer(pool, params) {
 
   // Push notification to subscribers (gated by has_push_on_offer tier feature)
   try {
-    const { plan } = await getBusinessTier(pool, businessId);
-    if (process.env.TIER_GATING_ENABLED !== 'true' || plan.has_push_on_offer) {
+    // W11: Reuse pre-fetched tier instead of querying DB again
+    const tierInfo = tier || await getBusinessTier(pool, businessId);
+    if (process.env.TIER_GATING_ENABLED !== 'true' || tierInfo.plan.has_push_on_offer) {
       let discountText = "";
       if (discountValue) {
         discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;

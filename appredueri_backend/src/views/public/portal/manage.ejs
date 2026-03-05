@@ -2438,6 +2438,8 @@
 
   function loadCharts(days) {
     currentPeriod = days;
+    // W4: Skip API calls if analytics charts are not available (gated on backend too)
+    if (_serverTier && _serverTier.plan && !_serverTier.plan.hasAnalyticsCharts) return;
     loadViewsChart(days);
     loadSubscribersChart(days);
     loadClicksChart(days);

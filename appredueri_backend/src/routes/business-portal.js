@@ -517,6 +517,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
       promoCodes: sanitizedPromoCodes,
       maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: true, // Business portal triggers n8n webhook
+      tier: req.tier || null, // W11: Pass pre-fetched tier to avoid redundant DB query
     });
 
     console.log("[BusinessPortal] Offer created with ID:", offerId);
@@ -753,40 +754,56 @@ router.patch("/:businessId/offers/:offerId/toggle", businessAuth, async (req, re
   try {
     const { businessId, offerId } = req.params;
 
-    // Check current state first
-    const current = await pool.query(
-      "SELECT is_active FROM offers WHERE id = $1 AND business_id = $2",
-      [offerId, businessId]
-    );
-    if (current.rows.length === 0) {
-      return res.status(404).json({ message: "Oferta nu există" });
-    }
+    // C7: Wrap toggle in transaction to prevent race condition on active offer limit
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    const isCurrentlyActive = current.rows[0].is_active;
+      // Lock the offer row to prevent concurrent toggles
+      const current = await client.query(
+        "SELECT is_active FROM offers WHERE id = $1 AND business_id = $2 FOR UPDATE",
+        [offerId, businessId]
+      );
+      if (current.rows.length === 0) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ message: "Oferta nu există" });
+      }
 
-    // If activating, check tier limit
-    if (!isCurrentlyActive && process.env.TIER_GATING_ENABLED === 'true' && req.tier) {
-      const limit = req.tier.plan.max_active_offers;
-      if (limit !== null) {
-        const { countActiveOffers } = require('../helpers/tiers');
-        const activeCount = await countActiveOffers(pool, businessId);
-        if (activeCount >= limit) {
-          return res.status(403).json({
-            error: 'limit_reached',
-            message: `Ai atins limita de ${limit} oferte active pentru planul ${req.tier.plan.name}.`,
-          });
+      const isCurrentlyActive = current.rows[0].is_active;
+
+      // If activating, check tier limit atomically within transaction
+      if (!isCurrentlyActive && process.env.TIER_GATING_ENABLED === 'true' && req.tier) {
+        const limit = req.tier.plan.max_active_offers;
+        if (limit !== null) {
+          const countRes = await client.query(
+            "SELECT COUNT(*)::int AS cnt FROM offers WHERE business_id = $1 AND is_active = true",
+            [businessId]
+          );
+          if (countRes.rows[0].cnt >= limit) {
+            await client.query("ROLLBACK");
+            return res.status(403).json({
+              error: 'limit_reached',
+              message: `Ai atins limita de ${limit} oferte active pentru planul ${req.tier.plan.name}.`,
+            });
+          }
         }
       }
+
+      const result = await client.query(`
+        UPDATE offers
+        SET is_active = NOT is_active
+        WHERE id = $1 AND business_id = $2
+        RETURNING is_active
+      `, [offerId, businessId]);
+
+      await client.query("COMMIT");
+      res.json({ success: true, is_active: result.rows[0].is_active });
+    } catch (txErr) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
     }
-
-    const result = await pool.query(`
-      UPDATE offers
-      SET is_active = NOT is_active
-      WHERE id = $1 AND business_id = $2
-      RETURNING is_active
-    `, [offerId, businessId]);
-
-    res.json({ success: true, is_active: result.rows[0].is_active });
   } catch (err) {
     console.error("[BusinessPortal] Eroare toggle ofertă:", err);
     res.status(500).json({ message: "Eroare server" });
@@ -1379,62 +1396,20 @@ router.get(
   }
 );
 
-// ── CANCEL SUBSCRIPTION ──
+// ── CANCEL SUBSCRIPTION ── (W9: uses shared subscriptionService)
 router.post('/:businessId/subscription/cancel', businessAuth, async (req, res) => {
-  const client = await pool.connect();
   try {
     const businessId = parseInt(req.params.businessId);
-    await client.query('BEGIN');
+    const { cancelSubscription } = require('../services/subscriptionService');
+    const result = await cancelSubscription(pool, businessId, 'mobile');
 
-    // Mark as cancel at period end (don't immediately cancel)
-    const result = await client.query(`
-      UPDATE business_subscriptions
-      SET cancel_at_period_end = TRUE, updated_at = NOW()
-      WHERE business_id = $1
-        AND status IN ('active')
-        AND billing_cycle != 'none'
-      RETURNING id, current_period_end
-    `, [businessId]);
-
-    if (result.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: 'Nu exista un abonament activ de anulat.',
-      });
+    if (!result.success) {
+      return res.status(400).json(result);
     }
-
-    // Log to history
-    const freePlan = await client.query(
-      "SELECT id FROM subscription_plans WHERE slug = 'free'"
-    );
-    if (!freePlan.rows[0]) {
-      await client.query('ROLLBACK');
-      return res.status(500).json({ success: false, message: 'Eroare configurare plan.' });
-    }
-    await client.query(`
-      INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-      SELECT bs.business_id, bs.plan_id, $2, 'cancelled', 'User requested cancellation'
-      FROM business_subscriptions bs
-      WHERE bs.id = $1
-    `, [result.rows[0].id, freePlan.rows[0].id]);
-
-    await client.query('COMMIT');
-
-    console.log(`[BusinessPortal] Subscription cancelled for business ${businessId}, active until ${result.rows[0].current_period_end}`);
-
-    res.json({
-      success: true,
-      message: 'Abonamentul a fost anulat. Beneficiile raman active pana la ' +
-        new Date(result.rows[0].current_period_end).toLocaleDateString('ro-RO') + '.',
-      activeUntil: result.rows[0].current_period_end,
-    });
+    res.json(result);
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error('[BusinessPortal] Cancel subscription error:', err);
     res.status(500).json({ success: false, message: 'Eroare la anularea abonamentului.' });
-  } finally {
-    client.release();
   }
 });
 

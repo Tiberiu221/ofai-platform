@@ -1,6 +1,11 @@
 const { getBusinessTier } = require('../helpers/tiers');
 const pool = require('../db');
 
+// W3: Warn once at startup if tier gating is disabled
+if (process.env.TIER_GATING_ENABLED !== 'true') {
+  console.warn('[TierAuth] WARNING: TIER_GATING_ENABLED is not set to "true" — all tier limits and feature gates are BYPASSED. Set TIER_GATING_ENABLED=true in production.');
+}
+
 /**
  * Middleware: attach tier info to req
  * Usage: router.use('/:businessId', attachTier())

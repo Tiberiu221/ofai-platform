@@ -35,7 +35,7 @@ async function businessAuth(req, res, next) {
   // 2. Obține user-ul cu rol
   try {
     const userResult = await pool.query(
-      "SELECT id, email, role FROM users WHERE id = $1",
+      "SELECT id, email, role, banned_at FROM users WHERE id = $1",
       [userId]
     );
 
@@ -44,6 +44,12 @@ async function businessAuth(req, res, next) {
     }
 
     const user = userResult.rows[0];
+
+    // W8: Block banned users even if JWT is still valid
+    if (user.banned_at) {
+      return res.status(403).json({ message: "Contul a fost suspendat" });
+    }
+
     req.user = user;
 
     // 3. Dacă e admin, are acces la orice
@@ -61,10 +67,13 @@ async function businessAuth(req, res, next) {
       );
 
       if (accessResult.rows.length === 0) {
-        return res.status(403).json({ 
-          message: "Nu ai permisiunea să accesezi acest business" 
+        return res.status(403).json({
+          message: "Nu ai permisiunea să accesezi acest business"
         });
       }
+    } else {
+      // C3: Default to denied when businessId is missing from route params
+      return res.status(400).json({ error: "Missing business ID" });
     }
 
     // 5. Totul OK, continuă

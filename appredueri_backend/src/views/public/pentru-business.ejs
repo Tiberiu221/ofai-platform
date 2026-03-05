@@ -402,6 +402,27 @@
     border-color: rgba(251, 146, 60, 0.5);
   }
 
+  .biz-btn-abandon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 10px;
+    color: #ef4444;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .biz-btn-abandon:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.45);
+  }
+
   .biz-btn-manage {
     display: inline-flex;
     align-items: center;
@@ -449,7 +470,7 @@
 <% if (webUser) { %>
 <script>
 // Load existing requests and show tracker
-(async function loadMyRequests() {
+async function loadMyRequests() {
   try {
     var res = await fetch('/api/business-requests/mine', { credentials: 'same-origin' });
     if (!res.ok) return;
@@ -473,6 +494,12 @@
       html += '    <span class="biz-request-status biz-status-pending"><span class="pulse-dot"></span> In asteptare</span>';
       html += '  </div>';
       html += '  <p class="biz-request-msg">Cererea ta este in curs de verificare. Vei primi un email cand este procesata.</p>';
+      html += '  <div class="biz-request-actions">';
+      html += '    <button type="button" class="biz-btn-abandon" onclick="abandonRequest(' + pending.id + ')">';
+      html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      html += '      Renunta la adaugare';
+      html += '    </button>';
+      html += '  </div>';
       html += '</div>';
     }
 
@@ -514,6 +541,10 @@
         html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
         html += '      Reia procesul';
         html += '    </button>';
+        html += '    <button type="button" class="biz-btn-abandon" onclick="abandonRequest(' + rejected.id + ')">';
+        html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        html += '      Renunta la adaugare';
+        html += '    </button>';
         html += '  </div>';
       }
       html += '</div>';
@@ -529,7 +560,9 @@
   } catch (err) {
     console.error('Error loading requests:', err);
   }
-})();
+}
+// Initial load
+loadMyRequests();
 
 function escapeHtml(text) {
   if (!text) return '';
@@ -578,6 +611,44 @@ function prefillFromRejected() {
 
   // Smooth scroll to section header (above the form)
   document.getElementById('adauga-business').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function abandonRequest(requestId) {
+  if (!confirm('Esti sigur ca vrei sa renunti? Cererea va fi stearsa definitiv.')) return;
+
+  try {
+    var csrfToken = document.querySelector('meta[name="csrf-token"]');
+    var res = await fetch('/api/business-requests/' + requestId, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
+      },
+      credentials: 'same-origin'
+    });
+
+    var data = await res.json();
+    if (!res.ok || !data.success) {
+      var msg = (data.errors && data.errors.length > 0) ? data.errors.join(' ') : 'Eroare la stergerea cererii.';
+      alert(msg);
+      return;
+    }
+
+    // Success — re-enable form and reload requests section
+    enableForm();
+    window._rejectedRequestData = null;
+    window._retryingRejectedId = null;
+
+    // Clear the requests section and reload
+    var container = document.getElementById('my-requests');
+    container.innerHTML = '';
+    container.style.display = 'none';
+
+    // Re-run loadMyRequests to refresh (or hide if no more requests)
+    loadMyRequests();
+  } catch (err) {
+    console.error('Error abandoning request:', err);
+    alert('Eroare de retea. Incearca din nou.');
+  }
 }
 
 // Form submission

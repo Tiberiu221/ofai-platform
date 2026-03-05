@@ -2378,6 +2378,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       promoCodes: sanitizedPromoCodes,
       maxReveals: max_reveals ? parseInt(max_reveals) : null,
       sendWebhook: false, // Web portal doesn't send webhook
+      tier: req.tier || null, // W11: Pass pre-fetched tier to avoid redundant DB query
     });
 
     res.json({ success: true, offer_id: offerId });
@@ -2456,18 +2457,55 @@ router.delete("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwne
   }
 });
 
-// Toggle offer active
+// Toggle offer active (C7: wrapped in transaction with tier limit check)
 router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusinessOwner, async (req, res) => {
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query("BEGIN");
+
+    // Lock the offer row to prevent concurrent toggles
+    const current = await client.query(
+      "SELECT is_active FROM offers WHERE id = $1 AND business_id = $2 FOR UPDATE",
+      [req.params.offerId, req.params.businessId]
+    );
+    if (current.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Ofertă negăsită" });
+    }
+
+    const isCurrentlyActive = current.rows[0].is_active;
+
+    // If activating, check tier limit atomically
+    if (!isCurrentlyActive && process.env.TIER_GATING_ENABLED === 'true' && req.tier) {
+      const limit = req.tier.plan.max_active_offers;
+      if (limit !== null) {
+        const countRes = await client.query(
+          "SELECT COUNT(*)::int AS cnt FROM offers WHERE business_id = $1 AND is_active = true",
+          [req.params.businessId]
+        );
+        if (countRes.rows[0].cnt >= limit) {
+          await client.query("ROLLBACK");
+          return res.status(403).json({
+            error: 'limit_reached',
+            message: `Ai atins limita de ${limit} oferte active pentru planul ${req.tier.plan.name}.`,
+          });
+        }
+      }
+    }
+
+    const result = await client.query(
       "UPDATE offers SET is_active = NOT is_active WHERE id = $1 AND business_id = $2 RETURNING is_active",
       [req.params.offerId, req.params.businessId]
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: "Ofertă negăsită" });
+
+    await client.query("COMMIT");
     res.json({ success: true, is_active: result.rows[0].is_active });
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[Web API] Portal toggle offer error:", err);
     res.status(500).json({ message: "Eroare server" });
+  } finally {
+    client.release();
   }
 });
 
@@ -2561,8 +2599,8 @@ router.delete("/api/web/reviews/:id", requireWebAuth, async (req, res) => {
   }
 });
 
-// Analytics views timeline
-router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, async (req, res) => {
+// Analytics views timeline (W4: added requireFeature gate to match mobile routes)
+router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
@@ -2593,8 +2631,8 @@ router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, 
   }
 });
 
-// Analytics offer-views timeline
-router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessOwner, async (req, res) => {
+// Analytics offer-views timeline (W4: added requireFeature gate to match mobile routes)
+router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
@@ -2638,8 +2676,8 @@ router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessO
   }
 });
 
-// Analytics subscribers timeline
-router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, async (req, res) => {
+// Analytics subscribers timeline (W4: added requireFeature gate to match mobile routes)
+router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
@@ -2666,8 +2704,8 @@ router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessO
   }
 });
 
-// Analytics clicks timeline
-router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner, async (req, res) => {
+// Analytics clicks timeline (W4: added requireFeature gate to match mobile routes)
+router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
@@ -3217,58 +3255,20 @@ router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, asy
   }
 });
 
-// POST cancel subscription for web portal
+// POST cancel subscription for web portal (W9: uses shared subscriptionService)
 router.post("/api/web/portal/:businessId/subscription/cancel", requireBusinessOwner, async (req, res) => {
-  const client = await pool.connect();
   try {
     const businessId = parseInt(req.params.businessId);
-    await client.query('BEGIN');
+    const { cancelSubscription } = require('../services/subscriptionService');
+    const result = await cancelSubscription(pool, businessId, 'web');
 
-    const result = await client.query(`
-      UPDATE business_subscriptions
-      SET cancel_at_period_end = TRUE, updated_at = NOW()
-      WHERE business_id = $1
-        AND status IN ('active')
-        AND billing_cycle != 'none'
-      RETURNING id, current_period_end
-    `, [businessId]);
-
-    if (result.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: 'Nu exista un abonament activ de anulat.',
-      });
+    if (!result.success) {
+      return res.status(400).json(result);
     }
-
-    const freePlan = await client.query(
-      "SELECT id FROM subscription_plans WHERE slug = 'free'"
-    );
-    if (!freePlan.rows[0]) {
-      await client.query('ROLLBACK');
-      return res.status(500).json({ success: false, message: 'Eroare configurare plan.' });
-    }
-    await client.query(`
-      INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-      SELECT bs.business_id, bs.plan_id, $2, 'cancelled', 'User requested cancellation (web)'
-      FROM business_subscriptions bs
-      WHERE bs.id = $1
-    `, [result.rows[0].id, freePlan.rows[0].id]);
-
-    await client.query('COMMIT');
-
-    res.json({
-      success: true,
-      message: 'Abonamentul a fost anulat. Beneficiile raman active pana la ' +
-        new Date(result.rows[0].current_period_end).toLocaleDateString('ro-RO') + '.',
-      activeUntil: result.rows[0].current_period_end,
-    });
+    res.json(result);
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error('[Web API] Cancel subscription error:', err);
     res.status(500).json({ success: false, message: 'Eroare la anularea abonamentului.' });
-  } finally {
-    client.release();
   }
 });
 

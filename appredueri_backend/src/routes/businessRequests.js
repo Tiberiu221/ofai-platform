@@ -137,4 +137,38 @@ router.get("/mine", requireWebAuth, async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/business-requests/:id
+ * Abandon/cancel a pending or rejected business request
+ */
+router.delete("/:id", requireWebAuth, async (req, res) => {
+  try {
+    const userId = req.webUser.id;
+    const requestId = parseInt(req.params.id, 10);
+
+    if (isNaN(requestId)) {
+      return res.status(400).json({ success: false, errors: ["ID invalid."] });
+    }
+
+    // Only allow deleting pending or rejected requests owned by this user
+    const result = await pool.query(
+      "DELETE FROM business_requests WHERE id = $1 AND user_id = $2 AND status IN ('pending', 'rejected') RETURNING id",
+      [requestId, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        errors: ["Cererea nu a fost gasita sau nu poate fi stearsa."]
+      });
+    }
+
+    console.log(`[BusinessRequests] Request #${requestId} abandoned by user ${userId}`);
+    res.json({ success: true, message: "Cererea a fost stearsa." });
+  } catch (err) {
+    console.error("[BusinessRequests] Delete error:", err);
+    res.status(500).json({ success: false, errors: ["Eroare la stergerea cererii."] });
+  }
+});
+
 module.exports = router;

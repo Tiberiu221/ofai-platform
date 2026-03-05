@@ -94,10 +94,23 @@ async function requireBusinessOwner(req, res, next) {
           webUser: req.webUser,
         });
       }
+    } else {
+      // C3: Default to denied when businessId is missing from route params
+      return res.status(400).json({ error: "Missing business ID" });
     }
 
     next();
   } catch (err) {
+    // W7: Distinguish DB errors from auth errors — don't clear cookies on DB failure
+    if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' ||
+        err.code === '57P01' /* admin_shutdown */ || err.code === '57P03' /* cannot_connect_now */ ||
+        err.message?.includes('Connection terminated') || err.message?.includes('connection timeout')) {
+      console.error('[BusinessWebAuth] DB connection error (not clearing cookies):', err.message);
+      return res.status(503).render("public/404", {
+        activePage: null,
+        webUser: null,
+      });
+    }
     return deny();
   }
 }
