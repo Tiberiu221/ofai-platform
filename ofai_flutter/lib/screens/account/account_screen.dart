@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -193,65 +194,105 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 ],
               ),
 
-              // Badges section (selectable for review display)
+              // Badges card (glassmorphism)
               if (user?.badges != null && user!.badges!.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Text('Insigne câștigate', style: AppTypography.labelLarge),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${user!.badges!.length}',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-                Text('Glisează și selectează pentru recenzii', style: AppTypography.captionMuted),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  height: 88,
-                  child: ShaderMask(
-                    shaderCallback: (Rect bounds) {
-                      return LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          Colors.transparent,
-                          Colors.white,
-                          Colors.white,
-                          Colors.transparent,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        boxShadow: [
+                          // Inner glow top
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.03),
+                            blurRadius: 0,
+                            offset: const Offset(0, 1),
+                          ),
                         ],
-                        stops: const [0.0, 0.03, 0.97, 1.0],
-                      ).createShader(bounds);
-                    },
-                    blendMode: BlendMode.dstIn,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      children: [
-                        _BadgeChip(
-                          badge: null,
-                          isSelected: user!.displayBadgeId == null,
-                          onTap: () => _updateDisplayBadge(ref, null),
-                        ),
-                        ...user!.badges!.map((badge) => _BadgeChip(
-                          badge: badge,
-                          isSelected: user!.displayBadgeId == badge.id,
-                          onTap: () => _updateDisplayBadge(ref, badge.id),
-                        )),
-                      ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: Row(
+                              children: [
+                                Text('Insigne câștigate', style: AppTypography.labelLarge),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${user!.badges!.length}',
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: AppColors.bgPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                            child: Text('Selectează pentru recenzii', style: AppTypography.captionMuted),
+                          ),
+                          // Badge strip
+                          SizedBox(
+                            height: 110,
+                            child: ShaderMask(
+                              shaderCallback: (Rect bounds) {
+                                return LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white,
+                                    Colors.white,
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.05, 0.95, 1.0],
+                                ).createShader(bounds);
+                              },
+                              blendMode: BlendMode.dstIn,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                children: [
+                                  _BadgeChip(
+                                    badge: null,
+                                    isSelected: user!.displayBadgeId == null,
+                                    onTap: () => _updateDisplayBadge(ref, null),
+                                  ),
+                                  ...user!.badges!.map((badge) => _BadgeChip(
+                                    badge: badge,
+                                    isSelected: user!.displayBadgeId == badge.id,
+                                    onTap: () => _updateDisplayBadge(ref, badge.id),
+                                  )),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ],
 
-              // Gamification card removed — badges are sufficient
-
-              const SizedBox(height: AppSpacing.xxxl),
+              const SizedBox(height: AppSpacing.lg),
 
               // Menu items
               _MenuItem(
@@ -446,67 +487,106 @@ class _BadgeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = badge != null ? _parseColor(badge!.color) : AppColors.textTertiary;
-    final label = badge?.name ?? 'Niciuna';
-    final icon = badge == null
-        ? Icons.close
-        : (isSelected ? Icons.star_rounded : Icons.verified_rounded);
+    final isNone = badge == null;
+    final color = isNone ? AppColors.textTertiary : _parseColor(badge!.color);
+    final label = isNone ? 'Fără insignă' : badge!.name;
 
     return GestureDetector(
       onTap: onTap,
       child: Tooltip(
         message: badge?.description ?? label,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: SizedBox(
-            width: 64,
+            width: 80,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Animated circle
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutCubic,
-                  width: isSelected ? 52 : 46,
-                  height: isSelected ? 52 : 46,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected
-                        ? color.withValues(alpha: 0.2)
-                        : color.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: isSelected ? color : color.withValues(alpha: 0.25),
-                      width: isSelected ? 2.5 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              spreadRadius: 1,
+                // Circle with optional checkmark overlay
+                AnimatedScale(
+                  scale: isSelected ? 1.08 : 1.0,
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  child: SizedBox(
+                    width: 58,
+                    height: 58,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Main circle
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeOut,
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isNone
+                                ? AppColors.bgSecondary
+                                : color.withValues(alpha: 0.12),
+                            border: Border.all(
+                              color: isSelected
+                                  ? color
+                                  : color.withValues(alpha: 0.30),
+                              width: isSelected ? 2.5 : 1,
                             ),
-                          ]
-                        : [],
-                  ),
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      icon,
-                      key: ValueKey('$label-$isSelected'),
-                      size: isSelected ? 24 : 20,
-                      color: isSelected ? color : color.withValues(alpha: 0.7),
+                            boxShadow: isSelected && !isNone
+                                ? [
+                                    BoxShadow(
+                                      color: color.withValues(alpha: 0.40),
+                                      blurRadius: 14,
+                                      spreadRadius: 0,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Center(
+                            child: Icon(
+                              isNone ? Icons.close_rounded : Icons.star_rounded,
+                              size: isNone ? 20 : 24,
+                              color: isNone
+                                  ? AppColors.textTertiary
+                                  : (isSelected ? color : color.withValues(alpha: 0.7)),
+                            ),
+                          ),
+                        ),
+                        // Checkmark overlay (bottom-right) when selected
+                        if (isSelected && !isNone)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: color,
+                                border: Border.all(
+                                  color: AppColors.bgPrimary,
+                                  width: 2,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 10,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Label
+                // Label — 2 lines
                 Text(
                   label,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: AppTypography.caption.copyWith(
-                    fontSize: 10.5,
+                    fontSize: 10,
+                    height: 1.2,
                     color: isSelected ? color : AppColors.textTertiary,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   ),

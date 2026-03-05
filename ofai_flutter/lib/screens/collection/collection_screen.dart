@@ -156,7 +156,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                 onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                 style: AppTypography.bodyMedium,
                 decoration: InputDecoration(
-                  hintText: _tabController.index == 0 ? 'Caută în favorite...' : 'Caută în urmărite...',
+                  hintText: _tabController.index == 0 ? 'Caută în oferte...' : 'Caută în business-uri...',
                   hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
                   prefixIcon: const Icon(Icons.search, size: 20),
                   suffixIcon: _searchController.text.isNotEmpty
@@ -263,8 +263,8 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                 labelStyle: AppTypography.labelMedium,
                 dividerHeight: 0,
                 tabs: const [
-                  Tab(text: 'Favorite'),
-                  Tab(text: 'Urmărite'),
+                  Tab(text: 'Oferte'),
+                  Tab(text: 'Business-uri'),
                 ],
               ),
             ),
