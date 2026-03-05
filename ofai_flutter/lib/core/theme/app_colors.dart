@@ -40,6 +40,11 @@ class AppColors {
 
   // Glass
   static const bgGlass = Color(0xCC111111); // bgSecondary ~80% alpha
+  static const bgGlassLiquid = Color(0x88111111);   // ~53% alpha (liquid glass)
+  static const glassHighlight = Color(0x05FFFFFF);   // white 2% top highlight
+  static const glassInsetTop = Color(0x08FFFFFF);    // white 3% inset shadow
+  static const glassInsetBottom = Color(0x1A000000); // black 10% inset shadow
+  static const accentGlow = Color(0x4DFB923C);       // orange 30% underline glow
 
   // Overlays
   static const overlay = Color(0x80000000); // rgba(0,0,0,0.5)

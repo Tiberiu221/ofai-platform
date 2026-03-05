@@ -34,13 +34,18 @@ import 'screens/legal/terms_screen.dart';
 import 'screens/legal/privacy_screen.dart';
 import 'screens/help/help_screen.dart';
 
-// Shell for bottom navigation with glassmorphic effect
-class _ShellScreen extends StatelessWidget {
+// Shell for bottom navigation with liquid glass effect
+class _ShellScreen extends StatefulWidget {
   final Widget child;
   final int currentIndex;
 
   const _ShellScreen({required this.child, required this.currentIndex});
 
+  @override
+  State<_ShellScreen> createState() => _ShellScreenState();
+}
+
+class _ShellScreenState extends State<_ShellScreen> {
   static const _items = [
     _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Acasa'),
     _NavItem(icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Exploreaza'),
@@ -52,71 +57,128 @@ class _ShellScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       extendBody: true,
-      body: child,
+      body: widget.child,
       bottomNavigationBar: RepaintBoundary(
         child: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: AppSpacing.bottomNavHeight + MediaQuery.of(context).padding.bottom,
-            decoration: const BoxDecoration(
-              color: AppColors.bgGlass,
-              border: Border(
-                top: BorderSide(color: AppColors.borderLight, width: 0.5),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              height: AppSpacing.bottomNavHeight + bottomPadding,
+              decoration: const BoxDecoration(
+                color: AppColors.bgGlassLiquid,
+                border: Border(
+                  top: BorderSide(color: AppColors.borderLight, width: 0.5),
+                ),
+                boxShadow: [
+                  // Top inset highlight (light on glass)
+                  BoxShadow(
+                    color: AppColors.glassInsetTop,
+                    blurRadius: 1,
+                    offset: Offset(0, 1),
+                  ),
+                  // Bottom inner shadow (depth)
+                  BoxShadow(
+                    color: AppColors.glassInsetBottom,
+                    blurRadius: 4,
+                    offset: Offset(0, -2),
+                  ),
+                ],
               ),
-            ),
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(_items.length, (i) {
-                final item = _items[i];
-                final isActive = i == currentIndex;
-                return Expanded(
-                  child: Semantics(
-                    label: item.label,
-                    selected: isActive,
-                    button: true,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => context.go(_routes[i]),
-                      child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          isActive ? item.activeIcon : item.icon,
-                          size: 24,
-                          color: isActive ? AppColors.accent : AppColors.textTertiary,
+              child: Stack(
+                children: [
+                  // Top highlight gradient (light on glass surface)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 24,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [AppColors.glassHighlight, Color(0x00000000)],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.label,
-                          style: AppTypography.labelSmall.copyWith(
-                            color: isActive ? AppColors.accent : AppColors.textTertiary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        // Active indicator dot
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: isActive ? 4 : 0,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: AppColors.accent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
+                  // Nav items row
+                  Padding(
+                    padding: EdgeInsets.only(bottom: bottomPadding),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: List.generate(_items.length, (i) {
+                        final item = _items[i];
+                        final isActive = i == widget.currentIndex;
+                        return Expanded(
+                          child: Semantics(
+                            label: item.label,
+                            selected: isActive,
+                            button: true,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => context.go(_routes[i]),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    isActive ? item.activeIcon : item.icon,
+                                    size: 24,
+                                    color: isActive ? AppColors.accent : AppColors.textTertiary,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    item.label,
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: isActive ? AppColors.accent : AppColors.textTertiary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Orange underline indicator (replaces dot)
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    curve: Curves.easeInOutCubic,
+                                    width: isActive ? 40 : 0,
+                                    height: 2,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(1),
+                                      gradient: isActive
+                                          ? const LinearGradient(
+                                              colors: [
+                                                Color(0x00FB923C),
+                                                AppColors.accent,
+                                                Color(0x00FB923C),
+                                              ],
+                                            )
+                                          : null,
+                                      boxShadow: isActive
+                                          ? const [
+                                              BoxShadow(
+                                                color: AppColors.accentGlow,
+                                                blurRadius: 6,
+                                                spreadRadius: 0,
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
                   ),
-                );
-              }),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
