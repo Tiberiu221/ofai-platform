@@ -13,6 +13,7 @@ import '../../providers/followed_businesses_provider.dart';
 import '../../providers/business_requests_provider.dart';
 import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
+import '../../widgets/orange_glow_wave.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -56,49 +57,54 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
     if (!isLoggedIn) {
       return Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: AppSpacing.pageH,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 80,
-                  color: AppColors.textTertiary,
+        body: Stack(
+          children: [
+            const Positioned.fill(child: OrangeGlowWave()),
+            SafeArea(
+              child: Padding(
+                padding: AppSpacing.pageH,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.person_outline,
+                      size: 80,
+                      color: AppColors.textTertiary,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Text(
+                      'Bine ai venit!',
+                      style: AppTypography.displaySmall,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Conecteaza-te pentru a accesa contul tau',
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xxxl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => context.push('/login'),
+                        child: const Text('Conecteaza-te'),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => context.push('/register'),
+                        child: const Text('Creeaza cont'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.xxl),
-                Text(
-                  'Bine ai venit!',
-                  style: AppTypography.displaySmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Conecteaza-te pentru a accesa contul tau',
-                  style: AppTypography.bodyLarge.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xxxl),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => context.push('/login'),
-                    child: const Text('Conecteaza-te'),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => context.push('/register'),
-                    child: const Text('Creeaza cont'),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       );
     }
