@@ -24,7 +24,7 @@
 
   /* ── Layout ── */
   .portal-page { padding: 120px 0 60px; min-height: 100vh; }
-  .portal-container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+  .portal-container { max-width: 960px; margin: 0 auto; padding: 0 20px; overflow-x: hidden; }
 
   /* ── Header ── */
   .portal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
@@ -72,7 +72,7 @@
   }
 
   /* ── Tab Panels ── */
-  .tab-panel { display: none; }
+  .tab-panel { display: none; overflow-x: hidden; }
   .tab-panel.active { display: block; }
 
   /* ── Glass Card ── */
@@ -84,6 +84,8 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     transition: border-color 0.2s;
+    min-width: 0;
+    overflow-x: hidden;
   }
   .glass-card:hover { border-color: var(--border-hover); }
   .glass-card + .glass-card { margin-top: 16px; }
@@ -394,8 +396,8 @@
   /* ── Bar Charts (Chart.js) ── */
   .chart-section { margin-top: 0; }
   .chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 10px; }
-  .chart-container { position: relative; height: 180px; }
-  .charts-row { display: flex; flex-direction: column; gap: 28px; }
+  .chart-container { position: relative; height: 180px; overflow: hidden; }
+  .charts-row { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
 
   /* ── Chart Dropdowns ── */
   .chart-dropdown {
@@ -613,6 +615,69 @@
   @keyframes pmToastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pmToastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(12px); } }
 
+  /* ── Gallery Upload ── */
+  .gallery-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .gallery-upload-item {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+  }
+  .gallery-upload-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .gallery-delete-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    line-height: 1;
+  }
+  .gallery-upload-item:hover .gallery-delete-btn {
+    opacity: 1;
+  }
+  .gallery-upload-add {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    font-size: 0.8rem;
+  }
+  .gallery-upload-add:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── Support Grid ── */
+  .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+
   /* ── Responsive ── */
   @media (max-width: 600px) {
     .portal-biz-name { font-size: 1.2rem; }
@@ -620,6 +685,19 @@
     .score-card { flex-direction: column; align-items: center; }
     .offer-card { flex-direction: column; align-items: flex-start; }
     .offer-actions { width: 100%; justify-content: flex-end; margin-top: 8px; }
+    .gallery-upload-grid { grid-template-columns: repeat(3, 1fr); }
+    .comp-row { flex-wrap: wrap; gap: 8px; }
+    .comp-metric { width: 100%; font-weight: 500; }
+    .comp-diff { width: auto; text-align: left; }
+  }
+  @media (max-width: 500px) {
+    .support-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .export-dropdown-menu { right: auto; left: 0; min-width: 160px; }
+  }
+  @media (max-width: 400px) {
+    .gallery-upload-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 
@@ -853,78 +931,6 @@
           <% } %>
         </div>
       </div>
-
-      <style>
-        .gallery-upload-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
-        }
-        .gallery-upload-item {
-          position: relative;
-          aspect-ratio: 4 / 3;
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          border: 1px solid var(--border);
-          background: var(--bg-surface);
-        }
-        .gallery-upload-item img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        .gallery-delete-btn {
-          position: absolute;
-          top: 6px;
-          right: 6px;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: rgba(239, 68, 68, 0.9);
-          border: none;
-          color: #fff;
-          font-size: 1rem;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: opacity 0.2s;
-          line-height: 1;
-        }
-        .gallery-upload-item:hover .gallery-delete-btn {
-          opacity: 1;
-        }
-        .gallery-upload-add {
-          aspect-ratio: 4 / 3;
-          border-radius: var(--radius-md);
-          border: 2px dashed var(--border);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          color: var(--text-secondary);
-          cursor: pointer;
-          transition: border-color 0.2s, color 0.2s;
-          font-size: 0.8rem;
-        }
-        .gallery-upload-add:hover {
-          border-color: var(--accent);
-          color: var(--accent);
-        }
-        @media (max-width: 600px) {
-          .gallery-upload-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-        @media (max-width: 400px) {
-          .gallery-upload-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-      </style>
-    </div>
 
       <% if (tier && tier.plan && tier.plan.has_competitor_blocking) { %>
       <div class="glass-card" style="margin-top: 24px;">
@@ -1431,7 +1437,7 @@
             Ca business Premium, beneficiezi de suport prioritar. Echipa noastra iti raspunde in maxim 4 ore in zilele lucratoare.
           </p>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+          <div class="support-grid">
             <a href="mailto:premium@ofai.ro?subject=Suport Premium - <%= encodeURIComponent(business.name) %>" class="support-contact-card" style="text-decoration: none;">
               <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; transition: border-color 0.2s; cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
