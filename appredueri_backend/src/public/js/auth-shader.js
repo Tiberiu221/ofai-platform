@@ -1,6 +1,6 @@
 /**
  * Auth Page WebGL Shader Background
- * Orange-to-Violet chromatic aberration light wave.
+ * Single orange glow wave matching OFAI brand #fb923c.
  * Replaces particle canvas on login/register pages.
  *
  * Requires THREE.js loaded before this script.
@@ -21,7 +21,7 @@
   var scene = new THREE.Scene();
   var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: false });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(new THREE.Color(0x06060a));
+  renderer.setClearColor(new THREE.Color(0x000000));
 
   var camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, -1);
 
@@ -29,8 +29,7 @@
     resolution: { value: [canvas.clientWidth, canvas.clientHeight] },
     time: { value: 0.0 },
     xScale: { value: 1.0 },
-    yScale: { value: 0.35 },
-    distortion: { value: 0.10 }
+    yScale: { value: 0.35 }
   };
 
   var vertexShader = [
@@ -46,13 +45,12 @@
     'uniform float time;',
     'uniform float xScale;',
     'uniform float yScale;',
-    'uniform float distortion;',
     '',
     'void main() {',
     '  vec2 p = (gl_FragCoord.xy * 2.0 - resolution) / min(resolution.x, resolution.y);',
     '',
     '  // Single orange glow wave — OFAI brand #fb923c',
-    '  float wave = 0.06 / abs(p.y + sin((p.x + time) * xScale) * yScale);',
+    '  float wave = 0.08 / abs(p.y + sin((p.x + time) * xScale) * yScale);',
     '  wave = min(wave, 1.5);',
     '',
     '  // Pure orange: rgb(251, 146, 60) = (0.98, 0.57, 0.24)',
