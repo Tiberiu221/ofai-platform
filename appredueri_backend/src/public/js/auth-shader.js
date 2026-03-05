@@ -100,7 +100,7 @@
 
   function animate() {
     if (!animating) return;
-    uniforms.time.value += 0.005;
+    uniforms.time.value += 0.0025;
     renderer.render(scene, camera);
     animationId = requestAnimationFrame(animate);
   }
