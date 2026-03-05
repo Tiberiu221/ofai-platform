@@ -13,7 +13,7 @@ const SALT_ROUNDS = 10;
 const REFRESH_TOKEN_DAYS = 30;
 
 // Helper pentru a standardiza obiectul User trimis către Frontend
-function mapUserResponse(user, points = 0) {
+function mapUserResponse(user, points = 0, badges = []) {
   return {
     id: user.id,
     email: user.email,
@@ -26,6 +26,9 @@ function mapUserResponse(user, points = 0) {
     role: user.role || 'user',
     profile_picture_url: user.profile_picture_url || null,
     has_password: !!user.password_hash,
+    show_picture_in_reviews: user.show_picture_in_reviews !== false,
+    display_badge_id: user.display_badge_id || null,
+    badges,
   };
 }
 
@@ -94,11 +97,10 @@ router.post("/register", async (req, res) => {
       [user.id]
     );
 
-    // Badge check (fire-and-forget)
-    try {
-      const { checkAndAwardBadges } = require("../services/badgeService");
-      await checkAndAwardBadges(user.id, ['early_adopter']);
-    } catch (e) { /* badge check should never block */ }
+    // Badge check + fetch
+    const { checkAndAwardBadges, getUserBadges } = require("../services/badgeService");
+    await checkAndAwardBadges(user.id, ['early_adopter']).catch(() => {});
+    const badges = await getUserBadges(user.id).catch(() => []);
 
     const token = signToken({ id: user.id });
     const refreshToken = await createRefreshToken(user.id);
@@ -115,7 +117,7 @@ router.post("/register", async (req, res) => {
     });
 
     return res.status(201).json({
-      user: mapUserResponse(user, 0),
+      user: mapUserResponse(user, 0, badges),
       token,
       refreshToken,
     });
@@ -134,8 +136,10 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Email și parolă sunt obligatorii" });
     }
 
+    const { getUserBadges } = require("../services/badgeService");
+
     const result = await pool.query(
-      `SELECT id, email, password_hash, role, first_name, last_name, banned_at, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url
+      `SELECT id, email, password_hash, role, first_name, last_name, banned_at, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, show_picture_in_reviews, display_badge_id
        FROM users WHERE email = $1`,
       [email]
     );
@@ -164,18 +168,18 @@ router.post("/login", async (req, res) => {
     // Update last_active_at
     await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [user.id]);
 
-    // Luăm Punctele explicit la Login
-    const pointsRes = await pool.query(
-      `SELECT total_points FROM user_points WHERE user_id = $1`,
-      [user.id]
-    );
+    // Fetch points + badges in parallel
+    const [pointsRes, badges] = await Promise.all([
+      pool.query(`SELECT total_points FROM user_points WHERE user_id = $1`, [user.id]),
+      getUserBadges(user.id).catch(() => []),
+    ]);
     const points = pointsRes.rows[0]?.total_points || 0;
 
     const token = signToken({ id: user.id });
     const refreshToken = await createRefreshToken(user.id);
 
     return res.json({
-      user: mapUserResponse(user, points),
+      user: mapUserResponse(user, points, badges),
       token,
       refreshToken,
     });
@@ -288,7 +292,7 @@ router.post("/google", async (req, res) => {
 
       // Re-fetch for full user data
       const fullUser = await pool.query(
-        `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, password_hash
+        `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, password_hash, show_picture_in_reviews, display_badge_id
          FROM users WHERE id = $1`,
         [user.id]
       );
@@ -313,17 +317,18 @@ router.post("/google", async (req, res) => {
       });
     }
 
-    const pointsRes = await pool.query(
-      "SELECT total_points FROM user_points WHERE user_id = $1",
-      [user.id]
-    );
+    const { getUserBadges } = require("../services/badgeService");
+    const [pointsRes, badges] = await Promise.all([
+      pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [user.id]),
+      getUserBadges(user.id).catch(() => []),
+    ]);
     const points = pointsRes.rows[0]?.total_points || 0;
 
     const token = signToken({ id: user.id });
     const refreshToken = await createRefreshToken(user.id);
 
     return res.json({
-      user: mapUserResponse(user, points),
+      user: mapUserResponse(user, points, badges),
       token,
       refreshToken,
       isNewUser,
@@ -592,24 +597,31 @@ router.post("/change-password", authenticateToken, async (req, res) => {
 // GET /auth/me
 router.get("/me", authenticateToken, async (req, res) => {
   try {
-    const userRes = await pool.query(
-      `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, password_hash
-       FROM users WHERE id = $1`,
-      [req.user.id]
-    );
+    const { getUserBadges } = require("../services/badgeService");
 
-    const pointsRes = await pool.query(
-      `SELECT total_points FROM user_points WHERE user_id = $1`,
-      [req.user.id]
-    );
+    const [userRes, pointsRes, badges] = await Promise.all([
+      pool.query(
+        `SELECT id, email, role, first_name, last_name, created_at, preferred_city_ids, preferred_category_ids, profile_picture_url, password_hash, show_picture_in_reviews, display_badge_id
+         FROM users WHERE id = $1`,
+        [req.user.id]
+      ),
+      pool.query(
+        `SELECT total_points FROM user_points WHERE user_id = $1`,
+        [req.user.id]
+      ),
+      getUserBadges(req.user.id).catch(err => {
+        console.error("[Auth] Badges fetch error:", err.message);
+        return [];
+      }),
+    ]);
 
     // Update last_active_at
-    await pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.user.id]);
+    pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.user.id]).catch(() => {});
 
     const user = userRes.rows[0];
     const points = pointsRes.rows[0]?.total_points || 0;
 
-    res.json(mapUserResponse(user, points));
+    res.json(mapUserResponse(user, points, badges));
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Eroare server" });
