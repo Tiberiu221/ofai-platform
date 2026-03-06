@@ -1101,6 +1101,24 @@ router.get("/business/:id", async (req, res) => {
       LIMIT 50
     `, [id]);
 
+    // Fetch offer_locations for all active offers (for location tabs)
+    const offerIds = offersRes.rows.map(o => o.id);
+    let offerLocationMap = {}; // offerId -> [locationId, ...]
+    if (offerIds.length > 0) {
+      const olRes = await pool.query(
+        `SELECT offer_id, location_id FROM offer_locations WHERE offer_id = ANY($1)`,
+        [offerIds]
+      );
+      olRes.rows.forEach(row => {
+        if (!offerLocationMap[row.offer_id]) offerLocationMap[row.offer_id] = [];
+        offerLocationMap[row.offer_id].push(row.location_id);
+      });
+    }
+    // Attach locationIds to each offer row
+    offersRes.rows.forEach(o => {
+      o.locationIds = offerLocationMap[o.id] || [];
+    });
+
     // Reviews
     const reviewsRes = await pool.query(`
       SELECT r.id, r.rating, r.comment, r.created_at,
