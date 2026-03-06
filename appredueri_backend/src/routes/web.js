@@ -1882,7 +1882,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
 
     // Business details
     const bizRes = await pool.query(`
-      SELECT b.id, b.name, b.address, b.phone, b.website, b.lat, b.lng,
+      SELECT b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,
              b.logo_url, b.cover_image_url,
              b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
              b.city_id, c.name as city_name, b.category_id, cat.name as category_name,
@@ -2297,37 +2297,40 @@ router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwn
 router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId } = req.params;
-    const { name, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+    const { name, description, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
 
+    const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
     const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
 
     if (bookingGated) {
       await pool.query(`
         UPDATE businesses SET
           name = COALESCE($1, name),
-          address = COALESCE($2, address),
-          phone = COALESCE($3, phone),
-          website = COALESCE($4, website),
-          city_id = COALESCE($5, city_id),
-          category_id = COALESCE($6, category_id)
-        WHERE id = $7
-      `, [name, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null, businessId]);
+          description = COALESCE($2, description),
+          address = COALESCE($3, address),
+          phone = COALESCE($4, phone),
+          website = COALESCE($5, website),
+          city_id = COALESCE($6, city_id),
+          category_id = COALESCE($7, category_id)
+        WHERE id = $8
+      `, [name, sanitizedDesc, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null, businessId]);
     } else {
       await pool.query(`
         UPDATE businesses SET
           name = COALESCE($1, name),
-          address = COALESCE($2, address),
-          phone = COALESCE($3, phone),
-          website = COALESCE($4, website),
-          city_id = COALESCE($5, city_id),
-          category_id = COALESCE($6, category_id),
-          booking_type = COALESCE($7, booking_type),
-          booking_phone = $8,
-          booking_whatsapp = $9,
-          booking_url = $10,
-          booking_instructions = $11
-        WHERE id = $12
-      `, [name, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
+          description = COALESCE($2, description),
+          address = COALESCE($3, address),
+          phone = COALESCE($4, phone),
+          website = COALESCE($5, website),
+          city_id = COALESCE($6, city_id),
+          category_id = COALESCE($7, category_id),
+          booking_type = COALESCE($8, booking_type),
+          booking_phone = $9,
+          booking_whatsapp = $10,
+          booking_url = $11,
+          booking_instructions = $12
+        WHERE id = $13
+      `, [name, sanitizedDesc, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
           booking_type, booking_phone || null, booking_whatsapp || null, booking_url || null, booking_instructions || null, businessId]);
     }
 
