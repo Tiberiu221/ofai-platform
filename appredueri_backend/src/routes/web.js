@@ -13,7 +13,7 @@ const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email"
 const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
 const offerService = require("../services/offerService");
-const { sanitizeString, createImageFilter, validatePassword } = require("../helpers/validate");
+const { sanitizeString, sanitizeDescriptionHtml, createImageFilter, validatePassword } = require("../helpers/validate");
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier, requireFeature, requireLimit } = require('../middleware/tierAuth');
@@ -2093,6 +2093,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
       activePage: "portal",
       webUser: req.webUser,
       loadChartJs: true,
+      useQuill: true,
       tier: req.tier || { tier: 'free', plan: {} },
       nominations,
       canNominate,
@@ -2299,7 +2300,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
     const { businessId } = req.params;
     const { name, description, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
 
-    const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
+    const sanitizedDesc = description !== undefined ? sanitizeDescriptionHtml(description) : undefined;
     const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
 
     if (bookingGated) {
@@ -3339,6 +3340,7 @@ router.get("/pentru-business", async (req, res) => {
       webUser: req.webUser,
       cities: citiesResult.rows,
       categories: categoriesResult.rows,
+      useQuill: true,
     });
   } catch (err) {
     console.error("[Web] Pentru-business error:", err.message);
@@ -3347,6 +3349,7 @@ router.get("/pentru-business", async (req, res) => {
       webUser: req.webUser,
       cities: [],
       categories: [],
+      useQuill: true,
     });
   }
 });

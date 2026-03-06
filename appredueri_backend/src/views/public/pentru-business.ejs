@@ -164,7 +164,8 @@
 
         <div class="biz-form-group">
           <label for="biz_description" class="biz-label">Descriere business</label>
-          <textarea id="biz_description" class="biz-input biz-textarea" placeholder="Descrie pe scurt business-ul tău, serviciile oferite..." maxlength="2000" rows="4"></textarea>
+          <div id="biz_desc_editor" class="quill-editor-wrap"></div>
+          <textarea id="biz_description" style="display:none;"></textarea>
           <span class="biz-hint">Câmpurile marcate cu * sunt obligatorii</span>
         </div>
 
@@ -255,6 +256,38 @@
     resize: vertical;
     min-height: 100px;
   }
+
+  /* Quill Rich Text Editor (dark theme) */
+  .quill-editor-wrap { min-height: 120px; }
+  .quill-editor-wrap .ql-editor {
+    min-height: 100px; color: var(--text-primary); font-size: 15px; font-family: inherit;
+  }
+  .quill-editor-wrap .ql-editor.ql-blank::before { color: var(--text-muted); font-style: normal; }
+  .ql-toolbar.ql-snow {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px 12px 0 0;
+  }
+  .ql-container.ql-snow {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-top: none;
+    border-radius: 0 0 12px 12px;
+  }
+  .ql-snow .ql-stroke { stroke: var(--text-secondary); }
+  .ql-snow .ql-fill { fill: var(--text-secondary); }
+  .ql-snow .ql-picker-label { color: var(--text-secondary); }
+  .ql-snow .ql-picker-options {
+    background: #1e1e22; border-color: rgba(255,255,255,0.08); border-radius: 12px;
+  }
+  .ql-snow .ql-picker-item { color: var(--text-secondary); }
+  .ql-snow .ql-picker-item:hover, .ql-snow .ql-picker-item.ql-selected { color: var(--accent); }
+  .ql-snow .ql-picker-label:hover .ql-stroke,
+  .ql-snow button:hover .ql-stroke { stroke: var(--accent); }
+  .ql-snow .ql-picker-label:hover,
+  .ql-snow button:hover .ql-fill { fill: var(--accent); }
+  .ql-snow button:hover, .ql-snow .ql-picker-label:hover { color: var(--accent); }
+  .ql-snow .ql-active .ql-stroke { stroke: var(--accent); }
+  .ql-snow .ql-active .ql-fill { fill: var(--accent); }
+  .ql-snow .ql-active { color: var(--accent); }
+  .ql-container.ql-snow:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15); }
 
   .biz-hint {
     display: block;
@@ -565,6 +598,25 @@ async function loadMyRequests() {
 // Initial load
 loadMyRequests();
 
+// Quill rich text editor for description
+var bizDescQuill = null;
+if (typeof Quill !== 'undefined') {
+  bizDescQuill = new Quill('#biz_desc_editor', {
+    theme: 'snow',
+    placeholder: 'Descrie pe scurt business-ul tău, serviciile oferite...',
+    modules: {
+      toolbar: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'strike']
+      ]
+    }
+  });
+  bizDescQuill.on('text-change', function() {
+    var html = bizDescQuill.root.innerHTML;
+    document.getElementById('biz_description').value = (html === '<p><br></p>') ? '' : html;
+  });
+}
+
 function escapeHtml(text) {
   if (!text) return '';
   var div = document.createElement('div');
@@ -576,12 +628,14 @@ function disableForm() {
   var form = document.getElementById('biz-request-form');
   var inputs = form.querySelectorAll('input, select, textarea, button');
   inputs.forEach(function(el) { el.disabled = true; });
+  if (bizDescQuill) bizDescQuill.enable(false);
 }
 
 function enableForm() {
   var form = document.getElementById('biz-request-form');
   var inputs = form.querySelectorAll('input, select, textarea, button');
   inputs.forEach(function(el) { el.disabled = false; });
+  if (bizDescQuill) bizDescQuill.enable(true);
   // Reset button state
   var submitBtn = document.getElementById('biz-submit-btn');
   submitBtn.innerHTML = 'Trimite cererea <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
@@ -605,7 +659,12 @@ function prefillFromRejected() {
   document.getElementById('biz_phone').value = r.phone || '';
   document.getElementById('biz_address').value = r.address || '';
   document.getElementById('biz_website').value = r.website || '';
-  document.getElementById('biz_description').value = r.description || '';
+  if (bizDescQuill && r.description) {
+    bizDescQuill.clipboard.dangerouslyPasteHTML(r.description);
+    // hidden field synced by text-change event
+  } else {
+    document.getElementById('biz_description').value = r.description || '';
+  }
 
   // Store the rejected request ID so the backend can clean it up
   window._retryingRejectedId = r.id;
@@ -718,6 +777,7 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
     submitBtn.style.opacity = '0.6';
     var inputs = e.target.querySelectorAll('input, select, textarea');
     inputs.forEach(function(el) { el.disabled = true; });
+    if (bizDescQuill) bizDescQuill.enable(false);
 
   } catch (err) {
     errorDiv.textContent = 'Eroare de retea. Verifica conexiunea si incearca din nou.';

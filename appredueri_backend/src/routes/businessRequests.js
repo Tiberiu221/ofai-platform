@@ -9,7 +9,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 const { requireWebAuth } = require("../middleware/webAuth");
-const { validateBusinessRequest, sanitizeString } = require("../helpers/validate");
+const { validateBusinessRequest, sanitizeString, sanitizeDescriptionHtml } = require("../helpers/validate");
 const { validateBusinessData } = require("../services/llm/businessValidation");
 
 /**
@@ -45,7 +45,7 @@ router.post("/", requireWebAuth, async (req, res) => {
     const address = sanitizeString(req.body.address, 500) || null;
     const phone = sanitizeString(req.body.phone, 50) || null;
     let website = sanitizeString(req.body.website, 500) || null;
-    const description = sanitizeString(req.body.description, 2000) || null;
+    const description = sanitizeDescriptionHtml(req.body.description) || null;
 
     // Normalize website URL
     if (website && !website.startsWith("http")) {

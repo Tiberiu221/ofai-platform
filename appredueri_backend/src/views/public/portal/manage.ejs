@@ -134,6 +134,38 @@
   .form-select option { background: #18181b; color: var(--text-primary); }
   .form-textarea { resize: vertical; min-height: 80px; }
 
+  /* ── Quill Rich Text Editor (dark theme) ── */
+  .quill-editor-wrap { min-height: 120px; }
+  .quill-editor-wrap .ql-editor {
+    min-height: 100px; color: var(--text-primary); font-size: 0.9rem; font-family: inherit;
+  }
+  .quill-editor-wrap .ql-editor.ql-blank::before { color: var(--text-muted); font-style: normal; }
+  .ql-toolbar.ql-snow {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+  .ql-container.ql-snow {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+  .ql-snow .ql-stroke { stroke: var(--text-secondary); }
+  .ql-snow .ql-fill { fill: var(--text-secondary); }
+  .ql-snow .ql-picker-label { color: var(--text-secondary); }
+  .ql-snow .ql-picker-options {
+    background: #1e1e22; border-color: var(--border); border-radius: var(--radius-md);
+  }
+  .ql-snow .ql-picker-item { color: var(--text-secondary); }
+  .ql-snow .ql-picker-item:hover, .ql-snow .ql-picker-item.ql-selected { color: var(--accent); }
+  .ql-snow .ql-picker-label:hover .ql-stroke,
+  .ql-snow button:hover .ql-stroke { stroke: var(--accent); }
+  .ql-snow .ql-picker-label:hover,
+  .ql-snow button:hover .ql-fill { fill: var(--accent); }
+  .ql-snow button:hover, .ql-snow .ql-picker-label:hover { color: var(--accent); }
+  .ql-snow .ql-active .ql-stroke { stroke: var(--accent); }
+  .ql-snow .ql-active .ql-fill { fill: var(--accent); }
+  .ql-snow .ql-active { color: var(--accent); }
+  .ql-container.ql-snow:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
 
@@ -751,7 +783,8 @@
 
           <div class="form-group">
             <label class="form-label">Descriere</label>
-            <textarea name="description" class="form-input" rows="4" maxlength="2000" placeholder="Descrie pe scurt business-ul tău, serviciile oferite..."><%= business.description || '' %></textarea>
+            <div id="desc-editor" class="quill-editor-wrap"></div>
+            <textarea name="description" id="desc-hidden" style="display:none;"></textarea>
           </div>
 
           <div class="form-group">
@@ -2057,6 +2090,36 @@
 
   // Apply tier gating immediately using server-side data
   applyTierGating(_serverTier);
+
+  /* ════════════════════════════════
+     QUILL RICH TEXT EDITOR — DESCRIPTION
+     ════════════════════════════════ */
+  var descQuill = null;
+  if (typeof Quill !== 'undefined') {
+    descQuill = new Quill('#desc-editor', {
+      theme: 'snow',
+      placeholder: 'Descrie pe scurt business-ul tău, serviciile oferite...',
+      modules: {
+        toolbar: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'strike']
+        ]
+      }
+    });
+    // Load existing description
+    var _existingDesc = <%- JSON.stringify(business.description || '') %>;
+    if (_existingDesc) {
+      descQuill.clipboard.dangerouslyPasteHTML(_existingDesc);
+    }
+    // Sync Quill content to hidden textarea before FormData is collected
+    descQuill.on('text-change', function() {
+      var html = descQuill.root.innerHTML;
+      document.getElementById('desc-hidden').value = (html === '<p><br></p>') ? '' : html;
+    });
+    // Init hidden field with existing content
+    var initHtml = descQuill.root.innerHTML;
+    document.getElementById('desc-hidden').value = (initHtml === '<p><br></p>') ? '' : initHtml;
+  }
 
   /* ════════════════════════════════
      TAB 1: BUSINESS INFO FORM
