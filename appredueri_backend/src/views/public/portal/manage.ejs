@@ -937,6 +937,123 @@
         </div>
       </div>
 
+      <!-- ═══════════════════════════════════════
+           LOCATIONS SECTION (outside form, like gallery)
+           ═══════════════════════════════════════ -->
+      <div class="glass-card" id="locations-section" style="margin-top: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h3 class="section-title" style="margin-bottom: 0;">Locații</h3>
+          <% const maxLocs = (tier && tier.plan && tier.plan.max_locations) || 1;
+             const currentLocs = (typeof locations !== 'undefined' && locations) ? locations.length : 0; %>
+          <% if (currentLocs < maxLocs) { %>
+            <button type="button" class="btn-accent" onclick="loc_showAddForm()" style="font-size: 0.8125rem; padding: 6px 14px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Adaugă locație
+            </button>
+          <% } else { %>
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">
+              Limită: <%= currentLocs %>/<%= maxLocs %> locații
+              <% if (maxLocs <= 1) { %> — <a href="#tab-subscription" onclick="switchTab('subscription')">Upgrade</a><% } %>
+            </span>
+          <% } %>
+        </div>
+
+        <!-- Add location form (hidden by default) -->
+        <div id="loc-add-form" style="display: none; margin-bottom: 16px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-bg);">
+          <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">Locație nouă</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div style="grid-column: 1 / -1;">
+              <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Adresă *</label>
+              <input type="text" id="loc-add-address" class="form-input" placeholder="Str. Exemplu nr. 1" required>
+            </div>
+            <div>
+              <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Oraș *</label>
+              <select id="loc-add-city" class="form-input">
+                <option value="">Selectează</option>
+                <% if (typeof cities !== 'undefined' && cities) { cities.forEach(function(c) { %>
+                  <option value="<%= c.id %>"><%= c.name %></option>
+                <% }); } %>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Telefon</label>
+              <input type="text" id="loc-add-phone" class="form-input" placeholder="07xx xxx xxx">
+            </div>
+            <div style="grid-column: 1 / -1;">
+              <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Link Google Maps</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="loc-add-maps-url" class="form-input" placeholder="https://maps.app.goo.gl/..." style="flex: 1;">
+                <button type="button" class="btn-secondary" onclick="loc_detectCoords('add')" style="white-space: nowrap; font-size: 0.8125rem;">Detectează</button>
+              </div>
+            </div>
+            <div>
+              <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Latitudine</label>
+              <input type="text" id="loc-add-lat" class="form-input" placeholder="44.4268" readonly style="background: var(--surface-2);">
+            </div>
+            <div>
+              <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Longitudine</label>
+              <input type="text" id="loc-add-lng" class="form-input" placeholder="26.1025" readonly style="background: var(--surface-2);">
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;">
+            <button type="button" class="btn-secondary" onclick="loc_hideAddForm()">Anulează</button>
+            <button type="button" class="btn-accent" onclick="loc_create()">Salvează</button>
+          </div>
+        </div>
+
+        <!-- Existing locations list -->
+        <div id="loc-list">
+          <% if (typeof locations !== 'undefined' && locations && locations.length > 0) { %>
+            <% locations.forEach(function(loc) { %>
+              <div class="loc-card" id="loc-card-<%= loc.id %>" style="padding: 14px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 10px; background: var(--card-bg);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div style="grid-column: 1 / -1;">
+                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Adresă</label>
+                    <input type="text" class="form-input loc-address" value="<%= loc.address %>" data-loc-id="<%= loc.id %>">
+                  </div>
+                  <div>
+                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Oraș</label>
+                    <select class="form-input loc-city" data-loc-id="<%= loc.id %>">
+                      <% if (typeof cities !== 'undefined' && cities) { cities.forEach(function(c) { %>
+                        <option value="<%= c.id %>" <%= c.id === loc.city_id ? 'selected' : '' %>><%= c.name %></option>
+                      <% }); } %>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Telefon</label>
+                    <input type="text" class="form-input loc-phone" value="<%= loc.phone || '' %>" data-loc-id="<%= loc.id %>">
+                  </div>
+                  <div style="grid-column: 1 / -1;">
+                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Link Google Maps</label>
+                    <div style="display: flex; gap: 8px;">
+                      <input type="text" class="form-input loc-maps-url" value="<%= loc.maps_url || '' %>" data-loc-id="<%= loc.id %>" style="flex: 1;">
+                      <button type="button" class="btn-secondary" onclick="loc_detectCoords('<%= loc.id %>')" style="white-space: nowrap; font-size: 0.8125rem;">Detectează</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Lat</label>
+                    <input type="text" class="form-input loc-lat" value="<%= loc.lat || '' %>" data-loc-id="<%= loc.id %>" readonly style="background: var(--surface-2);">
+                  </div>
+                  <div>
+                    <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Lng</label>
+                    <input type="text" class="form-input loc-lng" value="<%= loc.lng || '' %>" data-loc-id="<%= loc.id %>" readonly style="background: var(--surface-2);">
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;">
+                  <button type="button" class="btn-secondary" style="color: #ef4444; font-size: 0.8125rem;" onclick="loc_delete(<%= loc.id %>)">Șterge</button>
+                  <button type="button" class="btn-accent" style="font-size: 0.8125rem;" onclick="loc_update(<%= loc.id %>)">Salvează</button>
+                </div>
+              </div>
+            <% }); %>
+          <% } else { %>
+            <div id="loc-empty" style="text-align: center; padding: 24px; color: var(--text-secondary); font-size: 0.875rem;">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <p>Nicio locație adăugată.</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
       <% if (tier && tier.plan && tier.plan.has_competitor_blocking) { %>
       <div class="glass-card" style="margin-top: 24px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
@@ -1811,6 +1928,165 @@
     .catch(function() {
       if (item) item.style.opacity = '1';
       showToast('Eroare la ștergerea imaginii', 'error');
+    });
+  };
+
+  /* ════════════════════════════════
+     LOCATION MANAGEMENT
+     ════════════════════════════════ */
+
+  window.loc_showAddForm = function() {
+    document.getElementById('loc-add-form').style.display = '';
+  };
+
+  window.loc_hideAddForm = function() {
+    var form = document.getElementById('loc-add-form');
+    form.style.display = 'none';
+    // Reset fields
+    document.getElementById('loc-add-address').value = '';
+    document.getElementById('loc-add-city').value = '';
+    document.getElementById('loc-add-phone').value = '';
+    document.getElementById('loc-add-maps-url').value = '';
+    document.getElementById('loc-add-lat').value = '';
+    document.getElementById('loc-add-lng').value = '';
+  };
+
+  window.loc_detectCoords = function(locIdOrAdd) {
+    var mapsInput, latInput, lngInput;
+    if (locIdOrAdd === 'add') {
+      mapsInput = document.getElementById('loc-add-maps-url');
+      latInput = document.getElementById('loc-add-lat');
+      lngInput = document.getElementById('loc-add-lng');
+    } else {
+      var card = document.getElementById('loc-card-' + locIdOrAdd);
+      mapsInput = card.querySelector('.loc-maps-url');
+      latInput = card.querySelector('.loc-lat');
+      lngInput = card.querySelector('.loc-lng');
+    }
+
+    var url = mapsInput.value.trim();
+    if (!url) {
+      showToast('Introdu un link Google Maps', 'error');
+      return;
+    }
+
+    showToast('Se detectează coordonatele...', 'info');
+
+    apiFetch('/api/web/parse-maps-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.error) {
+        showToast(data.error, 'error');
+        return;
+      }
+      latInput.value = data.lat;
+      lngInput.value = data.lng;
+      if (data.mapsUrl) mapsInput.value = data.mapsUrl;
+      showToast('Coordonate detectate!', 'success');
+    })
+    .catch(function() {
+      showToast('Eroare la detectarea coordonatelor', 'error');
+    });
+  };
+
+  window.loc_create = function() {
+    var address = document.getElementById('loc-add-address').value.trim();
+    var cityId = document.getElementById('loc-add-city').value;
+    var phone = document.getElementById('loc-add-phone').value.trim();
+    var mapsUrl = document.getElementById('loc-add-maps-url').value.trim();
+    var lat = document.getElementById('loc-add-lat').value.trim();
+    var lng = document.getElementById('loc-add-lng').value.trim();
+
+    if (!address || !cityId) {
+      showToast('Adresa și orașul sunt obligatorii', 'error');
+      return;
+    }
+
+    apiFetch('/api/web/portal/' + businessId + '/locations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: address, city_id: cityId, phone: phone, maps_url: mapsUrl, lat: lat, lng: lng })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast(data.message || 'Locație adăugată!', 'success');
+        // Reload page to refresh location list and counters
+        setTimeout(function() { window.location.reload(); }, 500);
+      } else {
+        showToast(data.message || 'Eroare la adăugare', 'error');
+      }
+    })
+    .catch(function() {
+      showToast('Eroare la adăugarea locației', 'error');
+    });
+  };
+
+  window.loc_update = function(locId) {
+    var card = document.getElementById('loc-card-' + locId);
+    var address = card.querySelector('.loc-address').value.trim();
+    var cityId = card.querySelector('.loc-city').value;
+    var phone = card.querySelector('.loc-phone').value.trim();
+    var mapsUrl = card.querySelector('.loc-maps-url').value.trim();
+    var lat = card.querySelector('.loc-lat').value.trim();
+    var lng = card.querySelector('.loc-lng').value.trim();
+
+    if (!address || !cityId) {
+      showToast('Adresa și orașul sunt obligatorii', 'error');
+      return;
+    }
+
+    apiFetch('/api/web/portal/' + businessId + '/locations/' + locId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: address, city_id: cityId, phone: phone, maps_url: mapsUrl, lat: lat, lng: lng })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast(data.message || 'Locație actualizată!', 'success');
+      } else {
+        showToast(data.message || 'Eroare la actualizare', 'error');
+      }
+    })
+    .catch(function() {
+      showToast('Eroare la actualizarea locației', 'error');
+    });
+  };
+
+  window.loc_delete = function(locId) {
+    if (!confirm('Sigur vrei să ștergi această locație? Ofertele asociate vor fi actualizate.')) return;
+
+    var card = document.getElementById('loc-card-' + locId);
+    if (card) card.style.opacity = '0.5';
+
+    apiFetch('/api/web/portal/' + businessId + '/locations/' + locId, {
+      method: 'DELETE'
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (data.success) {
+        if (card) card.remove();
+        showToast(data.message || 'Locație ștearsă!', data.affectedOffers > 0 ? 'info' : 'success');
+        // If no more locations, show empty state
+        var list = document.getElementById('loc-list');
+        if (list && !list.querySelector('.loc-card')) {
+          list.innerHTML = '<div id="loc-empty" style="text-align: center; padding: 24px; color: var(--text-secondary); font-size: 0.875rem;">' +
+            '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.5;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+            '<p>Nicio locație adăugată.</p></div>';
+        }
+      } else {
+        if (card) card.style.opacity = '1';
+        showToast(data.message || 'Eroare la ștergere', 'error');
+      }
+    })
+    .catch(function() {
+      if (card) card.style.opacity = '1';
+      showToast('Eroare la ștergerea locației', 'error');
     });
   };
 

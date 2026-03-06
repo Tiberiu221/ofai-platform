@@ -1375,7 +1375,7 @@ router.get("/businesses/:id/locations", async (req, res) => {
 // POST: Update existing location (inline edit from locations page)
 router.post("/businesses/:businessId/locations/:locationId", async (req, res) => {
   const { businessId, locationId } = req.params;
-  const { city_id, address, phone, lat, lng } = req.body;
+  const { city_id, address, phone, lat, lng, maps_url } = req.body;
 
   const toNullableFloat = (v) => {
     if (v === "" || v == null) return null;
@@ -1395,8 +1395,9 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
           address = $2,
           phone = $3,
           lat = $4,
-          lng = $5
-      WHERE id = $6 AND business_id = $7
+          lng = $5,
+          maps_url = $6
+      WHERE id = $7 AND business_id = $8
       RETURNING id
       `,
       [
@@ -1405,6 +1406,7 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
         phone || null,
         toNullableFloat(lat),
         toNullableFloat(lng),
+        maps_url || null,
         Number(locationId),
         Number(businessId),
       ]
@@ -1425,7 +1427,7 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
 // POST: Create new location for a business
 router.post("/businesses/:id/locations", async (req, res) => {
   const businessId = req.params.id;
-  const { city_id, address, phone, lat, lng } = req.body;
+  const { city_id, address, phone, lat, lng, maps_url } = req.body;
 
   const toNullableFloat = (v) => {
     if (v === "" || v == null) return null;
@@ -1445,8 +1447,8 @@ router.post("/businesses/:id/locations", async (req, res) => {
     const overLimit = locationLimit !== null && currentCount >= locationLimit;
 
     await pool.query(
-      `INSERT INTO business_locations (business_id, city_id, address, phone, lat, lng)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO business_locations (business_id, city_id, address, phone, lat, lng, maps_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         Number(businessId),
         Number(city_id),
@@ -1454,6 +1456,7 @@ router.post("/businesses/:id/locations", async (req, res) => {
         phone || null,
         toNullableFloat(lat),
         toNullableFloat(lng),
+        maps_url || null,
       ]
     );
 

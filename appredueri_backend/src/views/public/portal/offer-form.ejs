@@ -585,6 +585,32 @@
             <textarea id="of-conditions" name="conditions" class="of-textarea" placeholder="Condiții de utilizare a ofertei..." style="min-height: 80px;"><%= offer ? offer.conditions : '' %></textarea>
           </div>
 
+          <!-- Location checkboxes (only if 2+ locations) -->
+          <% const offerLocs = typeof locations !== 'undefined' && locations ? locations : [];
+             const selectedLocs = typeof selectedLocationIds !== 'undefined' && selectedLocationIds ? selectedLocationIds : [];
+             if (offerLocs.length >= 2) { %>
+          <div class="of-field">
+            <label class="of-label">Locații valabile</label>
+            <p style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 8px;">
+              Selectează locațiile unde oferta este valabilă. Dacă sunt toate selectate, oferta e valabilă peste tot.
+            </p>
+            <div id="of-locations-list" style="display: flex; flex-direction: column; gap: 6px;">
+              <% offerLocs.forEach(function(loc) {
+                   // If editing and selectedLocs is empty, that means "all locations" — so check all
+                   var isChecked = selectedLocs.length === 0 || selectedLocs.indexOf(loc.id) !== -1;
+              %>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg);">
+                  <input type="checkbox" class="of-loc-checkbox" value="<%= loc.id %>" <%= isChecked ? 'checked' : '' %>>
+                  <span style="font-size: 0.875rem; color: var(--text-primary);"><%= loc.address %></span>
+                  <% if (loc.city_name) { %>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">(<%= loc.city_name %>)</span>
+                  <% } %>
+                </label>
+              <% }); %>
+            </div>
+          </div>
+          <% } %>
+
           <!-- Date range -->
           <div class="of-row">
             <div class="of-field">
@@ -917,6 +943,20 @@
       promo_codes: promoCodes.filter(function(pc) { return pc.code && pc.code.trim(); }),
       max_reveals: document.getElementById('of-max-reveals').value || null
     };
+
+    // Collect location IDs if location checkboxes exist
+    var locCheckboxes = document.querySelectorAll('.of-loc-checkbox');
+    if (locCheckboxes.length > 0) {
+      var allChecked = true;
+      var checkedIds = [];
+      locCheckboxes.forEach(function(cb) {
+        if (cb.checked) checkedIds.push(parseInt(cb.value));
+        else allChecked = false;
+      });
+      // If all checked, send empty array (= offer valid everywhere)
+      // If some unchecked, send only the checked ones
+      payload.locationIds = allChecked ? [] : checkedIds;
+    }
 
     try {
       var url = isEdit

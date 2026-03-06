@@ -29,12 +29,21 @@
     </div>
 
     <div class="form-group">
+      <label>Link Google Maps</label>
+      <div style="display: flex; gap: 10px; max-width: 600px;">
+        <input type="text" name="maps_url" id="add-maps-url" placeholder="https://maps.app.goo.gl/..." style="flex: 1;">
+        <button type="button" class="button button-small" onclick="adminDetectCoords('add')">Auto-detect</button>
+      </div>
+      <div class="hint">Paste un link Google Maps pentru a extrage automat coordonatele.</div>
+    </div>
+
+    <div class="form-group">
       <label>Coordonate (Lat / Lng)</label>
       <div style="display: flex; gap: 10px; max-width: 400px;">
-        <input type="number" step="any" name="lat" placeholder="Lat (ex: 44.42)">
-        <input type="number" step="any" name="lng" placeholder="Lng (ex: 26.10)">
+        <input type="number" step="any" name="lat" id="add-lat" placeholder="Lat (ex: 44.42)">
+        <input type="number" step="any" name="lng" id="add-lng" placeholder="Lng (ex: 26.10)">
       </div>
-      <div class="hint">Poți lăsa gol dacă nu ai coordonate acum.</div>
+      <div class="hint">Poți lăsa gol dacă nu ai coordonate sau folosește Auto-detect.</div>
     </div>
 
     <div style="margin-top: 15px;">
@@ -57,7 +66,7 @@
         <th style="min-width: 160px;">Oraș</th>
         <th>Adresă</th>
         <th style="min-width: 140px;">Telefon</th>
-        <th style="min-width: 260px;">Coordonate</th>
+        <th style="min-width: 260px;">Maps URL / Coordonate</th>
         <th style="width: 180px;">Acțiuni</th>
       </tr>
     </thead>
@@ -93,9 +102,13 @@
           </td>
 
           <td>
+            <div style="display: flex; gap: 6px; margin-bottom: 4px;">
+              <input type="text" name="maps_url" value="<%= loc.maps_url || '' %>" placeholder="Maps link..." form="<%= formId %>" id="maps-url-<%= loc.id %>" style="flex: 1; font-size: 0.8rem;" />
+              <button type="button" class="button button-small" onclick="adminDetectCoords('<%= loc.id %>')" style="white-space: nowrap;">Detect</button>
+            </div>
             <div class="coords-row">
-              <input type="number" step="any" name="lat" value="<%= (loc.lat ?? "") %>" placeholder="Lat" form="<%= formId %>" />
-              <input type="number" step="any" name="lng" value="<%= (loc.lng ?? "") %>" placeholder="Lng" form="<%= formId %>" />
+              <input type="number" step="any" name="lat" value="<%= (loc.lat ?? '') %>" placeholder="Lat" form="<%= formId %>" id="lat-<%= loc.id %>" />
+              <input type="number" step="any" name="lng" value="<%= (loc.lng ?? '') %>" placeholder="Lng" form="<%= formId %>" id="lng-<%= loc.id %>" />
             </div>
 
             <% if(loc.lat && loc.lng) { %>
@@ -120,5 +133,42 @@
     </tbody>
   </table>
 <% } %>
+
+<script>
+function adminDetectCoords(locIdOrAdd) {
+  var mapsInput, latInput, lngInput;
+  if (locIdOrAdd === 'add') {
+    mapsInput = document.getElementById('add-maps-url');
+    latInput = document.getElementById('add-lat');
+    lngInput = document.getElementById('add-lng');
+  } else {
+    mapsInput = document.getElementById('maps-url-' + locIdOrAdd);
+    latInput = document.getElementById('lat-' + locIdOrAdd);
+    lngInput = document.getElementById('lng-' + locIdOrAdd);
+  }
+
+  var url = mapsInput.value.trim();
+  if (!url) { alert('Introdu un link Google Maps'); return; }
+
+  var csrfToken = document.querySelector('meta[name="csrf-token"]');
+  fetch('/api/web/parse-maps-link', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken ? csrfToken.getAttribute('content') : ''
+    },
+    body: JSON.stringify({ url: url })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) { alert('Eroare: ' + data.error); return; }
+    latInput.value = data.lat;
+    lngInput.value = data.lng;
+    if (data.mapsUrl) mapsInput.value = data.mapsUrl;
+    alert('Coordonate detectate: ' + data.lat + ', ' + data.lng);
+  })
+  .catch(function(err) { alert('Eroare la detectare: ' + err.message); });
+}
+</script>
 
 <%- include('partials/layout-bottom') %>

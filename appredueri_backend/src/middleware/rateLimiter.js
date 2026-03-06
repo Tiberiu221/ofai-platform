@@ -141,6 +141,23 @@ const revealLimiter = rateLimit({
   validate: { xForwardedForHeader: true },
 });
 
+/**
+ * Rate limiter for Google Maps link parsing
+ * Server-side redirect following — limit to prevent abuse
+ * 10 requests per minute per IP
+ */
+const mapsParseLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: {
+    message: "Prea multe cereri de parsare link. Te rugăm să aștepți.",
+    retryAfter: 60,
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: true },
+});
+
 module.exports = {
   generalLimiter,
   authLimiter,
@@ -151,4 +168,5 @@ module.exports = {
   clickLimiter,
   searchLimiter,
   revealLimiter,
+  mapsParseLimiter,
 };

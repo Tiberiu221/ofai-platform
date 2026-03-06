@@ -17,8 +17,9 @@ const { sanitizeString, createImageFilter, validatePassword } = require("../help
 const crypto = require("crypto");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier, requireFeature, requireLimit } = require('../middleware/tierAuth');
-const { countActiveOffers, countGalleryImages, getBusinessTier } = require('../helpers/tiers');
-const { clickLimiter, searchLimiter, revealLimiter } = require("../middleware/rateLimiter");
+const { countActiveOffers, countGalleryImages, countLocations, getBusinessTier } = require('../helpers/tiers');
+const { clickLimiter, searchLimiter, revealLimiter, mapsParseLimiter } = require("../middleware/rateLimiter");
+const { parseMapsLink } = require("../helpers/mapsParser");
 const { deleteUserAccount } = require("../services/accountDeletion");
 const multer = require("multer");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
@@ -2045,10 +2046,19 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
     const totalScore = breakdown.reduce((sum, item) => sum + item.earned, 0);
     const score = { score: totalScore, max_score: 100, breakdown };
 
-    // Cities & categories for edit form
-    const [citiesRes, categoriesRes] = await Promise.all([
+    // Cities, categories & locations for edit form
+    const [citiesRes, categoriesRes, locationsRes] = await Promise.all([
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
+      pool.query(
+        `SELECT bl.id, bl.address, bl.phone, bl.lat, bl.lng, bl.maps_url, bl.city_id,
+                c.name AS city_name
+         FROM business_locations bl
+         LEFT JOIN cities c ON bl.city_id = c.id
+         WHERE bl.business_id = $1
+         ORDER BY bl.id`,
+        [businessId]
+      ),
     ]);
 
     // Fetch active nominations for this business (for Deal of the Day feature)
@@ -2090,6 +2100,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
       score,
       cities: citiesRes.rows,
       categories: categoriesRes.rows,
+      locations: locationsRes.rows,
       activePage: "portal",
       webUser: req.webUser,
       loadChartJs: true,
@@ -2108,12 +2119,23 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
 // Portal — new offer form
 router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, res) => {
   try {
-    const bizRes = await pool.query("SELECT id, name FROM businesses WHERE id = $1", [req.params.businessId]);
+    const { businessId } = req.params;
+    const [bizRes, locsRes] = await Promise.all([
+      pool.query("SELECT id, name FROM businesses WHERE id = $1", [businessId]),
+      pool.query(
+        `SELECT bl.id, bl.address, c.name AS city_name
+         FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id
+         WHERE bl.business_id = $1 ORDER BY bl.id`,
+        [businessId]
+      ),
+    ]);
     if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
     res.render("public/portal/offer-form", {
       business: bizRes.rows[0],
       offer: null,
+      locations: locsRes.rows,
+      selectedLocationIds: [],
       activePage: "portal",
       webUser: req.webUser,
     });
@@ -2130,22 +2152,35 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
     const bizRes = await pool.query("SELECT id, name FROM businesses WHERE id = $1", [businessId]);
     if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
-    const offerRes = await pool.query(
-      "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code FROM offers WHERE id = $1 AND business_id = $2",
-      [offerId, businessId]
-    );
-    if (offerRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
+    const [offerRes, promoCodesRes, locsRes, offerLocsRes] = await Promise.all([
+      pool.query(
+        "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code FROM offers WHERE id = $1 AND business_id = $2",
+        [offerId, businessId]
+      ),
+      pool.query(
+        "SELECT id, code, is_active FROM promo_codes WHERE offer_id = $1 ORDER BY id",
+        [offerId]
+      ),
+      pool.query(
+        `SELECT bl.id, bl.address, c.name AS city_name
+         FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id
+         WHERE bl.business_id = $1 ORDER BY bl.id`,
+        [businessId]
+      ),
+      pool.query(
+        "SELECT location_id FROM offer_locations WHERE offer_id = $1",
+        [offerId]
+      ),
+    ]);
 
-    // Fetch promo codes for this offer
-    const promoCodesRes = await pool.query(
-      "SELECT id, code, is_active FROM promo_codes WHERE offer_id = $1 ORDER BY id",
-      [offerId]
-    );
+    if (offerRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
     res.render("public/portal/offer-form", {
       business: bizRes.rows[0],
       offer: offerRes.rows[0],
       promoCodes: promoCodesRes.rows,
+      locations: locsRes.rows,
+      selectedLocationIds: offerLocsRes.rows.map(r => r.location_id),
       activePage: "portal",
       webUser: req.webUser,
     });
@@ -2293,6 +2328,121 @@ router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwn
   }
 });
 
+// =====================================
+//   PARSE GOOGLE MAPS LINK
+// =====================================
+router.post("/api/web/parse-maps-link", requireWebAuth, mapsParseLimiter, async (req, res) => {
+  try {
+    const { url } = req.body || {};
+    if (!url) return res.status(400).json({ error: "URL lipsă" });
+
+    const result = await parseMapsLink(url);
+    if (result.error) {
+      return res.status(422).json({ error: result.error });
+    }
+    res.json({ lat: result.lat, lng: result.lng, mapsUrl: result.mapsUrl });
+  } catch (err) {
+    console.error("[Web API] Parse maps link error:", err);
+    res.status(500).json({ error: "Eroare la parsarea link-ului" });
+  }
+});
+
+// =====================================
+//   LOCATION CRUD (Business Portal)
+// =====================================
+
+// Helper: parse lat/lng with European comma→dot conversion
+function toNullableFloat(v) {
+  if (v === "" || v == null) return null;
+  const n = parseFloat(String(v).replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+// CREATE location
+router.post("/api/web/portal/:businessId/locations", requireBusinessOwner, requireLimit('max_locations', countLocations), async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const { address, city_id, phone, lat, lng, maps_url } = req.body || {};
+
+    if (!address || !city_id) {
+      return res.status(400).json({ message: "Adresa și orașul sunt obligatorii" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO business_locations (business_id, city_id, address, phone, lat, lng, maps_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [businessId, parseInt(city_id), address.trim(), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null]
+    );
+
+    res.json({ success: true, locationId: result.rows[0].id, message: "Locație adăugată!" });
+  } catch (err) {
+    console.error("[Web API] Portal create location error:", err);
+    res.status(500).json({ message: "Eroare la adăugarea locației" });
+  }
+});
+
+// UPDATE location
+router.put("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId, locId } = req.params;
+    const { address, city_id, phone, lat, lng, maps_url } = req.body || {};
+
+    if (!address || !city_id) {
+      return res.status(400).json({ message: "Adresa și orașul sunt obligatorii" });
+    }
+
+    const result = await pool.query(
+      `UPDATE business_locations SET
+        address = $1, city_id = $2, phone = $3, lat = $4, lng = $5, maps_url = $6, updated_at = NOW()
+       WHERE id = $7 AND business_id = $8
+       RETURNING id`,
+      [address.trim(), parseInt(city_id), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null, locId, businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Locația nu a fost găsită" });
+    }
+
+    res.json({ success: true, message: "Locație actualizată!" });
+  } catch (err) {
+    console.error("[Web API] Portal update location error:", err);
+    res.status(500).json({ message: "Eroare la actualizarea locației" });
+  }
+});
+
+// DELETE location
+router.delete("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId, locId } = req.params;
+
+    // Check how many offers reference this location
+    const offerCheck = await pool.query(
+      `SELECT COUNT(*)::int AS cnt FROM offer_locations WHERE location_id = $1`,
+      [locId]
+    );
+    const affectedOffers = offerCheck.rows[0].cnt;
+
+    // Delete the location (offer_locations rows cascade-delete automatically)
+    const result = await pool.query(
+      `DELETE FROM business_locations WHERE id = $1 AND business_id = $2 RETURNING id`,
+      [locId, businessId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Locația nu a fost găsită" });
+    }
+
+    const msg = affectedOffers > 0
+      ? `Locație ștearsă. ${affectedOffers} ${affectedOffers === 1 ? 'ofertă a fost actualizată' : 'oferte au fost actualizate'}.`
+      : "Locație ștearsă!";
+
+    res.json({ success: true, message: msg, affectedOffers });
+  } catch (err) {
+    console.error("[Web API] Portal delete location error:", err);
+    res.status(500).json({ message: "Eroare la ștergerea locației" });
+  }
+});
+
 // Update business info
 router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
   try {
@@ -2363,6 +2513,8 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
         }))
       : null;
 
+    const { locationIds } = req.body || {};
+
     const offerId = await offerService.createOffer(pool, {
       businessId: parseInt(businessId),
       title: sanitizeString(title, 200),
@@ -2383,6 +2535,16 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       sendWebhook: false, // Web portal doesn't send webhook
       tier: req.tier || null, // W11: Pass pre-fetched tier to avoid redundant DB query
     });
+
+    // Sync offer_locations (empty array = valid everywhere, non-empty = specific locations)
+    if (Array.isArray(locationIds) && locationIds.length > 0) {
+      for (const locId of locationIds) {
+        await pool.query(
+          'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [offerId, parseInt(locId)]
+        );
+      }
+    }
 
     res.json({ success: true, offer_id: offerId });
   } catch (err) {
@@ -2437,6 +2599,20 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
           await pool.query(
             "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
             [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
+          );
+        }
+      }
+    }
+
+    // Sync offer_locations if provided
+    const { locationIds } = req.body || {};
+    if (Array.isArray(locationIds)) {
+      await pool.query('DELETE FROM offer_locations WHERE offer_id = $1', [offerId]);
+      if (locationIds.length > 0) {
+        for (const locId of locationIds) {
+          await pool.query(
+            'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [offerId, parseInt(locId)]
           );
         }
       }
