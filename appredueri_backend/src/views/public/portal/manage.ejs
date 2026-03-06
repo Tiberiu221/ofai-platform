@@ -2058,6 +2058,19 @@
   // Apply tier gating immediately using server-side data
   applyTierGating(_serverTier);
 
+  // Show toast if redirected from offer form
+  (function() {
+    var q = window.location.search;
+    var msg = null;
+    if (q.indexOf('offer_created=1') !== -1) msg = 'Oferta a fost creată cu succes!';
+    else if (q.indexOf('offer_updated=1') !== -1) msg = 'Oferta a fost actualizată!';
+    else if (q.indexOf('offer_deleted=1') !== -1) msg = 'Oferta a fost ștearsă.';
+    if (msg) {
+      showToast(msg, q.indexOf('deleted') !== -1 ? 'info' : 'success');
+      history.replaceState(null, '', window.location.pathname + window.location.hash);
+    }
+  })();
+
   /* ════════════════════════════════
      TAB 1: BUSINESS INFO FORM
      ════════════════════════════════ */

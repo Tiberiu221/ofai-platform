@@ -943,7 +943,8 @@
         return;
       }
 
-      window.location.href = '/portal/' + businessId;
+      var successParam = isEdit ? 'offer_updated=1' : 'offer_created=1';
+      window.location.href = '/portal/' + businessId + '?' + successParam + '#oferte';
 
     } catch (err) {
       showMessage('Eroare de rețea. Verifică conexiunea și încearcă din nou.', 'error');
@@ -983,7 +984,7 @@
         return;
       }
 
-      window.location.href = '/portal/' + businessId;
+      window.location.href = '/portal/' + businessId + '?offer_deleted=1#oferte';
 
     } catch (err) {
       showMessage('Eroare de rețea. Verifică conexiunea și încearcă din nou.', 'error');
