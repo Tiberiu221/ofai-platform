@@ -20,7 +20,7 @@ initializeFirebase();
 const { initCronJobs } = require("./services/cronJobs");
 
 // Rate Limiting
-const { generalLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
+const { generalLimiter, writeLimiter, authLimiter, passwordResetLimiter, verifyResetCodeLimiter, adminLimiter } = require("./middleware/rateLimiter");
 
 // Database pool (for sitemap + tier middleware)
 const pool = require("./db");
@@ -138,10 +138,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Prevent caching of authenticated API responses
+app.use('/api', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 // ============================================
 // RATE LIMITING (Global)
 // ============================================
 app.use(generalLimiter);
+app.use(writeLimiter);
 
 // ============================================
 // MIDDLEWARE-URI GLOBALE
@@ -154,6 +161,8 @@ app.use(cookieParser());
 // CSRF PROTECTION (Web routes only)
 // ============================================
 const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
+  // CSRF_SECRET is preferred; falls back to JWT_SECRET for backward compatibility.
+  // Set CSRF_SECRET in production for proper secret separation.
   getSecret: () => process.env.CSRF_SECRET || process.env.JWT_SECRET,
   getSessionIdentifier: (req) => {
     // Use auth cookie as session identifier; fall back to stable "anonymous"

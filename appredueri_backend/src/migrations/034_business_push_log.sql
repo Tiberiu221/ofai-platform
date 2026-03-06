@@ -17,6 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_business_push_log_bid
   ON business_push_log(business_id, created_at DESC);
 
 -- Index for rate limit check (business + recent window)
+-- Note: Partial index with NOW() is volatile — fixed in migration 037
 CREATE INDEX IF NOT EXISTS idx_business_push_log_rate
   ON business_push_log(business_id, created_at)
   WHERE created_at >= NOW() - INTERVAL '7 days';

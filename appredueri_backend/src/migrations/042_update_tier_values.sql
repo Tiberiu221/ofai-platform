@@ -1,4 +1,6 @@
 -- Migration 042: Update subscription plan tier values
+-- Note: Updates tier values from original 033 seed to final production values.
+-- If running on a fresh DB where 033 already has correct values, these UPDATEs are idempotent.
 -- Date: 5 Mar 2026
 --
 -- Changes:

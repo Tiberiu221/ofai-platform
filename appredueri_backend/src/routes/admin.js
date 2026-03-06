@@ -57,9 +57,14 @@ async function deleteImage(imageUrl) {
       // Codul existent folosea: path.join(businessImagesUploadDir, filename)
       // Aici reconstruim calea absolută
 
-      const safePath = path.join(__dirname, "..", imageUrl); // ../uploads/...
-      if (fs.existsSync(safePath)) {
-        fs.unlink(safePath, () => { });
+      const baseDir = path.resolve(__dirname, "..");
+      const resolved = path.resolve(__dirname, "..", imageUrl);
+      if (!resolved.startsWith(baseDir + path.sep)) {
+        console.error("[Admin] Path traversal attempt blocked:", imageUrl);
+        return;
+      }
+      if (fs.existsSync(resolved)) {
+        fs.unlink(resolved, () => { });
       }
     }
   } catch (err) {

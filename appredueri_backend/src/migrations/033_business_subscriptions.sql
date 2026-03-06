@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
 CREATE TABLE IF NOT EXISTS business_subscriptions (
   id SERIAL PRIMARY KEY,
   business_id INTEGER NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-  plan_id INTEGER NOT NULL REFERENCES subscription_plans(id),
+  plan_id INTEGER NOT NULL REFERENCES subscription_plans(id), -- implicit ON DELETE RESTRICT — plans should never be hard-deleted
   status VARCHAR(20) NOT NULL DEFAULT 'active',
     -- 'active', 'trial', 'past_due', 'cancelled', 'expired'
   billing_cycle VARCHAR(10) NOT NULL DEFAULT 'monthly',
@@ -81,6 +81,9 @@ CREATE INDEX IF NOT EXISTS idx_subscription_history_business
   ON subscription_history(business_id, created_at DESC);
 
 -- Seed the 3 plans
+-- Note: These initial values were updated post-deploy by migration 042.
+-- The values below reflect the ORIGINAL seed, not the current production values.
+-- For current values, see migration 042_update_tier_values.sql.
 INSERT INTO subscription_plans
   (slug, name, price_monthly, price_yearly, sort_order,
    max_active_offers, max_gallery_images, max_locations, max_promo_codes_per_offer,

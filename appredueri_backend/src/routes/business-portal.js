@@ -481,6 +481,11 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
 
     console.log("[BusinessPortal] Creating offer:", title);
 
+    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+    if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
+      return res.status(400).json({ message: "Tip de discount invalid" });
+    }
+
     let logoUrl = null;
     if (req.file) {
       // Upload pe Cloudinary cu rezoluție specifică pentru ofertă (800x600)
@@ -592,6 +597,11 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
     } = req.body;
 
+    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+    if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
+      return res.status(400).json({ message: "Tip de discount invalid" });
+    }
+
     const updates = [];
     const values = [];
     let paramIndex = 1;
@@ -694,6 +704,19 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
 
         if (Array.isArray(promoCodesArr)) {
           const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+
+          // Enforce tier limit on promo codes
+          if (req.tier && req.tier.plan && process.env.TIER_GATING_ENABLED === 'true') {
+            const promoLimit = req.tier.plan.max_promo_codes_per_offer;
+            if (promoLimit !== null && validCodes.length > promoLimit) {
+              await client.query("ROLLBACK");
+              return res.status(403).json({
+                error: 'limit_reached',
+                message: `Maximum ${promoLimit} coduri promoționale per ofertă pe planul ${req.tier.plan.name}.`,
+              });
+            }
+          }
+
           for (const pc of validCodes) {
             await client.query(
               "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",

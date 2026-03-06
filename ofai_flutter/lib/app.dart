@@ -229,6 +229,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: notifier,
     redirect: (context, state) {
+      // Don't redirect while auth is still being checked
+      if (notifier.authStatus == AuthStatus.initial) return null;
+
       final isAuth = notifier.authStatus == AuthStatus.authenticated;
       final isAuthRoute = state.uri.path == '/login' ||
           state.uri.path == '/register' ||

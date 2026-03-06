@@ -67,10 +67,12 @@ async function tryRefreshTokens(refreshTokenValue) {
  */
 async function fetchUser(userId) {
   const { rows } = await pool.query(
-    "SELECT id, email, first_name, last_name, role, profile_picture_url, display_badge_id FROM users WHERE id = $1",
+    "SELECT id, email, first_name, last_name, role, profile_picture_url, display_badge_id, banned_at FROM users WHERE id = $1",
     [userId]
   );
-  return rows[0] || null;
+  if (!rows[0]) return null;
+  if (rows[0].banned_at) return null; // Banned user treated as not found
+  return rows[0];
 }
 
 /**

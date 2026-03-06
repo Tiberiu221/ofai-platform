@@ -5,7 +5,8 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Railway și alți provideri cloud cer SSL
+  // Railway shared-certificate setup: TLS encryption without cert verification.
+  // TODO: Obtain Railway CA cert and switch to { rejectUnauthorized: true, ca: ... }
   ssl: isProduction ? { rejectUnauthorized: false } : false,
   // Connection pool settings
   max: 20,
@@ -24,6 +25,8 @@ pool.on("connect", () => {
 
 pool.on("error", (err) => {
   console.error("[DB] Unexpected error on idle client:", err);
+  // Exit to trigger Railway's process restart — pool may be wedged
+  process.exit(-1);
 });
 
 module.exports = pool;

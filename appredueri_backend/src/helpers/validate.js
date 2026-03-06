@@ -10,9 +10,11 @@
  */
 function isValidEmail(email) {
   if (!email || typeof email !== "string") return false;
-  // Simple but effective email regex
+  if (email.length > 254) return false; // RFC 5321 max email length
+  const localPart = email.split('@')[0];
+  if (!localPart || localPart.length > 64) return false; // RFC 5321 max local-part length
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email) && email.length <= 255;
+  return emailRegex.test(email);
 }
 
 /**

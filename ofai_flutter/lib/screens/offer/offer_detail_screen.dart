@@ -912,6 +912,11 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
           _revealed = true;
           _loading = false;
         });
+      } else if (mounted) {
+        setState(() {
+          _error = 'Codul nu este disponibil';
+          _loading = false;
+        });
       }
     } catch (e) {
       if (mounted) {

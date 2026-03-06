@@ -1201,7 +1201,8 @@
               <textarea id="response-text-<%= review.id %>"
                         maxlength="500"
                         placeholder="Scrie un răspuns..."
-                        oninput="updateCharCount(<%= review.id %>)"><%= review.response_id ? review.response_text : '' %></textarea>
+                        oninput="updateCharCount(<%= review.id %>)"></textarea>
+              <script>document.getElementById('response-text-<%= review.id %>').value = <%= JSON.stringify(review.response_id ? (review.response_text || '') : '') %>;</script>
               <div class="response-char-count" id="char-count-<%= review.id %>">0 / 500</div>
               <div class="response-form-actions">
                 <button class="btn-sm" onclick="cancelResponse(<%= review.id %>)">Anulează</button>
@@ -1876,8 +1877,22 @@
         if (data.success && data.image) {
           placeholder.style.opacity = '1';
           placeholder.setAttribute('data-image-id', data.image.id);
-          placeholder.innerHTML = '<img src="' + data.image.url + '" alt="Galerie" width="120" height="80" loading="lazy">' +
-            '<button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(' + data.image.id + ', this)" title="Șterge imaginea" aria-label="Șterge imaginea">&times;</button>';
+          var img = document.createElement('img');
+          img.src = data.image.url;
+          img.alt = 'Galerie';
+          img.width = 120;
+          img.height = 80;
+          img.loading = 'lazy';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'gallery-delete-btn';
+          btn.title = 'Șterge imaginea';
+          btn.setAttribute('aria-label', 'Șterge imaginea');
+          btn.innerHTML = '&times;';
+          btn.onclick = function() { deleteGalleryImage(data.image.id, this); };
+          placeholder.innerHTML = '';
+          placeholder.appendChild(img);
+          placeholder.appendChild(btn);
 
           currentCount++;
           // Hide add button if at limit
@@ -2163,6 +2178,13 @@
     gateSection('analytics-charts-section', plan.hasAnalyticsCharts, 'Grafice statistici', 'Standard');
   }
 
+  // Helper: escape HTML to prevent XSS in dynamic content
+  function escapeHtml(text) {
+    var el = document.createElement('span');
+    el.textContent = text;
+    return el.innerHTML;
+  }
+
   function renderSubscriptionSection(subscription) {
     var container = document.getElementById('subscription-content');
     if (!container) return;
@@ -2208,7 +2230,7 @@
     // Plan header
     html += '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">';
     html += '<div>';
-    html += '<h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0;">Planul tau: <span style="color: ' + tierColor + ';">' + plan.name + '</span></h3>';
+    html += '<h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0;">Planul tau: <span style="color: ' + tierColor + ';">' + escapeHtml(plan.name) + '</span></h3>';
     if (cancelAtEnd && periodEnd) {
       html += '<p style="color: #ef4444; font-size: 0.8125rem; margin: 4px 0 0;">Se anuleaza la ' + new Date(periodEnd).toLocaleDateString('ro-RO') + '</p>';
     }
@@ -2858,14 +2880,14 @@
           container.innerHTML = '<div class="comp-no-data">' +
             '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; opacity: 0.4;">' +
             '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
-            '<div>' + (data.reason || 'Date insuficiente') + '</div>' +
+            '<div>' + escapeHtml(data.reason || 'Date insuficiente') + '</div>' +
             '</div>';
           return;
         }
 
         var html = '<div class="comp-legend">' +
           '<span><span class="comp-legend-dot" style="background:#fb923c;"></span>Tu</span>' +
-          '<span><span class="comp-legend-dot" style="background:#3b82f6;"></span>Media categoriei (' + data.peersCount + ' business-uri)</span>' +
+          '<span><span class="comp-legend-dot" style="background:#3b82f6;"></span>Media categoriei (' + escapeHtml('' + data.peersCount) + ' business-uri)</span>' +
           '</div>';
 
         data.insights.forEach(function(ins) {
@@ -2877,17 +2899,17 @@
           var diffText = ins.diff > 0 ? '+' + ins.diff + '%' : (ins.diff < 0 ? ins.diff + '%' : '0%');
 
           html += '<div class="comp-row">' +
-            '<div class="comp-metric">' + ins.metric + '</div>' +
+            '<div class="comp-metric">' + escapeHtml(ins.metric) + '</div>' +
             '<div class="comp-bars">' +
               '<div class="comp-bar-wrap">' +
                 '<div class="comp-bar-label">Tu</div>' +
                 '<div class="comp-bar-track"><div class="comp-bar-fill yours" style="width:' + yoursPct + '%"></div></div>' +
-                '<div class="comp-bar-value">' + ins.yours + '</div>' +
+                '<div class="comp-bar-value">' + escapeHtml('' + ins.yours) + '</div>' +
               '</div>' +
               '<div class="comp-bar-wrap">' +
                 '<div class="comp-bar-label">Media</div>' +
                 '<div class="comp-bar-track"><div class="comp-bar-fill avg" style="width:' + avgPct + '%"></div></div>' +
-                '<div class="comp-bar-value">' + ins.categoryAvg + '</div>' +
+                '<div class="comp-bar-value">' + escapeHtml('' + ins.categoryAvg) + '</div>' +
               '</div>' +
             '</div>' +
             '<div class="comp-diff ' + diffClass + '">' + diffText + '</div>' +
@@ -2917,13 +2939,6 @@
       });
     }
   })();
-
-  // Helper: escape HTML to prevent XSS in push title/message display
-  function escapeHtml(text) {
-    var el = document.createElement('span');
-    el.textContent = text;
-    return el.innerHTML;
-  }
 
   window.sendCustomPush = function(e) {
     e.preventDefault();

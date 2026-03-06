@@ -1,6 +1,8 @@
 -- Migration 028: Create analytics tables (business_views + offer_views)
 -- These tables already exist in production (created manually), this migration ensures reproducibility
 -- Safe to run: uses IF NOT EXISTS
+-- Note: Uses SERIAL (not BIGSERIAL). Production may have BIGSERIAL from legacy migration.
+-- For fresh installs, SERIAL is sufficient for foreseeable analytics volume.
 
 -- Business page view tracking
 CREATE TABLE IF NOT EXISTS business_views (

@@ -65,16 +65,13 @@ ON business_locations(lat, lng)
 WHERE lat IS NOT NULL AND lng IS NOT NULL;
 
 -- ============================================
--- FAVORITES TABLE INDEXES
+-- FAVORITES TABLE INDEXES (table may not exist on fresh install)
 -- ============================================
-
--- Index pentru user_id (listare favorite user)
-CREATE INDEX IF NOT EXISTS idx_favorites_user_id 
-ON favorites(user_id);
-
--- Index pentru business_id (count favorites per business)
-CREATE INDEX IF NOT EXISTS idx_favorites_business_id 
-ON favorites(business_id);
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
+  CREATE INDEX IF NOT EXISTS idx_favorites_business_id ON favorites(business_id);
+EXCEPTION WHEN undefined_table THEN NULL;
+END $$;
 
 -- ============================================
 -- REVIEWS TABLE INDEXES
@@ -93,16 +90,13 @@ CREATE INDEX IF NOT EXISTS idx_reviews_business_rating
 ON reviews(business_id, rating);
 
 -- ============================================
--- SUBSCRIPTIONS TABLE INDEXES
+-- SUBSCRIPTIONS TABLE INDEXES (table may not exist on fresh install)
 -- ============================================
-
--- Index pentru user subscriptions
-CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id 
-ON subscriptions(user_id);
-
--- Index pentru business subscriptions
-CREATE INDEX IF NOT EXISTS idx_subscriptions_business_id 
-ON subscriptions(business_id);
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_subscriptions_business_id ON subscriptions(business_id);
+EXCEPTION WHEN undefined_table THEN NULL;
+END $$;
 
 -- ============================================
 -- USERS TABLE INDEXES
@@ -126,24 +120,23 @@ ON password_reset_tokens(user_id, token, expires_at)
 WHERE used_at IS NULL;
 
 -- ============================================
--- OFFER_LOCATIONS TABLE INDEXES (dacă există)
+-- OFFER_LOCATIONS TABLE INDEXES (table may not exist on fresh install)
 -- ============================================
-
-CREATE INDEX IF NOT EXISTS idx_offer_locations_offer_id 
-ON offer_locations(offer_id);
-
-CREATE INDEX IF NOT EXISTS idx_offer_locations_location_id 
-ON offer_locations(location_id);
+DO $$ BEGIN
+  CREATE INDEX IF NOT EXISTS idx_offer_locations_offer_id ON offer_locations(offer_id);
+  CREATE INDEX IF NOT EXISTS idx_offer_locations_location_id ON offer_locations(location_id);
+EXCEPTION WHEN undefined_table THEN NULL;
+END $$;
 
 -- ============================================
--- ANALYZE pentru a actualiza statisticile
+-- ANALYZE pentru a actualiza statisticile (guarded for missing tables)
 -- ============================================
 ANALYZE businesses;
 ANALYZE offers;
 ANALYZE business_locations;
-ANALYZE favorites;
+DO $$ BEGIN ANALYZE favorites; EXCEPTION WHEN undefined_table THEN NULL; END $$;
 ANALYZE reviews;
-ANALYZE subscriptions;
+DO $$ BEGIN ANALYZE subscriptions; EXCEPTION WHEN undefined_table THEN NULL; END $$;
 ANALYZE users;
 
 -- ============================================

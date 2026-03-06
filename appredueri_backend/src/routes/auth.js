@@ -340,6 +340,8 @@ router.post("/google", async (req, res) => {
 });
 
 // POST /auth/logout — Revoke refresh token
+// No auth middleware: users with expired access tokens must still be able to logout.
+// Token-based revocation is safe — only the token holder knows the value.
 router.post("/logout", async (req, res) => {
   try {
     const { refreshToken } = req.body || {};

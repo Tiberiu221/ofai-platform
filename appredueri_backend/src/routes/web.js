@@ -116,7 +116,7 @@ router.get("/", async (req, res) => {
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities ci2 ON b.city_id = ci2.id
         WHERE o.is_active = TRUE AND o.is_deal_of_day = TRUE AND o.deal_of_day_date = CURRENT_DATE
-          AND (o.end_date IS NULL OR o.end_date > CURRENT_DATE)
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
         LIMIT 1
       `);
       if (dodResult.rows.length === 0) {
@@ -129,7 +129,7 @@ router.get("/", async (req, res) => {
           FROM offers o
           JOIN businesses b ON o.business_id = b.id
           LEFT JOIN cities ci2 ON b.city_id = ci2.id
-          WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date > CURRENT_DATE)
+          WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
                    (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
           LIMIT 1
@@ -302,8 +302,8 @@ router.get("/", async (req, res) => {
     let userFollowedIds = [];
     if (req.webUser) {
       const [favRes, followRes] = await Promise.all([
-        pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
-        pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
+        pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
+        pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
       ]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
       userFollowedIds = followRes.rows.map(r => r.business_id);
@@ -358,7 +358,7 @@ router.get("/oferte", async (req, res) => {
     const selectedCity = req.query.city || null;
     const sort = req.query.sort || "newest";
 
-    const conditions = ["o.is_active = true", "o.end_date > CURRENT_DATE"];
+    const conditions = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"];
     const params = [];
     let paramIdx = 1;
 
@@ -510,7 +510,7 @@ router.get("/oferte", async (req, res) => {
     // Fetch user favorite IDs for card heart buttons
     let userFavoriteIds = [];
     if (req.webUser) {
-      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
@@ -677,7 +677,7 @@ router.get("/business-uri", async (req, res) => {
     // Fetch user followed IDs for card heart buttons
     let userFollowedIds = [];
     if (req.webUser) {
-      const followRes = await pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1", [req.webUser.id]);
+      const followRes = await pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
       userFollowedIds = followRes.rows.map(r => r.business_id);
     }
 
@@ -908,7 +908,7 @@ router.get("/oferta/:id", async (req, res) => {
     // Fetch user favorite IDs for similar offer heart buttons
     let userFavoriteIds = [];
     if (req.webUser) {
-      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
@@ -978,6 +978,17 @@ router.post("/api/web/offers/:id/reveal-code", revealLimiter, requireWebAuth, as
     const offerCheck = await pool.query("SELECT id FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
     if (offerCheck.rows.length === 0) {
       return res.status(404).json({ message: "Oferta nu există" });
+    }
+
+    // Check max_reveals limit
+    const limitCheck = await pool.query(
+      "SELECT o.max_reveals, (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count FROM offers o WHERE o.id = $1",
+      [id]
+    );
+    if (limitCheck.rows[0] && limitCheck.rows[0].max_reveals !== null) {
+      if (parseInt(limitCheck.rows[0].reveal_count) >= parseInt(limitCheck.rows[0].max_reveals)) {
+        return res.status(410).json({ message: "Codul promoțional a atins limita de utilizări" });
+      }
     }
 
     // Get a random active promo code for this offer
@@ -1240,7 +1251,7 @@ router.get("/business/:id", async (req, res) => {
     // Fetch user favorite IDs for offer card heart buttons
     let userFavoriteIds = [];
     if (req.webUser) {
-      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1", [req.webUser.id]);
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
@@ -1327,6 +1338,11 @@ router.post("/login", async (req, res) => {
 
     const user = result.rows[0];
 
+    // Check banned BEFORE password (so banned users get the right message)
+    if (user.banned_at) {
+      return res.status(403).json({ message: "Contul tău a fost suspendat." });
+    }
+
     // Google OAuth users have no password — must use Google Sign-In
     if (!user.password_hash) {
       return res.status(401).json({ message: "Acest cont folosește Google Sign-In. Te rugăm să te autentifici cu Google." });
@@ -1337,11 +1353,13 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Email sau parolă invalidă" });
     }
 
-    if (user.banned_at) {
-      return res.status(403).json({ message: "Contul tău a fost suspendat." });
-    }
-
     await pool.query("UPDATE users SET last_active_at = NOW() WHERE id = $1", [user.id]);
+
+    // Revoke existing refresh tokens to prevent session fixation
+    await pool.query(
+      "UPDATE refresh_tokens SET revoked_at = NOW() WHERE user_id = $1 AND revoked_at IS NULL",
+      [user.id]
+    );
 
     const token = signToken({ id: user.id }, "24h");
     const refreshToken = await createWebRefreshToken(user.id);
@@ -2303,9 +2321,13 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
       "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1 FOR UPDATE",
       [businessId]
     );
-    if (parseInt(countRes.rows[0].cnt) >= 8) {
+    // Use tier limit (requireLimit middleware already checks, this is a race-condition backup)
+    const galleryLimit = (req.tier && req.tier.plan && req.tier.plan.max_gallery_images !== null)
+      ? req.tier.plan.max_gallery_images
+      : 64; // Sane fallback matching premium tier
+    if (parseInt(countRes.rows[0].cnt) >= galleryLimit) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ message: "Maximum 8 imagini permise" });
+      return res.status(400).json({ message: `Maximum ${galleryLimit} imagini permise` });
     }
 
     const result = await uploadToCloudinary(req.file.buffer, "gallery");
@@ -2518,6 +2540,11 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
+    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+    if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
+      return res.status(400).json({ message: "Tip de discount invalid" });
+    }
+
     // Backward compat: if single promo_code string sent, convert to array
     let promoCodesArr = promo_codes;
     if (!promoCodesArr && promo_code) {
@@ -2580,6 +2607,11 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
   try {
     const { businessId, offerId } = req.params;
     const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+
+    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+    if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
+      return res.status(400).json({ message: "Tip de discount invalid" });
+    }
 
     await pool.query(`
       UPDATE offers SET

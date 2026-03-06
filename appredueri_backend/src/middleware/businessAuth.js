@@ -102,12 +102,16 @@ async function businessUserAuth(req, res, next) {
     const decoded = verifyToken(token);
     
     const userResult = await pool.query(
-      "SELECT id, email, role FROM users WHERE id = $1",
+      "SELECT id, email, role, banned_at FROM users WHERE id = $1",
       [decoded.id]
     );
 
     if (userResult.rows.length === 0) {
       return res.status(401).json({ message: "Utilizator inexistent" });
+    }
+
+    if (userResult.rows[0].banned_at) {
+      return res.status(403).json({ message: "Contul a fost suspendat" });
     }
 
     req.user = userResult.rows[0];

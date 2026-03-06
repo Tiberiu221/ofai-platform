@@ -571,7 +571,7 @@ class OfferCard extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.accent.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(99),
+          borderRadius: BorderRadius.circular(100),
           border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
         ),
         child: Text(

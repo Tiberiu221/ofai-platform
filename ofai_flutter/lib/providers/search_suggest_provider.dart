@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -92,14 +93,18 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
 
   final _api = ApiClient();
   String? _activeQuery;
+  CancelToken? _cancelToken;
 
   Future<void> search(String query) async {
     if (query.length < 2) {
+      _cancelToken?.cancel();
       state = const SearchSuggestState();
       _activeQuery = null;
       return;
     }
 
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
     _activeQuery = query;
     state = state.copyWith(isLoading: true, query: query);
 
@@ -107,6 +112,7 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
       final resp = await _api.dio.get(
         ApiEndpoints.searchSuggest,
         queryParameters: {'q': query},
+        cancelToken: _cancelToken,
       );
 
       if (!mounted) return;
@@ -128,7 +134,8 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
         isLoading: false,
         query: query,
       );
-    } catch (_) {
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.cancel) return;
       if (mounted && _activeQuery == query) {
         state = state.copyWith(isLoading: false);
       }
@@ -136,6 +143,7 @@ class SearchSuggestNotifier extends StateNotifier<SearchSuggestState> {
   }
 
   void clear() {
+    _cancelToken?.cancel();
     state = const SearchSuggestState();
     _activeQuery = null;
   }

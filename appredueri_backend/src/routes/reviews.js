@@ -94,14 +94,11 @@ router.post("/", authenticateToken, async (req, res) => {
             [user_id, business_id]
         );
         const isNewReview = existingReview.rows.length === 0;
-        console.log("Is New Review:", isNewReview);
-        console.log("Existing reviews found:", existingReview.rows.length);
 
         // 2. Insert sau Update recenzia
         let reviewRes;
         if (isNewReview) {
             // INSERT nou
-            console.log("Inserting NEW review...");
             reviewRes = await client.query(
                 `INSERT INTO reviews (user_id, business_id, rating, comment)
                  VALUES ($1, $2, $3, $4)
@@ -110,7 +107,6 @@ router.post("/", authenticateToken, async (req, res) => {
             );
         } else {
             // UPDATE existent
-            console.log("Updating EXISTING review...");
             reviewRes = await client.query(
                 `UPDATE reviews 
                  SET rating = $3, comment = $4, created_at = NOW()
@@ -120,22 +116,18 @@ router.post("/", authenticateToken, async (req, res) => {
             );
         }
         const reviewId = reviewRes.rows[0].id;
-        console.log("Review ID:", reviewId);
 
         // 3. Dăm puncte DOAR pentru recenzii noi
         const POINTS_REWARD = 10;
         let pointsEarned = 0;
 
         if (isNewReview) {
-            console.log("Giving points for NEW review...");
-            
             // Adăugăm în Istoric
             await client.query(
                 `INSERT INTO points_history (user_id, points_amount, action_type, metadata)
                  VALUES ($1, $2, 'REVIEW_BONUS', $3)`,
                 [user_id, POINTS_REWARD, JSON.stringify({ business_id, review_id: reviewId })]
             );
-            console.log("Points history inserted");
 
             // Actualizăm Totalul Userului
             await client.query(
@@ -145,11 +137,8 @@ router.post("/", authenticateToken, async (req, res) => {
                  DO UPDATE SET total_points = user_points.total_points + EXCLUDED.total_points, updated_at = NOW()`,
                 [user_id, POINTS_REWARD]
             );
-            console.log("User points updated");
-            
+
             pointsEarned = POINTS_REWARD;
-        } else {
-            console.log("NO points - this is an UPDATE, not a new review");
         }
 
         await client.query("COMMIT");
@@ -185,17 +174,11 @@ router.post("/", authenticateToken, async (req, res) => {
         if (isNewReview) {
           try {
             const { checkAndAwardBadges } = require("../services/badgeService");
-            console.log("[badge] Checking badges for user", user_id);
             const awarded = await checkAndAwardBadges(user_id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
-            console.log("[badge] Awarded:", awarded);
           } catch (e) {
             console.error("[badge] ERROR in review badge check:", e.message, e.stack);
           }
         }
-
-        console.log("=== REVIEW POST END ===");
-        console.log("Points earned:", pointsEarned);
-        console.log("Is update:", !isNewReview);
 
         res.json({
             success: true,

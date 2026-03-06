@@ -86,6 +86,7 @@
 <% } %>
 <script>
 // Read returnTo from URL once on page load
+// returnTo is validated server-side (web.js) — must start with / and not //
 const _qs = new URLSearchParams(window.location.search);
 const returnTo = _qs.get('returnTo') || '/cont';
 
@@ -99,12 +100,10 @@ if (returnTo !== '/cont') {
 // Initialize Google Sign-In and render button when library loads
 (function waitForGoogle() {
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-    console.log('[Google] GIS library loaded, initializing...');
     google.accounts.id.initialize({
       client_id: '<%= googleClientId %>',
       callback: handleGoogleCallback,
-      ux_mode: 'popup',
-      log_level: 'debug'
+      ux_mode: 'popup'
     });
     const target = document.getElementById('google-btn-target');
     if (target) {
@@ -115,7 +114,6 @@ if (returnTo !== '/cont') {
         shape: 'rectangular',
         width: 360
       });
-      console.log('[Google] Button rendered');
     }
   } else {
     setTimeout(waitForGoogle, 100);
@@ -125,7 +123,6 @@ if (returnTo !== '/cont') {
 
 // Google Sign-In callback
 function handleGoogleCallback(response) {
-  console.log('[Google] Callback fired, credential length:', response.credential ? response.credential.length : 'NONE');
   fetch('/auth/google', {
     method: 'POST',
     headers: {

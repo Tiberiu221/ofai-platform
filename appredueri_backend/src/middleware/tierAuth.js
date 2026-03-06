@@ -21,7 +21,10 @@ function attachTier() {
     } catch (err) {
       console.error('Tier lookup error:', err);
       req.tier = null;
-      next(); // fail open — don't block on tier errors
+      if (process.env.TIER_GATING_ENABLED === 'true') {
+        return res.status(503).json({ error: 'Serviciu temporar indisponibil' });
+      }
+      next(); // fail open only when gating disabled
     }
   };
 }

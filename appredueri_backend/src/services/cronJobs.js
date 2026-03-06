@@ -115,11 +115,14 @@ function initCronJobs() {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          await client.query(`
+          const insertRes = await client.query(`
             INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
             VALUES ($1, $2, 'active', 'none')
             ON CONFLICT DO NOTHING
           `, [row.business_id, freePlanId]);
+          if (insertRes.rowCount === 0) {
+            console.warn(`[Cron] Free plan insert skipped for business ${row.business_id} — active subscription already exists`);
+          }
           await client.query(`
             INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
             VALUES ($1, $2, $3, 'trial_expired', 'Trial period ended')
@@ -151,11 +154,14 @@ function initCronJobs() {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          await client.query(`
+          const insertRes = await client.query(`
             INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
             VALUES ($1, $2, 'active', 'none')
             ON CONFLICT DO NOTHING
           `, [row.business_id, freePlanId]);
+          if (insertRes.rowCount === 0) {
+            console.warn(`[Cron] Free plan insert skipped for business ${row.business_id} — active subscription already exists`);
+          }
           await client.query(`
             INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
             VALUES ($1, $2, $3, 'expired', 'Paid subscription period ended without renewal')
@@ -230,33 +236,45 @@ function initCronJobs() {
           AND o.is_active = TRUE
           AND (o.end_date IS NULL OR o.end_date > $1::date)
           AND sp.has_deal_nomination = TRUE
-        ORDER BY dn.nominated_at ASC
+        ORDER BY dn.nominated_at ASC, dn.id ASC
         LIMIT 1
       `, [tomorrowStr]);
 
       if (candidate.rows.length === 0) {
+        console.log('[Cron] No deal-of-day candidates for ' + tomorrowStr);
         return;
       }
 
       const { nomination_id, offer_id } = candidate.rows[0];
 
-      // Mark nomination as selected
-      await pool.query(`
-        UPDATE deal_nominations
-        SET status = 'selected', selected_for_date = $1
-        WHERE id = $2
-      `, [tomorrowStr, nomination_id]);
+      // Wrap in transaction to prevent partial updates
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
 
-      // Clear any existing deal_of_day flag for tomorrow, then set the new one
-      await pool.query(`
-        UPDATE offers SET is_deal_of_day = FALSE, deal_of_day_date = NULL
-        WHERE deal_of_day_date = $1
-      `, [tomorrowStr]);
+        await client.query(`
+          UPDATE deal_nominations
+          SET status = 'selected', selected_for_date = $1
+          WHERE id = $2
+        `, [tomorrowStr, nomination_id]);
 
-      await pool.query(`
-        UPDATE offers SET is_deal_of_day = TRUE, deal_of_day_date = $1
-        WHERE id = $2
-      `, [tomorrowStr, offer_id]);
+        await client.query(`
+          UPDATE offers SET is_deal_of_day = FALSE, deal_of_day_date = NULL
+          WHERE deal_of_day_date = $1
+        `, [tomorrowStr]);
+
+        await client.query(`
+          UPDATE offers SET is_deal_of_day = TRUE, deal_of_day_date = $1
+          WHERE id = $2
+        `, [tomorrowStr, offer_id]);
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
+      }
 
       console.log(`[Cron] Selected offer ${offer_id} (nomination ${nomination_id}) as Deal of the Day for ${tomorrowStr}`);
     } catch (err) {

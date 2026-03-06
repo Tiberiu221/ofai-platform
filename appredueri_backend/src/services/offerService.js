@@ -56,6 +56,11 @@ async function createOffer(pool, params) {
     tier = null, // Pre-fetched tier info from middleware (avoids redundant DB query)
   } = params;
 
+  const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+  if (discountType && !VALID_DISCOUNT_TYPES.includes(discountType)) {
+    throw new Error("Tip de discount invalid");
+  }
+
   // Use transaction for offer + promo codes
   const client = await pool.connect();
   let offerId;

@@ -70,6 +70,7 @@ class BusinessesListState {
 class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
   final ApiClient _api;
   CancelToken? _cancelToken;
+  CancelToken? _loadMoreToken;
   static const _maxItems = 500;
 
   BusinessesListNotifier(this._api) : super(const BusinessesListState()) {
@@ -78,6 +79,7 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
 
   Future<void> fetch() async {
     _cancelToken?.cancel();
+    _loadMoreToken?.cancel();
     _cancelToken = CancelToken();
     state = state.copyWith(isLoading: true, clearError: true);
     try {
@@ -105,13 +107,15 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore) return;
     if (state.businesses.length >= _maxItems) return;
+    _loadMoreToken?.cancel();
+    _loadMoreToken = CancelToken();
     state = state.copyWith(isLoadingMore: true);
     try {
       final nextPage = state.page + 1;
       final response = await _api.dio.get(
         ApiEndpoints.businesses,
         queryParameters: _params(nextPage),
-        cancelToken: _cancelToken,
+        cancelToken: _loadMoreToken,
       );
       final paginated = PaginatedResponse.fromJson(response.data, Business.fromJson);
       state = state.copyWith(

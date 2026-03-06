@@ -4,6 +4,7 @@ const pool = require("../db");
 const auth = require("../middleware/auth");
 const { optionalAuth } = require("../middleware/auth");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
+const { revealLimiter } = require("../middleware/rateLimiter");
 
 // ==============================
 // Helper: Construire URL absolut
@@ -653,7 +654,7 @@ router.get("/:id", async (req, res) => {
 // =======================================
 // POST /:id/reveal-code - Reveal promo code (Mobile, auth required)
 // =======================================
-router.post("/:id/reveal-code", auth, async (req, res) => {
+router.post("/:id/reveal-code", revealLimiter, auth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -661,6 +662,17 @@ router.post("/:id/reveal-code", auth, async (req, res) => {
     const offerCheck = await pool.query("SELECT id FROM offers WHERE id = $1 AND is_active = TRUE", [id]);
     if (offerCheck.rows.length === 0) {
       return res.status(404).json({ message: "Oferta nu există" });
+    }
+
+    // Check max_reveals limit
+    const limitCheck = await pool.query(
+      "SELECT o.max_reveals, (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count FROM offers o WHERE o.id = $1",
+      [id]
+    );
+    if (limitCheck.rows[0] && limitCheck.rows[0].max_reveals !== null) {
+      if (parseInt(limitCheck.rows[0].reveal_count) >= parseInt(limitCheck.rows[0].max_reveals)) {
+        return res.status(410).json({ message: "Codul promoțional a atins limita de utilizări" });
+      }
     }
 
     // Get a random active promo code for this offer

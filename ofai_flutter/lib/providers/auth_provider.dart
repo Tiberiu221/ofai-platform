@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/network/api_client.dart';
@@ -69,8 +70,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = const AuthState(status: AuthStatus.unauthenticated);
       }
       // Network error, timeout etc. — don't log out (user may be offline)
-    } catch (_) {
-      state = const AuthState(status: AuthStatus.unauthenticated);
+    } catch (e) {
+      // Non-network error (JSON parsing, etc.) — don't log out
+      debugPrint('[Auth] _checkAuth unexpected error: $e');
     }
   }
 
@@ -152,6 +154,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> loginWithGoogle() async {
+    if (AppConfig.googleClientId.isEmpty) {
+      state = state.copyWith(status: AuthStatus.unauthenticated, error: 'Google Sign-In nu este configurat');
+      return;
+    }
     state = state.copyWith(status: AuthStatus.loading, error: null);
     try {
       final googleUser = await GoogleSignIn(
@@ -256,6 +262,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           hasPassword: u.hasPassword,
           badges: u.badges,
           showPictureInReviews: u.showPictureInReviews,
+          displayBadgeId: u.displayBadgeId,
         ));
       }
     } catch (e) {

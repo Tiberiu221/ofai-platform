@@ -137,7 +137,8 @@
       </a>
     <% } %>
     <% if (business.website) { %>
-      <a href="<%= business.website %>" target="_blank" rel="noopener noreferrer" class="bd-action-btn" onclick="trackClick(<%= business.id %>,'website')">
+      <% var safeWebsite = (business.website || '').match(/^https?:\/\//) ? business.website : '#'; %>
+      <a href="<%= safeWebsite %>" target="_blank" rel="noopener noreferrer" class="bd-action-btn" onclick="trackClick(<%= business.id %>,'website')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         Website
       </a>
@@ -179,7 +180,8 @@
           Rezerva pe WhatsApp
         </a>
       <% } else if (business.booking.type === 'url' && business.booking.url) { %>
-        <a href="<%= business.booking.url %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-booking-btn" onclick="trackClick(<%= business.id %>,'booking_url')">
+        <% var safeBookingUrl = (business.booking.url || '').match(/^https?:\/\//) ? business.booking.url : '#'; %>
+        <a href="<%= safeBookingUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-booking-btn" onclick="trackClick(<%= business.id %>,'booking_url')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
           Rezerva online
         </a>
@@ -443,7 +445,8 @@
                 Rezerv&#259; pe WhatsApp
               </a>
             <% } else if (loc.booking_type === 'url' && loc.booking_url) { %>
-              <a href="<%= loc.booking_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-action-btn" onclick="trackClick(<%= business.id %>,'booking_url')">
+              <% var safeLocBooking = (loc.booking_url || '').match(/^https?:\/\//) ? loc.booking_url : '#'; %>
+              <a href="<%= safeLocBooking %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-action-btn" onclick="trackClick(<%= business.id %>,'booking_url')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
                 Rezerv&#259; online
               </a>

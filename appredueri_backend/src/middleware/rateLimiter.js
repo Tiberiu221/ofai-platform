@@ -158,8 +158,25 @@ const mapsParseLimiter = rateLimit({
   validate: { xForwardedForHeader: true },
 });
 
+/**
+ * Write-method limiter for POST/PUT/DELETE endpoints
+ * 60 requests per minute per IP
+ */
+const writeLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: {
+    message: "Prea multe cereri de scriere. Încearcă din nou în curând.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: true },
+  skip: (req) => !['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method),
+});
+
 module.exports = {
   generalLimiter,
+  writeLimiter,
   authLimiter,
   passwordResetLimiter,
   verifyResetCodeLimiter,

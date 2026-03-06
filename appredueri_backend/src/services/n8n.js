@@ -11,6 +11,11 @@ const N8N_BASE_URL = process.env.N8N_WEBHOOK_URL || "";
  */
 function triggerWebhook(webhookPath, payload) {
   if (!N8N_BASE_URL) return; // No n8n URL configured — skip silently
+  // Ensure webhookPath starts with / and doesn't contain protocol
+  if (!webhookPath.startsWith('/') || webhookPath.includes('://')) {
+    console.error(`[n8n] Invalid webhook path: ${webhookPath}`);
+    return;
+  }
   const url = `${N8N_BASE_URL}${webhookPath}`;
 
   fetch(url, {
