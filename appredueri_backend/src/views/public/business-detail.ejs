@@ -207,18 +207,20 @@
      1. OFERTE ACTIVE (with location tabs when applicable)
      ═══════════════════════════════════════════════════════ -->
 <%
-  // Determine if we need location tabs
-  var hasLocationRestrictions = offers && offers.some(function(o) { return o.locationIds && o.locationIds.length > 0; });
-  var locs = business.locations || [];
+  // Only use real business_locations rows (filter out synthetic 'main' fallback)
+  var locs = (business.locations || []).filter(function(loc) { return typeof loc.id === 'number'; });
+  var hasLocationRestrictions = offers && locs.length > 0 && offers.some(function(o) { return o.locationIds && o.locationIds.length > 0; });
 
   // Build tab data
   var offerTabs = [];
   if (offers && offers.length > 0) {
-    // Tab 1: "Oferte active" — offers valid everywhere (no locationIds)
     var globalOffers = offers.filter(function(o) { return !o.locationIds || o.locationIds.length === 0; });
-    offerTabs.push({ id: 'all', label: 'Oferte active', offers: globalOffers });
 
     if (hasLocationRestrictions && locs.length > 0) {
+      // Only add "Oferte active" tab if there are unrestricted offers
+      if (globalOffers.length > 0) {
+        offerTabs.push({ id: 'all', label: 'Oferte active', offers: globalOffers });
+      }
       // Tab per location — offers that include this location
       locs.forEach(function(loc) {
         var locOffers = offers.filter(function(o) {
@@ -228,6 +230,14 @@
           offerTabs.push({ id: 'loc-' + loc.id, label: loc.address, offers: locOffers });
         }
       });
+      // Safety: if no tabs were generated (data mismatch), fall back to all offers
+      if (offerTabs.length === 0) {
+        offerTabs.push({ id: 'all', label: 'Oferte active', offers: offers });
+        hasLocationRestrictions = false;
+      }
+    } else {
+      // No location restrictions or no real locations — single flat list
+      offerTabs.push({ id: 'all', label: 'Oferte active', offers: offers });
     }
   }
 %>
@@ -273,7 +283,7 @@
             class="bd-offer-tab<%= ti === 0 ? ' active' : '' %>"
             data-tab-target="bd-offers-<%= tab.id %>"
             onclick="switchOfferTab(this)"
-            style="flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-color); background: <%= ti === 0 ? 'var(--accent)' : 'transparent' %>; color: <%= ti === 0 ? '#09090b' : 'var(--text-secondary)' %>; font-size: 0.8125rem; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+            style="flex-shrink: 0; padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-color); background: <%= ti === 0 ? 'var(--accent)' : 'transparent' %>; color: <%= ti === 0 ? '#09090b' : 'var(--text-secondary)' %>; font-size: 0.8125rem; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis;">
             <% if (tab.id !== 'all') { %>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px; margin-right: 3px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
             <% } %>
@@ -284,7 +294,7 @@
     <% } %>
 
     <% offerTabs.forEach(function(tab, ti) { %>
-      <div class="offers-grid bd-offers-panel" id="bd-offers-<%= tab.id %>" style="<%= ti > 0 && hasLocationRestrictions && offerTabs.length > 1 ? 'display:none;' : '' %>">
+      <div class="offers-grid bd-offers-panel" id="bd-offers-<%= tab.id %>" style="<%= (ti > 0 && offerTabs.length > 1) ? 'display:none;' : '' %>">
         <% tab.offers.forEach(function(offer, i) { %>
           <a href="/oferta/<%= offer.id %>" class="offer-card reveal reveal-delay-<%= Math.min((i % 4) + 1, 5) %>">
             <div class="offer-image-wrapper">
