@@ -20,41 +20,24 @@ router.use(optionalWebAuth);
 // ═══════════════════════════════════════════════════════
 // HOME PAGE
 // ═══════════════════════════════════════════════════════
-router.get("/", async (req, res) => {
+// Home page helpers (extracted for parallelization)
+async function _getDealOfDay() {
   try {
-    const [bizCount, offerCount, cityCount, recentOffers] = await Promise.all([
-      pool.query("SELECT COUNT(*) as total FROM businesses"),
-      pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
-      pool.query("SELECT COUNT(*) as total FROM cities"),
-      pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
-    ]);
-
-    const categories = await pool.query(`
-      SELECT c.id, c.name, COUNT(DISTINCT o.id) as offer_count
-      FROM categories c
-      LEFT JOIN businesses b ON b.category_id = c.id
-      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-      GROUP BY c.id, c.name
-      ORDER BY offer_count DESC
+    let dodResult = await pool.query(`
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+             b.name as business_name, b.logo_url as business_logo,
+             COALESCE(b.cover_image_url, o.logo_url) as image_url,
+             ci2.name as city_name,
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
+      FROM offers o
+      JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN cities ci2 ON b.city_id = ci2.id
+      WHERE o.is_active = TRUE AND o.is_deal_of_day = TRUE AND o.deal_of_day_date = CURRENT_DATE
+        AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+      LIMIT 1
     `);
-
-    // Load user preferences for personalization
-    let userPrefs = { city_ids: [], category_ids: [] };
-    if (req.webUser) {
-      const prefsRes = await pool.query(
-        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
-        [req.webUser.id]
-      );
-      if (prefsRes.rows[0]) {
-        userPrefs.city_ids = prefsRes.rows[0].preferred_city_ids || [];
-        userPrefs.category_ids = prefsRes.rows[0].preferred_category_ids || [];
-      }
-    }
-
-    // Deal of the Day (fetched early so we can exclude from featured)
-    let dealOfDay = null;
-    try {
-      let dodResult = await pool.query(`
+    if (dodResult.rows.length === 0) {
+      dodResult = await pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name as business_name, b.logo_url as business_logo,
                COALESCE(b.cover_image_url, o.logo_url) as image_url,
@@ -63,50 +46,71 @@ router.get("/", async (req, res) => {
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities ci2 ON b.city_id = ci2.id
-        WHERE o.is_active = TRUE AND o.is_deal_of_day = TRUE AND o.deal_of_day_date = CURRENT_DATE
-          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
+                 (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
         LIMIT 1
       `);
-      if (dodResult.rows.length === 0) {
-        dodResult = await pool.query(`
-          SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-                 b.name as business_name, b.logo_url as business_logo,
-                 COALESCE(b.cover_image_url, o.logo_url) as image_url,
-                 ci2.name as city_name,
-                 (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
-          FROM offers o
-          JOIN businesses b ON o.business_id = b.id
-          LEFT JOIN cities ci2 ON b.city_id = ci2.id
-          WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
-                   (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
-          LIMIT 1
-        `);
-      }
-      if (dodResult.rows.length > 0) dealOfDay = dodResult.rows[0];
-    } catch (e) { /* silently fail — deal of day is optional */ }
-
-    // Build dynamic WHERE clause based on preferences
-    const featuredWhere = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"];
-    const featuredParams = [];
-    let paramIdx = 1;
-
-    if (userPrefs.city_ids && userPrefs.city_ids.length > 0) {
-      featuredWhere.push(`(b.city_id = ANY($${paramIdx++}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
-      featuredParams.push(userPrefs.city_ids);
     }
-    if (userPrefs.category_ids.length > 0) {
-      featuredWhere.push(`b.category_id = ANY($${paramIdx++})`);
-      featuredParams.push(userPrefs.category_ids);
-    }
+    return dodResult.rows.length > 0 ? dodResult.rows[0] : null;
+  } catch (e) { return null; /* deal of day is optional */ }
+}
 
-    // Exclude deal-of-day from featured offers to avoid duplicates
+async function _getFeaturedOffers(userPrefs, dealOfDay) {
+  const where = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"];
+  const params = [];
+  let paramIdx = 1;
+  if (userPrefs.city_ids && userPrefs.city_ids.length > 0) {
+    where.push(`(b.city_id = ANY($${paramIdx++}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
+    params.push(userPrefs.city_ids);
+  }
+  if (userPrefs.category_ids.length > 0) {
+    where.push(`b.category_id = ANY($${paramIdx++})`);
+    params.push(userPrefs.category_ids);
+  }
+  if (dealOfDay) {
+    where.push(`o.id != $${paramIdx++}`);
+    params.push(dealOfDay.id);
+  }
+  const result = await pool.query(`
+    SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+           b.name as business_name, b.logo_url as business_logo,
+           b.cover_image_url as business_cover,
+           b.lat as business_lat, b.lng as business_lng,
+           ci.name as city_name, cat.name as category_name,
+           COALESCE(b.cover_image_url, o.logo_url) as image_url,
+           COALESCE(AVG(r.rating), 0) as rating_avg,
+           COUNT(DISTINCT r.id) as rating_count,
+           (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
+           (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending
+    FROM offers o
+    JOIN businesses b ON o.business_id = b.id
+    LEFT JOIN cities ci ON b.city_id = ci.id
+    LEFT JOIN categories cat ON b.category_id = cat.id
+    LEFT JOIN reviews r ON r.business_id = b.id
+    LEFT JOIN business_subscriptions bsub
+      ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+    LEFT JOIN subscription_plans splan
+      ON splan.id = bsub.plan_id
+    WHERE ${where.join(" AND ")}
+    GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+             b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
+             ci.name, cat.name, o.logo_url, splan.slug
+    ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC
+    LIMIT 6
+  `, params);
+  return result.rows;
+}
+
+async function _getPromotedOffers(dealOfDay) {
+  try {
+    const params = [];
+    let exclude = '';
     if (dealOfDay) {
-      featuredWhere.push(`o.id != $${paramIdx++}`);
-      featuredParams.push(dealOfDay.id);
+      params.push(parseInt(dealOfDay.id));
+      exclude = `AND o.id != $1`;
     }
-
-    const featuredOffers = await pool.query(`
+    const result = await pool.query(`
       SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
@@ -115,104 +119,144 @@ router.get("/", async (req, res) => {
              COALESCE(b.cover_image_url, o.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
-             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
-             (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending
+             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
+      JOIN business_subscriptions bsub
+        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+      JOIN subscription_plans splan
+        ON splan.id = bsub.plan_id AND splan.has_promoted_placement = TRUE
       LEFT JOIN cities ci ON b.city_id = ci.id
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
-      LEFT JOIN business_subscriptions bsub
-        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
-      LEFT JOIN subscription_plans splan
-        ON splan.id = bsub.plan_id
-      WHERE ${featuredWhere.join(" AND ")}
+      WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        ${exclude}
       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
-               ci.name, cat.name, o.logo_url, splan.slug
-      ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC
-      LIMIT 6
-    `, featuredParams);
-
-    const cities = await pool.query(`
-      SELECT c.id, c.name, COUNT(b.id) as business_count
-      FROM cities c
-      LEFT JOIN businesses b ON b.city_id = c.id
-      GROUP BY c.id, c.name
-      ORDER BY business_count DESC
-      LIMIT 15
-    `);
-
-    const featuredBusinesses = await pool.query(`
-      SELECT id, name, logo_url
-      FROM businesses
-      WHERE logo_url IS NOT NULL
+               ci.name, cat.name, o.logo_url
       ORDER BY RANDOM()
-      LIMIT 20
-    `);
+      LIMIT 3
+    `, params);
+    return result.rows;
+  } catch (e) { return []; /* promoted section is non-critical */ }
+}
 
-    const topBusinesses = await pool.query(`
-      SELECT b.id, b.name, b.logo_url, b.cover_image_url,
-             b.lat, b.lng, b.is_verified, b.subscription_badge_type,
-             ci.name as city_name, cat.name as category_name,
-             COALESCE(AVG(r.rating), 0) as rating_avg,
-             COUNT(DISTINCT r.id) as rating_count,
-             COUNT(DISTINCT o.id) as offer_count,
-             COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
-      FROM businesses b
-      LEFT JOIN cities ci ON b.city_id = ci.id
-      LEFT JOIN categories cat ON b.category_id = cat.id
-      LEFT JOIN reviews r ON r.business_id = b.id
-      LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-      LEFT JOIN business_subscriptions bsub
-        ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
-      LEFT JOIN subscription_plans splan
-        ON splan.id = bsub.plan_id
-      GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
-      HAVING COUNT(DISTINCT o.id) > 0
-      ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC
-      LIMIT 8
-    `);
+router.get("/", async (req, res) => {
+  try {
+    const isLoggedIn = !!req.webUser;
 
-    // Promoted offers (dedicated section for Premium businesses)
-    let promotedOffers = [];
-    try {
-      const promotedParams = [];
-      let promotedExclude = '';
-      if (dealOfDay) {
-        promotedParams.push(parseInt(dealOfDay.id));
-        promotedExclude = `AND o.id != $1`;
-      }
-      const promotedResult = await pool.query(`
-        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-               b.name as business_name, b.logo_url as business_logo,
-               b.cover_image_url as business_cover,
-               b.lat as business_lat, b.lng as business_lng,
+    // ── Phase A: All independent queries in parallel ──
+    const [
+      [bizCount, offerCount, cityCount, recentOffers],
+      categoriesResult,
+      userPrefsResult,
+      dealOfDay,
+      citiesResult,
+      featuredBizResult,
+      topBizResult,
+      followedResult,
+      favFollowResult,
+    ] = await Promise.all([
+      // 1. Stats counts
+      Promise.all([
+        pool.query("SELECT COUNT(*) as total FROM businesses"),
+        pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
+        pool.query("SELECT COUNT(*) as total FROM cities"),
+        pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
+      ]),
+      // 2. Categories with offer counts
+      pool.query(`
+        SELECT c.id, c.name, COUNT(DISTINCT o.id) as offer_count
+        FROM categories c
+        LEFT JOIN businesses b ON b.category_id = c.id
+        LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        GROUP BY c.id, c.name
+        ORDER BY offer_count DESC
+      `),
+      // 3. User preferences (null if not logged in)
+      isLoggedIn
+        ? pool.query("SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1", [req.webUser.id])
+        : Promise.resolve(null),
+      // 4. Deal of the Day (with internal fallback)
+      _getDealOfDay(),
+      // 5. Cities list
+      pool.query(`
+        SELECT c.id, c.name, COUNT(b.id) as business_count
+        FROM cities c
+        LEFT JOIN businesses b ON b.city_id = c.id
+        GROUP BY c.id, c.name
+        ORDER BY business_count DESC
+        LIMIT 15
+      `),
+      // 6. Featured businesses (logo strip)
+      pool.query(`
+        SELECT id, name, logo_url
+        FROM businesses
+        WHERE logo_url IS NOT NULL
+        ORDER BY RANDOM()
+        LIMIT 20
+      `),
+      // 7. Top businesses
+      pool.query(`
+        SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+               b.lat, b.lng, b.is_verified, b.subscription_badge_type,
                ci.name as city_name, cat.name as category_name,
-               COALESCE(b.cover_image_url, o.logo_url) as image_url,
                COALESCE(AVG(r.rating), 0) as rating_avg,
                COUNT(DISTINCT r.id) as rating_count,
-               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
-        FROM offers o
-        JOIN businesses b ON o.business_id = b.id
-        JOIN business_subscriptions bsub
-          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
-        JOIN subscription_plans splan
-          ON splan.id = bsub.plan_id AND splan.has_promoted_placement = TRUE
+               COUNT(DISTINCT o.id) as offer_count,
+               COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
+        FROM businesses b
         LEFT JOIN cities ci ON b.city_id = ci.id
         LEFT JOIN categories cat ON b.category_id = cat.id
         LEFT JOIN reviews r ON r.business_id = b.id
-        WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          ${promotedExclude}
-        GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-                 b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
-                 ci.name, cat.name, o.logo_url
-        ORDER BY RANDOM()
-        LIMIT 3
-      `, promotedParams);
-      promotedOffers = promotedResult.rows;
-    } catch (e) { /* promoted section is non-critical */ }
+        LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        LEFT JOIN business_subscriptions bsub
+          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+        LEFT JOIN subscription_plans splan
+          ON splan.id = bsub.plan_id
+        GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
+        HAVING COUNT(DISTINCT o.id) > 0
+        ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC
+        LIMIT 8
+      `),
+      // 8. Followed offers (null if not logged in)
+      isLoggedIn
+        ? pool.query(`
+            SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+                   b.name as business_name, b.logo_url as business_logo,
+                   COALESCE(b.cover_image_url, o.logo_url) as image_url
+            FROM offers o
+            JOIN businesses b ON o.business_id = b.id
+            JOIN followed_businesses fb ON fb.business_id = b.id AND fb.user_id = $1
+            WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+              AND o.start_date >= CURRENT_DATE - INTERVAL '7 days'
+            ORDER BY o.id DESC
+            LIMIT 6
+          `, [req.webUser.id])
+        : Promise.resolve(null),
+      // 9. User favorite/follow IDs (null if not logged in)
+      isLoggedIn
+        ? Promise.all([
+            pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
+            pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
+          ])
+        : Promise.resolve(null),
+    ]);
 
+    // Unpack user preferences
+    let userPrefs = { city_ids: [], category_ids: [] };
+    if (userPrefsResult && userPrefsResult.rows[0]) {
+      userPrefs.city_ids = userPrefsResult.rows[0].preferred_city_ids || [];
+      userPrefs.category_ids = userPrefsResult.rows[0].preferred_category_ids || [];
+    }
+
+    // ── Phase B: Queries that depend on Phase A results ──
+    const [featuredOffersRows, promotedOffers] = await Promise.all([
+      _getFeaturedOffers(userPrefs, dealOfDay),
+      _getPromotedOffers(dealOfDay),
+    ]);
+
+    // Assemble template data
     const stats = {
       totalBusinesses: parseInt(bizCount.rows[0].total),
       totalOffers: parseInt(offerCount.rows[0].total),
@@ -220,52 +264,30 @@ router.get("/", async (req, res) => {
       newOffers: parseInt(recentOffers.rows[0].total) || Math.floor(parseInt(offerCount.rows[0].total) * 0.1),
     };
 
-    // New offers from followed businesses (for logged-in users)
-    let followedOffers = [];
-    if (req.webUser) {
-      const followedRes = await pool.query(`
-        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
-               b.name as business_name, b.logo_url as business_logo,
-               COALESCE(b.cover_image_url, o.logo_url) as image_url
-        FROM offers o
-        JOIN businesses b ON o.business_id = b.id
-        JOIN followed_businesses fb ON fb.business_id = b.id AND fb.user_id = $1
-        WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          AND o.start_date >= CURRENT_DATE - INTERVAL '7 days'
-        ORDER BY o.id DESC
-        LIMIT 6
-      `, [req.webUser.id]);
-      followedOffers = followedRes.rows;
-    }
-
-    // Get preferred city name for banner
-    let preferredCityName = null;
-    if (userPrefs.city_id) {
-      const cityName = cities.rows.find(c => c.id === userPrefs.city_id);
-      preferredCityName = cityName ? cityName.name : null;
-    }
-
-    // Fetch user favorite/follow IDs for card heart buttons
+    const followedOffers = followedResult ? followedResult.rows : [];
     let userFavoriteIds = [];
     let userFollowedIds = [];
-    if (req.webUser) {
-      const [favRes, followRes] = await Promise.all([
-        pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
-        pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
-      ]);
-      userFavoriteIds = favRes.rows.map(r => r.offer_id);
-      userFollowedIds = followRes.rows.map(r => r.business_id);
+    if (favFollowResult) {
+      userFavoriteIds = favFollowResult[0].rows.map(r => r.offer_id);
+      userFollowedIds = favFollowResult[1].rows.map(r => r.business_id);
+    }
+
+    // Preferred city name for banner
+    let preferredCityName = null;
+    if (userPrefs.city_id) {
+      const cityName = citiesResult.rows.find(c => c.id === userPrefs.city_id);
+      preferredCityName = cityName ? cityName.name : null;
     }
 
     res.render("public/home", {
       stats,
-      categories: categories.rows,
-      featuredOffers: featuredOffers.rows,
+      categories: categoriesResult.rows,
+      featuredOffers: featuredOffersRows,
       promotedOffers,
       dealOfDay,
-      cities: cities.rows,
-      featuredBusinesses: featuredBusinesses.rows,
-      topBusinesses: topBusinesses.rows,
+      cities: citiesResult.rows,
+      featuredBusinesses: featuredBizResult.rows,
+      topBusinesses: topBizResult.rows,
       followedOffers,
       preferredCityName,
       hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),

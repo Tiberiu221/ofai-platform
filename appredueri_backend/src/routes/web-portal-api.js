@@ -16,11 +16,12 @@ const offerService = require("../services/offerService");
 const pushService = require("../services/pushNotifications");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { portalUpload } = require("./web-shared");
+const { cancelSubscription } = require("../services/subscriptionService");
 
 // Upload logo
 router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, requireFeature('can_upload_logo'), portalUpload.single("logo"), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
 
     const oldRes = await pool.query("SELECT logo_url FROM businesses WHERE id = $1", [businessId]);
@@ -41,7 +42,7 @@ router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, requireFea
 // Upload cover
 router.post("/api/web/portal/:businessId/cover", requireBusinessOwner, requireFeature('can_upload_cover'), portalUpload.single("cover"), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
 
     const oldRes = await pool.query("SELECT cover_image_url FROM businesses WHERE id = $1", [businessId]);
@@ -62,7 +63,7 @@ router.post("/api/web/portal/:businessId/cover", requireBusinessOwner, requireFe
 // Delete logo
 router.delete("/api/web/portal/:businessId/logo", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const oldRes = await pool.query("SELECT logo_url FROM businesses WHERE id = $1", [businessId]);
     if (oldRes.rows[0]?.logo_url) {
       const oldId = getPublicIdFromUrl(oldRes.rows[0].logo_url);
@@ -79,7 +80,7 @@ router.delete("/api/web/portal/:businessId/logo", requireBusinessOwner, async (r
 // Delete cover
 router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const oldRes = await pool.query("SELECT cover_image_url FROM businesses WHERE id = $1", [businessId]);
     if (oldRes.rows[0]?.cover_image_url) {
       const oldId = getPublicIdFromUrl(oldRes.rows[0].cover_image_url);
@@ -97,7 +98,7 @@ router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (
 router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, requireLimit('max_gallery_images', countGalleryImages), portalUpload.single("image"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
 
     await client.query("BEGIN");
@@ -137,7 +138,9 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
 // Delete gallery image
 router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId, imageId } = req.params;
+    const businessId = req.businessId;
+    const imageId = parseInt(req.params.imageId, 10);
+    if (isNaN(imageId)) return res.status(400).json({ message: "ID invalid" });
     const imgRes = await pool.query(
       "SELECT image_url FROM business_images WHERE id = $1 AND business_id = $2",
       [imageId, businessId]
@@ -188,7 +191,7 @@ function toNullableFloat(v) {
 // CREATE location
 router.post("/api/web/portal/:businessId/locations", requireBusinessOwner, requireLimit('max_locations', countLocations), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const { address, city_id, phone, lat, lng, maps_url } = req.body || {};
 
     if (!address || !city_id) {
@@ -211,7 +214,9 @@ router.post("/api/web/portal/:businessId/locations", requireBusinessOwner, requi
 // UPDATE location
 router.put("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId, locId } = req.params;
+    const businessId = req.businessId;
+    const locId = parseInt(req.params.locId, 10);
+    if (isNaN(locId)) return res.status(400).json({ message: "ID invalid" });
     const { address, city_id, phone, lat, lng, maps_url } = req.body || {};
 
     if (!address || !city_id) {
@@ -240,7 +245,9 @@ router.put("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner,
 // DELETE location
 router.delete("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId, locId } = req.params;
+    const businessId = req.businessId;
+    const locId = parseInt(req.params.locId, 10);
+    if (isNaN(locId)) return res.status(400).json({ message: "ID invalid" });
 
     // Check how many offers reference this location
     const offerCheck = await pool.query(
@@ -273,7 +280,7 @@ router.delete("/api/web/portal/:businessId/locations/:locId", requireBusinessOwn
 // Update business info
 router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const { name, description, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
 
     const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
@@ -321,7 +328,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 // Create offer
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireLimit('max_active_offers', countActiveOffers), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
@@ -391,7 +398,9 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
 // Update offer
 router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
-    const { businessId, offerId } = req.params;
+    const businessId = req.businessId;
+    const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
     const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
@@ -465,7 +474,10 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
 // Delete offer
 router.delete("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
   try {
-    await pool.query("DELETE FROM offers WHERE id = $1 AND business_id = $2", [req.params.offerId, req.params.businessId]);
+    const businessId = req.businessId;
+    const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
+    await pool.query("DELETE FROM offers WHERE id = $1 AND business_id = $2", [offerId, businessId]);
     res.json({ success: true });
   } catch (err) {
     console.error("[Web API] Portal delete offer error:", err);
@@ -477,12 +489,16 @@ router.delete("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwne
 router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusinessOwner, async (req, res) => {
   const client = await pool.connect();
   try {
+    const businessId = req.businessId;
+    const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
+
     await client.query("BEGIN");
 
     // Lock the offer row to prevent concurrent toggles
     const current = await client.query(
       "SELECT is_active FROM offers WHERE id = $1 AND business_id = $2 FOR UPDATE",
-      [req.params.offerId, req.params.businessId]
+      [offerId, businessId]
     );
     if (current.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -497,7 +513,7 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
       if (limit !== null) {
         const countRes = await client.query(
           "SELECT COUNT(*)::int AS cnt FROM offers WHERE business_id = $1 AND is_active = true",
-          [req.params.businessId]
+          [businessId]
         );
         if (countRes.rows[0].cnt >= limit) {
           await client.query("ROLLBACK");
@@ -511,7 +527,7 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
 
     const result = await client.query(
       "UPDATE offers SET is_active = NOT is_active WHERE id = $1 AND business_id = $2 RETURNING is_active",
-      [req.params.offerId, req.params.businessId]
+      [offerId, businessId]
     );
 
     await client.query("COMMIT");
@@ -528,7 +544,9 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
 // Respond to review
 router.post("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, requireFeature('can_respond_reviews'), async (req, res) => {
   try {
-    const { businessId, reviewId } = req.params;
+    const businessId = req.businessId;
+    const reviewId = parseInt(req.params.reviewId, 10);
+    if (isNaN(reviewId)) return res.status(400).json({ message: "ID invalid" });
     const responseText = sanitizeString(req.body.response_text, 500);
     if (!responseText) return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
 
@@ -553,12 +571,15 @@ router.post("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusi
 // Edit review response
 router.put("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, requireFeature('can_respond_reviews'), async (req, res) => {
   try {
+    const businessId = req.businessId;
+    const reviewId = parseInt(req.params.reviewId, 10);
+    if (isNaN(reviewId)) return res.status(400).json({ message: "ID invalid" });
     const responseText = sanitizeString(req.body.response_text, 500);
     if (!responseText) return res.status(400).json({ message: "Răspunsul nu poate fi gol" });
 
     const result = await pool.query(
       "UPDATE review_responses SET response_text = $1, updated_at = NOW() WHERE review_id = $2 AND business_id = $3 RETURNING id",
-      [responseText, req.params.reviewId, req.params.businessId]
+      [responseText, reviewId, businessId]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Răspunsul nu există" });
 
@@ -572,9 +593,12 @@ router.put("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusin
 // Delete review response
 router.delete("/api/web/portal/:businessId/reviews/:reviewId/respond", requireBusinessOwner, async (req, res) => {
   try {
+    const businessId = req.businessId;
+    const reviewId = parseInt(req.params.reviewId, 10);
+    if (isNaN(reviewId)) return res.status(400).json({ message: "ID invalid" });
     const result = await pool.query(
       "DELETE FROM review_responses WHERE review_id = $1 AND business_id = $2 RETURNING id",
-      [req.params.reviewId, req.params.businessId]
+      [reviewId, businessId]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Răspunsul nu există" });
     res.json({ success: true });
@@ -618,7 +642,7 @@ router.delete("/api/web/reviews/:id", requireWebAuth, async (req, res) => {
 // Analytics views timeline (W4: added requireFeature gate to match mobile routes)
 router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
     const result = await pool.query(
@@ -650,7 +674,7 @@ router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, 
 // Analytics offer-views timeline (W4: added requireFeature gate to match mobile routes)
 router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
     const offerId = parseInt(req.query.offer_id);
 
@@ -695,7 +719,7 @@ router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessO
 // Analytics subscribers timeline (W4: added requireFeature gate to match mobile routes)
 router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
     const [trendRes, totalRes] = await Promise.all([
@@ -723,7 +747,7 @@ router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessO
 // Analytics clicks timeline (W4: added requireFeature gate to match mobile routes)
 router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
     const validActionTypes = ['phone', 'whatsapp', 'navigate', 'booking_url'];
@@ -784,7 +808,7 @@ router.get("/api/web/portal/:businessId/analytics/export",
   requireBusinessOwner, requireFeature('has_analytics_export'),
   async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const type = req.query.type || 'views';
     const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
 
@@ -929,7 +953,7 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
   requireBusinessOwner, requireFeature('has_competitive_insights'),
   async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
 
     // Check cache
     const cacheKey = `comp_${businessId}`;
@@ -1089,7 +1113,7 @@ router.post("/api/web/portal/:businessId/notifications/send",
   requireBusinessOwner, requireFeature('has_custom_push'),
   async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
     const userId = req.webUser.id;
 
     // Validate input
@@ -1178,7 +1202,7 @@ router.get("/api/web/portal/:businessId/notifications/history",
   requireBusinessOwner, requireFeature('has_custom_push'),
   async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = req.businessId;
 
     const historyRes = await pool.query(
       `SELECT id, title, message, recipients_count, success_count, failure_count, created_at
@@ -1226,7 +1250,7 @@ router.get("/api/web/portal/:businessId/notifications/history",
 // GET subscription info for web portal (manage.ejs subscription tab)
 router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, async (req, res) => {
   try {
-    const businessId = parseInt(req.params.businessId);
+    const businessId = req.businessId;
     const tierInfo = await getBusinessTier(pool, businessId);
     const { plan, tier, isTrial, subscription } = tierInfo;
 
@@ -1274,8 +1298,7 @@ router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, asy
 // POST cancel subscription for web portal (W9: uses shared subscriptionService)
 router.post("/api/web/portal/:businessId/subscription/cancel", requireBusinessOwner, async (req, res) => {
   try {
-    const businessId = parseInt(req.params.businessId);
-    const { cancelSubscription } = require('../services/subscriptionService');
+    const businessId = req.businessId;
     const result = await cancelSubscription(pool, businessId, 'web');
 
     if (!result.success) {

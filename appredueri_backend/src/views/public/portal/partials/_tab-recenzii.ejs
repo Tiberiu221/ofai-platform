@@ -53,7 +53,7 @@
                         maxlength="500"
                         placeholder="Scrie un răspuns..."
                         oninput="updateCharCount(<%= review.id %>)"></textarea>
-              <script>document.getElementById('response-text-<%= review.id %>').value = <%= JSON.stringify(review.response_id ? (review.response_text || '') : '') %>;</script>
+              <script>document.getElementById('response-text-<%= review.id %>').value = <%- JSON.stringify(review.response_id ? (review.response_text || '') : '').replace(/<\//g, '<\\/') %>;</script>
               <div class="response-char-count" id="char-count-<%= review.id %>">0 / 500</div>
               <div class="response-form-actions">
                 <button class="btn-sm" onclick="cancelResponse(<%= review.id %>)">Anulează</button>

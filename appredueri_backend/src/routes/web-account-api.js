@@ -24,6 +24,8 @@ const { sanitizeString, validatePassword } = require("../helpers/validate");
 const { deleteUserAccount } = require("../services/accountDeletion");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { portalUpload, SALT_ROUNDS } = require("./web-shared");
+const { awardPoints } = require("../services/gamification");
+const { checkAndAwardBadges } = require("../services/badgeService");
 
 // Business Requests sub-router
 const businessRequestsRouter = require("./businessRequests");
@@ -35,15 +37,15 @@ router.post("/api/web/favorites", requireWebAuth, async (req, res) => {
   try {
     const { offer_id } = req.body;
     if (!offer_id) return res.status(400).json({ message: "offer_id lipsă" });
+    const parsedOfferId = parseInt(offer_id, 10);
+    if (isNaN(parsedOfferId)) return res.status(400).json({ message: "offer_id invalid" });
 
     await pool.query(
       "INSERT INTO favorite_offers (user_id, offer_id) VALUES ($1, $2) ON CONFLICT (user_id, offer_id) DO NOTHING",
-      [req.webUser.id, parseInt(offer_id)]
+      [req.webUser.id, parsedOfferId]
     );
 
     // Fire-and-forget: award points + check badges
-    const { awardPoints } = require("../services/gamification");
-    const { checkAndAwardBadges } = require("../services/badgeService");
     awardPoints(req.webUser.id, "favorite").catch(() => {});
     checkAndAwardBadges(req.webUser.id, ["first_favorite"]).catch(() => {});
 
@@ -75,15 +77,15 @@ router.post("/api/web/subscriptions", requireWebAuth, async (req, res) => {
   try {
     const { business_id } = req.body;
     if (!business_id) return res.status(400).json({ message: "business_id lipsă" });
+    const parsedBusinessId = parseInt(business_id, 10);
+    if (isNaN(parsedBusinessId)) return res.status(400).json({ message: "business_id invalid" });
 
     await pool.query(
       "INSERT INTO followed_businesses (user_id, business_id) VALUES ($1, $2) ON CONFLICT (user_id, business_id) DO NOTHING",
-      [req.webUser.id, parseInt(business_id)]
+      [req.webUser.id, parsedBusinessId]
     );
 
     // Fire-and-forget: award points + check badges
-    const { awardPoints } = require("../services/gamification");
-    const { checkAndAwardBadges } = require("../services/badgeService");
     awardPoints(req.webUser.id, "follow").catch(() => {});
     checkAndAwardBadges(req.webUser.id, ["social_butterfly", "loyal_fan"]).catch(() => {});
 
@@ -302,7 +304,6 @@ router.post("/api/web/reviews", requireWebAuth, async (req, res) => {
       // Badge check (fire-and-forget, only for new reviews)
       if (isNewReview) {
         try {
-          const { checkAndAwardBadges } = require("../services/badgeService");
           console.log("[badge] Web review: checking badges for user", req.webUser.id);
           const awarded = await checkAndAwardBadges(req.webUser.id, ['first_review', 'reviewer_bronze', 'reviewer_silver', 'reviewer_gold']);
           console.log("[badge] Web review: awarded", awarded);
@@ -468,7 +469,6 @@ router.put("/api/web/profile", requireWebAuth, async (req, res) => {
 router.put("/api/web/account", requireWebAuth, async (req, res) => {
   try {
     const { show_picture_in_reviews, display_badge_id } = req.body || {};
-    const { validateInt } = require("../helpers/validate");
 
     // Handle display_badge_id: null = clear, integer = set (with ownership check)
     if (display_badge_id !== undefined) {

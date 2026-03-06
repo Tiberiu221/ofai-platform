@@ -76,17 +76,24 @@ async function requireBusinessOwner(req, res, next) {
 
     req.webUser = rows[0];
 
-    // Admin bypass
-    if (req.webUser.role === "admin") {
-      return next();
-    }
-
-    // Check business ownership
+    // Parse and attach businessId for downstream handlers
     const businessId = req.params.businessId;
     if (businessId) {
+      const parsedId = parseInt(businessId, 10);
+      if (isNaN(parsedId)) {
+        return res.status(400).json({ error: "ID business invalid" });
+      }
+      req.businessId = parsedId;
+
+      // Admin bypass
+      if (req.webUser.role === "admin") {
+        return next();
+      }
+
+      // Check business ownership
       const accessResult = await pool.query(
         "SELECT id FROM user_businesses WHERE user_id = $1 AND business_id = $2",
-        [req.webUser.id, parseInt(businessId, 10)]
+        [req.webUser.id, parsedId]
       );
 
       if (accessResult.rows.length === 0) {
