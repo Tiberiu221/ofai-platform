@@ -1,0 +1,308 @@
+
+      <!-- Performance Score -->
+      <div class="glass-card">
+        <h3 class="section-title">Scor Performanță</h3>
+        <div class="score-card">
+          <div class="score-circle-wrap">
+            <%
+              var scoreVal = score.score || 0;
+              var scoreMax = score.max_score || 100;
+              var scorePercent = scoreMax > 0 ? (scoreVal / scoreMax) * 100 : 0;
+              var scoreColor = scorePercent >= 70 ? '#22c55e' : (scorePercent >= 40 ? '#eab308' : '#ef4444');
+              var circumference = 2 * Math.PI * 50;
+              var dashOffset = circumference - (scorePercent / 100) * circumference;
+            %>
+            <div class="score-circle">
+              <svg viewBox="0 0 120 120">
+                <circle class="score-circle-bg" cx="60" cy="60" r="50"/>
+                <circle class="score-circle-fill" cx="60" cy="60" r="50"
+                        stroke="<%= scoreColor %>"
+                        stroke-dasharray="<%= circumference %>"
+                        stroke-dashoffset="<%= dashOffset %>"/>
+              </svg>
+              <div class="score-circle-text">
+                <span class="score-number" style="color: <%= scoreColor %>"><%= scoreVal %></span>
+                <span class="score-max">/ <%= scoreMax %></span>
+              </div>
+            </div>
+            <span class="score-label-text">
+              <% if (scorePercent >= 70) { %>Excelent
+              <% } else if (scorePercent >= 40) { %>Bine
+              <% } else { %>Necesită îmbunătățiri<% } %>
+            </span>
+          </div>
+
+          <div class="score-breakdown">
+            <% if (score.breakdown && score.breakdown.length) { score.breakdown.forEach(function(item) { %>
+              <div class="score-breakdown-item">
+                <% if (item.completed) { %>
+                  <svg class="score-icon-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <% } else { %>
+                  <svg class="score-icon-miss" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <% } %>
+                <span class="score-criterion"><%= item.criterion %></span>
+                <span class="score-points"><%= item.earned %>/<%= item.points %></span>
+              </div>
+            <% }); } %>
+
+            <%
+              var tips = [];
+              if (score.breakdown && score.breakdown.length) {
+                score.breakdown.forEach(function(item) {
+                  if (!item.completed && item.tip) tips.push(item.tip);
+                });
+              }
+            %>
+            <% if (tips.length > 0) { %>
+              <div class="score-tips">
+                <div class="score-tips-title">Sfaturi pentru îmbunătățire</div>
+                <% tips.forEach(function(tip) { %>
+                  <div class="score-tip">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span><%= tip %></span>
+                  </div>
+                <% }); %>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <%
+        var viewsTrend = 0;
+        if (analytics.views && analytics.views.prev_7d > 0) {
+          viewsTrend = Math.round(((analytics.views.last_7d - analytics.views.prev_7d) / analytics.views.prev_7d) * 100);
+        } else if (analytics.views && analytics.views.last_7d > 0) {
+          viewsTrend = 100;
+        }
+      %>
+      <div class="stats-grid" style="margin-top: 20px;">
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.views ? analytics.views.last_30d : 0 %></div>
+          <div class="stat-label">Vizualizări (30 zile)</div>
+          <% if (analytics.views && (analytics.views.last_7d > 0 || analytics.views.prev_7d > 0)) { %>
+            <div class="stat-trend <%= viewsTrend > 0 ? 'up' : (viewsTrend < 0 ? 'down' : 'neutral') %>">
+              <% if (viewsTrend > 0) { %>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
+                +<%= viewsTrend %>%
+              <% } else if (viewsTrend < 0) { %>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+                <%= viewsTrend %>%
+              <% } else { %>
+                &mdash; 0%
+              <% } %>
+              <span style="color: var(--text-tertiary); font-weight: 400; margin-left: 2px;">vs săpt. trec.</span>
+            </div>
+          <% } %>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.subscribers || 0 %></div>
+          <div class="stat-label">Abonați</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.reviews ? (Number(analytics.reviews.avg_rating) || 0).toFixed(1) : '0.0' %></div>
+          <div class="stat-label">Rating mediu</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.offers ? analytics.offers.active : 0 %></div>
+          <div class="stat-label">Oferte active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.offerRequests ? analytics.offerRequests.total : 0 %></div>
+          <div class="stat-label">Cereri de ofertă</div>
+          <% if (analytics.offerRequests && analytics.offerRequests.uniqueRequesters > 0) { %>
+            <div class="stat-subtext"><%= analytics.offerRequests.uniqueRequesters %> utilizator<%= analytics.offerRequests.uniqueRequesters === 1 ? '' : 'i' %> unic<%= analytics.offerRequests.uniqueRequesters === 1 ? '' : 'i' %></div>
+          <% } %>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value"><%= analytics.codeReveals ? analytics.codeReveals.last30d : 0 %></div>
+          <div class="stat-label">Coduri folosite</div>
+        </div>
+        <%
+          var actionCards = {
+            phone: { label: 'Apeluri', icon: '📞' },
+            whatsapp: { label: 'WhatsApp', icon: '💬' },
+            website: { label: 'Vizite site', icon: '🌐' },
+            navigate: { label: 'Direcții', icon: '📍' },
+            booking_url: { label: 'Rezervări link', icon: '🔗' },
+            share: { label: 'Distribuiri', icon: '📤' },
+            copy_code: { label: 'Coduri copiate', icon: '📋' },
+            follow: { label: 'Urmăriri noi', icon: '❤️' },
+            favorite: { label: 'Favorite', icon: '⭐' }
+          };
+          var clickCards = [];
+          if (analytics.clicks && analytics.clicks.breakdown) {
+            analytics.clicks.breakdown.forEach(function(c) {
+              if (c.last30d > 0 && actionCards[c.action]) {
+                clickCards.push({ value: c.last30d, label: actionCards[c.action].label, icon: actionCards[c.action].icon });
+              }
+            });
+          }
+        %>
+        <% clickCards.forEach(function(card) { %>
+          <div class="stat-card">
+            <div class="stat-value"><%= card.value %></div>
+            <div class="stat-label"><%= card.icon %> <%= card.label %></div>
+          </div>
+        <% }); %>
+      </div>
+
+      <!-- Rating Distribution -->
+      <div class="glass-card">
+        <div class="rating-dist-title">Distribuție recenzii</div>
+        <%
+          var distribution = (analytics.reviews && analytics.reviews.distribution) ? analytics.reviews.distribution : [];
+          var maxCount = 0;
+          distribution.forEach(function(d) { if (d.count > maxCount) maxCount = d.count; });
+        %>
+        <% for (var star = 5; star >= 1; star--) {
+          var found = distribution.find(function(d) { return d.rating == star; });
+          var count = found ? found.count : 0;
+          var pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        %>
+          <div class="rating-dist-row">
+            <div class="rating-dist-label">
+              <%= star %>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </div>
+            <div class="rating-dist-bar-bg">
+              <div class="rating-dist-bar-fill" style="width: <%= pct %>%"></div>
+            </div>
+            <div class="rating-dist-count"><%= count %></div>
+          </div>
+        <% } %>
+      </div>
+
+
+      <!-- Charts -->
+      <div class="glass-card" id="analytics-charts-section" style="margin-top: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+          <h3 class="section-title" style="border: none; margin: 0; padding: 0;">Grafice</h3>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <% if (tier && tier.plan && tier.plan.has_analytics_export) { %>
+              <div class="csv-export-dropdown" style="position: relative;">
+                <button class="period-btn" onclick="toggleExportDropdown(event)" title="Exporta CSV"
+                        style="display: flex; align-items: center; gap: 4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  CSV
+                </button>
+                <div id="export-dropdown" class="export-dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 4px 0; min-width: 200px; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+                  <a class="export-option" onclick="exportCSV('views')">Vizualizari pagina</a>
+                  <a class="export-option" onclick="exportCSV('subscribers')">Abonati noi</a>
+                  <a class="export-option" onclick="exportCSV('clicks')">Click-uri</a>
+                  <a class="export-option" onclick="exportCSV('code-reveals')">Coduri dezvaluite</a>
+                </div>
+              </div>
+            <% } %>
+            <div class="period-selector">
+              <button class="period-btn grouping-btn" id="grouping-toggle" onclick="toggleGrouping(this)">Săptămânal</button>
+              <span class="period-separator"></span>
+              <button class="period-btn" onclick="changePeriod(7, this)">7 zile</button>
+              <button class="period-btn active" onclick="changePeriod(30, this)">30 zile</button>
+              <button class="period-btn" onclick="changePeriod(90, this)">90 zile</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-section">
+            <select id="views-selector" class="chart-dropdown" onchange="onViewsDropdownChange(this)">
+              <option value="business">Vizualizări Pagină Business</option>
+              <% offers.forEach(function(o) { %>
+                <option value="offer-<%= o.id %>"><%= o.title.length > 40 ? o.title.substring(0, 40) + '...' : o.title %></option>
+              <% }); %>
+            </select>
+            <div class="chart-container">
+              <canvas id="views-chart"></canvas>
+            </div>
+          </div>
+          <div class="chart-section">
+            <div class="chart-title">Abonați noi</div>
+            <div class="chart-container">
+              <canvas id="subscribers-chart"></canvas>
+            </div>
+          </div>
+          <div class="chart-section">
+            <select id="clicks-selector" class="chart-dropdown" onchange="onClicksDropdownChange(this)">
+              <option value="phone">Click-uri: Apeluri</option>
+              <option value="whatsapp">Click-uri: WhatsApp</option>
+              <option value="navigate">Click-uri: Direcții</option>
+              <option value="booking_url">Click-uri: Rezervări Link</option>
+            </select>
+            <div class="chart-container">
+              <canvas id="clicks-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Competitive Insights (Premium only) -->
+      <% if (tier && tier.plan && tier.plan.has_competitive_insights) { %>
+        <div class="glass-card" id="competitive-insights-card" style="margin-top: 16px;">
+          <h3 class="section-title">Analiza Competitiva</h3>
+          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+            Cum te compari cu business-urile similare din aceeasi categorie si oras.
+          </p>
+          <div id="competitive-content">
+            <div style="text-align: center; padding: 24px; color: var(--text-tertiary);">
+              Se incarca...
+            </div>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Custom Push Notifications (Premium only) -->
+      <% if (tier && tier.plan && tier.plan.has_custom_push) { %>
+        <div class="glass-card" style="margin-top: 16px;">
+          <h3 class="section-title">Notificari catre abonati</h3>
+          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+            Trimite notificari push personalizate catre abonatii business-ului tau.
+            Limita: 2 notificari pe saptamana.
+          </p>
+
+          <!-- Send Form -->
+          <form id="push-form" onsubmit="return sendCustomPush(event)">
+            <div class="form-group">
+              <label class="form-label">Titlu <span style="color: var(--text-tertiary); font-weight: 400;">(max 100 caractere)</span></label>
+              <input type="text" id="push-title" class="form-input" maxlength="100" required
+                     placeholder="ex: Oferta speciala de weekend!">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mesaj <span style="color: var(--text-tertiary); font-weight: 400;">(max 300 caractere)</span></label>
+              <textarea id="push-message" class="form-input" maxlength="300" rows="3" required
+                        placeholder="ex: Vino sa profiti de 30% reducere la toate produsele, doar in acest weekend."></textarea>
+              <div style="text-align: right; font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">
+                <span id="push-char-count">0</span>/300
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button type="submit" class="btn-primary" id="push-send-btn" style="min-width: 160px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Trimite notificarea
+              </button>
+              <span id="push-remaining" style="font-size: 12px; color: var(--text-tertiary);"></span>
+            </div>
+          </form>
+
+          <!-- Push History -->
+          <div style="margin-top: 24px;">
+            <h4 style="font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px;">
+              Istoric notificari
+            </h4>
+            <div id="push-history">
+              <div style="text-align: center; padding: 16px; color: var(--text-tertiary); font-size: 13px;">
+                Se incarca...
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+

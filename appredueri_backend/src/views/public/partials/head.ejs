@@ -55,5 +55,8 @@
   <% if (typeof loadOnboardingCss !== 'undefined' && loadOnboardingCss) { %>
   <link rel="stylesheet" href="/css/onboarding.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
   <% } %>
+  <% if (typeof loadPortalCss !== 'undefined' && loadPortalCss) { %>
+  <link rel="stylesheet" href="/css/portal.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
+  <% } %>
 </head>
 <body>

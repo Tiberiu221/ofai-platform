@@ -1,0 +1,86 @@
+      <% if (tier && tier.plan && tier.plan.has_priority_support) { %>
+        <!-- Premium: Priority Support -->
+        <div class="glass-card" style="border-color: rgba(167, 139, 250, 0.2);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(167, 139, 250, 0.12); display: flex; align-items: center; justify-content: center;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0;">Suport Prioritar</h3>
+              <p style="font-size: 0.8125rem; color: #a78bfa; margin: 2px 0 0;">Premium</p>
+            </div>
+          </div>
+
+          <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin-bottom: 24px;">
+            Ca business Premium, beneficiezi de suport prioritar. Echipa noastra iti raspunde in maxim 4 ore in zilele lucratoare.
+          </p>
+
+          <div class="support-grid">
+            <a href="mailto:premium@ofai.ro?subject=Suport Premium - <%= encodeURIComponent(business.name) %>" class="support-contact-card" style="text-decoration: none;">
+              <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; transition: border-color 0.2s; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-primary);">Email</span>
+                </div>
+                <span style="font-size: 0.875rem; color: #a78bfa;">premium@ofai.ro</span>
+              </div>
+            </a>
+            <a href="https://wa.me/40700000000?text=<%= encodeURIComponent('Salut, am nevoie de suport pentru business-ul ' + business.name + ' (Premium)') %>" target="_blank" class="support-contact-card" style="text-decoration: none;">
+              <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; transition: border-color 0.2s; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#22c55e"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.126.553 4.122 1.523 5.86L0 24l6.335-1.652A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.94 9.94 0 0 1-5.39-1.586l-.386-.23-3.767.983.999-3.648-.252-.4A9.935 9.935 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+                  <span style="font-size: 0.8125rem; font-weight: 500; color: var(--text-primary);">WhatsApp</span>
+                </div>
+                <span style="font-size: 0.875rem; color: #22c55e;">+40 700 000 000</span>
+              </div>
+            </a>
+          </div>
+
+          <div style="background: rgba(167, 139, 250, 0.06); border: 1px solid rgba(167, 139, 250, 0.12); border-radius: var(--radius-md); padding: 14px 16px;">
+            <div style="display: flex; align-items: start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <div style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
+                <strong style="color: #a78bfa;">Timp mediu de raspuns:</strong> sub 4 ore in zilele lucratoare (Luni-Vineri, 09:00-18:00).
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="glass-card" style="margin-top: 16px;">
+          <h4 style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 16px;">Intrebari frecvente</h4>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px;">
+              <p style="font-weight: 500; color: var(--text-primary); margin: 0 0 6px; font-size: 0.875rem;">Cum imi schimb planul de abonament?</p>
+              <p style="color: var(--text-secondary); margin: 0; font-size: 0.8125rem; line-height: 1.5;">Mergi la tab-ul "Abonament" din acest portal. De acolo poti face upgrade sau downgrade.</p>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px;">
+              <p style="font-weight: 500; color: var(--text-primary); margin: 0 0 6px; font-size: 0.875rem;">Cum adaug mai multe locatii?</p>
+              <p style="color: var(--text-secondary); margin: 0; font-size: 0.8125rem; line-height: 1.5;">In tab-ul "Profil", sectiunea Locatii. Limita depinde de planul tau.</p>
+            </div>
+            <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px;">
+              <p style="font-weight: 500; color: var(--text-primary); margin: 0 0 6px; font-size: 0.875rem;">Pot anula abonamentul oricand?</p>
+              <p style="color: var(--text-secondary); margin: 0; font-size: 0.8125rem; line-height: 1.5;">Da, poti anula oricand. Vei pastra beneficiile pana la sfarsitul perioadei platite.</p>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <!-- Non-Premium: Upgrade CTA -->
+        <div class="glass-card" style="text-align: center; padding: 48px 32px;">
+          <div style="width: 64px; height: 64px; border-radius: 16px; background: rgba(167, 139, 250, 0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#71717a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0 0 8px;">Suport Prioritar</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 6px;">Disponibil cu planul <strong style="color: #a78bfa;">Premium</strong></p>
+          <p style="color: var(--text-tertiary); font-size: 0.8125rem; margin: 0 0 28px;">Raspuns in maxim 4 ore, contact dedicat prin email si WhatsApp.</p>
+          <p style="color: var(--text-tertiary); font-size: 0.75rem; margin: 0 0 20px;">Planul tau actual: <strong style="color: var(--accent);"><%= tier && tier.plan ? tier.plan.name : 'Gratuit' %></strong></p>
+          <a href="/pentru-business#preturi" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Upgrade la Premium
+          </a>
+        </div>
+      <% } %>

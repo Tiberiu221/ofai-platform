@@ -1,0 +1,74 @@
+      <% if (reviews.length === 0) { %>
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <p>Nu ai nicio recenzie încă.<br>Recenziile vor apărea pe măsură ce clienții vizitează pagina ta.</p>
+        </div>
+      <% } else { %>
+        <% reviews.forEach(function(review) { %>
+          <div class="review-card" id="review-<%= review.id %>">
+            <div class="review-header">
+              <div class="review-avatar">
+                <%= review.first_name ? review.first_name.charAt(0).toUpperCase() : '?' %>
+              </div>
+              <div class="review-user-info">
+                <div class="review-user-name"><%= review.first_name || '' %> <%= review.last_name || '' %></div>
+                <div class="review-date"><%= new Date(review.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+              </div>
+            </div>
+
+            <div class="review-stars">
+              <% for (var s = 1; s <= 5; s++) { %>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="<%= s <= review.rating ? '#fb923c' : 'none' %>" stroke="<%= s <= review.rating ? '#fb923c' : '#52525b' %>" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <% } %>
+            </div>
+
+            <% if (review.comment) { %>
+              <div class="review-comment"><%= review.comment %></div>
+            <% } %>
+
+            <!-- Response Section -->
+            <% if (review.response_id) { %>
+              <div class="review-response" id="response-<%= review.id %>">
+                <div class="review-response-header">
+                  <span class="review-response-label">Răspunsul tău</span>
+                  <div class="review-response-actions">
+                    <button class="btn-sm" onclick="editResponse(<%= review.id %>, this)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      Editează
+                    </button>
+                    <button class="btn-sm danger" onclick="deleteResponse(<%= review.id %>)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      Șterge
+                    </button>
+                  </div>
+                </div>
+                <div class="review-response-text"><%= review.response_text %></div>
+                <div class="review-response-date"><%= new Date(review.response_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %></div>
+              </div>
+            <% } %>
+
+            <!-- Response Form (hidden by default) -->
+            <div class="response-form" id="response-form-<%= review.id %>" style="display: none;">
+              <textarea id="response-text-<%= review.id %>"
+                        maxlength="500"
+                        placeholder="Scrie un răspuns..."
+                        oninput="updateCharCount(<%= review.id %>)"></textarea>
+              <script>document.getElementById('response-text-<%= review.id %>').value = <%= JSON.stringify(review.response_id ? (review.response_text || '') : '') %>;</script>
+              <div class="response-char-count" id="char-count-<%= review.id %>">0 / 500</div>
+              <div class="response-form-actions">
+                <button class="btn-sm" onclick="cancelResponse(<%= review.id %>)">Anulează</button>
+                <button class="btn-accent" style="padding: 6px 16px; font-size: 0.8rem;" onclick="submitResponse(<%= review.id %>)">
+                  <span id="response-btn-text-<%= review.id %>">Trimite</span>
+                </button>
+              </div>
+            </div>
+
+            <% if (!review.response_id) { %>
+              <button class="btn-sm" style="margin-top: 10px;" id="respond-btn-<%= review.id %>" onclick="showResponseForm(<%= review.id %>, false)">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Răspunde
+              </button>
+            <% } %>
+          </div>
+        <% }); %>
+      <% } %>
