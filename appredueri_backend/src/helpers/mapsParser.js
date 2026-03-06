@@ -67,29 +67,29 @@ function isAllowedDomain(urlString) {
 
 /**
  * Extract lat/lng coordinates from a Google Maps URL.
- * Supports patterns:
- *   /@44.4268,26.1025,17z
- *   !3d44.4268!4d26.1025
- *   ?q=44.4268,26.1025
- *   /dir//44.4268,26.1025/
- *   ll=44.4268,26.1025
+ * Priority order (most accurate first):
+ *   1. !3d44.4268!4d26.1025 — actual pin/place location (most accurate)
+ *   2. /@44.4268,26.1025,17z — viewport center (less accurate, may differ from pin)
+ *   3. ?q=44.4268,26.1025 — search query coordinates
+ *   4. ll=44.4268,26.1025 — legacy format
  */
 function extractCoordinates(urlString) {
-  // Pattern 1: /@lat,lng (most common in place URLs)
-  const atPattern = /@(-?\d+\.?\d*),(-?\d+\.?\d*)/;
-  const atMatch = urlString.match(atPattern);
-  if (atMatch) {
-    const lat = parseFloat(atMatch[1]);
-    const lng = parseFloat(atMatch[2]);
-    if (isValidCoordinate(lat, lng)) return { lat, lng };
-  }
-
-  // Pattern 2: !3dlat!4dlng (embedded in data params)
+  // Pattern 1: !3dlat!4dlng (actual pin location — HIGHEST PRIORITY)
+  // This is the real place marker, not the viewport center
   const dataPattern = /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/;
   const dataMatch = urlString.match(dataPattern);
   if (dataMatch) {
     const lat = parseFloat(dataMatch[1]);
     const lng = parseFloat(dataMatch[2]);
+    if (isValidCoordinate(lat, lng)) return { lat, lng };
+  }
+
+  // Pattern 2: /@lat,lng (viewport center — fallback, less accurate)
+  const atPattern = /@(-?\d+\.?\d*),(-?\d+\.?\d*)/;
+  const atMatch = urlString.match(atPattern);
+  if (atMatch) {
+    const lat = parseFloat(atMatch[1]);
+    const lng = parseFloat(atMatch[2]);
     if (isValidCoordinate(lat, lng)) return { lat, lng };
   }
 

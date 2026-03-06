@@ -972,8 +972,9 @@
               <% } %>
 
               <div class="booking-card-actions">
-                <% if (loc.lat && loc.lng) { %>
-                  <a href="https://www.google.com/maps/dir/?api=1&destination=<%= loc.lat %>,<%= loc.lng %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-primary" onclick="trackClick(<%= offer.business.id %>,'navigate',<%= offer.id %>)">
+                <% var offerLocNavUrl = loc.maps_url || (loc.lat && loc.lng ? 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng : null); %>
+                <% if (offerLocNavUrl) { %>
+                  <a href="<%= offerLocNavUrl %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-primary" onclick="trackClick(<%= offer.business.id %>,'navigate',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                     Navigheaz&#259;
                   </a>

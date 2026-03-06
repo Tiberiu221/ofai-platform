@@ -776,7 +776,7 @@ router.get("/oferta/:id", async (req, res) => {
     const specificLocationIds = linkRes.rows.map(r => r.location_id);
 
     let locations = [];
-    const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+    const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone, bl.maps_url,
       bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
       c.name as city_name
       FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id`;
@@ -1063,7 +1063,7 @@ router.get("/business/:id", async (req, res) => {
 
     // Locations
     const locationsRes = await pool.query(`
-      SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+      SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone, bl.maps_url,
              bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
              c.id as city_id, c.name as city_name
       FROM business_locations bl
@@ -1075,6 +1075,7 @@ router.get("/business/:id", async (req, res) => {
     if (locationsRes.rows.length > 0) {
       locations = locationsRes.rows.map(row => ({
         id: row.id, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
+        maps_url: row.maps_url || null,
         city: { id: row.city_id, name: row.city_name },
         booking_type: row.booking_type || 'none',
         booking_phone: row.booking_phone, booking_whatsapp: row.booking_whatsapp,
