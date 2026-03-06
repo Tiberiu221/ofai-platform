@@ -55,9 +55,5 @@
   <% if (typeof loadOnboardingCss !== 'undefined' && loadOnboardingCss) { %>
   <link rel="stylesheet" href="/css/onboarding.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
   <% } %>
-  <% if (typeof useQuill !== 'undefined' && useQuill) { %>
-  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-  <% } %>
 </head>
 <body>

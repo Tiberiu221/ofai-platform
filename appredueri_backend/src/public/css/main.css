@@ -3072,14 +3072,9 @@ ul, ol { list-style: none; }
   font-size: 1rem;
   line-height: 1.75;
   color: var(--text-secondary);
+  white-space: pre-wrap;
   max-width: 720px;
 }
-.bd-description p { margin: 0 0 0.5em; }
-.bd-description h1 { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0.75em 0 0.25em; }
-.bd-description h2 { font-size: 1.125rem; font-weight: 600; color: var(--text-primary); margin: 0.5em 0 0.25em; }
-.bd-description h3 { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0.5em 0 0.25em; }
-.bd-description strong { color: var(--text-primary); }
-.bd-description s { opacity: 0.6; }
 
 /* ─── LOCATION ACTIONS ROW ──────────────────────────────── */
 .bc-actions-row {

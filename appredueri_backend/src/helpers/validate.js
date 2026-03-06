@@ -2,7 +2,6 @@
  * Input Validation Helpers
  * Centralized validation for OFAI API
  */
-const sanitizeHtmlLib = require("sanitize-html");
 
 /**
  * Validate email format
@@ -200,37 +199,6 @@ const ALLOWED_IMAGE_MIMES = [
  * Creates a multer fileFilter that only allows safe image MIME types.
  * @returns {Function} multer fileFilter callback
  */
-/**
- * Sanitize rich-text HTML for description fields.
- * Allows only basic formatting tags produced by the Quill editor.
- * Strips everything else (scripts, styles, event handlers, etc.).
- * @param {string} html - Raw HTML from Quill editor
- * @param {number} maxLength - Max length of the stripped text content
- * @returns {string|null} - Sanitized HTML or null if empty
- */
-function sanitizeDescriptionHtml(html, maxLength = 2000) {
-  if (!html || typeof html !== "string") return null;
-
-  const clean = sanitizeHtmlLib(html, {
-    allowedTags: ["p", "br", "strong", "em", "s", "h1", "h2", "h3"],
-    allowedAttributes: {},
-    allowedSchemes: [],
-  });
-
-  // Strip tags to check text length
-  const textOnly = clean.replace(/<[^>]*>/g, "").trim();
-  if (!textOnly) return null;
-  if (textOnly.length > maxLength) {
-    // Truncate by cutting HTML at a safe point (re-sanitize to close tags)
-    return sanitizeHtmlLib(clean.slice(0, maxLength * 3), {
-      allowedTags: ["p", "br", "strong", "em", "s", "h1", "h2", "h3"],
-      allowedAttributes: {},
-    });
-  }
-
-  return clean;
-}
-
 function createImageFilter() {
   return (req, file, cb) => {
     if (ALLOWED_IMAGE_MIMES.includes(file.mimetype)) {
@@ -244,7 +212,6 @@ function createImageFilter() {
 module.exports = {
   isValidEmail,
   sanitizeString,
-  sanitizeDescriptionHtml,
   validateInt,
   isValidCoordinates,
   parsePagination,

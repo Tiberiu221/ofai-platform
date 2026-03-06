@@ -7,7 +7,7 @@ const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require
 const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
 const offerService = require("../services/offerService");
-const { parsePagination, paginatedResponse, sanitizeString, sanitizeDescriptionHtml, createImageFilter } = require("../helpers/validate");
+const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
 const { attachTier, requireFeature, requireLimit } = require("../middleware/tierAuth");
 const { countActiveOffers, countGalleryImages } = require("../helpers/tiers");
 
@@ -174,7 +174,6 @@ router.get("/:businessId", businessAuth, async (req, res) => {
     res.json({
       id: b.id,
       name: b.name,
-      description: b.description || null,
       address: b.address,
       phone: b.phone,
       website: b.website,
@@ -220,7 +219,7 @@ router.put("/:businessId", businessAuth, async (req, res) => {
 
     console.log("[BusinessPortal] PUT /my-businesses/:id - ID:", businessId);
 
-    const sanitizedDesc = description !== undefined ? sanitizeDescriptionHtml(description) : undefined;
+    const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
 
     const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
 
