@@ -55,6 +55,17 @@
       </select>
     </label>
 
+    <label>
+      Moderare
+      <select name="moderation_status">
+        <option value="">Toate</option>
+        <option value="auto_approved" <%= filters.moderation_status === "auto_approved" ? "selected" : "" %>>Auto-aprobate</option>
+        <option value="pending_review" <%= filters.moderation_status === "pending_review" ? "selected" : "" %>>In asteptare</option>
+        <option value="approved" <%= filters.moderation_status === "approved" ? "selected" : "" %>>Aprobate manual</option>
+        <option value="rejected" <%= filters.moderation_status === "rejected" ? "selected" : "" %>>Respinse</option>
+      </select>
+    </label>
+
     <div class="filters-actions">
       <button type="submit" class="button">Aplică filtre</button>
       <a href="/admin/offers" class="button secondary">Resetează</a>
@@ -74,6 +85,8 @@
         <th>Oraș</th>
         <th>Categorie</th>
         <th>Reducere</th>
+        <th>Moderare</th>
+        <th>AI Score</th>
         <th>Activă</th>
         <th>Acțiuni</th>
       </tr>
@@ -87,10 +100,36 @@
           <td><%= o.city_name %></td>
           <td><%= o.category_name %></td>
           <td>
-            <% if (o.discount_type === "percent") { %>
-              <%= o.discount_value %>%
+            <% if (o.discount_type === 'percentage' && o.discount_value) { %>
+              -<%= o.discount_value %>%
+            <% } else if (o.discount_type === 'fixed' && o.discount_value) { %>
+              -<%= o.discount_value %> RON
+            <% } else if (o.discount_value) { %>
+              <%= o.discount_value %> (<%= o.discount_type || '—' %>)
             <% } else { %>
-              <%= o.discount_value %> lei
+              <%= o.discount_type || '—' %>
+            <% } %>
+          </td>
+          <td>
+            <% if (o.moderation_status === 'pending_review') { %>
+              <span class="status-badge status-pending">In asteptare</span>
+            <% } else if (o.moderation_status === 'approved') { %>
+              <span class="status-badge status-approved">Aprobat</span>
+            <% } else if (o.moderation_status === 'rejected') { %>
+              <span class="status-badge status-rejected">Respins</span>
+            <% } else { %>
+              <span class="status-badge status-approved">Auto</span>
+            <% } %>
+          </td>
+          <td>
+            <% if (o.ai_score === null || o.ai_score === undefined) { %>
+              <span class="score-badge score-none">—</span>
+            <% } else if (o.ai_score >= 70) { %>
+              <span class="score-badge score-high"><%= o.ai_score %></span>
+            <% } else if (o.ai_score >= 40) { %>
+              <span class="score-badge score-medium"><%= o.ai_score %></span>
+            <% } else { %>
+              <span class="score-badge score-low"><%= o.ai_score %></span>
             <% } %>
           </td>
           <td>

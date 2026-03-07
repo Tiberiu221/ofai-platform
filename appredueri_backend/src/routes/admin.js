@@ -969,7 +969,7 @@ router.post("/businesses/:id/owners/:userId/delete", async (req, res) => {
 router.get("/offers", async (req, res) => {
   try {
     const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
-    const { city_id, category_id, business_id, is_active, q } = req.query;
+    const { city_id, category_id, business_id, is_active, moderation_status, q } = req.query;
     const filters = [];
     const values = [];
     let idx = 1;
@@ -988,6 +988,10 @@ router.get("/offers", async (req, res) => {
     }
     if (is_active === "1") filters.push("o.is_active = TRUE");
     if (is_active === "0") filters.push("o.is_active = FALSE");
+    if (moderation_status && ['auto_approved', 'pending_review', 'approved', 'rejected'].includes(moderation_status)) {
+      filters.push(`o.moderation_status = $${idx++}`);
+      values.push(moderation_status);
+    }
     if (q && q.trim()) {
       filters.push(
         `(o.title ILIKE $${idx} OR o.description ILIKE $${idx} OR b.name ILIKE $${idx})`
@@ -996,21 +1000,23 @@ router.get("/offers", async (req, res) => {
       idx++;
     }
 
+    const joinClause = `FROM offers o
+      JOIN businesses b ON b.id = o.business_id
+      LEFT JOIN cities c ON c.id = b.city_id
+      LEFT JOIN categories cat ON cat.id = b.category_id`;
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
 
     // Count total
-    const countQuery = `SELECT COUNT(*) FROM offers o JOIN businesses b ON b.id = o.business_id JOIN cities c ON c.id = b.city_id JOIN categories cat ON cat.id = b.category_id ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) ${joinClause} ${whereClause}`;
     const countRes = await pool.query(countQuery, values);
     const total = parseInt(countRes.rows[0].count);
 
     // Fetch page
     const offersQuery = `
       SELECT o.id, o.title, o.is_active, o.discount_type, o.discount_value,
+             o.moderation_status, o.ai_score, o.ai_flags,
              b.name AS business_name, c.name AS city_name, cat.name AS category_name
-      FROM offers o
-      JOIN businesses b ON b.id = o.business_id
-      JOIN cities c ON c.id = b.city_id
-      JOIN categories cat ON cat.id = b.category_id
+      ${joinClause}
       ${whereClause} ORDER BY o.id DESC
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
@@ -1036,6 +1042,7 @@ router.get("/offers", async (req, res) => {
         category_id: category_id || "",
         business_id: business_id || "",
         is_active: is_active || "",
+        moderation_status: moderation_status || "",
         q: q || "",
       },
     });
