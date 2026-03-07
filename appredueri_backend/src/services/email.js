@@ -465,6 +465,159 @@ async function sendBusinessRejectedEmail(to, firstName, businessName, reason) {
 }
 
 /**
+ * Trimite email de notificare cand o OFERTA a fost APROBATA
+ */
+async function sendOfferApprovedEmail(to, firstName, offerTitle, businessName) {
+  if (!resend) {
+    console.log(`[Email] Skipping offer approved email (no API key configured): ${to}`);
+    return { success: false, reason: "no_api_key" };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject: `Oferta ta "${escapeHtml(offerTitle)}" a fost aprobata! - ${APP_NAME}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #16a34a; margin: 0;">Oferta aprobata!</h1>
+          </div>
+
+          <p>Salut${firstName ? ` ${escapeHtml(firstName)}` : ""},</p>
+
+          <p>Oferta ta <strong>"${escapeHtml(offerTitle)}"</strong> pentru business-ul <strong>${escapeHtml(businessName)}</strong> a fost <span style="color: #16a34a; font-weight: bold;">aprobata</span> si este acum activa pe platforma!</p>
+
+          <p>Ce inseamna asta:</p>
+          <ul>
+            <li>Oferta este acum <strong>vizibila</strong> pentru toti utilizatorii ${APP_NAME}</li>
+            <li>Clientii pot vedea detaliile ofertei si pot profita de reducere</li>
+            <li>Poti modifica oferta oricand din <strong>Business Portal</strong></li>
+          </ul>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ofai.ro/cont" style="background: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              Vezi oferta in portal
+            </a>
+          </div>
+
+          <p style="color: #666; font-size: 14px;">
+            Tine cont ca daca editezi oferta, aceasta va fi trimisa din nou la verificare.
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+          <p style="color: #999; font-size: 12px; text-align: center;">
+            &copy; ${new Date().getFullYear()} ${APP_NAME}. Toate drepturile rezervate.
+          </p>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("[Email] Offer approved email error:", error);
+      return { success: false, error };
+    }
+
+    console.log(`[Email] Offer approved email sent to ${to}`);
+    return { success: true, data };
+  } catch (err) {
+    console.error("[Email] Offer approved email exception:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Trimite email de notificare cand o OFERTA a fost RESPINSA
+ */
+async function sendOfferRejectedEmail(to, firstName, offerTitle, businessName, rejectionReason) {
+  if (!resend) {
+    console.log(`[Email] Skipping offer rejected email (no API key configured): ${to}`);
+    return { success: false, reason: "no_api_key" };
+  }
+
+  const reasonBlock = rejectionReason
+    ? `
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <p style="margin: 0 0 4px 0; font-weight: 600; color: #991b1b;">Motivul respingerii:</p>
+        <p style="margin: 0; color: #7f1d1d;">${escapeHtml(rejectionReason)}</p>
+      </div>
+    `
+    : `
+      <p style="color: #666;">Nu a fost specificat un motiv detaliat.</p>
+    `;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject: `Oferta ta "${escapeHtml(offerTitle)}" necesita modificari - ${APP_NAME}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #dc2626; margin: 0;">Oferta necesita modificari</h1>
+          </div>
+
+          <p>Salut${firstName ? ` ${escapeHtml(firstName)}` : ""},</p>
+
+          <p>Oferta ta <strong>"${escapeHtml(offerTitle)}"</strong> pentru business-ul <strong>${escapeHtml(businessName)}</strong> nu a putut fi aprobata in forma actuala.</p>
+
+          ${reasonBlock}
+
+          <p><strong>Ce poti face:</strong></p>
+          <ul>
+            <li>Acceseaza <strong>Business Portal</strong> si deschide oferta</li>
+            <li>Editeaza oferta conform sugestiilor de mai sus</li>
+            <li>Salveaza — oferta va fi trimisa automat la verificare din nou</li>
+          </ul>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://ofai.ro/cont" style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+              Editeaza oferta
+            </a>
+          </div>
+
+          <p style="color: #666; font-size: 14px;">
+            Daca ai intrebari, raspunde la acest email si te ajutam cu placere.
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+          <p style="color: #999; font-size: 12px; text-align: center;">
+            &copy; ${new Date().getFullYear()} ${APP_NAME}. Toate drepturile rezervate.
+          </p>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("[Email] Offer rejected email error:", error);
+      return { success: false, error };
+    }
+
+    console.log(`[Email] Offer rejected email sent to ${to}`);
+    return { success: true, data };
+  } catch (err) {
+    console.error("[Email] Offer rejected email exception:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Send Premium support welcome email when a business upgrades to Premium
  */
 async function sendPremiumSupportWelcome(to, firstName, businessName) {
@@ -551,5 +704,7 @@ module.exports = {
   sendEmail,
   sendBusinessApprovedEmail,
   sendBusinessRejectedEmail,
+  sendOfferApprovedEmail,
+  sendOfferRejectedEmail,
   sendPremiumSupportWelcome,
 };

@@ -14,7 +14,7 @@ const {
   getExistingSummary,
   getLatestValidReviewId
 } = require("../services/llm/summarizationService");
-const { sendBusinessApprovedEmail, sendBusinessRejectedEmail } = require("../services/email");
+const { sendBusinessApprovedEmail, sendBusinessRejectedEmail, sendOfferApprovedEmail, sendOfferRejectedEmail } = require("../services/email");
 const { parsePagination, createImageFilter } = require("../helpers/validate");
 const { getBusinessTier, countLocations } = require("../helpers/tiers");
 
@@ -2219,6 +2219,22 @@ router.post("/offer-moderation/:id/approve", async (req, res) => {
       "UPDATE offers SET moderation_status = 'approved', is_active = true WHERE id = $1 AND moderation_status = 'pending_review'",
       [id]
     );
+
+    // Email notification to business owner(s) — non-blocking
+    const ownerRes = await pool.query(
+      `SELECT o.title, b.name AS business_name, u.email, u.first_name
+       FROM offers o
+       JOIN businesses b ON b.id = o.business_id
+       JOIN user_businesses ub ON ub.business_id = o.business_id
+       JOIN users u ON u.id = ub.user_id
+       WHERE o.id = $1`,
+      [id]
+    );
+    for (const row of ownerRes.rows) {
+      sendOfferApprovedEmail(row.email, row.first_name, row.title, row.business_name)
+        .catch(err => console.error("[Admin] Failed to send offer approved email:", err));
+    }
+
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă aprobată și activată")}`);
   } catch (err) {
     console.error("[Admin] Approve offer error:", err);
@@ -2240,6 +2256,22 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
       "UPDATE offers SET moderation_status = 'rejected', is_active = false, rejection_reason = $2 WHERE id = $1 AND moderation_status = 'pending_review'",
       [id, rejectionReason]
     );
+
+    // Email notification to business owner(s) — non-blocking
+    const ownerRes = await pool.query(
+      `SELECT o.title, b.name AS business_name, u.email, u.first_name
+       FROM offers o
+       JOIN businesses b ON b.id = o.business_id
+       JOIN user_businesses ub ON ub.business_id = o.business_id
+       JOIN users u ON u.id = ub.user_id
+       WHERE o.id = $1`,
+      [id]
+    );
+    for (const row of ownerRes.rows) {
+      sendOfferRejectedEmail(row.email, row.first_name, row.title, row.business_name, rejectionReason)
+        .catch(err => console.error("[Admin] Failed to send offer rejected email:", err));
+    }
+
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă respinsă")}`);
   } catch (err) {
     console.error("[Admin] Reject offer error:", err);
