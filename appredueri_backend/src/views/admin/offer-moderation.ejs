@@ -27,7 +27,7 @@
         <th>Discount</th>
         <th>AI Score</th>
         <th>Flags</th>
-        <th>Data</th>
+        <th>ID</th>
         <th style="width: 180px;">Actiuni</th>
       </tr>
     </thead>
@@ -67,7 +67,7 @@
             <% }); %>
             <% if (flags.length === 0) { %><span style="color: #6b7280;">—</span><% } %>
           </td>
-          <td><%= new Date(o.created_at).toLocaleDateString('ro-RO') %></td>
+          <td>#<%= o.id %></td>
           <td onclick="event.stopPropagation()">
             <form action="/admin/offer-moderation/<%= o.id %>/approve" method="POST" style="display: inline;">
               <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">

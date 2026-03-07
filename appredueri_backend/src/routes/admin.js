@@ -2180,12 +2180,12 @@ router.get("/offer-moderation", async (req, res) => {
 
     const result = await pool.query(`
       SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
-             o.moderation_status, o.ai_score, o.ai_flags, o.ai_reasoning, o.created_at,
+             o.moderation_status, o.ai_score, o.ai_flags, o.ai_reasoning,
              b.id AS business_id, b.name AS business_name
       FROM offers o
       JOIN businesses b ON b.id = o.business_id
       WHERE o.moderation_status = 'pending_review'
-      ORDER BY o.created_at DESC
+      ORDER BY o.id DESC
       LIMIT $1 OFFSET $2
     `, [limit, offset]);
 
