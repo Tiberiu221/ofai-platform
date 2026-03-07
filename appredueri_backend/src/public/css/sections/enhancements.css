@@ -1015,12 +1015,11 @@
 .badge-item:hover {
   background: rgba(255,255,255,0.04);
 }
-.badge-item.badge-selected {
-  background: transparent;
+.badge-item.badge-selected,
+.badge-item.badge-selected:hover {
+  background: none;
 }
 .badge-item.badge-selected .badge-icon {
-  width: 52px;
-  height: 52px;
   border-width: 2.5px;
   box-shadow: 0 0 12px 2px var(--badge-glow, rgba(249,115,22,0.35));
 }
