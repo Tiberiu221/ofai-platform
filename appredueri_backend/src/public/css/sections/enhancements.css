@@ -1020,8 +1020,8 @@
   background: none;
 }
 .badge-item.badge-selected .badge-icon {
-  border-width: 2.5px;
-  box-shadow: 0 0 12px 2px var(--badge-glow, rgba(249,115,22,0.35));
+  border-width: 2px;
+  box-shadow: 0 0 6px 1px var(--badge-glow, rgba(249,115,22,0.35));
 }
 .badge-item.badge-selected .badge-name {
   color: var(--accent);
