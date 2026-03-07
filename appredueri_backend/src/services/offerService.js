@@ -65,6 +65,8 @@ async function createOffer(pool, params) {
   // Use transaction for offer + promo codes
   const client = await pool.connect();
   let offerId;
+  let moderation = { score: null, flags: null, reasoning: null, action: 'auto_approve' };
+  let moderationStatus = 'auto_approved';
 
   try {
     await client.query("BEGIN");
@@ -127,7 +129,6 @@ async function createOffer(pool, params) {
     }
 
     // AI Offer Validation (outside critical path — graceful fallback)
-    let moderation = { score: null, flags: null, reasoning: null, action: 'auto_approve' };
     if (process.env.OFFER_VALIDATION_ENABLED === 'true') {
       try {
         // Fetch business info for category context
@@ -169,7 +170,7 @@ async function createOffer(pool, params) {
 
     // If pending_review, force offer inactive until admin approves
     const effectiveIsActive = moderation.action === 'pending_review' ? false : (isActive !== false);
-    const moderationStatus = moderation.action === 'pending_review' ? 'pending_review' : 'auto_approved';
+    moderationStatus = moderation.action === 'pending_review' ? 'pending_review' : 'auto_approved';
 
     const result = await client.query(`
       INSERT INTO offers (
