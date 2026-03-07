@@ -713,7 +713,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     values.push(null);
     updates.push(`ai_score = $${paramIndex++}`);
     values.push(aiScore);
-    updates.push(`ai_flags = $${paramIndex++}`);
+    updates.push(`ai_flags = $${paramIndex++}::jsonb`);
     values.push(aiFlags);
     updates.push(`ai_reasoning = $${paramIndex++}`);
     values.push(aiReasoning);

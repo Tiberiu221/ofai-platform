@@ -433,6 +433,9 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     }
 
     // Update offer fields + reset to pending_review for admin re-review
+    const parsedDiscountValue = discount_value != null && discount_value !== '' ? parseInt(discount_value, 10) : 0;
+    const parsedMaxReveals = max_reveals ? parseInt(max_reveals, 10) : null;
+
     await pool.query(`
       UPDATE offers SET
         title = COALESCE($1, title),
@@ -443,19 +446,33 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         start_date = COALESCE($6, start_date),
         end_date = COALESCE($7, end_date),
         is_active = false,
-        booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
-        max_reveals = $16,
+        booking_type = COALESCE($8, booking_type),
+        booking_phone = $9, booking_whatsapp = $10, booking_url = $11, booking_instructions = $12,
+        max_reveals = $13,
         moderation_status = 'pending_review',
         rejection_reason = NULL,
-        ai_score = $17, ai_flags = $18, ai_reasoning = $19
-      WHERE id = $14 AND business_id = $15
-    `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
-        discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
-        start_date || null, end_date || null, null /* $8 unused */,
-        booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
-        offerId, businessId, max_reveals ? parseInt(max_reveals) : null,
-        aiScore, aiFlags, aiReasoning]);
+        ai_score = $14, ai_flags = $15::jsonb, ai_reasoning = $16
+      WHERE id = $17 AND business_id = $18
+    `, [
+      sanitizeString(title, 200),
+      sanitizeString(description, 2000) || null,
+      discount_type || null,
+      isNaN(parsedDiscountValue) ? 0 : parsedDiscountValue,
+      sanitizeString(conditions, 2000) || null,
+      start_date || null,
+      end_date || null,
+      booking_type || 'inherit',
+      booking_phone || null,
+      booking_whatsapp || null,
+      booking_url || null,
+      sanitizeString(booking_instructions, 500) || null,
+      isNaN(parsedMaxReveals) ? null : parsedMaxReveals,
+      aiScore,
+      aiFlags,
+      aiReasoning,
+      offerId,
+      businessId,
+    ]);
 
     // Backward compat: if single promo_code string sent, convert to array
     let promoCodesArr = promo_codes;
@@ -495,8 +512,8 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
 
     res.json({ success: true, moderation_status: 'pending_review' });
   } catch (err) {
-    console.error("[Web API] Portal update offer error:", err);
-    res.status(500).json({ message: "Eroare server" });
+    console.error("[Web API] Portal update offer error:", err.message, err.stack);
+    res.status(500).json({ message: "Eroare server", detail: process.env.NODE_ENV !== 'production' ? err.message : undefined });
   }
 });
 
