@@ -507,7 +507,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
         }))
       : null;
 
-    const offerId = await offerService.createOffer(pool, {
+    const result = await offerService.createOffer(pool, {
       businessId: parseInt(businessId),
       title: title,
       description: description,
@@ -529,11 +529,18 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
       tier: req.tier || null, // W11: Pass pre-fetched tier to avoid redundant DB query
     });
 
-    console.log("[BusinessPortal] Offer created with ID:", offerId);
+    console.log("[BusinessPortal] Offer created with ID:", result.offerId, "moderation:", result.moderationStatus);
 
-    res.json({ success: true, offer_id: offerId });
+    res.json({
+      success: true,
+      offer_id: result.offerId,
+      moderation_status: result.moderationStatus,
+    });
   } catch (err) {
     console.error("[BusinessPortal] Error creating offer:", err);
+    if (err.message === 'offer_rejected' && err.details) {
+      return res.status(err.statusCode || 422).json(err.details);
+    }
     if (err.message === 'promo_code_limit' && err.details) {
       return res.status(err.statusCode || 403).json(err.details);
     }

@@ -6,6 +6,7 @@
 const { triggerWebhook } = require("./n8n");
 const pushService = require("./pushNotifications");
 const { getBusinessTier } = require('../helpers/tiers');
+const { validateOfferData } = require('./llm/offerValidation');
 
 /**
  * Create a new offer with promo codes, push notifications, and n8n webhook
@@ -125,14 +126,59 @@ async function createOffer(pool, params) {
       }
     }
 
+    // AI Offer Validation (outside critical path — graceful fallback)
+    let moderation = { score: null, flags: null, reasoning: null, action: 'auto_approve' };
+    if (process.env.OFFER_VALIDATION_ENABLED === 'true') {
+      try {
+        // Fetch business info for category context
+        const bizRes = await client.query(
+          `SELECT b.name, c.name AS category_name
+           FROM businesses b LEFT JOIN categories c ON c.id = b.category_id
+           WHERE b.id = $1`,
+          [businessId]
+        );
+        const bizInfo = bizRes.rows[0] || {};
+
+        moderation = await validateOfferData(
+          { title, description, discountType, discountValue, conditions, startDate, endDate },
+          { name: bizInfo.name, categoryName: bizInfo.category_name }
+        );
+
+        // Auto-reject: rollback and throw
+        if (moderation.action === 'auto_reject') {
+          await client.query("ROLLBACK");
+          const err = new Error('offer_rejected');
+          err.statusCode = 422;
+          err.details = {
+            error: 'offer_rejected',
+            message: 'Oferta nu a trecut verificarea de calitate. Verifică titlul și descrierea.',
+            ai_score: moderation.score,
+            ai_flags: moderation.flags,
+            ai_reasoning: moderation.reasoning,
+          };
+          throw err;
+        }
+      } catch (validationErr) {
+        // Re-throw rejection errors
+        if (validationErr.message === 'offer_rejected') throw validationErr;
+        // For any other validation error, log and continue (don't block offer creation)
+        console.error("[OfferValidation] Validation error (non-blocking):", validationErr.message);
+        moderation = { score: null, flags: ['validation_error'], reasoning: validationErr.message, action: 'auto_approve' };
+      }
+    }
+
+    // If pending_review, force offer inactive until admin approves
+    const effectiveIsActive = moderation.action === 'pending_review' ? false : (isActive !== false);
+    const moderationStatus = moderation.action === 'pending_review' ? 'pending_review' : 'auto_approved';
+
     const result = await client.query(`
       INSERT INTO offers (
         business_id, title, description, discount_type, discount_value,
         conditions, start_date, end_date, is_active, logo_url,
         booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions,
-        max_reveals
+        max_reveals, moderation_status, ai_score, ai_flags, ai_reasoning
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       RETURNING id
     `, [
       businessId,
@@ -143,7 +189,7 @@ async function createOffer(pool, params) {
       conditions || null,
       startDate || null,
       endDate || null,
-      isActive !== false,
+      effectiveIsActive,
       logoUrl || null,
       bookingType || 'inherit',
       bookingPhone || null,
@@ -151,6 +197,10 @@ async function createOffer(pool, params) {
       bookingUrl || null,
       bookingInstructions || null,
       maxReveals ?? null,
+      moderationStatus,
+      moderation.score,
+      moderation.flags ? JSON.stringify(moderation.flags) : null,
+      moderation.reasoning || null,
     ]);
 
     offerId = result.rows[0].id;
@@ -173,49 +223,52 @@ async function createOffer(pool, params) {
     client.release();
   }
 
-  // Notifications outside transaction (fire-and-forget)
-  const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
-  const bizName = bizNameRes.rows[0]?.name || "Business";
+  // Skip notifications for pending_review offers (not yet visible to users)
+  if (moderationStatus !== 'pending_review') {
+    // Notifications outside transaction (fire-and-forget)
+    const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
+    const bizName = bizNameRes.rows[0]?.name || "Business";
 
-  // Trigger n8n webhook if requested (business portal only)
-  if (sendWebhook) {
-    triggerWebhook("/webhook/new-offer", {
-      offer_id: offerId,
-      business_id: parseInt(businessId),
-      business_name: bizName,
-      title: title,
-      discount_type: discountType || null,
-      discount_value: discountValue || null,
-      start_date: startDate || null,
-      end_date: endDate || null,
-      created_at: new Date().toISOString(),
-    });
-  }
-
-  // Push notification to subscribers (gated by has_push_on_offer tier feature)
-  try {
-    // W11: Reuse pre-fetched tier instead of querying DB again
-    const tierInfo = tier || await getBusinessTier(pool, businessId);
-    if (process.env.TIER_GATING_ENABLED !== 'true' || tierInfo.plan.has_push_on_offer) {
-      let discountText = "";
-      if (discountValue) {
-        discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;
-      }
-      pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
-        title: `${bizName} are o ofertă nouă!`,
-        body: `${title}${discountText}`,
-        data: {
-          type: "new_offer",
-          offerId: String(offerId),
-          businessId: String(businessId),
-        },
-      }).catch(err => console.error("[Push] New offer push error:", err));
+    // Trigger n8n webhook if requested (business portal only)
+    if (sendWebhook) {
+      triggerWebhook("/webhook/new-offer", {
+        offer_id: offerId,
+        business_id: parseInt(businessId),
+        business_name: bizName,
+        title: title,
+        discount_type: discountType || null,
+        discount_value: discountValue || null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        created_at: new Date().toISOString(),
+      });
     }
-  } catch (err) {
-    console.error("[Push] Tier check for push_on_offer failed:", err.message);
+
+    // Push notification to subscribers (gated by has_push_on_offer tier feature)
+    try {
+      // W11: Reuse pre-fetched tier instead of querying DB again
+      const tierInfo = tier || await getBusinessTier(pool, businessId);
+      if (process.env.TIER_GATING_ENABLED !== 'true' || tierInfo.plan.has_push_on_offer) {
+        let discountText = "";
+        if (discountValue) {
+          discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;
+        }
+        pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
+          title: `${bizName} are o ofertă nouă!`,
+          body: `${title}${discountText}`,
+          data: {
+            type: "new_offer",
+            offerId: String(offerId),
+            businessId: String(businessId),
+          },
+        }).catch(err => console.error("[Push] New offer push error:", err));
+      }
+    } catch (err) {
+      console.error("[Push] Tier check for push_on_offer failed:", err.message);
+    }
   }
 
-  return offerId;
+  return { offerId, moderationStatus, aiScore: moderation.score };
 }
 
 module.exports = { createOffer };

@@ -354,7 +354,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
 
     const { locationIds } = req.body || {};
 
-    const offerId = await offerService.createOffer(pool, {
+    const result = await offerService.createOffer(pool, {
       businessId: parseInt(businessId),
       title: sanitizeString(title, 200),
       description: sanitizeString(description, 2000),
@@ -380,14 +380,21 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       for (const locId of locationIds) {
         await pool.query(
           'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [offerId, parseInt(locId)]
+          [result.offerId, parseInt(locId)]
         );
       }
     }
 
-    res.json({ success: true, offer_id: offerId });
+    res.json({
+      success: true,
+      offer_id: result.offerId,
+      moderation_status: result.moderationStatus,
+    });
   } catch (err) {
     console.error("[Web API] Portal create offer error:", err);
+    if (err.message === 'offer_rejected' && err.details) {
+      return res.status(err.statusCode || 422).json(err.details);
+    }
     if (err.message === 'promo_code_limit' && err.details) {
       return res.status(err.statusCode || 403).json(err.details);
     }

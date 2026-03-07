@@ -2165,4 +2165,73 @@ router.post("/reports/:id/deactivate-target", async (req, res) => {
   }
 });
 
+// =====================================
+//   OFFER MODERATION (AI-flagged offers)
+// =====================================
+
+router.get("/offer-moderation", async (req, res) => {
+  const { page, limit, offset } = parsePagination(req.query);
+
+  try {
+    const countRes = await pool.query(
+      "SELECT COUNT(*) FROM offers WHERE moderation_status = 'pending_review'"
+    );
+    const pendingCount = parseInt(countRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
+             o.moderation_status, o.ai_score, o.ai_flags, o.ai_reasoning, o.created_at,
+             b.id AS business_id, b.name AS business_name
+      FROM offers o
+      JOIN businesses b ON b.id = o.business_id
+      WHERE o.moderation_status = 'pending_review'
+      ORDER BY o.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+
+    res.render("admin/offer-moderation", {
+      offers: result.rows,
+      pendingCount,
+      pagination: { page, limit, total: pendingCount, totalPages: Math.ceil(pendingCount / limit) },
+      message: req.query.message || "",
+      error: req.query.err || "",
+    });
+  } catch (err) {
+    console.error("[Admin] Offer moderation list error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+router.post("/offer-moderation/:id/approve", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    await pool.query(
+      "UPDATE offers SET moderation_status = 'approved', is_active = true WHERE id = $1 AND moderation_status = 'pending_review'",
+      [id]
+    );
+    res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă aprobată și activată")}`);
+  } catch (err) {
+    console.error("[Admin] Approve offer error:", err);
+    res.redirect(`/admin/offer-moderation?err=${encodeURIComponent("Eroare la aprobare")}`);
+  }
+});
+
+router.post("/offer-moderation/:id/reject", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    await pool.query(
+      "UPDATE offers SET moderation_status = 'rejected' WHERE id = $1 AND moderation_status = 'pending_review'",
+      [id]
+    );
+    res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă respinsă")}`);
+  } catch (err) {
+    console.error("[Admin] Reject offer error:", err);
+    res.redirect(`/admin/offer-moderation?err=${encodeURIComponent("Eroare la respingere")}`);
+  }
+});
+
 module.exports = router;

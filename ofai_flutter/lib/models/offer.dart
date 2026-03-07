@@ -21,6 +21,7 @@ class Offer {
   final bool isPromoted;
   final int? maxReveals;
   final int? revealCount;
+  final String? moderationStatus;
 
   Offer({
     required this.id,
@@ -43,6 +44,7 @@ class Offer {
     this.isPromoted = false,
     this.maxReveals,
     this.revealCount,
+    this.moderationStatus,
   });
 
   String get discountLabel {
@@ -84,6 +86,7 @@ class Offer {
       isPromoted: json['is_promoted'] == true,
       maxReveals: json['max_reveals'] as int?,
       revealCount: json['reveal_count'] as int?,
+      moderationStatus: json['moderation_status'] as String?,
     );
   }
 
