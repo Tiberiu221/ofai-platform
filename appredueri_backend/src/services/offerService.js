@@ -3,8 +3,6 @@
  * Shared logic for creating offers across web portal and business portal
  */
 
-const { triggerWebhook } = require("./n8n");
-const pushService = require("./pushNotifications");
 const { getBusinessTier } = require('../helpers/tiers');
 const { validateOfferData } = require('./llm/offerValidation');
 
@@ -65,8 +63,8 @@ async function createOffer(pool, params) {
   // Use transaction for offer + promo codes
   const client = await pool.connect();
   let offerId;
-  let moderation = { score: null, flags: null, reasoning: null, action: 'auto_approve' };
-  let moderationStatus = 'auto_approved';
+  let moderation = { score: null, flags: null, reasoning: null };
+  let moderationStatus = 'pending_review';
 
   try {
     await client.query("BEGIN");
@@ -77,32 +75,13 @@ async function createOffer(pool, params) {
       [String(businessId)]
     );
 
-    // C4: Atomic offer limit check INSIDE transaction (after advisory lock)
-    // This prevents race conditions where two concurrent requests both pass
-    // the middleware COUNT check and then both INSERT.
+    // Tier info for promo code limits
     const tierInfo = tier || await getBusinessTier(pool, businessId);
     const plan = tierInfo.plan;
 
-    if (plan.max_active_offers !== null && (isActive !== false)) {
-      const countRes = await client.query(
-        "SELECT COUNT(*)::int AS cnt FROM offers WHERE business_id = $1 AND is_active = true",
-        [businessId]
-      );
-      if (countRes.rows[0].cnt >= plan.max_active_offers) {
-        await client.query("ROLLBACK");
-        const err = new Error('offer_limit');
-        err.statusCode = 403;
-        err.details = {
-          error: 'limit_reached',
-          message: `Ai atins limita de ${plan.max_active_offers} oferte active pentru planul ${plan.name}.`,
-          currentTier: plan.slug,
-          limit: plan.max_active_offers,
-          current: countRes.rows[0].cnt,
-          limitKey: 'max_active_offers',
-        };
-        throw err;
-      }
-    }
+    // Note: Active offer limit is NOT checked here because all offers are
+    // created as inactive (pending admin review). The limit is enforced when
+    // the offer is activated (toggle endpoint or admin approval).
 
     // Promo code limit check
     if (promoCodes && Array.isArray(promoCodes)) {
@@ -128,49 +107,28 @@ async function createOffer(pool, params) {
       }
     }
 
-    // AI Offer Validation (outside critical path — graceful fallback)
-    if (process.env.OFFER_VALIDATION_ENABLED === 'true') {
-      try {
-        // Fetch business info for category context
-        const bizRes = await client.query(
-          `SELECT b.name, c.name AS category_name
-           FROM businesses b LEFT JOIN categories c ON c.id = b.category_id
-           WHERE b.id = $1`,
-          [businessId]
-        );
-        const bizInfo = bizRes.rows[0] || {};
+    // AI Offer Validation (advisory only — score/reasoning for admin review)
+    try {
+      const bizRes = await client.query(
+        `SELECT b.name, c.name AS category_name
+         FROM businesses b LEFT JOIN categories c ON c.id = b.category_id
+         WHERE b.id = $1`,
+        [businessId]
+      );
+      const bizInfo = bizRes.rows[0] || {};
 
-        moderation = await validateOfferData(
-          { title, description, discountType, discountValue, conditions, startDate, endDate },
-          { name: bizInfo.name, categoryName: bizInfo.category_name }
-        );
-
-        // Auto-reject: rollback and throw
-        if (moderation.action === 'auto_reject') {
-          await client.query("ROLLBACK");
-          const err = new Error('offer_rejected');
-          err.statusCode = 422;
-          err.details = {
-            error: 'offer_rejected',
-            message: 'Oferta nu a trecut verificarea de calitate. Verifică titlul și descrierea.',
-            ai_score: moderation.score,
-            ai_flags: moderation.flags,
-            ai_reasoning: moderation.reasoning,
-          };
-          throw err;
-        }
-      } catch (validationErr) {
-        // Re-throw rejection errors
-        if (validationErr.message === 'offer_rejected') throw validationErr;
-        // For any other validation error, log and continue (don't block offer creation)
-        console.error("[OfferValidation] Validation error (non-blocking):", validationErr.message);
-        moderation = { score: null, flags: ['validation_error'], reasoning: validationErr.message, action: 'auto_approve' };
-      }
+      moderation = await validateOfferData(
+        { title, description, discountType, discountValue, conditions, startDate, endDate },
+        { name: bizInfo.name, categoryName: bizInfo.category_name }
+      );
+    } catch (validationErr) {
+      // AI failure is non-blocking — offer still goes to pending_review
+      console.error("[OfferValidation] Validation error (non-blocking):", validationErr.message);
+      moderation = { score: null, flags: ['validation_error'], reasoning: validationErr.message };
     }
 
-    // If pending_review, force offer inactive until admin approves
-    const effectiveIsActive = moderation.action === 'pending_review' ? false : (isActive !== false);
-    moderationStatus = moderation.action === 'pending_review' ? 'pending_review' : 'auto_approved';
+    // All offers go to pending_review — admin decides
+    const effectiveIsActive = false;
 
     const result = await client.query(`
       INSERT INTO offers (
@@ -224,50 +182,9 @@ async function createOffer(pool, params) {
     client.release();
   }
 
-  // Skip notifications for pending_review offers (not yet visible to users)
-  if (moderationStatus !== 'pending_review') {
-    // Notifications outside transaction (fire-and-forget)
-    const bizNameRes = await pool.query("SELECT name FROM businesses WHERE id = $1", [businessId]);
-    const bizName = bizNameRes.rows[0]?.name || "Business";
-
-    // Trigger n8n webhook if requested (business portal only)
-    if (sendWebhook) {
-      triggerWebhook("/webhook/new-offer", {
-        offer_id: offerId,
-        business_id: parseInt(businessId),
-        business_name: bizName,
-        title: title,
-        discount_type: discountType || null,
-        discount_value: discountValue || null,
-        start_date: startDate || null,
-        end_date: endDate || null,
-        created_at: new Date().toISOString(),
-      });
-    }
-
-    // Push notification to subscribers (gated by has_push_on_offer tier feature)
-    try {
-      // W11: Reuse pre-fetched tier instead of querying DB again
-      const tierInfo = tier || await getBusinessTier(pool, businessId);
-      if (process.env.TIER_GATING_ENABLED !== 'true' || tierInfo.plan.has_push_on_offer) {
-        let discountText = "";
-        if (discountValue) {
-          discountText = discountType === "fixed" ? ` (-${discountValue} RON)` : ` (-${discountValue}%)`;
-        }
-        pushService.sendToBusinessSubscribers(pool, parseInt(businessId), {
-          title: `${bizName} are o ofertă nouă!`,
-          body: `${title}${discountText}`,
-          data: {
-            type: "new_offer",
-            offerId: String(offerId),
-            businessId: String(businessId),
-          },
-        }).catch(err => console.error("[Push] New offer push error:", err));
-      }
-    } catch (err) {
-      console.error("[Push] Tier check for push_on_offer failed:", err.message);
-    }
-  }
+  // Notifications are NOT sent here — all offers are pending_review.
+  // Push notifications and webhooks will be triggered when admin approves
+  // the offer (via the admin approval route).
 
   return { offerId, moderationStatus, aiScore: moderation.score };
 }

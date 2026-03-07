@@ -392,9 +392,6 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
     });
   } catch (err) {
     console.error("[Web API] Portal create offer error:", err);
-    if (err.message === 'offer_rejected' && err.details) {
-      return res.status(err.statusCode || 422).json(err.details);
-    }
     if (err.message === 'promo_code_limit' && err.details) {
       return res.status(err.statusCode || 403).json(err.details);
     }

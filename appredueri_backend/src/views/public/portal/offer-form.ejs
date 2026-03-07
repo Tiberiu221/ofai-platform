@@ -985,10 +985,9 @@
 
       if (isEdit) {
         window.location.href = '/portal/' + businessId + '?offer_updated=1#oferte';
-      } else if (data.moderation_status === 'pending_review') {
-        window.location.href = '/portal/' + businessId + '?offer_pending=1#oferte';
       } else {
-        window.location.href = '/portal/' + businessId + '?offer_created=1#oferte';
+        // All new offers go to pending_review — admin approves
+        window.location.href = '/portal/' + businessId + '?offer_pending=1#oferte';
       }
 
     } catch (err) {

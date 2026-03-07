@@ -538,9 +538,6 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
     });
   } catch (err) {
     console.error("[BusinessPortal] Error creating offer:", err);
-    if (err.message === 'offer_rejected' && err.details) {
-      return res.status(err.statusCode || 422).json(err.details);
-    }
     if (err.message === 'promo_code_limit' && err.details) {
       return res.status(err.statusCode || 403).json(err.details);
     }
