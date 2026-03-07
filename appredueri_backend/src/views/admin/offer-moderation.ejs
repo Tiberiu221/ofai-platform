@@ -79,9 +79,34 @@
         <tr class="details-row" id="details-<%= idx %>">
           <td colspan="8">
             <div class="detail-grid">
+              <% if (o.logo_url) { %>
+                <div style="grid-column: 1 / -1; margin-bottom: 8px;">
+                  <img src="<%= o.logo_url %>" alt="<%= o.title %>" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:1px solid #374151;">
+                </div>
+              <% } %>
               <div>
                 <div class="detail-label">Descriere</div>
                 <div class="detail-value"><%= o.description || '(fara descriere)' %></div>
+              </div>
+              <div>
+                <div class="detail-label">Conditii</div>
+                <div class="detail-value"><%= o.conditions || '(fara conditii)' %></div>
+              </div>
+              <div>
+                <div class="detail-label">Perioada</div>
+                <div class="detail-value">
+                  <% if (o.start_date && o.end_date) { %>
+                    <%= new Date(o.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                    &nbsp;—&nbsp;
+                    <%= new Date(o.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                  <% } else if (o.start_date) { %>
+                    De la <%= new Date(o.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                  <% } else if (o.end_date) { %>
+                    Pana la <%= new Date(o.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                  <% } else { %>
+                    (fara perioada)
+                  <% } %>
+                </div>
               </div>
             </div>
             <% if (o.ai_reasoning) { %>

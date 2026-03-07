@@ -2187,6 +2187,7 @@ router.get("/offer-moderation", async (req, res) => {
 
     const result = await pool.query(`
       SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
+             o.conditions, o.start_date, o.end_date, o.logo_url,
              o.moderation_status, o.ai_score, o.ai_flags, o.ai_reasoning,
              b.id AS business_id, b.name AS business_name
       FROM offers o
