@@ -23,6 +23,7 @@ import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
 import '../../providers/offer_requests_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
+import '../../widgets/report_dialog.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -65,6 +66,36 @@ class OfferDetailScreen extends ConsumerWidget {
                           }
                         },
                       ),
+                      if (isLoggedIn)
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (value) async {
+                            if (value == 'report') {
+                              final sent = await showReportDialog(
+                                context: context,
+                                targetType: 'offer',
+                                targetId: offer.id,
+                              );
+                              if (sent && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Raportul a fost trimis. Multumim!')),
+                                );
+                              }
+                            }
+                          },
+                          itemBuilder: (ctx) => [
+                            const PopupMenuItem(
+                              value: 'report',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
+                                  SizedBox(width: 8),
+                                  Text('Raporteaza'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                     flexibleSpace: LayoutBuilder(
                       builder: (context, constraints) {

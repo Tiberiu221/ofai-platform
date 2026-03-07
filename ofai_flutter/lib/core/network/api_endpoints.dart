@@ -78,6 +78,9 @@ class ApiEndpoints {
   static const String businessRequests = '/api/business-requests';
   static const String myBusinessRequests = '/api/business-requests/mine';
 
+  // Reports
+  static const String reports = '/reports';
+
   // Static data
   static const String cities = '/cities';
   static const String categories = '/categories';

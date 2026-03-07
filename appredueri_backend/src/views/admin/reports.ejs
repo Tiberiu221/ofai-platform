@@ -1,0 +1,174 @@
+<%- include('partials/layout-top', { pageTitle: 'Rapoarte', activePage: 'reports' }) %>
+
+<h1>Rapoarte utilizatori</h1>
+
+<% if (message) { %>
+  <div class="alert alert-success"><%= message %></div>
+<% } %>
+<% if (error) { %>
+  <div class="alert alert-danger"><%= error %></div>
+<% } %>
+
+<div style="display: flex; gap: 8px; margin-bottom: 16px;">
+  <a href="/admin/reports" class="button button-small <%= !statusFilter ? 'primary' : 'secondary' %>">Toate (<%= pagination.total %>)</a>
+  <a href="/admin/reports?status=pending" class="button button-small <%= statusFilter === 'pending' ? 'primary' : 'secondary' %>">Pending (<%= pendingCount %>)</a>
+  <a href="/admin/reports?status=reviewed" class="button button-small <%= statusFilter === 'reviewed' ? 'primary' : 'secondary' %>">Revizuite</a>
+  <a href="/admin/reports?status=dismissed" class="button button-small <%= statusFilter === 'dismissed' ? 'primary' : 'secondary' %>">Respinse</a>
+</div>
+
+<% if (reports.length === 0) { %>
+  <p>Nu există rapoarte<%= statusFilter ? ' cu acest status' : '' %>.</p>
+<% } else { %>
+  <p style="color: #9ca3af; font-size: 13px;">
+    <%= pendingCount %> rapoarte în așteptare
+    &bull;
+    Click pe un rând pentru detalii
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Tip</th>
+        <th>Țintă</th>
+        <th>Motiv</th>
+        <th>Reporter</th>
+        <th>Nr. rapoarte</th>
+        <th>Status</th>
+        <th>Data</th>
+        <th style="width: 200px;">Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reports.forEach(function(r, idx) { %>
+        <tr class="clickable" onclick="toggleDetails(<%= idx %>)">
+          <td><%= r.id %></td>
+          <td>
+            <span class="flag-tag"><%= r.target_type === 'offer' ? 'Ofertă' : 'Business' %></span>
+          </td>
+          <td>
+            <strong><%= r.target_name || '(șters)' %></strong>
+            <br><small style="color: #6b7280;">#<%= r.target_id %></small>
+          </td>
+          <td><%= reasonLabels[r.reason] || r.reason %></td>
+          <td>
+            <%= r.reporter_email %>
+            <% if (r.reporter_name) { %>
+              <br><small style="color: #9ca3af;"><%= r.reporter_name %></small>
+            <% } %>
+          </td>
+          <td>
+            <% var count = parseInt(r.total_reports_on_target); %>
+            <% if (count >= 5) { %>
+              <span class="score-badge score-low"><%= count %></span>
+            <% } else if (count >= 3) { %>
+              <span class="score-badge score-medium"><%= count %></span>
+            <% } else { %>
+              <span class="score-badge score-high"><%= count %></span>
+            <% } %>
+          </td>
+          <td>
+            <span class="status-badge status-<%= r.status %>">
+              <%= r.status === 'pending' ? 'Pending' : r.status === 'reviewed' ? 'Revizuit' : 'Respins' %>
+            </span>
+          </td>
+          <td><%= new Date(r.created_at).toLocaleDateString('ro-RO') %></td>
+          <td onclick="event.stopPropagation()">
+            <% if (r.status === 'pending') { %>
+              <button class="btn-approve" data-action-id="<%= r.id %>" data-action-type="review">Revizuit</button>
+              <button class="btn-reject" data-action-id="<%= r.id %>" data-action-type="dismiss">Respinge</button>
+              <% if (r.target_type === 'offer') { %>
+                <button class="button button-small" style="background: #dc2626; color: white; margin-top: 4px;" data-action-id="<%= r.id %>" data-action-type="deactivate">Dezactiveaza</button>
+              <% } %>
+            <% } else { %>
+              <span style="color: #6b7280; font-size: 12px;">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <!-- Details row -->
+        <tr class="details-row" id="details-<%= idx %>">
+          <td colspan="9">
+            <div class="detail-grid">
+              <div>
+                <div class="detail-label">Detalii raport</div>
+                <div class="detail-value"><%= r.details || '(fără detalii)' %></div>
+              </div>
+              <div>
+                <div class="detail-label">Link direct</div>
+                <div class="detail-value">
+                  <% if (r.target_type === 'offer') { %>
+                    <a href="/admin/offers/<%= r.target_id %>/edit" style="color: #60a5fa;">Vezi oferta în admin</a>
+                  <% } else { %>
+                    <a href="/admin/businesses/<%= r.target_id %>/edit" style="color: #60a5fa;">Vezi business în admin</a>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+            <% if (r.admin_notes) { %>
+              <div style="margin-top: 8px; padding: 8px 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 6px; font-size: 13px; color: #93c5fd;">
+                <strong>Note admin:</strong> <%= r.admin_notes %>
+              </div>
+            <% } %>
+            <% if (r.reviewed_at) { %>
+              <div style="margin-top: 6px; font-size: 11px; color: #6b7280;">
+                Procesat la: <%= new Date(r.reviewed_at).toLocaleString('ro-RO') %>
+              </div>
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/reports', currentQuery: statusFilter ? 'status=' + statusFilter : '' }) %>
+<% } %>
+
+<!-- Action Modal -->
+<div class="modal-overlay" id="action-modal">
+  <div class="modal-box">
+    <h3 id="action-modal-title">Procesează raport</h3>
+    <form id="action-form" method="POST">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <textarea name="admin_notes" placeholder="Note admin (opțional)..." maxlength="500"></textarea>
+      <div class="modal-actions">
+        <button type="button" class="button secondary" onclick="closeActionModal()">Anulează</button>
+        <button type="submit" id="action-submit-btn" class="btn-approve">Confirmă</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleDetails(idx) {
+    var row = document.getElementById('details-' + idx);
+    row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
+  }
+
+  function openActionModal(id, type) {
+    var titles = { review: 'Marchează ca revizuit', dismiss: 'Respinge raportul', deactivate: 'Dezactivează ținta' };
+    var endpoints = { review: 'review', dismiss: 'dismiss', deactivate: 'deactivate-target' };
+    document.getElementById('action-modal-title').textContent = titles[type] || 'Procesează';
+    document.getElementById('action-form').action = '/admin/reports/' + id + '/' + endpoints[type];
+    var btn = document.getElementById('action-submit-btn');
+    btn.className = type === 'dismiss' || type === 'deactivate' ? 'btn-reject' : 'btn-approve';
+    btn.style.padding = '6px 16px';
+    btn.style.fontSize = '14px';
+    document.getElementById('action-modal').classList.add('active');
+  }
+
+  function closeActionModal() {
+    document.getElementById('action-modal').classList.remove('active');
+  }
+
+  document.getElementById('action-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeActionModal();
+  });
+
+  document.querySelectorAll('[data-action-id]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openActionModal(this.dataset.actionId, this.dataset.actionType);
+    });
+  });
+</script>
+
+<%- include('partials/layout-bottom') %>

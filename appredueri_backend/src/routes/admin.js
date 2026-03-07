@@ -2022,4 +2022,147 @@ router.post("/reviews/:id/delete", async (req, res) => {
   }
 });
 
+// =====================================
+//   REPORTS (User-submitted reports)
+// =====================================
+
+const REPORT_REASON_LABELS = {
+  fake_offer: "Ofertă falsă",
+  misleading_price: "Preț înșelător",
+  closed_business: "Business închis",
+  inappropriate_content: "Conținut inadecvat",
+  spam: "Spam",
+  other: "Altul",
+};
+
+router.get("/reports", async (req, res) => {
+  const { page, limit, offset } = parsePagination(req.query);
+  const statusFilter = req.query.status || "";
+
+  try {
+    let whereClause = "";
+    const values = [];
+    if (statusFilter && ["pending", "reviewed", "dismissed"].includes(statusFilter)) {
+      whereClause = "WHERE rp.status = $1";
+      values.push(statusFilter);
+    }
+
+    const idx = values.length + 1;
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM reports rp ${whereClause}`,
+      values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    const pendingRes = await pool.query(
+      "SELECT COUNT(*) FROM reports WHERE status = 'pending'"
+    );
+    const pendingCount = parseInt(pendingRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT rp.id, rp.target_type, rp.target_id, rp.reason, rp.details,
+             rp.status, rp.admin_notes, rp.created_at, rp.reviewed_at,
+             u.email AS reporter_email, u.first_name AS reporter_name,
+             CASE
+               WHEN rp.target_type = 'offer' THEN (SELECT title FROM offers WHERE id = rp.target_id)
+               WHEN rp.target_type = 'business' THEN (SELECT name FROM businesses WHERE id = rp.target_id)
+             END AS target_name,
+             (SELECT COUNT(*) FROM reports r2
+              WHERE r2.target_type = rp.target_type AND r2.target_id = rp.target_id
+              AND r2.status = 'pending') AS total_reports_on_target
+      FROM reports rp
+      LEFT JOIN users u ON u.id = rp.reporter_id
+      ${whereClause}
+      ORDER BY
+        CASE rp.status WHEN 'pending' THEN 0 ELSE 1 END,
+        rp.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    res.render("admin/reports", {
+      reports: result.rows,
+      reasonLabels: REPORT_REASON_LABELS,
+      pendingCount,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      statusFilter,
+      message: req.query.message || "",
+      error: req.query.err || "",
+    });
+  } catch (err) {
+    console.error("[Admin] Reports list error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+router.post("/reports/:id/review", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  const adminNotes = (req.body.admin_notes || "").trim().slice(0, 500);
+
+  try {
+    await pool.query(
+      `UPDATE reports SET status = 'reviewed', admin_notes = $1, reviewed_at = NOW()
+       WHERE id = $2 AND status = 'pending'`,
+      [adminNotes || null, id]
+    );
+    res.redirect(`/admin/reports?message=${encodeURIComponent("Raport marcat ca revizuit")}`);
+  } catch (err) {
+    console.error("[Admin] Review report error:", err);
+    res.redirect(`/admin/reports?err=${encodeURIComponent("Eroare la procesare")}`);
+  }
+});
+
+router.post("/reports/:id/dismiss", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  const adminNotes = (req.body.admin_notes || "").trim().slice(0, 500);
+
+  try {
+    await pool.query(
+      `UPDATE reports SET status = 'dismissed', admin_notes = $1, reviewed_at = NOW()
+       WHERE id = $2 AND status = 'pending'`,
+      [adminNotes || null, id]
+    );
+    res.redirect(`/admin/reports?message=${encodeURIComponent("Raport respins")}`);
+  } catch (err) {
+    console.error("[Admin] Dismiss report error:", err);
+    res.redirect(`/admin/reports?err=${encodeURIComponent("Eroare la procesare")}`);
+  }
+});
+
+router.post("/reports/:id/deactivate-target", async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).send("ID invalid");
+
+  try {
+    const { rows } = await pool.query(
+      "SELECT target_type, target_id FROM reports WHERE id = $1",
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).send("Raport negăsit");
+
+    const { target_type, target_id } = rows[0];
+    const adminNotes = (req.body.admin_notes || "").trim().slice(0, 500) || "Dezactivat de admin";
+
+    if (target_type === "offer") {
+      await pool.query("UPDATE offers SET is_active = false WHERE id = $1", [target_id]);
+    }
+
+    // Mark all pending reports on this target as reviewed
+    await pool.query(
+      `UPDATE reports SET status = 'reviewed', admin_notes = $1, reviewed_at = NOW()
+       WHERE target_type = $2 AND target_id = $3 AND status = 'pending'`,
+      [adminNotes, target_type, target_id]
+    );
+
+    const action = target_type === "offer" ? "Ofertă dezactivată" : "Rapoarte procesate";
+    res.redirect(`/admin/reports?message=${encodeURIComponent(action)}`);
+  } catch (err) {
+    console.error("[Admin] Deactivate target error:", err);
+    res.redirect(`/admin/reports?err=${encodeURIComponent("Eroare la procesare")}`);
+  }
+});
+
 module.exports = router;

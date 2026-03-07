@@ -20,6 +20,7 @@ import '../../widgets/animated_toggle_fab.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/subscription_badge.dart';
 import '../../services/analytics_service.dart';
+import '../../widgets/report_dialog.dart';
 import 'package:go_router/go_router.dart';
 
 class BusinessDetailScreen extends ConsumerWidget {
@@ -61,6 +62,36 @@ class BusinessDetailScreen extends ConsumerWidget {
                           AnalyticsService.trackClick(businessId: business.id, actionType: 'share');
                         },
                       ),
+                      if (isLoggedIn)
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert),
+                          onSelected: (value) async {
+                            if (value == 'report') {
+                              final sent = await showReportDialog(
+                                context: context,
+                                targetType: 'business',
+                                targetId: business.id,
+                              );
+                              if (sent && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Raportul a fost trimis. Multumim!')),
+                                );
+                              }
+                            }
+                          },
+                          itemBuilder: (ctx) => [
+                            const PopupMenuItem(
+                              value: 'report',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
+                                  SizedBox(width: 8),
+                                  Text('Raporteaza'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                     flexibleSpace: LayoutBuilder(
                       builder: (context, constraints) {
