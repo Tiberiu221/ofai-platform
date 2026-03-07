@@ -192,7 +192,8 @@ async function getUserBadges(userId) {
  */
 async function getAllBadgeDefinitions() {
   const result = await pool.query(
-    `SELECT slug,
+    `SELECT id,
+            slug,
             name,
             description,
             icon,

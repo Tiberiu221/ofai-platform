@@ -1332,19 +1332,13 @@ router.get("/orase", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
-    const { getUserBadges } = require("../services/badgeService");
-
-    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBadges] = await Promise.all([
+    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails] = await Promise.all([
       pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [req.webUser.id]),
       pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]),
-      getUserBadges(req.webUser.id).catch(err => {
-        console.error("[Web] Badges fetch error:", err.message);
-        return [];
-      }),
     ]);
 
     const userPoints = pointsRes.rows[0]?.total_points || 0;
@@ -1360,7 +1354,6 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       reviewCount: parseInt(reviewCount.rows[0].total),
       bizRequest,
       lastProfileEdit,
-      userBadges,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);
@@ -1471,10 +1464,23 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
 
 router.get("/setari", requireWebAuth, async (req, res) => {
   try {
-    const userRes = await pool.query(
-      "SELECT show_picture_in_reviews, google_id FROM users WHERE id = $1",
-      [req.webUser.id]
-    );
+    const { getUserBadges, getAllBadgeDefinitions } = require("../services/badgeService");
+
+    const [userRes, userBadges, allBadges] = await Promise.all([
+      pool.query(
+        "SELECT show_picture_in_reviews, google_id FROM users WHERE id = $1",
+        [req.webUser.id]
+      ),
+      getUserBadges(req.webUser.id).catch(err => {
+        console.error("[Web] Badges fetch error:", err.message);
+        return [];
+      }),
+      getAllBadgeDefinitions().catch(err => {
+        console.error("[Web] All badges fetch error:", err.message);
+        return [];
+      }),
+    ]);
+
     const userSettings = userRes.rows[0] || {};
 
     res.render("public/setari", {
@@ -1482,6 +1488,8 @@ router.get("/setari", requireWebAuth, async (req, res) => {
       webUser: req.webUser,
       showPictureInReviews: userSettings.show_picture_in_reviews !== false,
       isGoogleUser: !!userSettings.google_id,
+      userBadges,
+      allBadges,
     });
   } catch (err) {
     console.error("[Web] Settings error:", err);
