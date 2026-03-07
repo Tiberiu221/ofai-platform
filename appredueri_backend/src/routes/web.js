@@ -1619,7 +1619,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
 
     // Offers
     const offersRes = await pool.query(`
-      SELECT id, title, discount_type, discount_value, start_date, end_date, is_active, logo_url, moderation_status
+      SELECT id, title, discount_type, discount_value, start_date, end_date, is_active, logo_url, moderation_status, rejection_reason
       FROM offers WHERE business_id = $1 ORDER BY id DESC
     `, [businessId]);
 
@@ -1861,7 +1861,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
 
     const [offerRes, promoCodesRes, locsRes, offerLocsRes] = await Promise.all([
       pool.query(
-        "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code FROM offers WHERE id = $1 AND business_id = $2",
+        "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, moderation_status, rejection_reason FROM offers WHERE id = $1 AND business_id = $2",
         [offerId, businessId]
       ),
       pool.query(

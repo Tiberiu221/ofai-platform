@@ -2229,10 +2229,15 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
   const id = parseInt(req.params.id, 10);
   if (Number.isNaN(id)) return res.status(400).send("ID invalid");
 
+  const rejectionReason = (req.body.rejection_reason || "").trim();
+  if (!rejectionReason) {
+    return res.redirect(`/admin/offer-moderation?err=${encodeURIComponent("Trebuie să specifici un motiv de respingere")}`);
+  }
+
   try {
     await pool.query(
-      "UPDATE offers SET moderation_status = 'rejected', is_active = false WHERE id = $1 AND moderation_status = 'pending_review'",
-      [id]
+      "UPDATE offers SET moderation_status = 'rejected', is_active = false, rejection_reason = $2 WHERE id = $1 AND moderation_status = 'pending_review'",
+      [id, rejectionReason]
     );
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă respinsă")}`);
   } catch (err) {

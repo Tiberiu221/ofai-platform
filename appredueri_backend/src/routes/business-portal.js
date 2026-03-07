@@ -7,6 +7,7 @@ const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require
 const { triggerWebhook } = require("../services/n8n");
 const pushService = require("../services/pushNotifications");
 const offerService = require("../services/offerService");
+const { validateOfferData } = require("../services/llm/offerValidation");
 const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
 const { attachTier, requireFeature, requireLimit } = require("../middleware/tierAuth");
 const { countActiveOffers, countGalleryImages } = require("../helpers/tiers");
@@ -684,12 +685,45 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       values.push(uploadResult.url);
     }
 
+    // Re-run AI validation (advisory) on edited data
+    let aiScore = null, aiFlags = null, aiReasoning = null;
+    try {
+      const bizRes = await pool.query(
+        `SELECT b.name, c.name AS category_name FROM businesses b LEFT JOIN categories c ON c.id = b.category_id WHERE b.id = $1`,
+        [businessId]
+      );
+      const bizInfo = bizRes.rows[0] || {};
+      const moderation = await validateOfferData(
+        { title, description, discountType: discount_type, discountValue: discount_value, conditions, startDate: start_date, endDate: end_date },
+        { name: bizInfo.name, categoryName: bizInfo.category_name }
+      );
+      aiScore = moderation.score;
+      aiFlags = moderation.flags ? JSON.stringify(moderation.flags) : null;
+      aiReasoning = moderation.reasoning || null;
+    } catch (validationErr) {
+      console.error("[OfferValidation] Re-validation error (non-blocking):", validationErr.message);
+    }
+
+    // Reset moderation status — all edits go back to pending_review
+    updates.push(`moderation_status = $${paramIndex++}`);
+    values.push('pending_review');
+    updates.push(`is_active = $${paramIndex++}`);
+    values.push(false);
+    updates.push(`rejection_reason = $${paramIndex++}`);
+    values.push(null);
+    updates.push(`ai_score = $${paramIndex++}`);
+    values.push(aiScore);
+    updates.push(`ai_flags = $${paramIndex++}`);
+    values.push(aiFlags);
+    updates.push(`ai_reasoning = $${paramIndex++}`);
+    values.push(aiReasoning);
+
     // Use transaction for offer update + promo codes
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
 
-      // Update offer fields if there are any changes
+      // Update offer fields + moderation reset
       if (updates.length > 0) {
         values.push(offerId);
         const query = `UPDATE offers SET ${updates.join(', ')} WHERE id = $${paramIndex}`;
@@ -738,8 +772,8 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       client.release();
     }
 
-    console.log("[BusinessPortal] Offer updated successfully");
-    res.json({ success: true });
+    console.log("[BusinessPortal] Offer updated successfully — reset to pending_review");
+    res.json({ success: true, moderation_status: 'pending_review' });
   } catch (err) {
     console.error("[BusinessPortal] Error updating offer:", err);
     res.status(500).json({ message: "Eroare la actualizare" });

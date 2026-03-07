@@ -13,6 +13,7 @@ const { searchLimiter, mapsParseLimiter } = require("../middleware/rateLimiter")
 const { parseMapsLink } = require("../helpers/mapsParser");
 const { sanitizeString } = require("../helpers/validate");
 const offerService = require("../services/offerService");
+const { validateOfferData } = require("../services/llm/offerValidation");
 const pushService = require("../services/pushNotifications");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { portalUpload } = require("./web-shared");
@@ -412,6 +413,26 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       return res.status(400).json({ message: "Tip de discount invalid" });
     }
 
+    // Re-run AI validation (advisory) on the edited offer data
+    let aiScore = null, aiFlags = null, aiReasoning = null;
+    try {
+      const bizRes = await pool.query(
+        `SELECT b.name, c.name AS category_name FROM businesses b LEFT JOIN categories c ON c.id = b.category_id WHERE b.id = $1`,
+        [businessId]
+      );
+      const bizInfo = bizRes.rows[0] || {};
+      const moderation = await validateOfferData(
+        { title, description, discountType: discount_type, discountValue: discount_value, conditions, startDate: start_date, endDate: end_date },
+        { name: bizInfo.name, categoryName: bizInfo.category_name }
+      );
+      aiScore = moderation.score;
+      aiFlags = moderation.flags ? JSON.stringify(moderation.flags) : null;
+      aiReasoning = moderation.reasoning || null;
+    } catch (validationErr) {
+      console.error("[OfferValidation] Re-validation error (non-blocking):", validationErr.message);
+    }
+
+    // Update offer fields + reset to pending_review for admin re-review
     await pool.query(`
       UPDATE offers SET
         title = COALESCE($1, title),
@@ -421,16 +442,20 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         conditions = $5,
         start_date = COALESCE($6, start_date),
         end_date = COALESCE($7, end_date),
-        is_active = COALESCE($8, is_active),
+        is_active = false,
         booking_type = COALESCE($9, booking_type),
         booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
-        max_reveals = $16
+        max_reveals = $16,
+        moderation_status = 'pending_review',
+        rejection_reason = NULL,
+        ai_score = $17, ai_flags = $18, ai_reasoning = $19
       WHERE id = $14 AND business_id = $15
     `, [sanitizeString(title, 200), sanitizeString(description, 2000) || null,
         discount_type, discount_value || 0, sanitizeString(conditions, 2000) || null,
-        start_date || null, end_date || null, is_active,
+        start_date || null, end_date || null, null /* $8 unused */,
         booking_type || 'inherit', booking_phone || null, booking_whatsapp || null, booking_url || null, sanitizeString(booking_instructions, 500) || null,
-        offerId, businessId, max_reveals ? parseInt(max_reveals) : null]);
+        offerId, businessId, max_reveals ? parseInt(max_reveals) : null,
+        aiScore, aiFlags, aiReasoning]);
 
     // Backward compat: if single promo_code string sent, convert to array
     let promoCodesArr = promo_codes;
@@ -468,7 +493,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       }
     }
 
-    res.json({ success: true });
+    res.json({ success: true, moderation_status: 'pending_review' });
   } catch (err) {
     console.error("[Web API] Portal update offer error:", err);
     res.status(500).json({ message: "Eroare server" });
