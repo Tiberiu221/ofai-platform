@@ -885,6 +885,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  padding-right: 20px;
 }
 .badges-count {
   font-size: 0.75rem;
@@ -895,19 +896,77 @@
   border-radius: var(--radius-full);
   letter-spacing: 0.02em;
 }
+.badges-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.badges-nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.2s;
+}
+.badges-nav-btn:hover:not(:disabled) {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.badges-nav-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
 .badges-subtitle {
   font-size: 0.8125rem;
   color: var(--text-muted);
-  margin: 4px 0 18px;
+  margin: 4px 0 14px;
 }
 
-/* Badge grid — wrapping layout, no horizontal scroll */
-.badges-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 6px;
-  padding: 6px 0;
+/* Horizontal scroll strip */
+.badges-strip-wrapper {
+  position: relative;
+  overflow: hidden;
 }
+.badges-strip-wrapper::before,
+.badges-strip-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 32px;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.badges-strip-wrapper::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-surface), transparent);
+  opacity: 0;
+}
+.badges-strip-wrapper::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-surface), transparent);
+}
+.badges-strip-wrapper.scrolled-start::before { opacity: 1; }
+.badges-strip-wrapper.scrolled-end::after { opacity: 0; }
+.badges-strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 8px 8px;
+}
+.badges-strip::-webkit-scrollbar { display: none; }
 
 /* Individual badge cell */
 .badge-item {
@@ -915,9 +974,11 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 10px 4px;
+  padding: 8px;
   cursor: pointer;
   border-radius: 14px;
+  flex-shrink: 0;
+  width: 78px;
   transition: transform 0.2s cubic-bezier(.4,0,.2,1);
 }
 .badge-item:hover {
@@ -933,7 +994,7 @@
   align-items: center;
   justify-content: center;
   border: 2px solid;
-  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s ease;
 }
 .badge-item:hover .badge-icon {
   transform: scale(1.08);
@@ -954,11 +1015,10 @@
   transition: color 0.2s;
 }
 
-/* Selection — outline ring sits OUTSIDE the circle, never clips */
+/* Selection — solid ring + glow on circle only, no rectangle */
 .badge-item.badge-selected .badge-icon {
-  outline: 2.5px solid var(--badge-color, var(--accent));
-  outline-offset: 3px;
-  box-shadow: 0 0 14px 0 var(--badge-glow, rgba(251,146,60,0.25));
+  box-shadow: 0 0 0 3px var(--badge-color, var(--accent)),
+              0 0 12px 0 var(--badge-glow, rgba(251,146,60,0.3));
 }
 .badge-item.badge-selected .badge-name {
   color: var(--accent);
