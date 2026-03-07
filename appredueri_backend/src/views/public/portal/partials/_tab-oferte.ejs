@@ -38,9 +38,25 @@
                   <%= new Date(offer.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }) %>
                 </span>
               </div>
+              <% var isModerated = offer.moderation_status === 'pending_review' || offer.moderation_status === 'rejected'; %>
+              <% if (isModerated) { %>
+                <div class="offer-moderation-row">
+                  <% if (offer.moderation_status === 'pending_review') { %>
+                    <span class="moderation-badge pending">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      In verificare
+                    </span>
+                  <% } else { %>
+                    <span class="moderation-badge rejected">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      Respinsa
+                    </span>
+                  <% } %>
+                </div>
+              <% } %>
             </div>
             <div class="offer-actions">
-              <% if (tier && tier.plan && tier.plan.has_deal_nomination && offer.is_active) { %>
+              <% if (tier && tier.plan && tier.plan.has_deal_nomination && offer.is_active && !isModerated) { %>
                 <button class="nominate-btn"
                         id="nom-btn-<%= offer.id %>"
                         onclick="nominateOffer(<%= offer.id %>, this)"
@@ -49,9 +65,15 @@
                   Nominalizare
                 </button>
               <% } %>
-              <button class="toggle-btn <%= offer.is_active ? 'on' : 'off' %>"
-                      onclick="toggleOffer(<%= offer.id %>, this)"
-                      title="<%= offer.is_active ? 'Activă' : 'Inactivă' %>"></button>
+              <% if (isModerated) { %>
+                <button class="toggle-btn off disabled"
+                        title="<%= offer.moderation_status === 'pending_review' ? 'In curs de verificare' : 'Respinsa de moderare' %>"
+                        disabled></button>
+              <% } else { %>
+                <button class="toggle-btn <%= offer.is_active ? 'on' : 'off' %>"
+                        onclick="toggleOffer(<%= offer.id %>, this)"
+                        title="<%= offer.is_active ? 'Activă' : 'Inactivă' %>"></button>
+              <% } %>
               <a href="/portal/<%= business.id %>/oferta/<%= offer.id %>" class="offer-edit-link" title="Editează">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </a>

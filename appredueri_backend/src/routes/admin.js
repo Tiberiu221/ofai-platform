@@ -2231,7 +2231,7 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
 
   try {
     await pool.query(
-      "UPDATE offers SET moderation_status = 'rejected' WHERE id = $1 AND moderation_status = 'pending_review'",
+      "UPDATE offers SET moderation_status = 'rejected', is_active = false WHERE id = $1 AND moderation_status = 'pending_review'",
       [id]
     );
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă respinsă")}`);

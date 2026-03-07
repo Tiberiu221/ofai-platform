@@ -504,7 +504,7 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
 
     // Lock the offer row to prevent concurrent toggles
     const current = await client.query(
-      "SELECT is_active FROM offers WHERE id = $1 AND business_id = $2 FOR UPDATE",
+      "SELECT is_active, moderation_status FROM offers WHERE id = $1 AND business_id = $2 FOR UPDATE",
       [offerId, businessId]
     );
     if (current.rows.length === 0) {
@@ -513,6 +513,20 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
     }
 
     const isCurrentlyActive = current.rows[0].is_active;
+    const moderationStatus = current.rows[0].moderation_status;
+
+    // Block activation for offers under moderation or rejected
+    if (!isCurrentlyActive && (moderationStatus === 'pending_review' || moderationStatus === 'rejected')) {
+      await client.query("ROLLBACK");
+      const msg = moderationStatus === 'pending_review'
+        ? 'Această ofertă este în curs de verificare. Nu poate fi activată până la aprobarea unui admin.'
+        : 'Această ofertă a fost respinsă de moderare. Nu poate fi activată.';
+      return res.status(403).json({
+        error: 'moderation_blocked',
+        moderation_status: moderationStatus,
+        message: msg,
+      });
+    }
 
     // If activating, check tier limit atomically
     if (!isCurrentlyActive && process.env.TIER_GATING_ENABLED === 'true' && req.tier) {

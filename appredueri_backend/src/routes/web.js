@@ -1619,7 +1619,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
 
     // Offers
     const offersRes = await pool.query(`
-      SELECT id, title, discount_type, discount_value, start_date, end_date, is_active, logo_url
+      SELECT id, title, discount_type, discount_value, start_date, end_date, is_active, logo_url, moderation_status
       FROM offers WHERE business_id = $1 ORDER BY id DESC
     `, [businessId]);
 

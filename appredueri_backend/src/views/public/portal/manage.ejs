@@ -800,11 +800,20 @@
   (function() {
     var q = window.location.search;
     var msg = null;
-    if (q.indexOf('offer_created=1') !== -1) msg = 'Oferta a fost creată cu succes!';
-    else if (q.indexOf('offer_updated=1') !== -1) msg = 'Oferta a fost actualizată!';
-    else if (q.indexOf('offer_deleted=1') !== -1) msg = 'Oferta a fost ștearsă.';
+    var type = 'success';
+    if (q.indexOf('offer_pending=1') !== -1) {
+      msg = 'Oferta ta a fost creată și este în curs de verificare. Va fi activată după aprobarea unui admin.';
+      type = 'info';
+    } else if (q.indexOf('offer_created=1') !== -1) {
+      msg = 'Oferta a fost creată cu succes!';
+    } else if (q.indexOf('offer_updated=1') !== -1) {
+      msg = 'Oferta a fost actualizată!';
+    } else if (q.indexOf('offer_deleted=1') !== -1) {
+      msg = 'Oferta a fost ștearsă.';
+      type = 'info';
+    }
     if (msg) {
-      showToast(msg, q.indexOf('deleted') !== -1 ? 'info' : 'success');
+      showToast(msg, type);
       history.replaceState(null, '', window.location.pathname + window.location.hash);
     }
   })();

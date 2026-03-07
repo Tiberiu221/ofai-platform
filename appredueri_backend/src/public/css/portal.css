@@ -240,6 +240,17 @@
   }
   .offer-dates { font-size: 0.75rem; color: var(--text-tertiary); }
 
+  /* ── Offer Moderation ── */
+  .offer-moderation-row { margin-top: 4px; }
+  .moderation-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 10px; border-radius: 20px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .moderation-badge.pending { background: rgba(234, 179, 8, 0.12); color: var(--warning); }
+  .moderation-badge.rejected { background: rgba(239, 68, 68, 0.12); color: var(--danger); }
+  .toggle-btn.disabled { opacity: 0.3; cursor: not-allowed; }
+
   .offer-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
   .toggle-btn {
@@ -608,6 +619,7 @@
   }
   .pm-toast.success { background: var(--success); color: #fff; }
   .pm-toast.error { background: var(--danger); color: #fff; }
+  .pm-toast.info { background: #3b82f6; color: #fff; }
   @keyframes pmToastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pmToastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(12px); } }
 

@@ -983,8 +983,13 @@
         return;
       }
 
-      var successParam = isEdit ? 'offer_updated=1' : 'offer_created=1';
-      window.location.href = '/portal/' + businessId + '?' + successParam + '#oferte';
+      if (isEdit) {
+        window.location.href = '/portal/' + businessId + '?offer_updated=1#oferte';
+      } else if (data.moderation_status === 'pending_review') {
+        window.location.href = '/portal/' + businessId + '?offer_pending=1#oferte';
+      } else {
+        window.location.href = '/portal/' + businessId + '?offer_created=1#oferte';
+      }
 
     } catch (err) {
       showMessage('Eroare de rețea. Verifică conexiunea și încearcă din nou.', 'error');
