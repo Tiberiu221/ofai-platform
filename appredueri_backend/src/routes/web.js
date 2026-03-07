@@ -1836,7 +1836,15 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, 
   try {
     const { businessId } = req.params;
     const [bizRes, locsRes] = await Promise.all([
-      pool.query("SELECT id, name FROM businesses WHERE id = $1", [businessId]),
+      pool.query(
+        `SELECT b.id, b.name, b.logo_url,
+                c.name AS city_name, cat.name AS category_name
+         FROM businesses b
+         LEFT JOIN cities c ON b.city_id = c.id
+         LEFT JOIN categories cat ON b.category_id = cat.id
+         WHERE b.id = $1`,
+        [businessId]
+      ),
       pool.query(
         `SELECT bl.id, bl.address, c.name AS city_name
          FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id
@@ -1864,7 +1872,15 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, 
 router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
-    const bizRes = await pool.query("SELECT id, name FROM businesses WHERE id = $1", [businessId]);
+    const bizRes = await pool.query(
+      `SELECT b.id, b.name, b.logo_url,
+              c.name AS city_name, cat.name AS category_name
+       FROM businesses b
+       LEFT JOIN cities c ON b.city_id = c.id
+       LEFT JOIN categories cat ON b.category_id = cat.id
+       WHERE b.id = $1`,
+      [businessId]
+    );
     if (bizRes.rows.length === 0) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser });
 
     const [offerRes, promoCodesRes, locsRes, offerLocsRes] = await Promise.all([

@@ -36,6 +36,9 @@
     margin: 0 auto;
     padding: 0 var(--container-px);
   }
+  @media (min-width: 1100px) {
+    .of-container { max-width: 1280px; }
+  }
   .of-page-title {
     font-size: 1.75rem;
     font-weight: 700;
@@ -515,6 +518,116 @@
       flex: none;
     }
   }
+
+  /* ─── LIVE PREVIEW LAYOUT ──────────────────────────────── */
+  .ofp-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (min-width: 1100px) {
+    .ofp-layout {
+      grid-template-columns: 1fr 390px;
+    }
+  }
+  .ofp-form-col { min-width: 0; }
+
+  .ofp-preview-col { display: none; }
+  @media (min-width: 1100px) {
+    .ofp-preview-col {
+      display: block;
+      position: sticky;
+      top: 88px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+  }
+
+  /* ─── PREVIEW PANEL ────────────────────────────────────── */
+  .ofp-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow: hidden;
+  }
+  .ofp-panel-header {
+    padding: 16px 18px 0;
+  }
+  .ofp-panel-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .ofp-panel-label svg { color: var(--accent); }
+
+  /* ─── TAB SWITCHER ─────────────────────────────────────── */
+  .ofp-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ofp-tab {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 6px 8px;
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .ofp-tab:hover {
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.04);
+  }
+  .ofp-tab.active {
+    background: rgba(251,146,60,0.12);
+    border-color: rgba(251,146,60,0.25);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ─── PREVIEW STAGE ────────────────────────────────────── */
+  .ofp-stage { padding: 18px; }
+  .ofp-view { display: none; }
+  .ofp-view.active { display: block; }
+  .ofp-view-label {
+    margin: 10px 0 0;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* ─── CARD FRAME OVERRIDES ─────────────────────────────── */
+  .ofp-card-frame { border-radius: var(--radius-lg); overflow: hidden; }
+
+  /* Featured needs min-height since it's outside bento grid context */
+  .ofp-frame-featured .offer-card.featured { min-height: 340px; }
+  .ofp-frame-featured .offer-card.featured .offer-image-wrapper { height: 340px; }
+
+  /* Prevent hover transforms in preview */
+  .ofp-stage .offer-card { pointer-events: none; cursor: default; }
+  .ofp-stage .offer-card:hover { transform: none; box-shadow: none; }
+
+  /* Badge hidden state */
+  .ofp-badge-hidden { display: none !important; }
 </style>
 
 <section class="of-page-header">
@@ -558,6 +671,9 @@
         </div>
       </div>
     <% } %>
+
+    <div class="ofp-layout">
+      <div class="ofp-form-col">
 
     <form id="offer-form" novalidate>
       <div class="of-form-card">
@@ -765,6 +881,150 @@
 
       </div>
     </form>
+
+      </div><!-- /.ofp-form-col -->
+
+      <!-- ═══ LIVE PREVIEW PANEL ═══ -->
+      <aside class="ofp-preview-col" aria-label="Previzualizare ofertă"
+        data-biz-name="<%= business.name %>"
+        data-biz-logo="<%= business.logo_url || '' %>"
+        data-biz-city="<%= business.city_name || '' %>"
+        data-biz-category="<%= business.category_name || '' %>">
+        <div class="ofp-panel">
+          <div class="ofp-panel-header">
+            <span class="ofp-panel-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+              Previzualizare
+            </span>
+          </div>
+          <div class="ofp-tabs" role="tablist">
+            <button class="ofp-tab active" data-tab="standard" type="button">In Oferte</button>
+            <button class="ofp-tab" data-tab="featured" type="button">Oferta Zilei</button>
+            <button class="ofp-tab" data-tab="compact" type="button">Compact</button>
+            <button class="ofp-tab" data-tab="promoted" type="button">Promovat</button>
+          </div>
+          <div class="ofp-stage">
+
+            <!-- ── Standard card ── -->
+            <div class="ofp-view active" id="ofp-view-standard">
+              <div class="ofp-card-frame">
+                <div class="offer-card" id="ofp-card-standard">
+                  <div class="offer-image-wrapper">
+                    <div class="offer-image-placeholder">
+                      <span class="offer-placeholder-letter ofp-placeholder"></span>
+                    </div>
+                    <div class="offer-badge ofp-badge" style="display:none;"></div>
+                  </div>
+                  <div class="offer-content">
+                    <div class="offer-business ofp-biz-name"></div>
+                    <div class="offer-title ofp-title">Titlul ofertei apare aici</div>
+                    <div class="offer-meta">
+                      <span class="offer-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span class="ofp-city"></span>
+                      </span>
+                      <span class="offer-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        <span class="ofp-cat"></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="ofp-view-label">Cum apare pe pagina Oferte</p>
+            </div>
+
+            <!-- ── Featured / Deal of Day card ── -->
+            <div class="ofp-view" id="ofp-view-featured" hidden>
+              <div class="ofp-card-frame ofp-frame-featured">
+                <div class="offer-card featured" id="ofp-card-featured">
+                  <div class="offer-image-wrapper">
+                    <div class="offer-image-placeholder">
+                      <span class="offer-placeholder-letter ofp-placeholder"></span>
+                    </div>
+                    <div class="offer-badge ofp-badge" style="display:none;"></div>
+                    <div style="position:absolute;top:12px;left:12px;background:var(--accent);color:#000;font-size:0.625rem;font-weight:700;padding:3px 10px;border-radius:4px;text-transform:uppercase;letter-spacing:0.04em;z-index:2;">Oferta Zilei</div>
+                  </div>
+                  <div class="offer-content">
+                    <div class="offer-content-text">
+                      <div class="offer-business ofp-biz-name"></div>
+                      <div class="offer-title ofp-title">Titlul ofertei apare aici</div>
+                      <div class="offer-meta">
+                        <span class="offer-meta-item">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                          <span class="ofp-city"></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="ofp-view-label">Cum apare ca Oferta Zilei pe pagina principala</p>
+            </div>
+
+            <!-- ── Compact card ── -->
+            <div class="ofp-view" id="ofp-view-compact" hidden>
+              <div class="ofp-card-frame">
+                <div class="offer-card offer-card-compact" id="ofp-card-compact">
+                  <div class="offer-image-wrapper">
+                    <div class="offer-image-placeholder">
+                      <span class="offer-placeholder-letter ofp-placeholder"></span>
+                    </div>
+                    <div class="offer-badge ofp-badge" style="display:none;"></div>
+                  </div>
+                  <div class="offer-content">
+                    <div class="offer-business ofp-biz-name"></div>
+                    <div class="offer-title ofp-title">Titlul ofertei apare aici</div>
+                    <div class="offer-meta">
+                      <span class="offer-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span class="ofp-city"></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="ofp-view-label">Cum apare in sectiunea Oferte similare</p>
+            </div>
+
+            <!-- ── Promoted card ── -->
+            <div class="ofp-view" id="ofp-view-promoted" hidden>
+              <div class="ofp-card-frame">
+                <div class="offer-card" id="ofp-card-promoted">
+                  <div class="offer-image-wrapper">
+                    <div class="offer-image-placeholder">
+                      <span class="offer-placeholder-letter ofp-placeholder"></span>
+                    </div>
+                    <span class="promoted-badge">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      Promovat
+                    </span>
+                    <div class="offer-badge ofp-badge" style="display:none;"></div>
+                  </div>
+                  <div class="offer-content">
+                    <div class="offer-business ofp-biz-name"></div>
+                    <div class="offer-title ofp-title">Titlul ofertei apare aici</div>
+                    <div class="offer-meta">
+                      <span class="offer-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span class="ofp-city"></span>
+                      </span>
+                      <span class="offer-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        <span class="ofp-cat"></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="ofp-view-label">Cum apare in sectiunea Oferte Promovate</p>
+            </div>
+
+          </div><!-- /.ofp-stage -->
+        </div><!-- /.ofp-panel -->
+      </aside>
+
+    </div><!-- /.ofp-layout -->
 
   </div>
 </section>
@@ -1051,6 +1311,108 @@
     }
   });
   <% } %>
+
+  // ─── Live Preview Panel ─────────────────────────────────────
+  (function initPreview() {
+    var aside = document.querySelector('.ofp-preview-col');
+    if (!aside) return; // safety — hidden on mobile anyway
+
+    // ── Static business data (set once) ──
+    var bizName     = aside.dataset.bizName     || '';
+    var bizLogo     = aside.dataset.bizLogo     || '';
+    var bizCity     = aside.dataset.bizCity      || '';
+    var bizCategory = aside.dataset.bizCategory  || '';
+    var initial     = bizName.charAt(0).toUpperCase() || '?';
+
+    // Populate all static fields across the 4 cards
+    aside.querySelectorAll('.ofp-biz-name').forEach(function(el)  { el.textContent = bizName; });
+    aside.querySelectorAll('.ofp-city').forEach(function(el)      { el.textContent = bizCity; });
+    aside.querySelectorAll('.ofp-cat').forEach(function(el)       { el.textContent = bizCategory; });
+    aside.querySelectorAll('.offer-image-placeholder').forEach(function(container) {
+      container.innerHTML = '';
+      if (bizLogo) {
+        // Use the same .offer-placeholder-logo class as the real site
+        var img = document.createElement('img');
+        img.src = bizLogo;
+        img.alt = bizName;
+        img.className = 'offer-placeholder-logo';
+        container.appendChild(img);
+      } else {
+        var letterBox = document.createElement('span');
+        letterBox.className = 'offer-placeholder-letter';
+        letterBox.textContent = initial;
+        container.appendChild(letterBox);
+      }
+    });
+
+    // ── Form field references ──
+    var titleInput    = document.getElementById('of-title');
+    var discountType  = document.getElementById('of-discount-type');
+    var discountValue = document.getElementById('of-discount-value');
+
+    // ── All preview elements that need live updates ──
+    var allTitles = aside.querySelectorAll('.ofp-title');
+    var allBadges = aside.querySelectorAll('.ofp-badge');
+
+    function formatBadge(type, val) {
+      if (!val || val === '0') return '';
+      switch (type) {
+        case 'percentage': return '-' + val + '%';
+        case 'fixed':      return '-' + val + ' lei';
+        case 'special':    return val;
+        default:           return val;
+      }
+    }
+
+    function updatePreview() {
+      // Title
+      var title = titleInput.value.trim() || 'Titlul ofertei apare aici';
+      allTitles.forEach(function(el) { el.textContent = title; });
+
+      // Discount badge
+      var type = discountType.value;
+      var val  = discountValue.value.trim();
+      var badgeText = formatBadge(type, val);
+
+      allBadges.forEach(function(el) {
+        if (badgeText) {
+          el.textContent = badgeText;
+          el.style.display = '';
+        } else {
+          el.textContent = '';
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    // ── Bind events ──
+    titleInput.addEventListener('input', updatePreview);
+    discountValue.addEventListener('input', updatePreview);
+    discountType.addEventListener('change', updatePreview);
+
+    // ── Tab switcher ──
+    var tabs  = aside.querySelectorAll('.ofp-tab');
+    var views = aside.querySelectorAll('.ofp-view');
+
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        var target = this.dataset.tab;
+
+        // Toggle active tab
+        tabs.forEach(function(t) { t.classList.toggle('active', t === tab); });
+
+        // Toggle active view
+        views.forEach(function(v) {
+          var isTarget = v.id === 'ofp-view-' + target;
+          v.classList.toggle('active', isTarget);
+          v.hidden = !isTarget;
+        });
+      });
+    });
+
+    // ── Initial render (edit mode pre-population) ──
+    updatePreview();
+  })();
 
 })();
 </script>
