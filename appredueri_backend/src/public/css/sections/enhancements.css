@@ -986,6 +986,7 @@
   border-radius: 12px;
   flex-shrink: 0;
   width: 72px;
+  overflow: visible;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 .badge-icon {
@@ -1021,7 +1022,7 @@
 }
 .badge-item.badge-selected .badge-icon {
   border-width: 2px;
-  box-shadow: 0 0 6px 1px var(--badge-glow, rgba(249,115,22,0.35));
+  box-shadow: 0 0 10px 2px var(--badge-glow, rgba(249,115,22,0.35));
 }
 .badge-item.badge-selected .badge-name {
   color: var(--accent);
