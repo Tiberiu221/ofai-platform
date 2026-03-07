@@ -880,23 +880,11 @@
 }
 
 /* ─── USER BADGES ────────────────────────────────────────── */
-.badges-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px 0 20px 20px;
-  margin-bottom: 24px;
-}
+.badges-card { display: none; }
 .badges-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-right: 20px;
-}
-.badges-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin: 0;
+  gap: 10px;
 }
 .badges-count {
   font-size: 0.75rem;
@@ -904,138 +892,91 @@
   color: var(--accent);
   background: var(--accent-muted);
   padding: 2px 8px;
-  border-radius: 100px;
-}
-.badges-nav {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-.badges-nav-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.2s;
-}
-.badges-nav-btn:hover:not(:disabled) {
-  background: var(--accent-muted);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.badges-nav-btn:disabled {
-  opacity: 0.25;
-  cursor: default;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
 }
 .badges-subtitle {
   font-size: 0.8125rem;
   color: var(--text-muted);
-  margin: 4px 20px 14px 0;
+  margin: 4px 0 18px;
 }
-.badges-strip-wrapper {
-  position: relative;
-  overflow: hidden;
-}
-.badges-strip-wrapper::before,
-.badges-strip-wrapper::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 32px;
-  z-index: 2;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-.badges-strip-wrapper::before {
-  left: 0;
-  background: linear-gradient(to right, var(--bg-card), transparent);
-  opacity: 0;
-}
-.badges-strip-wrapper::after {
-  right: 0;
-  background: linear-gradient(to left, var(--bg-card), transparent);
-}
-.badges-strip-wrapper.scrolled-start::before { opacity: 1; }
-.badges-strip-wrapper.scrolled-end::after { opacity: 0; }
-.badges-strip {
-  display: flex;
+
+/* Badge grid — wrapping layout, no horizontal scroll */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
   gap: 6px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding: 4px 20px 4px 0;
+  padding: 6px 0;
 }
-.badges-strip::-webkit-scrollbar { display: none; }
+
+/* Individual badge cell */
 .badge-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  text-align: center;
-  padding: 6px;
+  gap: 8px;
+  padding: 10px 4px;
   cursor: pointer;
-  border-radius: 12px;
-  flex-shrink: 0;
-  width: 72px;
-  overflow: visible;
-  transition: background 0.2s ease, transform 0.2s ease;
+  border-radius: 14px;
+  transition: transform 0.2s cubic-bezier(.4,0,.2,1);
 }
+.badge-item:hover {
+  transform: translateY(-2px);
+}
+
+/* Badge circle */
 .badge-icon {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid;
-  transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s cubic-bezier(.4,0,.2,1), width 0.25s, height 0.25s, border-width 0.25s;
+  border: 2px solid;
+  transition: transform 0.25s cubic-bezier(.4,0,.2,1);
 }
 .badge-item:hover .badge-icon {
   transform: scale(1.08);
 }
+
+/* Badge label */
 .badge-name {
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   color: var(--text-secondary);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  text-align: center;
   max-width: 100%;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   transition: color 0.2s;
 }
-.badge-item:hover {
-  background: rgba(255,255,255,0.04);
-}
-.badge-item.badge-selected,
-.badge-item.badge-selected:hover {
-  background: none;
-}
+
+/* Selection — outline ring sits OUTSIDE the circle, never clips */
 .badge-item.badge-selected .badge-icon {
-  border-width: 2px;
-  box-shadow: 0 0 10px 2px var(--badge-glow, rgba(249,115,22,0.35));
+  outline: 2.5px solid var(--badge-color, var(--accent));
+  outline-offset: 3px;
+  box-shadow: 0 0 14px 0 var(--badge-glow, rgba(251,146,60,0.25));
 }
 .badge-item.badge-selected .badge-name {
   color: var(--accent);
   font-weight: 700;
 }
+
+/* Locked (unearned) badges */
 .badge-locked {
-  opacity: 0.35;
-  filter: grayscale(1);
   cursor: default;
   pointer-events: none;
 }
 .badge-locked .badge-icon {
+  opacity: 0.18;
+  filter: grayscale(1);
   border-style: dashed;
+}
+.badge-locked .badge-name {
+  opacity: 0.3;
 }
 
 /* ─── DETAIL CARDS (shared) ─── */
