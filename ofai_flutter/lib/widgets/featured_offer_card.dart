@@ -372,7 +372,6 @@ class FeaturedOfferCard extends ConsumerWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }
