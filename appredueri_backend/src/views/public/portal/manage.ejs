@@ -611,13 +611,14 @@
      OPENING HOURS — per-location
      ════════════════════════════════ */
   var HRS_DAY_NAMES = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+  var _hrsLoaded = {};
 
   window.hrs_toggle = function(locId) {
     var panel = document.getElementById('hrs-panel-' + locId);
     if (!panel) return;
     if (panel.style.display === 'none') {
       panel.style.display = 'block';
-      hrs_load(locId);
+      if (!_hrsLoaded[locId]) hrs_load(locId); // fetch only on first expand
     } else {
       panel.style.display = 'none';
     }
@@ -635,16 +636,24 @@
       var html = '';
       for (var i = 0; i < 7; i++) {
         var h = hours.find(function(x) { return x.day_of_week === i; }) || { day_of_week: i, open_time: '09:00', close_time: '18:00', is_closed: false };
-        html += '<div class="hrs-day-row" style="display: grid; grid-template-columns: 90px 1fr 12px 1fr 80px; gap: 8px; align-items: center;">';
+        var closed = !!h.is_closed;
+        html += '<div class="hrs-day-row" data-day="' + i + '" style="display: grid; grid-template-columns: 90px 1fr 80px; gap: 8px; align-items: center;">';
         html += '<span style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">' + HRS_DAY_NAMES[i] + '</span>';
-        html += '<input type="time" class="form-input hrs-open" data-day="' + i + '" value="' + (h.open_time || '09:00') + '" style="font-size:0.8125rem;padding:6px 8px;"' + (h.is_closed ? ' disabled' : '') + '>';
+        // Time inputs wrapper — hidden when closed
+        html += '<span class="hrs-times" style="display:' + (closed ? 'none' : 'grid') + '; grid-template-columns: 1fr 12px 1fr; gap: 8px; align-items: center;">';
+        html += '<input type="time" class="form-input hrs-open" data-day="' + i + '" value="' + (h.open_time || '09:00') + '" style="font-size:0.8125rem;padding:6px 8px;">';
         html += '<span style="color:var(--text-tertiary);text-align:center;">–</span>';
-        html += '<input type="time" class="form-input hrs-close" data-day="' + i + '" value="' + (h.close_time || '18:00') + '" style="font-size:0.8125rem;padding:6px 8px;"' + (h.is_closed ? ' disabled' : '') + '>';
-        html += '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-secondary);cursor:pointer;">';
-        html += '<input type="checkbox" class="hrs-closed" data-day="' + i + '" ' + (h.is_closed ? 'checked' : '') + ' onchange="hrs_toggleClosed(this,' + locId + ',' + i + ')"> Închis</label>';
+        html += '<input type="time" class="form-input hrs-close" data-day="' + i + '" value="' + (h.close_time || '18:00') + '" style="font-size:0.8125rem;padding:6px 8px;">';
+        html += '</span>';
+        // "Închis" label — visible when closed
+        html += '<span class="hrs-closed-label" style="display:' + (closed ? '' : 'none') + '; font-size:0.8125rem; color:var(--text-tertiary); font-style:italic;">Închis</span>';
+        // Checkbox
+        html += '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-secondary);cursor:pointer;justify-self:end;">';
+        html += '<input type="checkbox" class="hrs-closed" data-day="' + i + '" ' + (closed ? 'checked' : '') + ' onchange="hrs_toggleClosed(this,' + locId + ',' + i + ')"> Închis</label>';
         html += '</div>';
       }
       grid.innerHTML = html;
+      _hrsLoaded[locId] = true;
       hrs_updateStatus(locId, hours);
     })
     .catch(function() {
@@ -653,12 +662,33 @@
   }
 
   function hrs_toggleClosed(checkbox, locId, day) {
+    var row = checkbox.closest('.hrs-day-row');
+    if (!row) return;
+    var times = row.querySelector('.hrs-times');
+    var label = row.querySelector('.hrs-closed-label');
+    if (times) times.style.display = checkbox.checked ? 'none' : 'grid';
+    if (label) label.style.display = checkbox.checked ? '' : 'none';
+    // Update status badge from current DOM state
+    hrs_updateStatusFromDOM(locId);
+  }
+
+  // Read current hours state from DOM inputs (no server call)
+  function hrs_updateStatusFromDOM(locId) {
     var panel = document.getElementById('hrs-panel-' + locId);
     if (!panel) return;
-    var openInput = panel.querySelector('.hrs-open[data-day="' + day + '"]');
-    var closeInput = panel.querySelector('.hrs-close[data-day="' + day + '"]');
-    if (openInput) openInput.disabled = checkbox.checked;
-    if (closeInput) closeInput.disabled = checkbox.checked;
+    var hours = [];
+    for (var d = 0; d < 7; d++) {
+      var closed = panel.querySelector('.hrs-closed[data-day="' + d + '"]');
+      var openI = panel.querySelector('.hrs-open[data-day="' + d + '"]');
+      var closeI = panel.querySelector('.hrs-close[data-day="' + d + '"]');
+      hours.push({
+        day_of_week: d,
+        is_closed: closed ? closed.checked : false,
+        open_time: openI ? openI.value : null,
+        close_time: closeI ? closeI.value : null,
+      });
+    }
+    hrs_updateStatus(locId, hours);
   }
 
   window.hrs_save = function(locId) {
