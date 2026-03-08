@@ -482,7 +482,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
 
     console.log("[BusinessPortal] Creating offer:", title);
 
-    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'special', 'free', 'bogo', 'other'];
     if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
       return res.status(400).json({ message: "Tip de discount invalid" });
     }
@@ -602,7 +602,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
     } = req.body;
 
-    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'free', 'bogo', 'other'];
+    const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'special', 'free', 'bogo', 'other'];
     if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
       return res.status(400).json({ message: "Tip de discount invalid" });
     }
