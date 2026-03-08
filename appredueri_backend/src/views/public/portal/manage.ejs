@@ -614,7 +614,7 @@
   var _hrsLoaded = {};
 
   // Build <option> tags for 24h time select (30-min steps)
-  function hrs_timeOpts(sel) {
+  function hrs_timeOpts(sel, isClose) {
     var opts = '';
     var matched = false;
     for (var h = 0; h < 24; h++) {
@@ -622,9 +622,17 @@
         var hh = (h < 10 ? '0' : '') + h;
         var mm = (m < 10 ? '0' : '') + m;
         var val = hh + ':' + mm;
+        // Skip 00:00 in the normal loop for close selects (added at end as midnight)
+        if (isClose && val === '00:00') continue;
         if (val === sel) matched = true;
         opts += '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + val + '</option>';
       }
+    }
+    // Close select: add 00:00 at end as "midnight" option
+    if (isClose) {
+      var midSel = (sel === '00:00');
+      if (midSel) matched = true;
+      opts += '<option value="00:00"' + (midSel ? ' selected' : '') + '>00:00 (miezul nopții)</option>';
     }
     // If saved value doesn't match a 30-min slot, add it as first option
     if (!matched && sel) {
@@ -661,9 +669,9 @@
         html += '<span style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">' + HRS_DAY_NAMES[i] + '</span>';
         // Time inputs wrapper — hidden when closed
         html += '<span class="hrs-times" style="display:' + (closed ? 'none' : 'grid') + '; grid-template-columns: 1fr 12px 1fr; gap: 8px; align-items: center;">';
-        html += '<select class="form-select hrs-open" data-day="' + i + '" style="font-size:0.8125rem;padding:6px 8px;">' + hrs_timeOpts(h.open_time || '09:00') + '</select>';
+        html += '<select class="form-select hrs-open" data-day="' + i + '" style="font-size:0.8125rem;padding:6px 8px;">' + hrs_timeOpts(h.open_time || '09:00', false) + '</select>';
         html += '<span style="color:var(--text-tertiary);text-align:center;">–</span>';
-        html += '<select class="form-select hrs-close" data-day="' + i + '" style="font-size:0.8125rem;padding:6px 8px;">' + hrs_timeOpts(h.close_time || '18:00') + '</select>';
+        html += '<select class="form-select hrs-close" data-day="' + i + '" style="font-size:0.8125rem;padding:6px 8px;">' + hrs_timeOpts(h.close_time || '18:00', true) + '</select>';
         html += '</span>';
         // "Închis" label — visible when closed
         html += '<span class="hrs-closed-label" style="display:' + (closed ? '' : 'none') + '; font-size:0.8125rem; color:var(--text-tertiary); font-style:italic;">Închis</span>';
@@ -774,6 +782,7 @@
       var cl = today.close_time.split(':');
       var openMin = parseInt(op[0]) * 60 + parseInt(op[1]);
       var closeMin = parseInt(cl[0]) * 60 + parseInt(cl[1]);
+      if (closeMin === 0) closeMin = 1440; // 00:00 = midnight = end of day
       if (hm >= openMin && hm < closeMin) {
         statusEl.textContent = 'Deschis acum';
         statusEl.style.background = 'rgba(34,197,94,0.1)';

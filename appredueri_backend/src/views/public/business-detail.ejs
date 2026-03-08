@@ -518,6 +518,7 @@
                 var closeParts = entry.close_time.split(':');
                 var openMins = parseInt(openParts[0]) * 60 + parseInt(openParts[1]);
                 var closeMins = parseInt(closeParts[0]) * 60 + parseInt(closeParts[1]);
+                if (closeMins === 0) closeMins = 1440; // 00:00 = midnight = end of day
                 var isOpen = nowMins >= openMins && nowMins < closeMins;
               %>
               <span class="bd-hours-badge <%= isOpen ? 'bd-hours-open' : 'bd-hours-shut' %>"><%= isOpen ? 'Deschis acum' : 'Închis acum' %></span>
