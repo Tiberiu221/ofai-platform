@@ -613,6 +613,26 @@
   var HRS_DAY_NAMES = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
   var _hrsLoaded = {};
 
+  // Build <option> tags for 24h time select (30-min steps)
+  function hrs_timeOpts(sel) {
+    var opts = '';
+    var matched = false;
+    for (var h = 0; h < 24; h++) {
+      for (var m = 0; m < 60; m += 30) {
+        var hh = (h < 10 ? '0' : '') + h;
+        var mm = (m < 10 ? '0' : '') + m;
+        var val = hh + ':' + mm;
+        if (val === sel) matched = true;
+        opts += '<option value="' + val + '"' + (val === sel ? ' selected' : '') + '>' + val + '</option>';
+      }
+    }
+    // If saved value doesn't match a 30-min slot, add it as first option
+    if (!matched && sel) {
+      opts = '<option value="' + sel + '" selected>' + sel + '</option>' + opts;
+    }
+    return opts;
+  }
+
   window.hrs_toggle = function(locId) {
     var panel = document.getElementById('hrs-panel-' + locId);
     if (!panel) return;
@@ -641,9 +661,9 @@
         html += '<span style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">' + HRS_DAY_NAMES[i] + '</span>';
         // Time inputs wrapper — hidden when closed
         html += '<span class="hrs-times" style="display:' + (closed ? 'none' : 'grid') + '; grid-template-columns: 1fr 12px 1fr; gap: 8px; align-items: center;">';
-        html += '<input type="time" class="form-input hrs-open" data-day="' + i + '" value="' + (h.open_time || '09:00') + '" style="font-size:0.8125rem;padding:6px 8px;">';
+        html += '<select class="form-select hrs-open" data-day="' + i + '" style="font-size:0.8125rem;padding:6px 8px;">' + hrs_timeOpts(h.open_time || '09:00') + '</select>';
         html += '<span style="color:var(--text-tertiary);text-align:center;">–</span>';
-        html += '<input type="time" class="form-input hrs-close" data-day="' + i + '" value="' + (h.close_time || '18:00') + '" style="font-size:0.8125rem;padding:6px 8px;">';
+        html += '<select class="form-select hrs-close" data-day="' + i + '" style="font-size:0.8125rem;padding:6px 8px;">' + hrs_timeOpts(h.close_time || '18:00') + '</select>';
         html += '</span>';
         // "Închis" label — visible when closed
         html += '<span class="hrs-closed-label" style="display:' + (closed ? '' : 'none') + '; font-size:0.8125rem; color:var(--text-tertiary); font-style:italic;">Închis</span>';
