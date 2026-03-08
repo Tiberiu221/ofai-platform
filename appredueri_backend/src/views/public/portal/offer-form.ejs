@@ -918,6 +918,7 @@
         data-biz-logo="<%= business.logo_url || '' %>"
         data-biz-city="<%= business.city_name || '' %>"
         data-biz-category="<%= business.category_name || '' %>"
+        data-biz-cover="<%= business.cover_image_url || '' %>"
         data-offer-image="<%= offer && offer.logo_url ? offer.logo_url : '' %>">
         <div class="ofp-panel">
           <div class="ofp-panel-header">
@@ -1457,6 +1458,7 @@
     // ── Static business data (set once) ──
     var bizName     = aside.dataset.bizName     || '';
     var bizLogo     = aside.dataset.bizLogo     || '';
+    var bizCover    = aside.dataset.bizCover    || '';
     var bizCity     = aside.dataset.bizCity      || '';
     var bizCategory = aside.dataset.bizCategory  || '';
     var offerImage  = aside.dataset.offerImage   || '';
@@ -1468,13 +1470,15 @@
     aside.querySelectorAll('.ofp-cat').forEach(function(el)       { el.textContent = bizCategory; });
 
     // Helper: set the image content for a preview card's image area
+    // Fallback chain: imgUrl → bizCover → bizLogo → letter
     // Exposed to outer scope so offer image upload can call it
     window._ofpSetPreviewImage = setPreviewImage;
     function setPreviewImage(container, imgUrl) {
       container.innerHTML = '';
-      if (imgUrl) {
+      var coverSrc = imgUrl || bizCover;
+      if (coverSrc) {
         var img = document.createElement('img');
-        img.src = imgUrl;
+        img.src = coverSrc;
         img.alt = bizName;
         img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
         container.appendChild(img);
@@ -1492,7 +1496,7 @@
       }
     }
 
-    // Initial render: use offer cover photo if available, else fallback
+    // Initial render: offer image → biz cover → biz logo → letter
     aside.querySelectorAll('.offer-image-placeholder').forEach(function(container) {
       setPreviewImage(container, offerImage);
     });

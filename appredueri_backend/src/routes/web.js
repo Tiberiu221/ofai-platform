@@ -1837,7 +1837,7 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, 
     const { businessId } = req.params;
     const [bizRes, locsRes] = await Promise.all([
       pool.query(
-        `SELECT b.id, b.name, b.logo_url,
+        `SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                 c.name AS city_name, cat.name AS category_name
          FROM businesses b
          LEFT JOIN cities c ON b.city_id = c.id
@@ -1873,7 +1873,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
   try {
     const { businessId, offerId } = req.params;
     const bizRes = await pool.query(
-      `SELECT b.id, b.name, b.logo_url,
+      `SELECT b.id, b.name, b.logo_url, b.cover_image_url,
               c.name AS city_name, cat.name AS category_name
        FROM businesses b
        LEFT JOIN cities c ON b.city_id = c.id
