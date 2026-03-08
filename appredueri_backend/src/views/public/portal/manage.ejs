@@ -661,7 +661,7 @@
     });
   }
 
-  function hrs_toggleClosed(checkbox, locId, day) {
+  window.hrs_toggleClosed = function(checkbox, locId, day) {
     var row = checkbox.closest('.hrs-day-row');
     if (!row) return;
     var times = row.querySelector('.hrs-times');
@@ -670,7 +670,7 @@
     if (label) label.style.display = checkbox.checked ? '' : 'none';
     // Update status badge from current DOM state
     hrs_updateStatusFromDOM(locId);
-  }
+  };
 
   // Read current hours state from DOM inputs (no server call)
   function hrs_updateStatusFromDOM(locId) {
