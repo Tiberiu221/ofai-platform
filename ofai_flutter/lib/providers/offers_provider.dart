@@ -121,7 +121,7 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
   static const _maxItems = 500;
 
   OffersListNotifier(this._api) : super(const OffersListState()) {
-    fetch();
+    Future.microtask(fetch);
   }
 
   Future<void> fetch() async {

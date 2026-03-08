@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
+import 'package:dio/dio.dart';
 import '../core/network/api_exceptions.dart';
 
 /// State for offer request (pinch) data for a specific business
@@ -94,7 +95,8 @@ class OfferRequestNotifier extends StateNotifier<OfferRequestState> {
     } catch (e) {
       // Check for 429 rate limit
       String errorMsg = 'Eroare la trimiterea cererii';
-      if (e.toString().contains('429')) {
+      final statusCode = e is DioException ? e.response?.statusCode : null;
+      if (statusCode == 429) {
         errorMsg = 'Ai cerut deja recent. Poți cere din nou peste câteva zile.';
         state = state.copyWith(
           isSubmitting: false,

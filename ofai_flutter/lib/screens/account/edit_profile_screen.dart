@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
+import '../../core/network/api_exceptions.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -64,7 +65,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             errorMessage = data['message'] as String? ?? errorMessage;
           }
         } else {
-          errorMessage = e.toString().split(':').last.trim();
+          errorMessage = friendlyError(e);
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

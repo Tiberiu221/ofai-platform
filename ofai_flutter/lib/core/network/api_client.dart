@@ -150,9 +150,15 @@ class _AuthInterceptor extends Interceptor {
     }
 
     // Perform refresh
-    _client._isRefreshing = true;
-    final success = await _client._refreshToken();
-    _client._isRefreshing = false;
+    bool success = false;
+    try {
+      _client._isRefreshing = true;
+      success = await _client._refreshToken();
+    } catch (_) {
+      // _refreshToken threw — treat as failure
+    } finally {
+      _client._isRefreshing = false;
+    }
 
     // Resolve all queued requests
     for (final completer in _client._refreshQueue) {

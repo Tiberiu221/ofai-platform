@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/static_data_provider.dart';
+import '../../core/network/api_exceptions.dart';
 
 class PreferencesScreen extends ConsumerStatefulWidget {
   const PreferencesScreen({super.key});
@@ -50,7 +51,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare: ${e.toString().split(':').last.trim()}'),
+            content: Text('Eroare: ${friendlyError(e)}'),
             backgroundColor: AppColors.danger,
           ),
         );

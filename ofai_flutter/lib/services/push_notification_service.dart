@@ -23,6 +23,8 @@ class PushNotificationService {
   String? _currentToken;
   bool _initialized = false;
   StreamSubscription<String>? _tokenRefreshSubscription;
+  StreamSubscription<RemoteMessage>? _foregroundSub;
+  StreamSubscription<RemoteMessage>? _tapSub;
 
   /// Called after successful login/register to set up push notifications.
   Future<void> initialize() async {
@@ -67,10 +69,10 @@ class PushNotificationService {
       });
 
       // Foreground messages
-      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+      _foregroundSub = FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
       // Notification tap when app was in background
-      FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+      _tapSub = FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
 
       // Check if app was opened from a terminated state via notification
       final initialMessage = await _messaging.getInitialMessage();
@@ -166,6 +168,10 @@ class PushNotificationService {
       await _messaging.deleteToken();
       await _tokenRefreshSubscription?.cancel();
       _tokenRefreshSubscription = null;
+      await _foregroundSub?.cancel();
+      _foregroundSub = null;
+      await _tapSub?.cancel();
+      _tapSub = null;
       _currentToken = null;
       _initialized = false;
       print('[Push] Logout cleanup done');

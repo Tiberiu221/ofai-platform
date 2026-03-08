@@ -74,7 +74,7 @@ class BusinessesListNotifier extends StateNotifier<BusinessesListState> {
   static const _maxItems = 500;
 
   BusinessesListNotifier(this._api) : super(const BusinessesListState()) {
-    fetch();
+    Future.microtask(fetch);
   }
 
   Future<void> fetch() async {

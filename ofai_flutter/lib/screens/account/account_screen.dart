@@ -13,6 +13,7 @@ import '../../providers/favorites_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
 import '../../widgets/initial_avatar.dart';
 import '../../widgets/orange_glow_wave.dart';
+import '../../core/network/api_exceptions.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -442,7 +443,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Eroare: ${e.toString()}')),
+        SnackBar(content: Text('Eroare: ${friendlyError(e)}')),
       );
     }
   }
@@ -458,7 +459,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Eroare: ${e.toString()}')),
+        SnackBar(content: Text('Eroare: ${friendlyError(e)}')),
       );
     }
   }
@@ -473,7 +474,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Eroare: ${e.toString()}')),
+        SnackBar(content: Text('Eroare: ${friendlyError(e)}')),
       );
     }
   }

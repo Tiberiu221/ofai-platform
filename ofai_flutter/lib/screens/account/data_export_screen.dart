@@ -6,6 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
+import '../../core/network/api_exceptions.dart';
 
 class DataExportScreen extends StatefulWidget {
   const DataExportScreen({super.key});
@@ -38,7 +39,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        _error = friendlyError(e);
         _isLoading = false;
       });
     }

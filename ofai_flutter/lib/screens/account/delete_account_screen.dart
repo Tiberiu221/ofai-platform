@@ -8,6 +8,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../core/storage/secure_storage.dart';
+import '../../core/network/api_exceptions.dart';
 import '../../providers/auth_provider.dart';
 
 class DeleteAccountScreen extends ConsumerStatefulWidget {
@@ -90,7 +91,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Eroare: ${e.toString().split(':').last.trim()}'),
+            content: Text('Eroare: ${friendlyError(e)}'),
             backgroundColor: AppColors.danger,
           ),
         );

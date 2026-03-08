@@ -359,7 +359,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                             SectionHeader(title: 'Oferte Promovate'),
                             const SizedBox(height: AppSpacing.md),
                             SizedBox(
-                              height: 200,
+                              height: 288,
                               child: ListView.separated(
                                 scrollDirection: Axis.horizontal,
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),

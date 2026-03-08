@@ -3,6 +3,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/utils/formatters.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/review.dart';
 import 'initial_avatar.dart';
 
@@ -36,7 +37,7 @@ class ReviewCard extends StatelessWidget {
               if (review.reviewerProfilePictureUrl != null && review.reviewerShowPicture)
                 CircleAvatar(
                   radius: 18,
-                  backgroundImage: NetworkImage(review.reviewerProfilePictureUrl!),
+                  backgroundImage: CachedNetworkImageProvider(review.reviewerProfilePictureUrl!),
                   backgroundColor: AppColors.bgSecondary,
                 )
               else

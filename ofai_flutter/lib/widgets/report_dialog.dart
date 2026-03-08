@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/network/api_client.dart';
+import 'package:dio/dio.dart';
 import '../core/network/api_endpoints.dart';
 
 /// Report reason option
@@ -97,9 +98,9 @@ class _ReportSheetState extends State<_ReportSheet> {
     } catch (e) {
       if (mounted) {
         String msg = 'Eroare la trimiterea raportului.';
-        if (e is dynamic && e.response?.statusCode == 409) {
+        if (e is DioException && e.response?.statusCode == 409) {
           msg = 'Ai raportat deja aceasta resursa.';
-        } else if (e is dynamic && e.response?.statusCode == 429) {
+        } else if (e is DioException && e.response?.statusCode == 429) {
           msg = 'Ai atins limita de rapoarte pentru astazi.';
         }
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));

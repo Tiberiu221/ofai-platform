@@ -8,6 +8,7 @@ import '../core/theme/app_spacing.dart';
 import '../core/utils/formatters.dart';
 import '../core/utils/distance.dart';
 import '../models/offer.dart';
+import 'subscription_badge.dart';
 import '../providers/location_provider.dart';
 
 class FeaturedOfferCard extends ConsumerWidget {
@@ -70,6 +71,7 @@ class FeaturedOfferCard extends ConsumerWidget {
       onTap: () => context.push('/offer/${offer.id}'),
       child: Container(
         width: double.infinity,
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: AppColors.bgSecondary,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -84,10 +86,7 @@ class FeaturedOfferCard extends ConsumerWidget {
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          clipBehavior: Clip.hardEdge,
-          child: Column(
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Image section with gradient overlay ──
@@ -230,9 +229,10 @@ class FeaturedOfferCard extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                if (offer.business!.isVerified) ...[
-                                  Icon(Icons.verified,
-                                      size: 14, color: AppColors.accent),
+                                if (offer.business!.badgeType != null) ...[
+                                  SubscriptionBadge(
+                                      badgeType: offer.business!.badgeType,
+                                      size: 14),
                                   const SizedBox(width: 4),
                                 ],
                                 Flexible(
@@ -376,3 +376,5 @@ class FeaturedOfferCard extends ConsumerWidget {
     );
   }
 }
+
+

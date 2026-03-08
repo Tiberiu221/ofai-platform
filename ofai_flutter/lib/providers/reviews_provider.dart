@@ -48,7 +48,7 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
   final int businessId;
 
   ReviewsNotifier(this._api, this.businessId) : super(const ReviewsState()) {
-    fetch();
+    Future.microtask(fetch);
   }
 
   Future<void> fetch() async {
