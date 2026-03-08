@@ -741,7 +741,7 @@
     var now = new Date();
     var jsDay = now.getDay(); // 0=Sun
     var todayIdx = (jsDay + 6) % 7; // 0=Mon
-    var today = hours.find(function(h) { return h.day_of_week === todayIdx; });
+    var today = hours.find(function(h) { return parseInt(h.day_of_week) === todayIdx; });
     if (!today || today.is_closed) {
       statusEl.textContent = 'Închis acum';
       statusEl.style.background = 'rgba(239,68,68,0.1)';

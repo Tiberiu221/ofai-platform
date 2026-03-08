@@ -481,9 +481,10 @@
 
     <%
       var dayNames = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
-      /* JS Date.getDay(): 0=Sun … 6=Sat → convert to 0=Mon schema: (jsDay + 6) % 7 */
-      var jsDay = new Date().getDay();
-      var todayIdx = (jsDay + 6) % 7;
+      /* Server runs UTC — convert to Romania time for correct day + hour */
+      var nowRO = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }));
+      var jsDay = nowRO.getDay(); // 0=Sun … 6=Sat
+      var todayIdx = (jsDay + 6) % 7; // 0=Mon … 6=Sun
     %>
 
     <% locsWithHours.forEach(function(loc, locIdx) { %>
@@ -511,7 +512,7 @@
             <% if (isToday && !isClosed) { %>
               <%
                 /* Check if currently open */
-                var now = new Date();
+                var now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }));
                 var nowMins = now.getHours() * 60 + now.getMinutes();
                 var openParts = entry.open_time.split(':');
                 var closeParts = entry.close_time.split(':');
