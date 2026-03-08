@@ -635,7 +635,7 @@
       var hours = data.hours || [];
       var html = '';
       for (var i = 0; i < 7; i++) {
-        var h = hours.find(function(x) { return x.day_of_week === i; }) || { day_of_week: i, open_time: '09:00', close_time: '18:00', is_closed: false };
+        var h = hours.find(function(x) { return parseInt(x.day_of_week) === i; }) || { day_of_week: i, open_time: '09:00', close_time: '18:00', is_closed: false };
         var closed = !!h.is_closed;
         html += '<div class="hrs-day-row" data-day="' + i + '" style="display: grid; grid-template-columns: 90px 1fr 80px; gap: 8px; align-items: center;">';
         html += '<span style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">' + HRS_DAY_NAMES[i] + '</span>';

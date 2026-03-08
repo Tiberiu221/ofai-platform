@@ -498,7 +498,7 @@
       <div class="bd-hours-grid">
         <% for (var d = 0; d < 7; d++) { %>
           <%
-            var entry = loc.hours.find(function(h) { return h.day_of_week === d; });
+            var entry = loc.hours.find(function(h) { return parseInt(h.day_of_week) === d; });
             var isToday = (d === todayIdx);
             var isClosed = !entry || entry.is_closed;
           %>
