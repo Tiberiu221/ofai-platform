@@ -269,6 +269,31 @@ router.get("/:id", async (req, res) => {
       [id]
     );
 
+    // 3b. Opening Hours — per-location
+    const hoursRes = await pool.query(
+      `SELECT bh.location_id, bh.day_of_week,
+              to_char(bh.open_time, 'HH24:MI') AS open_time,
+              to_char(bh.close_time, 'HH24:MI') AS close_time,
+              bh.is_closed
+       FROM business_hours bh
+       JOIN business_locations bl ON bl.id = bh.location_id
+       WHERE bl.business_id = $1
+       ORDER BY bh.location_id, bh.day_of_week`,
+      [id]
+    );
+
+    // Build hours map: location_id -> hours array
+    const hoursMap = {};
+    for (const row of hoursRes.rows) {
+      if (!hoursMap[row.location_id]) hoursMap[row.location_id] = [];
+      hoursMap[row.location_id].push({
+        day_of_week: row.day_of_week,
+        open_time: row.open_time,
+        close_time: row.close_time,
+        is_closed: row.is_closed,
+      });
+    }
+
     // Dacă NU există locații multiple, creăm o "locație virtuală" din datele business-ului
     let locations = [];
 
@@ -289,6 +314,7 @@ router.get("/:id", async (req, res) => {
         booking_whatsapp: row.booking_whatsapp,
         booking_url: makeAbsoluteUrl(baseUrl, row.booking_url),
         booking_instructions: row.booking_instructions,
+        hours: hoursMap[row.id] || [],
       }));
     } else if (b.address) {
       // NU avem locații multiple - creăm o locație virtuală din business
@@ -308,7 +334,46 @@ router.get("/:id", async (req, res) => {
         booking_whatsapp: b.booking_whatsapp,
         booking_url: makeAbsoluteUrl(baseUrl, b.booking_url),
         booking_instructions: b.booking_instructions,
+        hours: [],
       }];
+    }
+
+    // 3c. Catalog (categories + active items)
+    const catalogRes = await pool.query(
+      `SELECT ci.id, ci.category_id, ci.type, ci.name, ci.description, ci.price, ci.price_label,
+              ci.duration_minutes, ci.image_url, ci.sort_order,
+              cc.name AS category_name, cc.sort_order AS cat_sort
+       FROM business_catalog_items ci
+       LEFT JOIN business_catalog_categories cc ON cc.id = ci.category_id
+       WHERE ci.business_id = $1 AND ci.is_active = TRUE
+       ORDER BY COALESCE(cc.sort_order, 999999), cc.id, ci.sort_order, ci.id`,
+      [id]
+    );
+    // Group by category
+    const catalogMap = {};
+    const uncategorizedItems = [];
+    catalogRes.rows.forEach(row => {
+      const item = {
+        id: row.id,
+        type: row.type,
+        name: row.name,
+        description: row.description,
+        price_display: row.price != null ? (row.price / 100).toFixed(2) + ' RON' : (row.price_label || null),
+        duration_minutes: row.duration_minutes,
+        image_url: row.image_url,
+      };
+      if (row.category_id) {
+        if (!catalogMap[row.category_id]) {
+          catalogMap[row.category_id] = { id: row.category_id, name: row.category_name, items: [] };
+        }
+        catalogMap[row.category_id].items.push(item);
+      } else {
+        uncategorizedItems.push(item);
+      }
+    });
+    const catalog = Object.values(catalogMap);
+    if (uncategorizedItems.length > 0) {
+      catalog.push({ id: null, name: 'Altele', items: uncategorizedItems });
     }
 
     // Cover image priority
@@ -426,7 +491,9 @@ router.get("/:id", async (req, res) => {
       subscription_badge_type: b.subscription_badge_type || null,
       badge_type: b.subscription_badge_type || (b.is_verified ? 'verified' : null),
       // Show pinch button flag
-      showPinch
+      showPinch,
+      // Catalog (services, products, menu items)
+      catalog: catalog.length > 0 ? catalog : undefined,
     });
   } catch (err) {
     console.error(err);

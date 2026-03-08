@@ -278,6 +278,591 @@ router.delete("/api/web/portal/:businessId/locations/:locId", requireBusinessOwn
   }
 });
 
+// ═══════════════════════════════════════
+// OPENING HOURS — per-location schedule
+// ═══════════════════════════════════════
+
+// GET hours for a location (returns defaults if none exist)
+router.get("/api/web/portal/:businessId/locations/:locId/hours", requireBusinessOwner, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    const locId = parseInt(req.params.locId, 10);
+    if (isNaN(locId)) return res.status(400).json({ message: "ID locație invalid" });
+
+    // Verify the location belongs to this business
+    const locCheck = await pool.query(
+      "SELECT id FROM business_locations WHERE id = $1 AND business_id = $2",
+      [locId, businessId]
+    );
+    if (locCheck.rows.length === 0) return res.status(404).json({ message: "Locație negăsită" });
+
+    const { rows } = await pool.query(
+      `SELECT id, day_of_week,
+              to_char(open_time, 'HH24:MI') AS open_time,
+              to_char(close_time, 'HH24:MI') AS close_time,
+              is_closed
+       FROM business_hours WHERE location_id = $1 ORDER BY day_of_week`,
+      [locId]
+    );
+
+    // If no hours exist yet, return defaults: Mon-Fri 09:00-18:00, Sat/Sun closed
+    if (rows.length === 0) {
+      const defaults = [];
+      for (let d = 0; d < 7; d++) {
+        defaults.push({
+          day_of_week: d,
+          open_time: d < 5 ? '09:00' : null,
+          close_time: d < 5 ? '18:00' : null,
+          is_closed: d >= 5,
+        });
+      }
+      return res.json({ hours: defaults, isDefault: true });
+    }
+    res.json({ hours: rows, isDefault: false });
+  } catch (err) {
+    console.error("[Web API] Get hours error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea programului" });
+  }
+});
+
+// PUT (upsert) hours for a location — expects exactly 7 days
+router.put("/api/web/portal/:businessId/locations/:locId/hours", requireBusinessOwner, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    const locId = parseInt(req.params.locId, 10);
+    if (isNaN(locId)) return res.status(400).json({ message: "ID locație invalid" });
+    const { hours } = req.body || {};
+
+    // Verify ownership
+    const locCheck = await pool.query(
+      "SELECT id FROM business_locations WHERE id = $1 AND business_id = $2",
+      [locId, businessId]
+    );
+    if (locCheck.rows.length === 0) return res.status(404).json({ message: "Locație negăsită" });
+
+    if (!Array.isArray(hours) || hours.length !== 7) {
+      return res.status(400).json({ message: "Trebuie să trimiți exact 7 zile" });
+    }
+
+    // Validate all 7 days (0-6) present
+    const days = hours.map(h => h.day_of_week).sort((a, b) => a - b);
+    if (JSON.stringify(days) !== JSON.stringify([0, 1, 2, 3, 4, 5, 6])) {
+      return res.status(400).json({ message: "Zilele trebuie să fie 0-6 (Luni-Duminică)" });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const h of hours) {
+        const openTime = h.is_closed ? null : (h.open_time || null);
+        const closeTime = h.is_closed ? null : (h.close_time || null);
+        await client.query(
+          `INSERT INTO business_hours (location_id, day_of_week, open_time, close_time, is_closed, updated_at)
+           VALUES ($1, $2, $3, $4, $5, NOW())
+           ON CONFLICT (location_id, day_of_week)
+           DO UPDATE SET open_time = $3, close_time = $4, is_closed = $5, updated_at = NOW()`,
+          [locId, h.day_of_week, openTime, closeTime, !!h.is_closed]
+        );
+      }
+      await client.query('COMMIT');
+      res.json({ success: true, message: "Program salvat!" });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("[Web API] Save hours error:", err);
+    res.status(500).json({ message: "Eroare la salvarea programului" });
+  }
+});
+
+// POST copy hours from one location to all others
+router.post("/api/web/portal/:businessId/locations/:locId/hours/copy-all", requireBusinessOwner, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    const locId = parseInt(req.params.locId, 10);
+    if (isNaN(locId)) return res.status(400).json({ message: "ID locație invalid" });
+
+    // Verify source location
+    const srcCheck = await pool.query(
+      "SELECT id FROM business_locations WHERE id = $1 AND business_id = $2",
+      [locId, businessId]
+    );
+    if (srcCheck.rows.length === 0) return res.status(404).json({ message: "Locație sursă negăsită" });
+
+    // Get source hours
+    const { rows: srcHours } = await pool.query(
+      "SELECT day_of_week, open_time, close_time, is_closed FROM business_hours WHERE location_id = $1",
+      [locId]
+    );
+    if (srcHours.length === 0) return res.status(400).json({ message: "Locația sursă nu are program configurat" });
+
+    // Get all other locations of this business
+    const { rows: otherLocs } = await pool.query(
+      "SELECT id FROM business_locations WHERE business_id = $1 AND id != $2",
+      [businessId, locId]
+    );
+
+    if (otherLocs.length === 0) return res.json({ success: true, message: "Nicio altă locație de actualizat" });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const loc of otherLocs) {
+        for (const h of srcHours) {
+          await client.query(
+            `INSERT INTO business_hours (location_id, day_of_week, open_time, close_time, is_closed, updated_at)
+             VALUES ($1, $2, $3, $4, $5, NOW())
+             ON CONFLICT (location_id, day_of_week)
+             DO UPDATE SET open_time = $3, close_time = $4, is_closed = $5, updated_at = NOW()`,
+            [loc.id, h.day_of_week, h.open_time, h.close_time, h.is_closed]
+          );
+        }
+      }
+      await client.query('COMMIT');
+      res.json({ success: true, message: `Program copiat la ${otherLocs.length} ${otherLocs.length === 1 ? 'locație' : 'locații'}!` });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("[Web API] Copy hours error:", err);
+    res.status(500).json({ message: "Eroare la copierea programului" });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//  CATALOG — Categories + Items CRUD + CSV Import
+// ═══════════════════════════════════════════════════════
+
+// CSV upload multer instance (text/csv, max 1MB)
+const csvUpload = require("multer")({
+  storage: require("multer").memoryStorage(),
+  limits: { fileSize: 1 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+    if (allowed.includes(file.mimetype) || file.originalname.endsWith('.csv')) cb(null, true);
+    else cb(new Error('Doar fișiere CSV sunt acceptate'));
+  },
+});
+
+const VALID_CATALOG_TYPES = ['service', 'product', 'menu_item'];
+
+// GET catalog categories
+router.get("/api/web/portal/:businessId/catalog/categories", requireBusinessOwner, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, name, sort_order FROM business_catalog_categories WHERE business_id = $1 ORDER BY sort_order, id",
+      [req.businessId]
+    );
+    res.json({ success: true, categories: rows });
+  } catch (err) {
+    console.error("[Web API] List catalog categories error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea categoriilor" });
+  }
+});
+
+// POST create catalog category
+router.post("/api/web/portal/:businessId/catalog/categories", requireBusinessOwner, async (req, res) => {
+  try {
+    const name = (req.body.name || '').trim();
+    if (!name || name.length > 200) return res.status(400).json({ message: "Numele categoriei este obligatoriu (max 200 caractere)" });
+
+    // Get next sort order
+    const { rows: maxRows } = await pool.query(
+      "SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM business_catalog_categories WHERE business_id = $1",
+      [req.businessId]
+    );
+    const sortOrder = maxRows[0].next_order;
+
+    const { rows } = await pool.query(
+      "INSERT INTO business_catalog_categories (business_id, name, sort_order) VALUES ($1, $2, $3) RETURNING id, name, sort_order",
+      [req.businessId, name, sortOrder]
+    );
+    res.json({ success: true, category: rows[0] });
+  } catch (err) {
+    console.error("[Web API] Create catalog category error:", err);
+    res.status(500).json({ message: "Eroare la crearea categoriei" });
+  }
+});
+
+// PUT update catalog category (rename / reorder)
+router.put("/api/web/portal/:businessId/catalog/categories/:catId", requireBusinessOwner, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId, 10);
+    if (isNaN(catId)) return res.status(400).json({ message: "ID categorie invalid" });
+
+    const name = req.body.name !== undefined ? (req.body.name || '').trim() : undefined;
+    const sortOrder = req.body.sort_order !== undefined ? parseInt(req.body.sort_order, 10) : undefined;
+
+    if (name !== undefined && (!name || name.length > 200)) {
+      return res.status(400).json({ message: "Numele categoriei este obligatoriu (max 200 caractere)" });
+    }
+
+    // Verify ownership
+    const check = await pool.query(
+      "SELECT id FROM business_catalog_categories WHERE id = $1 AND business_id = $2",
+      [catId, req.businessId]
+    );
+    if (check.rows.length === 0) return res.status(404).json({ message: "Categorie negăsită" });
+
+    const updates = [];
+    const params = [];
+    let idx = 1;
+    if (name !== undefined) { updates.push(`name = $${idx++}`); params.push(name); }
+    if (sortOrder !== undefined && !isNaN(sortOrder)) { updates.push(`sort_order = $${idx++}`); params.push(sortOrder); }
+
+    if (updates.length === 0) return res.status(400).json({ message: "Nicio modificare" });
+
+    params.push(catId);
+    await pool.query(`UPDATE business_catalog_categories SET ${updates.join(', ')} WHERE id = $${idx}`, params);
+    res.json({ success: true, message: "Categorie actualizată" });
+  } catch (err) {
+    console.error("[Web API] Update catalog category error:", err);
+    res.status(500).json({ message: "Eroare la actualizarea categoriei" });
+  }
+});
+
+// DELETE catalog category (items → uncategorized via ON DELETE SET NULL)
+router.delete("/api/web/portal/:businessId/catalog/categories/:catId", requireBusinessOwner, async (req, res) => {
+  try {
+    const catId = parseInt(req.params.catId, 10);
+    if (isNaN(catId)) return res.status(400).json({ message: "ID categorie invalid" });
+
+    const result = await pool.query(
+      "DELETE FROM business_catalog_categories WHERE id = $1 AND business_id = $2",
+      [catId, req.businessId]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ message: "Categorie negăsită" });
+    res.json({ success: true, message: "Categorie ștearsă. Articolele rămân fără categorie." });
+  } catch (err) {
+    console.error("[Web API] Delete catalog category error:", err);
+    res.status(500).json({ message: "Eroare la ștergerea categoriei" });
+  }
+});
+
+// GET catalog items (all, optionally filtered by category)
+router.get("/api/web/portal/:businessId/catalog/items", requireBusinessOwner, async (req, res) => {
+  try {
+    const catFilter = req.query.category_id ? parseInt(req.query.category_id, 10) : null;
+    let query = `SELECT ci.*, cc.name AS category_name
+      FROM business_catalog_items ci
+      LEFT JOIN business_catalog_categories cc ON cc.id = ci.category_id
+      WHERE ci.business_id = $1`;
+    const params = [req.businessId];
+
+    if (catFilter && !isNaN(catFilter)) {
+      query += ` AND ci.category_id = $2`;
+      params.push(catFilter);
+    }
+    query += ` ORDER BY ci.sort_order, ci.id`;
+
+    const { rows } = await pool.query(query, params);
+    // Convert price from bani to RON for display
+    const items = rows.map(r => ({
+      ...r,
+      price_display: r.price != null ? (r.price / 100).toFixed(2) + ' RON' : (r.price_label || 'La cerere'),
+    }));
+    res.json({ success: true, items });
+  } catch (err) {
+    console.error("[Web API] List catalog items error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea articolelor" });
+  }
+});
+
+// POST create catalog item
+router.post("/api/web/portal/:businessId/catalog/items", requireBusinessOwner, async (req, res) => {
+  try {
+    const { name, type, category_id, description, price, price_label, duration_minutes } = req.body || {};
+
+    const itemName = (name || '').trim();
+    if (!itemName || itemName.length > 300) return res.status(400).json({ message: "Numele articolului este obligatoriu (max 300 caractere)" });
+
+    const itemType = VALID_CATALOG_TYPES.includes(type) ? type : 'service';
+
+    // Verify category ownership if provided
+    let catId = category_id ? parseInt(category_id, 10) : null;
+    if (catId) {
+      const catCheck = await pool.query(
+        "SELECT id FROM business_catalog_categories WHERE id = $1 AND business_id = $2",
+        [catId, req.businessId]
+      );
+      if (catCheck.rows.length === 0) catId = null; // silently ignore invalid category
+    }
+
+    // Price: portal sends RON string → convert to bani (integer cents)
+    let priceBani = null;
+    if (price !== undefined && price !== null && price !== '') {
+      const parsed = parseFloat(price);
+      if (!isNaN(parsed)) priceBani = Math.round(parsed * 100);
+    }
+
+    const dur = duration_minutes ? parseInt(duration_minutes, 10) : null;
+
+    // Get next sort order
+    const { rows: maxRows } = await pool.query(
+      "SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM business_catalog_items WHERE business_id = $1",
+      [req.businessId]
+    );
+
+    const { rows } = await pool.query(
+      `INSERT INTO business_catalog_items (business_id, category_id, type, name, description, price, price_label, duration_minutes, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [req.businessId, catId, itemType, itemName, (description || '').trim() || null, priceBani,
+       (price_label || '').trim() || null, dur && !isNaN(dur) ? dur : null, maxRows[0].next_order]
+    );
+    const item = rows[0];
+    item.price_display = item.price != null ? (item.price / 100).toFixed(2) + ' RON' : (item.price_label || 'La cerere');
+    res.json({ success: true, item });
+  } catch (err) {
+    console.error("[Web API] Create catalog item error:", err);
+    res.status(500).json({ message: "Eroare la crearea articolului" });
+  }
+});
+
+// PUT update catalog item
+router.put("/api/web/portal/:businessId/catalog/items/:itemId", requireBusinessOwner, async (req, res) => {
+  try {
+    const itemId = parseInt(req.params.itemId, 10);
+    if (isNaN(itemId)) return res.status(400).json({ message: "ID articol invalid" });
+
+    // Verify ownership
+    const check = await pool.query(
+      "SELECT id FROM business_catalog_items WHERE id = $1 AND business_id = $2",
+      [itemId, req.businessId]
+    );
+    if (check.rows.length === 0) return res.status(404).json({ message: "Articol negăsit" });
+
+    const { name, type, category_id, description, price, price_label, duration_minutes, is_active, sort_order } = req.body || {};
+
+    const updates = [];
+    const params = [];
+    let idx = 1;
+
+    if (name !== undefined) {
+      const n = (name || '').trim();
+      if (!n || n.length > 300) return res.status(400).json({ message: "Numele este obligatoriu (max 300)" });
+      updates.push(`name = $${idx++}`); params.push(n);
+    }
+    if (type !== undefined && VALID_CATALOG_TYPES.includes(type)) {
+      updates.push(`type = $${idx++}`); params.push(type);
+    }
+    if (category_id !== undefined) {
+      const cid = category_id ? parseInt(category_id, 10) : null;
+      if (cid) {
+        const catCheck = await pool.query("SELECT id FROM business_catalog_categories WHERE id = $1 AND business_id = $2", [cid, req.businessId]);
+        if (catCheck.rows.length === 0) return res.status(400).json({ message: "Categorie invalidă" });
+      }
+      updates.push(`category_id = $${idx++}`); params.push(cid);
+    }
+    if (description !== undefined) { updates.push(`description = $${idx++}`); params.push((description || '').trim() || null); }
+    if (price !== undefined) {
+      let pb = null;
+      if (price !== null && price !== '') { const p = parseFloat(price); if (!isNaN(p)) pb = Math.round(p * 100); }
+      updates.push(`price = $${idx++}`); params.push(pb);
+    }
+    if (price_label !== undefined) { updates.push(`price_label = $${idx++}`); params.push((price_label || '').trim() || null); }
+    if (duration_minutes !== undefined) {
+      const d = duration_minutes ? parseInt(duration_minutes, 10) : null;
+      updates.push(`duration_minutes = $${idx++}`); params.push(d && !isNaN(d) ? d : null);
+    }
+    if (is_active !== undefined) { updates.push(`is_active = $${idx++}`); params.push(!!is_active); }
+    if (sort_order !== undefined) { const so = parseInt(sort_order, 10); if (!isNaN(so)) { updates.push(`sort_order = $${idx++}`); params.push(so); } }
+
+    if (updates.length === 0) return res.status(400).json({ message: "Nicio modificare" });
+
+    updates.push(`updated_at = NOW()`);
+    params.push(itemId);
+    await pool.query(`UPDATE business_catalog_items SET ${updates.join(', ')} WHERE id = $${idx}`, params);
+    res.json({ success: true, message: "Articol actualizat" });
+  } catch (err) {
+    console.error("[Web API] Update catalog item error:", err);
+    res.status(500).json({ message: "Eroare la actualizarea articolului" });
+  }
+});
+
+// DELETE catalog item
+router.delete("/api/web/portal/:businessId/catalog/items/:itemId", requireBusinessOwner, async (req, res) => {
+  try {
+    const itemId = parseInt(req.params.itemId, 10);
+    if (isNaN(itemId)) return res.status(400).json({ message: "ID articol invalid" });
+
+    const result = await pool.query(
+      "DELETE FROM business_catalog_items WHERE id = $1 AND business_id = $2",
+      [itemId, req.businessId]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ message: "Articol negăsit" });
+    res.json({ success: true, message: "Articol șters" });
+  } catch (err) {
+    console.error("[Web API] Delete catalog item error:", err);
+    res.status(500).json({ message: "Eroare la ștergerea articolului" });
+  }
+});
+
+// GET CSV template download
+router.get("/api/web/portal/:businessId/catalog/template", requireBusinessOwner, (req, res) => {
+  const BOM = '\uFEFF'; // UTF-8 BOM for Excel
+  const header = 'nume,tip,categorie,pret_ron,eticheta_pret,descriere,durata_minute';
+  const example = 'Tuns barbati,service,Tuns & Barbierit,35.00,,Tuns clasic cu masina si foarfeca,30';
+  const csv = BOM + header + '\n' + example + '\n';
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="catalog-template.csv"');
+  res.send(csv);
+});
+
+// POST CSV upload → parse + preview (no insert yet)
+router.post("/api/web/portal/:businessId/catalog/import-csv", requireBusinessOwner, csvUpload.single('csv'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "Niciun fișier CSV" });
+
+    let content = req.file.buffer.toString('utf-8');
+    // Strip BOM
+    if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
+
+    const lines = content.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return res.status(400).json({ message: "Fișierul CSV trebuie să aibă cel puțin un rând de date (linia 1 = header)" });
+
+    // Parse header
+    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const nameIdx = header.indexOf('nume');
+    if (nameIdx === -1) return res.status(400).json({ message: "Header-ul CSV trebuie să conțină coloana 'nume'" });
+
+    const typeIdx = header.indexOf('tip');
+    const catIdx = header.indexOf('categorie');
+    const priceIdx = header.indexOf('pret_ron');
+    const labelIdx = header.indexOf('eticheta_pret');
+    const descIdx = header.indexOf('descriere');
+    const durIdx = header.indexOf('durata_minute');
+
+    const dataLines = lines.slice(1);
+    if (dataLines.length > 500) return res.status(400).json({ message: "Maximum 500 de rânduri per import" });
+
+    const preview = [];
+    const errors = [];
+
+    dataLines.forEach((line, i) => {
+      // Simple CSV parse (handles commas in quotes)
+      const cols = [];
+      let current = '';
+      let inQuotes = false;
+      for (let c = 0; c < line.length; c++) {
+        if (line[c] === '"') { inQuotes = !inQuotes; continue; }
+        if (line[c] === ',' && !inQuotes) { cols.push(current.trim()); current = ''; continue; }
+        current += line[c];
+      }
+      cols.push(current.trim());
+
+      const name = cols[nameIdx] || '';
+      if (!name) { errors.push(`Rândul ${i + 2}: Numele lipsește`); return; }
+
+      const rawType = (cols[typeIdx] || 'service').toLowerCase();
+      const typeMap = { 'service': 'service', 'serviciu': 'service', 'produs': 'product', 'product': 'product', 'meniu': 'menu_item', 'menu_item': 'menu_item', 'menu': 'menu_item' };
+      const type = typeMap[rawType] || 'service';
+
+      const category = cols[catIdx] || '';
+      const priceStr = cols[priceIdx] || '';
+      let price = null;
+      if (priceStr) { const p = parseFloat(priceStr.replace(',', '.')); if (!isNaN(p)) price = Math.round(p * 100); }
+
+      preview.push({
+        row: i + 2,
+        name,
+        type,
+        category: category || null,
+        price,
+        price_label: cols[labelIdx] || null,
+        description: cols[descIdx] || null,
+        duration_minutes: cols[durIdx] ? parseInt(cols[durIdx], 10) || null : null,
+      });
+    });
+
+    res.json({ success: true, preview, errors, total: preview.length });
+  } catch (err) {
+    console.error("[Web API] CSV parse error:", err);
+    res.status(500).json({ message: "Eroare la procesarea fișierului CSV" });
+  }
+});
+
+// POST confirm CSV import (bulk insert with transaction)
+router.post("/api/web/portal/:businessId/catalog/import-csv/confirm", requireBusinessOwner, async (req, res) => {
+  try {
+    const { items } = req.body || {};
+    if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: "Lista de articole este goală" });
+    if (items.length > 500) return res.status(400).json({ message: "Maximum 500 articole per import" });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Collect unique category names and create them
+      const catNames = [...new Set(items.filter(i => i.category).map(i => i.category.trim()))];
+      const catMap = {}; // name → id
+
+      // Load existing categories for this business
+      const { rows: existingCats } = await client.query(
+        "SELECT id, name FROM business_catalog_categories WHERE business_id = $1",
+        [req.businessId]
+      );
+      existingCats.forEach(c => { catMap[c.name.toLowerCase()] = c.id; });
+
+      // Create missing categories
+      let maxOrder = 0;
+      if (existingCats.length > 0) {
+        const { rows: [{ max_order }] } = await client.query(
+          "SELECT COALESCE(MAX(sort_order), 0) AS max_order FROM business_catalog_categories WHERE business_id = $1",
+          [req.businessId]
+        );
+        maxOrder = max_order + 1;
+      }
+      for (const catName of catNames) {
+        if (!catMap[catName.toLowerCase()]) {
+          const { rows } = await client.query(
+            "INSERT INTO business_catalog_categories (business_id, name, sort_order) VALUES ($1, $2, $3) RETURNING id",
+            [req.businessId, catName, maxOrder++]
+          );
+          catMap[catName.toLowerCase()] = rows[0].id;
+        }
+      }
+
+      // Get next item sort order
+      const { rows: [{ next_order }] } = await client.query(
+        "SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM business_catalog_items WHERE business_id = $1",
+        [req.businessId]
+      );
+      let itemOrder = next_order;
+
+      // Insert items
+      let inserted = 0;
+      for (const item of items) {
+        const catId = item.category ? (catMap[item.category.trim().toLowerCase()] || null) : null;
+        await client.query(
+          `INSERT INTO business_catalog_items (business_id, category_id, type, name, description, price, price_label, duration_minutes, sort_order)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [req.businessId, catId, item.type || 'service', item.name, item.description || null,
+           item.price ?? null, item.price_label || null, item.duration_minutes ?? null, itemOrder++]
+        );
+        inserted++;
+      }
+
+      await client.query('COMMIT');
+      res.json({ success: true, message: `${inserted} articole importate cu succes!`, inserted });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error("[Web API] CSV confirm import error:", err);
+    res.status(500).json({ message: "Eroare la importul articolelor" });
+  }
+});
+
 // Update business info
 router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
   try {
@@ -1408,5 +1993,112 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
     res.json({ offers: [], businesses: [] });
   }
 });
+
+// ═══════════════════════════════════════════════════════
+//  CONCIERGE ONBOARDING
+// ═══════════════════════════════════════════════════════
+
+// Multer for onboarding attachments (PDF + images, max 10MB each, max 5 files)
+const onboardingUpload = require("multer")({
+  storage: require("multer").memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
+
+// GET active onboarding request
+router.get("/api/web/portal/:businessId/onboarding/request", requireBusinessOwner, async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const result = await pool.query(
+      `SELECT id, status, request_type, message, attachments, admin_notes, created_at, updated_at
+       FROM onboarding_requests
+       WHERE business_id = $1 AND status IN ('pending', 'in_progress')
+       ORDER BY created_at DESC LIMIT 1`,
+      [businessId]
+    );
+    res.json({ request: result.rows[0] || null });
+  } catch (err) {
+    console.error("[Portal API] Get onboarding request error:", err);
+    res.status(500).json({ error: "Eroare server" });
+  }
+});
+
+// POST submit onboarding request (requires has_concierge feature)
+router.post(
+  "/api/web/portal/:businessId/onboarding/request",
+  requireBusinessOwner,
+  requireFeature('has_concierge'),
+  onboardingUpload.array('attachments', 5),
+  async (req, res) => {
+    const { uploadToCloudinary, uploadRawToCloudinary } = require('../services/cloudinary');
+    const { sendAdminOnboardingEmail } = require('../services/email');
+
+    try {
+      const { businessId } = req.params;
+      const { request_type, message } = req.body;
+
+      // Validate request_type
+      const validTypes = ['catalog', 'hours', 'full_setup'];
+      if (!request_type || !validTypes.includes(request_type)) {
+        return res.status(400).json({ error: 'Tip cerere invalid' });
+      }
+
+      // Check no active request exists (app-level backup for UNIQUE partial index)
+      const existingRes = await pool.query(
+        `SELECT id FROM onboarding_requests WHERE business_id = $1 AND status IN ('pending', 'in_progress')`,
+        [businessId]
+      );
+      if (existingRes.rows.length > 0) {
+        return res.status(409).json({ error: 'Ai deja o cerere activă. Așteaptă finalizarea ei.' });
+      }
+
+      // Upload attachments
+      const attachments = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          try {
+            let uploaded;
+            if (file.mimetype === 'application/pdf') {
+              uploaded = await uploadRawToCloudinary(file.buffer, file.originalname);
+            } else {
+              uploaded = await uploadToCloudinary(file.buffer, 'gallery');
+            }
+            attachments.push({
+              url: uploaded.url,
+              name: file.originalname,
+              type: file.mimetype,
+              size: file.size,
+            });
+          } catch (uploadErr) {
+            console.error('[Portal API] Attachment upload error:', uploadErr);
+            // Continue with other files
+          }
+        }
+      }
+
+      // Insert request
+      const userId = req.webUser.id;
+      const insertRes = await pool.query(
+        `INSERT INTO onboarding_requests (business_id, requested_by, request_type, message, attachments)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, status, request_type, message, attachments, created_at`,
+        [businessId, userId, request_type, message || null, JSON.stringify(attachments)]
+      );
+
+      // Fire-and-forget: send admin notification email
+      const businessRes = await pool.query('SELECT name FROM businesses WHERE id = $1', [businessId]);
+      const businessName = businessRes.rows[0]?.name || `Business #${businessId}`;
+      sendAdminOnboardingEmail(businessId, businessName, request_type, message).catch(() => {});
+
+      res.json({ success: true, request: insertRes.rows[0] });
+    } catch (err) {
+      console.error("[Portal API] Submit onboarding request error:", err);
+      res.status(500).json({ error: "Eroare server" });
+    }
+  }
+);
 
 module.exports = router;

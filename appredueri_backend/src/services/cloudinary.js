@@ -251,8 +251,54 @@ function getTransformedUrl(publicId, imageType) {
   });
 }
 
+/**
+ * Upload a raw file (PDF, DOCX, etc.) to Cloudinary.
+ * Uses resource_type: 'raw' so no image transformations are applied.
+ *
+ * @param {Buffer} buffer - File buffer from multer memoryStorage
+ * @param {string} originalFilename - Original file name for Cloudinary public_id hint
+ * @returns {Promise<{url: string, publicId: string, bytes: number}>}
+ */
+function uploadRawToCloudinary(buffer, originalFilename) {
+  return new Promise((resolve, reject) => {
+    const uploadOptions = {
+      folder: 'ofai/businesses/onboarding',
+      resource_type: 'raw',
+      use_filename: true,
+      unique_filename: true,
+    };
+
+    if (originalFilename) {
+      // Strip extension for public_id, Cloudinary adds it back
+      uploadOptions.public_id = originalFilename.replace(/\.[^/.]+$/, '');
+    }
+
+    console.log(`[Cloudinary] Uploading raw file: ${originalFilename || 'unknown'}`);
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      uploadOptions,
+      (error, result) => {
+        if (error) {
+          console.error('[Cloudinary] Raw upload error:', error);
+          reject(error);
+        } else {
+          console.log(`[Cloudinary] Raw upload success: ${result.secure_url}`);
+          resolve({
+            url: result.secure_url,
+            publicId: result.public_id,
+            bytes: result.bytes,
+          });
+        }
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
+}
+
 module.exports = {
   uploadToCloudinary,
+  uploadRawToCloudinary,
   deleteFromCloudinary,
   getPublicIdFromUrl,
   getTransformedUrl,

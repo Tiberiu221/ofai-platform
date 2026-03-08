@@ -71,6 +71,7 @@ function normalisePlan(row) {
     has_deal_nomination: row.has_deal_nomination,
     has_booking: row.has_booking,
     has_priority_support: row.has_priority_support,
+    has_concierge: row.has_concierge,
     badge_type: row.badge_type,
     sort_order: row.sort_order,
   };
@@ -123,6 +124,7 @@ async function getBusinessTier(pool, businessId) {
       sp.has_deal_nomination,
       sp.has_booking,
       sp.has_priority_support,
+      sp.has_concierge,
       sp.badge_type,
       sp.sort_order
     FROM business_subscriptions bs

@@ -1052,6 +1052,27 @@ router.get("/business/:id", async (req, res) => {
       WHERE business_id = $1
     `, [id]);
 
+    // Opening Hours — per-location
+    const hoursRes = await pool.query(
+      `SELECT bh.location_id, bh.day_of_week,
+              to_char(bh.open_time, 'HH24:MI') AS open_time,
+              to_char(bh.close_time, 'HH24:MI') AS close_time,
+              bh.is_closed
+       FROM business_hours bh
+       JOIN business_locations bl ON bl.id = bh.location_id
+       WHERE bl.business_id = $1
+       ORDER BY bh.location_id, bh.day_of_week`,
+      [id]
+    );
+    const hoursMap = {};
+    for (const hr of hoursRes.rows) {
+      if (!hoursMap[hr.location_id]) hoursMap[hr.location_id] = [];
+      hoursMap[hr.location_id].push({
+        day_of_week: hr.day_of_week, open_time: hr.open_time,
+        close_time: hr.close_time, is_closed: hr.is_closed,
+      });
+    }
+
     let locations = [];
     if (locationsRes.rows.length > 0) {
       locations = locationsRes.rows.map(row => ({
@@ -1061,12 +1082,41 @@ router.get("/business/:id", async (req, res) => {
         booking_type: row.booking_type || 'none',
         booking_phone: row.booking_phone, booking_whatsapp: row.booking_whatsapp,
         booking_url: row.booking_url, booking_instructions: row.booking_instructions,
+        hours: hoursMap[row.id] || [],
       }));
     } else if (b.address) {
       locations = [{ id: 'main', address: b.address, lat: b.lat, lng: b.lng, phone: b.phone,
         city: { id: b.city_id, name: b.city_name },
-        booking_type: 'none', booking_phone: null, booking_whatsapp: null, booking_url: null, booking_instructions: null }];
+        booking_type: 'none', booking_phone: null, booking_whatsapp: null, booking_url: null, booking_instructions: null,
+        hours: [] }];
     }
+
+    // 3c. Catalog (categories + active items) for business-detail page
+    const catalogRes = await pool.query(
+      `SELECT ci.id, ci.category_id, ci.type, ci.name, ci.description, ci.price, ci.price_label,
+              ci.duration_minutes, ci.image_url, ci.sort_order,
+              cc.name AS category_name, cc.sort_order AS cat_sort
+       FROM business_catalog_items ci
+       LEFT JOIN business_catalog_categories cc ON cc.id = ci.category_id
+       WHERE ci.business_id = $1 AND ci.is_active = TRUE
+       ORDER BY COALESCE(cc.sort_order, 999999), cc.id, ci.sort_order, ci.id`,
+      [id]
+    );
+    const catalogMap = {};
+    const uncategorizedItems = [];
+    catalogRes.rows.forEach(row => {
+      const item = {
+        id: row.id, type: row.type, name: row.name, description: row.description,
+        price_display: row.price != null ? (row.price / 100).toFixed(2) + ' RON' : (row.price_label || null),
+        duration_minutes: row.duration_minutes, image_url: row.image_url,
+      };
+      if (row.category_id) {
+        if (!catalogMap[row.category_id]) catalogMap[row.category_id] = { id: row.category_id, name: row.category_name, items: [] };
+        catalogMap[row.category_id].items.push(item);
+      } else { uncategorizedItems.push(item); }
+    });
+    const catalog = Object.values(catalogMap);
+    if (uncategorizedItems.length > 0) catalog.push({ id: null, name: 'Altele', items: uncategorizedItems });
 
     // Active offers
     const offersRes = await pool.query(`
@@ -1227,6 +1277,7 @@ router.get("/business/:id", async (req, res) => {
 
     res.render("public/business-detail", {
       business,
+      catalog,
       offers: offersRes.rows,
       reviews: reviewsRes.rows,
       userReview,

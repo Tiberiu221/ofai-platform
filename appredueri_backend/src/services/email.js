@@ -698,6 +698,49 @@ async function sendPremiumSupportWelcome(to, firstName, businessName) {
   }
 }
 
+/**
+ * Notifică admin-ul (Tiberiu) despre o nouă cerere de onboarding concierge.
+ */
+async function sendAdminOnboardingEmail(businessId, businessName, requestType, message) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'tiberiu@ofai.ro';
+  if (!resend) {
+    console.log(`[Email] Skipping admin onboarding email (no API key): business ${businessId}`);
+    return { success: false, error: 'No API key' };
+  }
+
+  const typeLabels = { catalog: 'Catalog', hours: 'Program de lucru', full_setup: 'Setup complet' };
+  const typeLabel = typeLabels[requestType] || requestType;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: adminEmail,
+      subject: `[OFAI Concierge] Cerere nouă: ${escapeHtml(businessName)} — ${typeLabel}`,
+      html: `
+        <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 20px;">
+          <h2 style="color: #18181b; margin-top: 0;">Cerere Concierge nouă</h2>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr><td style="padding: 8px 0; color: #71717a; width: 120px;">Business:</td><td style="padding: 8px 0; font-weight: 600;">${escapeHtml(businessName)} (#${businessId})</td></tr>
+            <tr><td style="padding: 8px 0; color: #71717a;">Tip cerere:</td><td style="padding: 8px 0;">${escapeHtml(typeLabel)}</td></tr>
+          </table>
+          ${message ? `<div style="background: #f4f4f5; border-radius: 8px; padding: 16px; margin-bottom: 20px;"><p style="margin: 0; color: #27272a; white-space: pre-wrap;">${escapeHtml(message)}</p></div>` : ''}
+          <a href="https://ofai.ro/admin/onboarding" style="display: inline-block; background: #fb923c; color: #fff; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">Vezi în admin</a>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('[Email] Admin onboarding email error:', error);
+      return { success: false, error: error.message };
+    }
+    console.log(`[Email] Admin onboarding email sent: ${data?.id}`);
+    return { success: true, emailId: data?.id };
+  } catch (err) {
+    console.error('[Email] Admin onboarding email exception:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
@@ -707,4 +750,5 @@ module.exports = {
   sendOfferApprovedEmail,
   sendOfferRejectedEmail,
   sendPremiumSupportWelcome,
+  sendAdminOnboardingEmail,
 };

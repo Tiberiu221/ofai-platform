@@ -2279,4 +2279,117 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
   }
 });
 
+// ═════════════════════════════════════════════
+//   CONCIERGE ONBOARDING REQUESTS
+// ═════════════════════════════════════════════
+
+// GET /admin/onboarding — list pending + in_progress requests
+router.get("/onboarding", async (req, res) => {
+  try {
+    const statusFilter = req.query.status || 'active'; // 'active' | 'all' | specific status
+    let whereClause = '';
+    if (statusFilter === 'active') {
+      whereClause = `WHERE orq.status IN ('pending', 'in_progress')`;
+    } else if (['pending', 'in_progress', 'completed', 'cancelled'].includes(statusFilter)) {
+      whereClause = `WHERE orq.status = '${statusFilter}'`;
+    }
+    // 'all' → no WHERE clause
+
+    const result = await pool.query(`
+      SELECT orq.id, orq.business_id, orq.requested_by, orq.status, orq.request_type,
+             orq.message, orq.attachments, orq.admin_notes, orq.created_at, orq.updated_at,
+             b.name AS business_name, b.logo_url AS business_logo,
+             u.first_name, u.last_name, u.email AS requester_email
+      FROM onboarding_requests orq
+      JOIN businesses b ON b.id = orq.business_id
+      JOIN users u ON u.id = orq.requested_by
+      ${whereClause}
+      ORDER BY CASE orq.status WHEN 'pending' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, orq.created_at DESC
+      LIMIT 100
+    `);
+
+    // Render as JSON for simplicity (Tiberiu manages via direct DB or simple admin UI)
+    if (req.query.format === 'json') {
+      return res.json({ requests: result.rows });
+    }
+
+    // Simple HTML list for admin
+    const requests = result.rows;
+    const statusColors = { pending: '#f59e0b', in_progress: '#3b82f6', completed: '#22c55e', cancelled: '#71717a' };
+    const typeLabels = { catalog: 'Catalog', hours: 'Program', full_setup: 'Setup complet' };
+
+    let html = `<!DOCTYPE html><html><head><title>Concierge Onboarding — Admin</title>
+      <style>body{font-family:Inter,sans-serif;background:#09090b;color:#fafafa;padding:20px;max-width:900px;margin:0 auto}
+      h1{font-size:1.5rem;margin-bottom:20px}a{color:#fb923c}
+      .card{background:#18181b;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px}
+      .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+      .meta{font-size:13px;color:#a1a1aa;margin-top:4px}
+      .msg{background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;margin-top:8px;font-size:14px;white-space:pre-wrap}
+      .actions{margin-top:12px;display:flex;gap:8px}
+      .btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600}
+      .btn-blue{background:#3b82f6;color:#fff}.btn-green{background:#22c55e;color:#fff}.btn-gray{background:#3f3f46;color:#a1a1aa}
+      .att{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;font-size:12px;margin:4px 4px 0 0}
+      </style></head><body>
+      <h1>Cereri Concierge Onboarding</h1>
+      <p style="margin-bottom:16px"><a href="/admin/onboarding?status=active">Active</a> · <a href="/admin/onboarding?status=all">Toate</a> · <a href="/admin">← Admin</a></p>`;
+
+    if (requests.length === 0) {
+      html += `<p style="color:#71717a;text-align:center;padding:40px">Nicio cerere ${statusFilter === 'active' ? 'activă' : ''} găsită.</p>`;
+    }
+
+    for (const r of requests) {
+      const color = statusColors[r.status] || '#71717a';
+      const attachments = typeof r.attachments === 'string' ? JSON.parse(r.attachments) : (r.attachments || []);
+      html += `<div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div><strong>${r.business_name}</strong> (#${r.business_id})</div>
+          <span class="badge" style="background:${color}20;color:${color}">${r.status}</span>
+        </div>
+        <div class="meta">${typeLabels[r.request_type] || r.request_type} · ${r.first_name} ${r.last_name} (${r.requester_email}) · ${new Date(r.created_at).toLocaleString('ro-RO')}</div>
+        ${r.message ? `<div class="msg">${r.message.replace(/</g, '&lt;')}</div>` : ''}
+        ${attachments.length > 0 ? '<div style="margin-top:8px">' + attachments.map(a => `<a class="att" href="${a.url}" target="_blank">${(a.name || 'fișier').replace(/</g, '&lt;')}</a>`).join('') + '</div>' : ''}
+        ${r.admin_notes ? `<div class="meta" style="margin-top:8px"><strong>Note admin:</strong> ${r.admin_notes.replace(/</g, '&lt;')}</div>` : ''}
+        <div class="actions">
+          ${r.status === 'pending' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="in_progress"><button class="btn btn-blue" type="submit">Marchează în lucru</button></form>` : ''}
+          ${r.status === 'in_progress' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="completed"><button class="btn btn-green" type="submit">Finalizează</button></form>` : ''}
+          ${['pending','in_progress'].includes(r.status) ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="cancelled"><button class="btn btn-gray" type="submit">Anulează</button></form>` : ''}
+        </div>
+      </div>`;
+    }
+
+    html += `</body></html>`;
+    res.send(html);
+  } catch (err) {
+    console.error("[Admin] Get onboarding requests error:", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// POST /admin/onboarding/:requestId — update status + notes
+router.post("/onboarding/:requestId", async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { status, admin_notes } = req.body;
+
+    const validStatuses = ['pending', 'in_progress', 'completed', 'cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).send("Status invalid");
+    }
+
+    const sets = ['status = $2', 'updated_at = NOW()'];
+    const params = [requestId, status];
+    if (admin_notes !== undefined) {
+      sets.push(`admin_notes = $${params.length + 1}`);
+      params.push(admin_notes);
+    }
+
+    await pool.query(`UPDATE onboarding_requests SET ${sets.join(', ')} WHERE id = $1`, params);
+
+    res.redirect('/admin/onboarding?status=active');
+  } catch (err) {
+    console.error("[Admin] Update onboarding request error:", err);
+    res.redirect('/admin/onboarding?err=Eroare+la+actualizare');
+  }
+});
+
 module.exports = router;

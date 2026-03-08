@@ -29,6 +29,7 @@
       <button class="portal-tab" onclick="switchTab('oferte')">
         Oferte<span class="portal-tab-badge"><%= offers.length %></span>
       </button>
+      <button class="portal-tab" onclick="switchTab('catalog')">Catalog</button>
       <button class="portal-tab" onclick="switchTab('recenzii')">
         Recenzii<span class="portal-tab-badge"><%= reviewCount %></span>
       </button>
@@ -50,6 +51,13 @@
          ═══════════════════════════════════════ -->
     <div class="tab-panel" id="tab-oferte">
       <%- include("./partials/_tab-oferte") %>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         TAB 2b: CATALOG
+         ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-catalog">
+      <%- include("./partials/_tab-catalog") %>
     </div>
 
     <!-- ═══════════════════════════════════════
@@ -81,6 +89,59 @@
     </div><!-- /tab-subscription -->
 
   </div><!-- /portal-container -->
+
+  <!-- ═══════════════════════════════════════
+       CONCIERGE ONBOARDING MODAL (shared)
+       ═══════════════════════════════════════ -->
+  <div id="concierge-modal" class="portal-modal" style="display: none;">
+    <div class="portal-modal-backdrop" onclick="concierge_close()"></div>
+    <div class="portal-modal-content" style="max-width: 540px;">
+      <div class="portal-modal-header">
+        <h3 style="margin: 0;">Solicită ajutor Concierge</h3>
+        <button class="portal-modal-close" onclick="concierge_close()">&times;</button>
+      </div>
+      <div class="portal-modal-body">
+        <!-- Active request status -->
+        <div id="concierge-active" style="display: none; margin-bottom: 16px;">
+          <div style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); border-radius: 10px; padding: 14px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <strong style="color: #22c55e; font-size: 14px;">Cerere activă</strong>
+            </div>
+            <p id="concierge-active-detail" style="margin: 0; font-size: 13px; color: var(--text-secondary);"></p>
+          </div>
+        </div>
+        <!-- New request form -->
+        <div id="concierge-form">
+          <p style="color: var(--text-secondary); font-size: 14px; margin: 0 0 16px;">
+            Echipa OFAI te poate ajuta să îți configurezi pagina business-ului. Descrie ce ai nevoie și vom reveni în maxim 48h.
+          </p>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label">Tip cerere *</label>
+            <select id="concierge-type" class="form-control">
+              <option value="full_setup">Setup complet (catalog + program)</option>
+              <option value="catalog">Doar catalog (servicii/produse)</option>
+              <option value="hours">Doar program de lucru</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label">Mesaj (opțional)</label>
+            <textarea id="concierge-message" class="form-control" rows="3" maxlength="2000" placeholder="Descrie serviciile, prețurile, programul... orice informații ne ajută."></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label">Fișiere atașate (opțional, max 5)</label>
+            <p style="font-size: 12px; color: var(--text-tertiary); margin: 2px 0 8px;">PDF, imagini cu meniul, lista de prețuri, etc.</p>
+            <input type="file" id="concierge-files" multiple accept=".pdf,image/jpeg,image/png,image/webp" style="font-size: 14px;">
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="concierge_close()">Anulează</button>
+            <button class="btn btn-primary" id="concierge-submit-btn" onclick="concierge_submit()">Trimite cererea</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /portal-page -->
 
 <%- include('../partials/footer') %>
@@ -106,6 +167,7 @@
       canRespondReviews: !!tier.plan.can_respond_reviews,
       hasAiSummary: !!tier.plan.has_ai_summary,
       analyticsDays: tier.plan.analytics_days || 7,
+      hasConcierge: !!tier.plan.has_concierge,
     } : {}
   }).replace(/<\//g, '<\\/') %>;
 
@@ -546,6 +608,539 @@
   };
 
   /* ════════════════════════════════
+     OPENING HOURS — per-location
+     ════════════════════════════════ */
+  var HRS_DAY_NAMES = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+
+  window.hrs_toggle = function(locId) {
+    var panel = document.getElementById('hrs-panel-' + locId);
+    if (!panel) return;
+    if (panel.style.display === 'none') {
+      panel.style.display = 'block';
+      hrs_load(locId);
+    } else {
+      panel.style.display = 'none';
+    }
+  };
+
+  function hrs_load(locId) {
+    var grid = document.getElementById('hrs-grid-' + locId);
+    if (!grid) return;
+    grid.innerHTML = '<p style="font-size:0.8125rem;color:var(--text-tertiary);">Se încarcă...</p>';
+
+    apiFetch('/api/web/portal/' + businessId + '/locations/' + locId + '/hours')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var hours = data.hours || [];
+      var html = '';
+      for (var i = 0; i < 7; i++) {
+        var h = hours.find(function(x) { return x.day_of_week === i; }) || { day_of_week: i, open_time: '09:00', close_time: '18:00', is_closed: i >= 5 };
+        html += '<div class="hrs-day-row" style="display: grid; grid-template-columns: 90px 1fr 12px 1fr 80px; gap: 8px; align-items: center;">';
+        html += '<span style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">' + HRS_DAY_NAMES[i] + '</span>';
+        html += '<input type="time" class="form-input hrs-open" data-day="' + i + '" value="' + (h.open_time || '09:00') + '" style="font-size:0.8125rem;padding:6px 8px;"' + (h.is_closed ? ' disabled' : '') + '>';
+        html += '<span style="color:var(--text-tertiary);text-align:center;">–</span>';
+        html += '<input type="time" class="form-input hrs-close" data-day="' + i + '" value="' + (h.close_time || '18:00') + '" style="font-size:0.8125rem;padding:6px 8px;"' + (h.is_closed ? ' disabled' : '') + '>';
+        html += '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-secondary);cursor:pointer;">';
+        html += '<input type="checkbox" class="hrs-closed" data-day="' + i + '" ' + (h.is_closed ? 'checked' : '') + ' onchange="hrs_toggleClosed(this,' + locId + ',' + i + ')"> Închis</label>';
+        html += '</div>';
+      }
+      grid.innerHTML = html;
+      hrs_updateStatus(locId, hours);
+    })
+    .catch(function() {
+      grid.innerHTML = '<p style="font-size:0.8125rem;color:#ef4444;">Eroare la încărcarea programului</p>';
+    });
+  }
+
+  function hrs_toggleClosed(checkbox, locId, day) {
+    var panel = document.getElementById('hrs-panel-' + locId);
+    if (!panel) return;
+    var openInput = panel.querySelector('.hrs-open[data-day="' + day + '"]');
+    var closeInput = panel.querySelector('.hrs-close[data-day="' + day + '"]');
+    if (openInput) openInput.disabled = checkbox.checked;
+    if (closeInput) closeInput.disabled = checkbox.checked;
+  }
+
+  window.hrs_save = function(locId) {
+    var panel = document.getElementById('hrs-panel-' + locId);
+    if (!panel) return;
+    var hours = [];
+    for (var d = 0; d < 7; d++) {
+      var isClosed = panel.querySelector('.hrs-closed[data-day="' + d + '"]');
+      var openInput = panel.querySelector('.hrs-open[data-day="' + d + '"]');
+      var closeInput = panel.querySelector('.hrs-close[data-day="' + d + '"]');
+      hours.push({
+        day_of_week: d,
+        open_time: isClosed && isClosed.checked ? null : (openInput ? openInput.value : null),
+        close_time: isClosed && isClosed.checked ? null : (closeInput ? closeInput.value : null),
+        is_closed: isClosed ? isClosed.checked : false,
+      });
+    }
+
+    apiFetch('/api/web/portal/' + businessId + '/locations/' + locId + '/hours', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hours: hours }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        showToast(data.message || 'Program salvat!', 'success');
+        hrs_updateStatus(locId, hours);
+      } else {
+        showToast(data.message || 'Eroare', 'error');
+      }
+    })
+    .catch(function() { showToast('Eroare la salvarea programului', 'error'); });
+  };
+
+  window.hrs_copyAll = function(locId) {
+    if (!confirm('Copiezi programul acestei locații la toate celelalte locații?')) return;
+    apiFetch('/api/web/portal/' + businessId + '/locations/' + locId + '/hours/copy-all', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) showToast(data.message, 'success');
+      else showToast(data.message || 'Eroare', 'error');
+    })
+    .catch(function() { showToast('Eroare la copiere', 'error'); });
+  };
+
+  function hrs_updateStatus(locId, hours) {
+    var statusEl = document.getElementById('hrs-status-' + locId);
+    if (!statusEl || !hours || hours.length === 0) return;
+    var now = new Date();
+    var jsDay = now.getDay(); // 0=Sun
+    var todayIdx = (jsDay + 6) % 7; // 0=Mon
+    var today = hours.find(function(h) { return h.day_of_week === todayIdx; });
+    if (!today || today.is_closed) {
+      statusEl.textContent = 'Închis acum';
+      statusEl.style.background = 'rgba(239,68,68,0.1)';
+      statusEl.style.color = '#ef4444';
+      return;
+    }
+    if (today.open_time && today.close_time) {
+      var hm = now.getHours() * 60 + now.getMinutes();
+      var op = today.open_time.split(':');
+      var cl = today.close_time.split(':');
+      var openMin = parseInt(op[0]) * 60 + parseInt(op[1]);
+      var closeMin = parseInt(cl[0]) * 60 + parseInt(cl[1]);
+      if (hm >= openMin && hm < closeMin) {
+        statusEl.textContent = 'Deschis acum';
+        statusEl.style.background = 'rgba(34,197,94,0.1)';
+        statusEl.style.color = '#22c55e';
+      } else {
+        statusEl.textContent = 'Închis acum';
+        statusEl.style.background = 'rgba(239,68,68,0.1)';
+        statusEl.style.color = '#ef4444';
+      }
+    }
+  }
+
+  /* ════════════════════════════════
+     CATALOG MANAGEMENT
+     ════════════════════════════════ */
+  var _catalogLoaded = false;
+  var _catalogCategories = [];
+  var _catalogItems = [];
+  var _csvPreview = [];
+
+  // Type display labels
+  var TYPE_LABELS = { service: 'Serviciu', product: 'Produs', menu_item: 'Meniu' };
+
+  function catalog_load() {
+    if (_catalogLoaded) return;
+    _catalogLoaded = true;
+    var container = document.getElementById('catalog-container');
+    container.innerHTML = '<div style="text-align:center;padding:30px;"><div class="spinner"></div></div>';
+
+    Promise.all([
+      apiFetch('/api/web/portal/' + businessId + '/catalog/categories').then(function(r) { return r.json(); }),
+      apiFetch('/api/web/portal/' + businessId + '/catalog/items').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+      _catalogCategories = results[0].categories || [];
+      _catalogItems = results[1].items || [];
+      catalog_render();
+    }).catch(function() {
+      container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:30px;">Eroare la încărcarea catalogului. Reîncearcă.</p>';
+    });
+  }
+
+  function catalog_render() {
+    var container = document.getElementById('catalog-container');
+    if (_catalogCategories.length === 0 && _catalogItems.length === 0) {
+      container.innerHTML = '<div class="catalog-empty">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>' +
+        '<p style="margin:0 0 4px;font-weight:600;">Catalogul este gol</p>' +
+        '<p style="margin:0;font-size:13px;">Adaugă o categorie și apoi articole, sau importă din CSV.</p></div>';
+      return;
+    }
+
+    var html = '';
+    // Group items by category
+    var itemsByCat = {};
+    var uncategorized = [];
+    _catalogItems.forEach(function(item) {
+      if (item.category_id) {
+        if (!itemsByCat[item.category_id]) itemsByCat[item.category_id] = [];
+        itemsByCat[item.category_id].push(item);
+      } else {
+        uncategorized.push(item);
+      }
+    });
+
+    _catalogCategories.forEach(function(cat) {
+      var catItems = itemsByCat[cat.id] || [];
+      html += catalog_renderCategoryCard(cat, catItems);
+    });
+
+    if (uncategorized.length > 0) {
+      html += catalog_renderCategoryCard({ id: null, name: 'Fără categorie' }, uncategorized);
+    }
+
+    html += '<div style="margin-top: 12px;"><button class="btn btn-secondary" onclick="catalog_openItemModal(null)">+ Articol nou</button></div>';
+    container.innerHTML = html;
+  }
+
+  function catalog_renderCategoryCard(cat, items) {
+    var isReal = cat.id !== null;
+    var html = '<div class="catalog-cat-card">';
+    html += '<div class="catalog-cat-header" onclick="this.parentElement.querySelector(\'.catalog-items-list\').style.display = this.parentElement.querySelector(\'.catalog-items-list\').style.display === \'none\' ? \'\' : \'none\'">';
+    html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>';
+    html += '<span class="catalog-cat-name">' + escapeHtml(cat.name) + '</span>';
+    html += '<span class="catalog-cat-count">' + items.length + ' articol' + (items.length !== 1 ? 'e' : '') + '</span>';
+    if (isReal) {
+      html += '<span class="catalog-cat-actions" onclick="event.stopPropagation()">';
+      html += '<button title="Redenumește" onclick="catalog_renameCategory(' + cat.id + ',\'' + escapeHtml(cat.name).replace(/'/g, "\\'") + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
+      html += '<button class="catalog-del" title="Șterge" onclick="catalog_deleteCategory(' + cat.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>';
+      html += '</span>';
+    }
+    html += '</div>';
+    html += '<div class="catalog-items-list">';
+    items.forEach(function(item) {
+      html += '<div class="catalog-item-row">';
+      html += '<span class="catalog-item-type-badge ' + item.type + '">' + (TYPE_LABELS[item.type] || item.type) + '</span>';
+      html += '<span class="catalog-item-name">' + escapeHtml(item.name) + '</span>';
+      if (item.duration_minutes) html += '<span class="catalog-item-dur">' + item.duration_minutes + ' min</span>';
+      html += '<span class="catalog-item-price">' + (item.price_display || 'La cerere') + '</span>';
+      html += '<span class="catalog-item-actions">';
+      html += '<button title="Editează" onclick="catalog_openItemModal(' + item.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
+      html += '<button class="catalog-del" title="Șterge" onclick="catalog_deleteItem(' + item.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>';
+      html += '</span>';
+      html += '</div>';
+    });
+    if (isReal) {
+      html += '<div style="padding: 6px 12px;"><button class="btn btn-secondary" style="font-size: 12px; padding: 4px 12px;" onclick="catalog_openItemModal(null, ' + cat.id + ')">+ Articol</button></div>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
+  // Escape HTML helper
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str || ''));
+    return div.innerHTML;
+  }
+
+  window.catalog_addCategory = function() {
+    var name = prompt('Numele categoriei noi:');
+    if (!name || !name.trim()) return;
+    apiFetch('/api/web/portal/' + businessId + '/catalog/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        _catalogCategories.push(data.category);
+        catalog_render();
+      } else {
+        alert(data.message || 'Eroare');
+      }
+    });
+  };
+
+  window.catalog_renameCategory = function(catId, currentName) {
+    var name = prompt('Noul nume:', currentName);
+    if (!name || !name.trim() || name.trim() === currentName) return;
+    apiFetch('/api/web/portal/' + businessId + '/catalog/categories/' + catId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        var cat = _catalogCategories.find(function(c) { return c.id === catId; });
+        if (cat) cat.name = name.trim();
+        catalog_render();
+      }
+    });
+  };
+
+  window.catalog_deleteCategory = function(catId) {
+    if (!confirm('Sigur dorești să ștergi această categorie? Articolele rămân fără categorie.')) return;
+    apiFetch('/api/web/portal/' + businessId + '/catalog/categories/' + catId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        _catalogCategories = _catalogCategories.filter(function(c) { return c.id !== catId; });
+        _catalogItems.forEach(function(item) { if (item.category_id === catId) item.category_id = null; });
+        catalog_render();
+      }
+    });
+  };
+
+  window.catalog_openItemModal = function(itemId, presetCatId) {
+    var modal = document.getElementById('catalog-item-modal');
+    var title = document.getElementById('catalog-item-modal-title');
+    var catSelect = document.getElementById('catalog-item-category');
+
+    // Populate category select
+    catSelect.innerHTML = '<option value="">— Fără categorie —</option>';
+    _catalogCategories.forEach(function(c) {
+      catSelect.innerHTML += '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+    });
+
+    if (itemId) {
+      var item = _catalogItems.find(function(i) { return i.id === itemId; });
+      if (!item) return;
+      title.textContent = 'Editează articol';
+      document.getElementById('catalog-item-id').value = itemId;
+      document.getElementById('catalog-item-name').value = item.name;
+      document.getElementById('catalog-item-type').value = item.type;
+      catSelect.value = item.category_id || '';
+      document.getElementById('catalog-item-price').value = item.price != null ? (item.price / 100).toFixed(2) : '';
+      document.getElementById('catalog-item-duration').value = item.duration_minutes || '';
+      document.getElementById('catalog-item-price-label').value = item.price_label || '';
+      document.getElementById('catalog-item-desc').value = item.description || '';
+    } else {
+      title.textContent = 'Articol nou';
+      document.getElementById('catalog-item-id').value = '';
+      document.getElementById('catalog-item-name').value = '';
+      document.getElementById('catalog-item-type').value = 'service';
+      catSelect.value = presetCatId || '';
+      document.getElementById('catalog-item-price').value = '';
+      document.getElementById('catalog-item-duration').value = '';
+      document.getElementById('catalog-item-price-label').value = '';
+      document.getElementById('catalog-item-desc').value = '';
+    }
+    modal.style.display = 'flex';
+  };
+
+  window.catalog_closeItemModal = function() {
+    document.getElementById('catalog-item-modal').style.display = 'none';
+  };
+
+  window.catalog_saveItem = function() {
+    var itemId = document.getElementById('catalog-item-id').value;
+    var payload = {
+      name: document.getElementById('catalog-item-name').value,
+      type: document.getElementById('catalog-item-type').value,
+      category_id: document.getElementById('catalog-item-category').value || null,
+      price: document.getElementById('catalog-item-price').value || null,
+      duration_minutes: document.getElementById('catalog-item-duration').value || null,
+      price_label: document.getElementById('catalog-item-price-label').value || null,
+      description: document.getElementById('catalog-item-desc').value || null,
+    };
+
+    var url = '/api/web/portal/' + businessId + '/catalog/items' + (itemId ? '/' + itemId : '');
+    var method = itemId ? 'PUT' : 'POST';
+
+    apiFetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        catalog_closeItemModal();
+        // Refresh items
+        _catalogLoaded = false;
+        catalog_load();
+      } else {
+        alert(data.message || 'Eroare');
+      }
+    });
+  };
+
+  window.catalog_deleteItem = function(itemId) {
+    if (!confirm('Sigur dorești să ștergi acest articol?')) return;
+    apiFetch('/api/web/portal/' + businessId + '/catalog/items/' + itemId, { method: 'DELETE' })
+    .then(function(r) { return r.json(); }).then(function(data) {
+      if (data.success) {
+        _catalogItems = _catalogItems.filter(function(i) { return i.id !== itemId; });
+        catalog_render();
+      }
+    });
+  };
+
+  // CSV Import
+  window.catalog_showCsvModal = function() {
+    document.getElementById('catalog-csv-modal').style.display = 'flex';
+    document.getElementById('csv-step-upload').style.display = '';
+    document.getElementById('csv-step-preview').style.display = 'none';
+  };
+  window.catalog_closeCsvModal = function() {
+    document.getElementById('catalog-csv-modal').style.display = 'none';
+  };
+
+  window.catalog_uploadCsv = function(file) {
+    if (!file) return;
+    var formData = new FormData();
+    formData.append('csv', file);
+    apiFetch('/api/web/portal/' + businessId + '/catalog/import-csv', {
+      method: 'POST',
+      body: formData
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      if (!data.success) { alert(data.message || 'Eroare la procesare'); return; }
+      _csvPreview = data.preview || [];
+
+      // Show errors
+      var errDiv = document.getElementById('csv-errors');
+      if (data.errors && data.errors.length > 0) {
+        errDiv.style.display = '';
+        errDiv.innerHTML = data.errors.join('<br>');
+      } else {
+        errDiv.style.display = 'none';
+      }
+
+      // Build preview table
+      var tableHtml = '<table style="width:100%;font-size:13px;border-collapse:collapse;">' +
+        '<thead><tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:6px;">Nume</th><th>Tip</th><th>Categorie</th><th style="text-align:right;">Preț</th></tr></thead><tbody>';
+      _csvPreview.forEach(function(item) {
+        tableHtml += '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">';
+        tableHtml += '<td style="padding:6px;">' + escapeHtml(item.name) + '</td>';
+        tableHtml += '<td style="padding:6px;text-align:center;">' + (TYPE_LABELS[item.type] || item.type) + '</td>';
+        tableHtml += '<td style="padding:6px;">' + escapeHtml(item.category || '—') + '</td>';
+        tableHtml += '<td style="padding:6px;text-align:right;">' + (item.price != null ? (item.price / 100).toFixed(2) + ' RON' : '—') + '</td>';
+        tableHtml += '</tr>';
+      });
+      tableHtml += '</tbody></table>';
+      document.getElementById('csv-preview-table').innerHTML = tableHtml;
+
+      document.getElementById('csv-step-upload').style.display = 'none';
+      document.getElementById('csv-step-preview').style.display = '';
+    }).catch(function(err) {
+      alert('Eroare la upload: ' + (err.message || 'necunoscută'));
+    });
+  };
+
+  window.catalog_csvBack = function() {
+    document.getElementById('csv-step-upload').style.display = '';
+    document.getElementById('csv-step-preview').style.display = 'none';
+    document.getElementById('csv-file-input').value = '';
+  };
+
+  window.catalog_csvConfirm = function() {
+    if (_csvPreview.length === 0) return;
+    var btn = document.getElementById('csv-confirm-btn');
+    btn.disabled = true;
+    btn.textContent = 'Se importă...';
+
+    apiFetch('/api/web/portal/' + businessId + '/catalog/import-csv/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: _csvPreview })
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      btn.disabled = false;
+      btn.textContent = 'Importă articolele';
+      if (data.success) {
+        catalog_closeCsvModal();
+        _catalogLoaded = false;
+        catalog_load();
+        alert(data.message || 'Import reușit!');
+      } else {
+        alert(data.message || 'Eroare la import');
+      }
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Importă articolele';
+      alert('Eroare la import');
+    });
+  };
+
+  // Drag-n-drop on CSV zone
+  (function() {
+    var zone = document.getElementById('csv-drop-zone');
+    if (!zone) return;
+    zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) catalog_uploadCsv(e.dataTransfer.files[0]);
+    });
+  })();
+
+  /* ════════════════════════════════
+     CONCIERGE ONBOARDING MODAL
+     ════════════════════════════════ */
+  var _conciergeChecked = false;
+
+  window.concierge_open = function() {
+    document.getElementById('concierge-modal').style.display = '';
+    // Check for existing active request
+    if (!_conciergeChecked) {
+      apiFetch('/api/web/portal/' + businessId + '/onboarding/request').then(function(r) { return r.json(); })
+        .then(function(data) {
+          _conciergeChecked = true;
+          if (data.request) {
+            var typeLabels = { catalog: 'Catalog', hours: 'Program de lucru', full_setup: 'Setup complet' };
+            var statusLabels = { pending: 'În așteptare', in_progress: 'În lucru' };
+            document.getElementById('concierge-active-detail').textContent =
+              (typeLabels[data.request.request_type] || data.request.request_type) +
+              ' — ' + (statusLabels[data.request.status] || data.request.status) +
+              ' (trimisă ' + new Date(data.request.created_at).toLocaleDateString('ro-RO') + ')';
+            document.getElementById('concierge-active').style.display = '';
+            document.getElementById('concierge-form').style.display = 'none';
+          }
+        }).catch(function() {});
+    }
+  };
+
+  window.concierge_close = function() {
+    document.getElementById('concierge-modal').style.display = 'none';
+  };
+
+  window.concierge_submit = function() {
+    var type = document.getElementById('concierge-type').value;
+    var message = document.getElementById('concierge-message').value.trim();
+    var filesInput = document.getElementById('concierge-files');
+    var files = filesInput.files;
+
+    if (files.length > 5) {
+      alert('Maxim 5 fișiere!');
+      return;
+    }
+
+    var btn = document.getElementById('concierge-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Se trimite...';
+
+    var fd = new FormData();
+    fd.append('request_type', type);
+    if (message) fd.append('message', message);
+    for (var i = 0; i < files.length; i++) {
+      fd.append('attachments', files[i]);
+    }
+
+    apiFetch('/api/web/portal/' + businessId + '/onboarding/request', {
+      method: 'POST',
+      body: fd
+    }).then(function(r) { return r.json(); }).then(function(data) {
+      btn.disabled = false;
+      btn.textContent = 'Trimite cererea';
+      if (data.success) {
+        alert('Cererea a fost trimisă! Vom reveni în maxim 48h.');
+        _conciergeChecked = false;
+        concierge_close();
+      } else {
+        alert(data.error || 'Eroare la trimitere');
+      }
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Trimite cererea';
+      alert('Eroare: ' + (err.message || 'necunoscută'));
+    });
+  };
+
+  /* ════════════════════════════════
      SUBSCRIPTION MANAGEMENT
      ════════════════════════════════ */
   var _subscriptionLoaded = false;
@@ -616,6 +1211,12 @@
 
     // Analytics charts — Standard+
     gateSection('analytics-charts-section', plan.hasAnalyticsCharts, 'Grafice statistici', 'Standard');
+
+    // Concierge onboarding — Standard+ (multiple elements via class)
+    document.querySelectorAll('.concierge-section').forEach(function(el) {
+      el.id = 'concierge-gate-' + Math.random().toString(36).slice(2, 6);
+      gateSection(el.id, plan.hasConcierge, 'Concierge Onboarding', 'Standard');
+    });
   }
 
   // Helper: escape HTML to prevent XSS in dynamic content
@@ -756,7 +1357,7 @@
     if (panel) panel.classList.add('active');
 
     // Find matching tab button
-    var labels = { info: 'Info', oferte: 'Oferte', recenzii: 'Recenzii', statistici: 'Statistici', support: 'Suport', subscription: 'Abonament' };
+    var labels = { info: 'Info', oferte: 'Oferte', catalog: 'Catalog', recenzii: 'Recenzii', statistici: 'Statistici', support: 'Suport', subscription: 'Abonament' };
     tabs.forEach(function(t) {
       if (t.textContent.trim().indexOf(labels[tabName]) === 0) {
         t.classList.add('active');
@@ -773,6 +1374,11 @@
     if (tabName === 'statistici') {
       if (typeof loadCompetitiveInsights === 'function') loadCompetitiveInsights();
       if (typeof loadPushHistory === 'function') loadPushHistory();
+    }
+
+    // Load catalog on first visit
+    if (tabName === 'catalog') {
+      catalog_load();
     }
 
     // Load subscription on first visit

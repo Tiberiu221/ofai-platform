@@ -1,4 +1,5 @@
 import 'offer.dart' show Booking;
+import 'catalog.dart' show CatalogCategory;
 
 class Business {
   final int id;
@@ -27,6 +28,8 @@ class Business {
   final bool isVerified;
   final String? badgeType;             // effective badge: subscription badge || is_verified fallback
   final bool isPromoted;
+  // Catalog (services/products/menu items)
+  final List<CatalogCategory>? catalog;
   // Platform polish fields
   final int? followerCount;
   final Map<int, int>? ratingDistribution; // {1: count, 2: count, ...5: count}
@@ -56,6 +59,7 @@ class Business {
     this.isVerified = false,
     this.badgeType,
     this.isPromoted = false,
+    this.catalog,
     this.followerCount,
     this.ratingDistribution,
   });
@@ -116,6 +120,9 @@ class Business {
           ?? json['subscription_badge_type'] as String?
           ?? ((json['is_verified'] as bool? ?? false) ? 'verified' : null),
       isPromoted: json['is_promoted'] == true,
+      catalog: (json['catalog'] as List<dynamic>?)
+          ?.map((e) => CatalogCategory.fromJson(e as Map<String, dynamic>))
+          .toList(),
       followerCount: json['follower_count'] as int?,
       ratingDistribution: _parseRatingDistribution(json['rating_distribution']),
     );
@@ -154,6 +161,29 @@ class IdName {
   }
 }
 
+class BusinessHours {
+  final int dayOfWeek; // 0=Monday, 6=Sunday
+  final String? openTime; // "HH:MM"
+  final String? closeTime; // "HH:MM"
+  final bool isClosed;
+
+  BusinessHours({
+    required this.dayOfWeek,
+    this.openTime,
+    this.closeTime,
+    this.isClosed = false,
+  });
+
+  factory BusinessHours.fromJson(Map<String, dynamic> json) {
+    return BusinessHours(
+      dayOfWeek: json['day_of_week'] as int,
+      openTime: json['open_time'] as String?,
+      closeTime: json['close_time'] as String?,
+      isClosed: json['is_closed'] as bool? ?? false,
+    );
+  }
+}
+
 class BusinessLocation {
   final dynamic id; // can be int or "main"
   final String? address;
@@ -166,6 +196,7 @@ class BusinessLocation {
   final String? bookingWhatsapp;
   final String? bookingUrl;
   final String? bookingInstructions;
+  final List<BusinessHours>? hours;
 
   BusinessLocation({
     required this.id,
@@ -179,6 +210,7 @@ class BusinessLocation {
     this.bookingWhatsapp,
     this.bookingUrl,
     this.bookingInstructions,
+    this.hours,
   });
 
   factory BusinessLocation.fromJson(Map<String, dynamic> json) {
@@ -196,6 +228,9 @@ class BusinessLocation {
       bookingWhatsapp: json['booking_whatsapp'] as String?,
       bookingUrl: json['booking_url'] as String?,
       bookingInstructions: json['booking_instructions'] as String?,
+      hours: (json['hours'] as List<dynamic>?)
+          ?.map((e) => BusinessHours.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

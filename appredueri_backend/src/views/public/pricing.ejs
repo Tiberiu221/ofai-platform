@@ -130,6 +130,15 @@
                   <span class="pricing-feature--disabled">Rezumat AI recenzii</span>
                 <% } %>
               </li>
+              <li class="pricing-feature">
+                <% if (plan.has_concierge) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Onboarding Concierge (setup asistat)</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Onboarding Concierge</span>
+                <% } %>
+              </li>
               <% if (plan.has_priority_support) { %>
                 <li class="pricing-feature">
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>

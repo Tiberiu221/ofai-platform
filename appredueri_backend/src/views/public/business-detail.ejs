@@ -463,6 +463,137 @@
 <% } %>
 
 <!-- ═══════════════════════════════════════════════════════
+     2b. PROGRAM DE LUCRU
+     ═══════════════════════════════════════════════════════ -->
+<%
+  /* Collect locations that have at least one hours entry */
+  var locsWithHours = (business.locations || []).filter(function(loc) {
+    return loc.hours && loc.hours.length > 0;
+  });
+%>
+<% if (locsWithHours.length > 0) { %>
+<div class="bd-content">
+  <div class="detail-card">
+    <div class="detail-card-header">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Program de lucru</span>
+    </div>
+
+    <%
+      var dayNames = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+      /* JS Date.getDay(): 0=Sun … 6=Sat → convert to 0=Mon schema: (jsDay + 6) % 7 */
+      var jsDay = new Date().getDay();
+      var todayIdx = (jsDay + 6) % 7;
+    %>
+
+    <% locsWithHours.forEach(function(loc, locIdx) { %>
+      <% if (locsWithHours.length > 1) { %>
+        <div class="bd-hours-loc-label<%= locIdx > 0 ? ' bd-hours-loc-divider' : '' %>">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <%= loc.address %>
+        </div>
+      <% } %>
+
+      <div class="bd-hours-grid">
+        <% for (var d = 0; d < 7; d++) { %>
+          <%
+            var entry = loc.hours.find(function(h) { return h.day_of_week === d; });
+            var isToday = (d === todayIdx);
+            var isClosed = !entry || entry.is_closed;
+          %>
+          <div class="bd-hours-row<%= isToday ? ' bd-hours-today' : '' %>">
+            <span class="bd-hours-day"><%= dayNames[d] %><%= isToday ? ' ·' : '' %></span>
+            <% if (isClosed) { %>
+              <span class="bd-hours-time bd-hours-closed">Închis</span>
+            <% } else { %>
+              <span class="bd-hours-time"><%= entry.open_time %> – <%= entry.close_time %></span>
+            <% } %>
+            <% if (isToday && !isClosed) { %>
+              <%
+                /* Check if currently open */
+                var now = new Date();
+                var nowMins = now.getHours() * 60 + now.getMinutes();
+                var openParts = entry.open_time.split(':');
+                var closeParts = entry.close_time.split(':');
+                var openMins = parseInt(openParts[0]) * 60 + parseInt(openParts[1]);
+                var closeMins = parseInt(closeParts[0]) * 60 + parseInt(closeParts[1]);
+                var isOpen = nowMins >= openMins && nowMins < closeMins;
+              %>
+              <span class="bd-hours-badge <%= isOpen ? 'bd-hours-open' : 'bd-hours-shut' %>"><%= isOpen ? 'Deschis acum' : 'Închis acum' %></span>
+            <% } else if (isToday && isClosed) { %>
+              <span class="bd-hours-badge bd-hours-shut">Închis azi</span>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    <% }); %>
+  </div>
+</div>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
+     2c. CATALOG — Servicii & Produse
+     ═══════════════════════════════════════════════════════ -->
+<% if (typeof catalog !== 'undefined' && catalog && catalog.length > 0) { %>
+<%
+  /* Flatten all items to compute total count */
+  var totalItems = 0;
+  catalog.forEach(function(cat) { totalItems += cat.items.length; });
+  var typeLabels = { service: 'Serviciu', product: 'Produs', menu_item: 'Meniu' };
+%>
+<div class="bd-content">
+  <div class="detail-card">
+    <div class="detail-card-header">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
+      <span>Servicii & Produse</span>
+      <span class="detail-card-badge"><%= totalItems %> <%= totalItems === 1 ? 'articol' : 'articole' %></span>
+    </div>
+
+    <% if (catalog.length > 1) { %>
+    <!-- Category tabs -->
+    <div class="bd-catalog-tabs">
+      <% catalog.forEach(function(cat, ci) { %>
+        <button class="bd-catalog-tab<%= ci === 0 ? ' bd-catalog-tab-active' : '' %>" onclick="bdCatalogTab(<%= ci %>)" data-cat-idx="<%= ci %>">
+          <%= cat.name %> <span class="bd-catalog-tab-count"><%= cat.items.length %></span>
+        </button>
+      <% }); %>
+    </div>
+    <% } %>
+
+    <!-- Category panels -->
+    <% catalog.forEach(function(cat, ci) { %>
+    <div class="bd-catalog-panel<%= ci === 0 ? ' bd-catalog-panel-active' : '' %>" data-cat-panel="<%= ci %>">
+      <% cat.items.forEach(function(item) { %>
+      <div class="bd-catalog-item">
+        <div class="bd-catalog-item-main">
+          <span class="bd-catalog-type bd-catalog-type-<%= item.type %>"><%= typeLabels[item.type] || item.type %></span>
+          <span class="bd-catalog-item-name"><%= item.name %></span>
+        </div>
+        <div class="bd-catalog-item-meta">
+          <% if (item.duration_minutes) { %>
+            <span class="bd-catalog-dur">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <%= item.duration_minutes %> min
+            </span>
+          <% } %>
+          <% if (item.price_display) { %>
+            <span class="bd-catalog-price"><%= item.price_display %></span>
+          <% } else { %>
+            <span class="bd-catalog-price bd-catalog-price-ask">La cerere</span>
+          <% } %>
+        </div>
+        <% if (item.description) { %>
+          <p class="bd-catalog-desc"><%= item.description %></p>
+        <% } %>
+      </div>
+      <% }); %>
+    </div>
+    <% }); %>
+  </div>
+</div>
+<% } %>
+
+<!-- ═══════════════════════════════════════════════════════
      3. SUMAR AI — Ce spun clienții
      ═══════════════════════════════════════════════════════ -->
 <% if (reviewSummary) { %>
@@ -889,12 +1020,190 @@ function switchOfferTab(btn) {
   transform: translateY(0);
 }
 
+/* ── Opening Hours ─────────────────────────────────── */
+.bd-hours-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bd-hours-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+.bd-hours-today {
+  background: rgba(251, 146, 60, 0.08);
+  font-weight: 600;
+}
+.bd-hours-day {
+  min-width: 100px;
+  color: var(--text-primary);
+}
+.bd-hours-time {
+  color: var(--text-secondary);
+  flex: 1;
+}
+.bd-hours-closed {
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+}
+.bd-hours-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.bd-hours-open {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+.bd-hours-shut {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+.bd-hours-loc-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.bd-hours-loc-divider {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .pinch-card-empty {
     padding: 32px 20px !important;
   }
+  .bd-hours-day {
+    min-width: 80px;
+    font-size: 0.8125rem;
+  }
+  .bd-hours-row {
+    gap: 8px;
+    padding: 6px 8px;
+  }
+}
+
+/* ── Catalog section (bd-catalog-*) ──────── */
+.bd-catalog-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.bd-catalog-tabs::-webkit-scrollbar { display: none; }
+.bd-catalog-tab {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 99px;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary, #a1a1aa);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.bd-catalog-tab:hover { border-color: var(--accent, #fb923c); color: var(--text-primary, #fafafa); }
+.bd-catalog-tab-active {
+  background: rgba(251,146,60,0.12);
+  border-color: var(--accent, #fb923c);
+  color: var(--accent, #fb923c);
+}
+.bd-catalog-tab-count {
+  font-size: 0.6875rem;
+  opacity: 0.6;
+  margin-left: 4px;
+}
+.bd-catalog-panel { display: none; }
+.bd-catalog-panel-active { display: block; }
+.bd-catalog-item {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.bd-catalog-item:last-child { border-bottom: none; }
+.bd-catalog-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.bd-catalog-type {
+  font-size: 0.625rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.bd-catalog-type-service { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.bd-catalog-type-product { background: rgba(34,197,94,0.15); color: #4ade80; }
+.bd-catalog-type-menu_item { background: rgba(251,146,60,0.15); color: #fb923c; }
+.bd-catalog-item-name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary, #fafafa);
+}
+.bd-catalog-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+}
+.bd-catalog-dur {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #71717a);
+}
+.bd-catalog-price {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent, #fb923c);
+}
+.bd-catalog-price-ask {
+  color: var(--text-tertiary, #71717a);
+  font-weight: 400;
+  font-style: italic;
+}
+.bd-catalog-desc {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #a1a1aa);
+  line-height: 1.4;
+}
+@media (max-width: 640px) {
+  .bd-catalog-item-main { flex-wrap: wrap; }
+  .bd-catalog-item-name { font-size: 0.875rem; }
 }
 </style>
+
+<!-- Catalog tab switching JS -->
+<script>
+function bdCatalogTab(idx) {
+  document.querySelectorAll('.bd-catalog-tab').forEach(function(t) { t.classList.remove('bd-catalog-tab-active'); });
+  document.querySelectorAll('.bd-catalog-panel').forEach(function(p) { p.classList.remove('bd-catalog-panel-active'); });
+  var tab = document.querySelector('.bd-catalog-tab[data-cat-idx="' + idx + '"]');
+  var panel = document.querySelector('.bd-catalog-panel[data-cat-panel="' + idx + '"]');
+  if (tab) tab.classList.add('bd-catalog-tab-active');
+  if (panel) panel.classList.add('bd-catalog-panel-active');
+}
+</script>
 
 <%- include('partials/footer') %>

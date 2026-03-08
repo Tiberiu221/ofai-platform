@@ -1,0 +1,279 @@
+<!-- ═══════════════════════════════════════════════════════
+     CATALOG — Categories + Items + CSV Import
+     CSS namespace: catalog-*
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="portal-section" style="margin-bottom: 20px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <h3 style="margin: 0;">Catalog servicii & produse</h3>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button class="btn btn-secondary" onclick="catalog_showCsvModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+        Importă CSV
+      </button>
+      <button class="btn btn-primary" onclick="catalog_addCategory()">+ Categorie nouă</button>
+    </div>
+  </div>
+  <p style="color: var(--text-secondary); font-size: 13px; margin: 8px 0 0;">
+    Adaugă servicii, produse sau articole de meniu. Clienții le vor vedea pe pagina business-ului tău.
+  </p>
+</div>
+
+<!-- Categories + Items container -->
+<div id="catalog-container">
+  <div class="catalog-loading" style="text-align: center; padding: 40px;">
+    <div class="spinner"></div>
+    <p style="color: var(--text-secondary); margin-top: 12px;">Se încarcă catalogul...</p>
+  </div>
+</div>
+
+<!-- CSV Import Modal (hidden) -->
+<div id="catalog-csv-modal" class="portal-modal" style="display: none;">
+  <div class="portal-modal-backdrop" onclick="catalog_closeCsvModal()"></div>
+  <div class="portal-modal-content" style="max-width: 700px;">
+    <div class="portal-modal-header">
+      <h3 style="margin: 0;">Import catalog din CSV</h3>
+      <button class="portal-modal-close" onclick="catalog_closeCsvModal()">&times;</button>
+    </div>
+    <div class="portal-modal-body">
+      <!-- Step 1: Upload -->
+      <div id="csv-step-upload">
+        <p style="color: var(--text-secondary); font-size: 14px; margin: 0 0 16px;">
+          Descarcă template-ul CSV, completează-l cu articolele tale, apoi încarcă-l aici.
+        </p>
+        <a href="/api/web/portal/<%= business.id %>/catalog/template" class="btn btn-secondary" style="margin-bottom: 16px; display: inline-flex;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Descarcă template CSV
+        </a>
+        <div class="catalog-csv-drop" id="csv-drop-zone" onclick="document.getElementById('csv-file-input').click()">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          <p style="margin: 8px 0 4px; font-weight: 500;">Click sau trage fișierul CSV aici</p>
+          <p style="margin: 0; font-size: 12px; color: var(--text-tertiary);">Maximum 500 rânduri, 1 MB</p>
+        </div>
+        <input type="file" id="csv-file-input" accept=".csv,text/csv" style="display: none;" onchange="catalog_uploadCsv(this.files[0])">
+      </div>
+      <!-- Step 2: Preview (hidden initially) -->
+      <div id="csv-step-preview" style="display: none;">
+        <p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 14px;">
+          Verifică datele de mai jos. Articolele vor fi adăugate la catalogul existent.
+        </p>
+        <div id="csv-errors" style="display: none; margin-bottom: 12px; padding: 10px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; color: #ef4444; font-size: 13px;"></div>
+        <div id="csv-preview-table" style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;"></div>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="catalog_csvBack()">Înapoi</button>
+          <button class="btn btn-primary" id="csv-confirm-btn" onclick="catalog_csvConfirm()">Importă articolele</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Item Modal -->
+<div id="catalog-item-modal" class="portal-modal" style="display: none;">
+  <div class="portal-modal-backdrop" onclick="catalog_closeItemModal()"></div>
+  <div class="portal-modal-content" style="max-width: 500px;">
+    <div class="portal-modal-header">
+      <h3 style="margin: 0;" id="catalog-item-modal-title">Articol nou</h3>
+      <button class="portal-modal-close" onclick="catalog_closeItemModal()">&times;</button>
+    </div>
+    <div class="portal-modal-body">
+      <input type="hidden" id="catalog-item-id">
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Nume *</label>
+        <input type="text" id="catalog-item-name" class="form-control" maxlength="300" placeholder="ex: Tuns clasic">
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="form-group">
+          <label class="form-label">Tip</label>
+          <select id="catalog-item-type" class="form-control">
+            <option value="service">Serviciu</option>
+            <option value="product">Produs</option>
+            <option value="menu_item">Meniu</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categorie</label>
+          <select id="catalog-item-category" class="form-control">
+            <option value="">— Fără categorie —</option>
+          </select>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="form-group">
+          <label class="form-label">Preț (RON)</label>
+          <input type="number" id="catalog-item-price" class="form-control" step="0.01" min="0" placeholder="ex: 35.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Durată (minute)</label>
+          <input type="number" id="catalog-item-duration" class="form-control" min="1" placeholder="ex: 30">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Etichetă preț (opțional, override)</label>
+        <input type="text" id="catalog-item-price-label" class="form-control" maxlength="100" placeholder="ex: de la 50 RON">
+      </div>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label">Descriere</label>
+        <textarea id="catalog-item-desc" class="form-control" rows="2" maxlength="500" placeholder="Descriere scurtă..."></textarea>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button class="btn btn-secondary" onclick="catalog_closeItemModal()">Anulează</button>
+        <button class="btn btn-primary" id="catalog-item-save-btn" onclick="catalog_saveItem()">Salvează</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── Catalog tab styles (catalog-* namespace) ──────── */
+.catalog-cat-card {
+  background: var(--bg-card, rgba(24, 24, 27, 0.5));
+  border: 1px solid var(--border, rgba(255,255,255,0.06));
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.catalog-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.catalog-cat-header:hover { background: rgba(255,255,255,0.03); }
+.catalog-cat-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+.catalog-cat-count {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  background: rgba(255,255,255,0.06);
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+.catalog-cat-actions {
+  display: flex;
+  gap: 4px;
+}
+.catalog-cat-actions button {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.catalog-cat-actions button:hover { color: var(--accent); background: rgba(251,146,60,0.1); }
+.catalog-cat-actions button.catalog-del:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+.catalog-items-list {
+  padding: 0 16px 12px;
+}
+.catalog-item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.catalog-item-row:hover { background: rgba(255,255,255,0.03); }
+.catalog-item-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.catalog-item-type-badge.service { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.catalog-item-type-badge.product { background: rgba(34,197,94,0.15); color: #4ade80; }
+.catalog-item-type-badge.menu_item { background: rgba(251,146,60,0.15); color: #fb923c; }
+.catalog-item-name { flex: 1; font-size: 14px; }
+.catalog-item-price { font-size: 14px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.catalog-item-dur { font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
+.catalog-item-actions {
+  display: flex; gap: 4px;
+}
+.catalog-item-actions button {
+  background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; border-radius: 4px;
+}
+.catalog-item-actions button:hover { color: var(--accent); }
+.catalog-item-actions button.catalog-del:hover { color: #ef4444; }
+
+.catalog-empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-secondary);
+}
+.catalog-empty svg { margin-bottom: 12px; opacity: 0.4; }
+
+.catalog-csv-drop {
+  border: 2px dashed rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.catalog-csv-drop:hover, .catalog-csv-drop.dragover {
+  border-color: var(--accent);
+  background: rgba(251,146,60,0.05);
+}
+
+/* Modal reuse (portal-modal pattern) */
+.portal-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.portal-modal-backdrop {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+}
+.portal-modal-content {
+  position: relative;
+  background: var(--bg-secondary, #18181b);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.portal-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.portal-modal-close {
+  background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.portal-modal-body {
+  padding: 20px;
+}
+</style>
+
+<!-- Concierge CTA (tier-gated via concierge-section) -->
+<div class="concierge-section portal-section" style="margin-top: 20px;">
+  <div style="background: linear-gradient(135deg, rgba(251,146,60,0.06), rgba(251,146,60,0.02)); border: 1px solid rgba(251,146,60,0.15); border-radius: 12px; padding: 20px; text-align: center;">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <h4 style="margin: 0 0 6px; font-size: 15px;">Ai nevoie de ajutor cu catalogul?</h4>
+    <p style="color: var(--text-secondary); font-size: 13px; margin: 0 0 12px;">
+      Trimite-ne meniul sau lista de prețuri și noi completăm catalogul pentru tine.
+    </p>
+    <button class="btn btn-primary" onclick="concierge_open()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Solicită Concierge
+    </button>
+  </div>
+</div>

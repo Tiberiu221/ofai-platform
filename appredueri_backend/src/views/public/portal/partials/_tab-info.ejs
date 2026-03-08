@@ -297,9 +297,29 @@
                     <input type="text" class="form-input loc-lng" value="<%= loc.lng || '' %>" data-loc-id="<%= loc.id %>" readonly style="background: var(--surface-2);">
                   </div>
                 </div>
-                <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end;">
+                <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; align-items: center;">
+                  <button type="button" class="btn-secondary" style="font-size: 0.8125rem;" onclick="hrs_toggle(<%= loc.id %>)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Program
+                  </button>
+                  <span style="flex: 1;"></span>
                   <button type="button" class="btn-secondary" style="color: #ef4444; font-size: 0.8125rem;" onclick="loc_delete(<%= loc.id %>)">Șterge</button>
                   <button type="button" class="btn-accent" style="font-size: 0.8125rem;" onclick="loc_update(<%= loc.id %>)">Salvează</button>
+                </div>
+
+                <!-- Opening Hours Editor (collapsed by default) -->
+                <div class="hrs-panel" id="hrs-panel-<%= loc.id %>" style="display: none; margin-top: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(255,255,255,0.02);">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="font-size: 0.8125rem; font-weight: 600; color: var(--text-primary);">Program de lucru</span>
+                    <span class="hrs-status" id="hrs-status-<%= loc.id %>" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 10px;"></span>
+                  </div>
+                  <div id="hrs-grid-<%= loc.id %>" style="display: grid; gap: 6px;"></div>
+                  <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; flex-wrap: wrap;">
+                    <% if (typeof locations !== 'undefined' && locations && locations.length > 1) { %>
+                      <button type="button" class="btn-secondary" style="font-size: 0.8125rem;" onclick="hrs_copyAll(<%= loc.id %>)">Copiază la toate</button>
+                    <% } %>
+                    <button type="button" class="btn-accent" style="font-size: 0.8125rem;" onclick="hrs_save(<%= loc.id %>)">Salvează program</button>
+                  </div>
                 </div>
               </div>
             <% }); %>
@@ -331,3 +351,17 @@
       </div>
       <% } %>
 
+<!-- Concierge CTA (tier-gated via concierge-section) -->
+<div class="concierge-section portal-section" style="margin-top: 20px;">
+  <div style="background: linear-gradient(135deg, rgba(251,146,60,0.06), rgba(251,146,60,0.02)); border: 1px solid rgba(251,146,60,0.15); border-radius: 12px; padding: 20px; text-align: center;">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <h4 style="margin: 0 0 6px; font-size: 15px;">Ai nevoie de ajutor?</h4>
+    <p style="color: var(--text-secondary); font-size: 13px; margin: 0 0 12px;">
+      Echipa OFAI îți poate configura programul și catalogul gratuit.
+    </p>
+    <button class="btn btn-primary" onclick="concierge_open()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Solicită Concierge
+    </button>
+  </div>
+</div>

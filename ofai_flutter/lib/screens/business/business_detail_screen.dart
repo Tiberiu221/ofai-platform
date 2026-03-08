@@ -6,7 +6,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/launchers.dart';
-import '../../models/business.dart' show BusinessLocation;
+import '../../models/business.dart' show BusinessLocation, BusinessHours;
+import '../../models/catalog.dart' show CatalogCategory;
 import '../../models/offer.dart' show Booking;
 import '../../providers/businesses_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
@@ -444,6 +445,19 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   ),
                               ],
                             ),
+                            const SizedBox(height: 40),
+                          ],
+
+                          // Opening Hours
+                          if (business.locations != null &&
+                              business.locations!.any((loc) => loc.hours != null && loc.hours!.isNotEmpty)) ...[
+                            _OpeningHoursSection(locations: business.locations!),
+                            const SizedBox(height: 40),
+                          ],
+
+                          // Catalog (services / products / menu items)
+                          if (business.catalog != null && business.catalog!.isNotEmpty) ...[
+                            _CatalogSection(categories: business.catalog!),
                             const SizedBox(height: 40),
                           ],
 
@@ -1247,6 +1261,352 @@ class _BookingChip extends StatelessWidget {
             Text(label, style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _OpeningHoursSection extends StatelessWidget {
+  final List<BusinessLocation> locations;
+  const _OpeningHoursSection({required this.locations});
+
+  static const _dayNames = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+
+  @override
+  Widget build(BuildContext context) {
+    final locsWithHours = locations.where((loc) => loc.hours != null && loc.hours!.isNotEmpty).toList();
+    if (locsWithHours.isEmpty) return const SizedBox.shrink();
+
+    // Dart DateTime.now().weekday: 1=Monday … 7=Sunday → todayIdx = weekday - 1
+    final todayIdx = DateTime.now().weekday - 1; // 0=Mon
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.schedule, size: 20, color: AppColors.textTertiary),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Program de lucru', style: AppTypography.headlineSmall),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ...locsWithHours.asMap().entries.map((entry) {
+            final locIdx = entry.key;
+            final loc = entry.value;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (locsWithHours.length > 1) ...[
+                  if (locIdx > 0) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Divider(color: AppColors.border, height: 1),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 14, color: AppColors.accent),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          loc.address ?? 'Locație ${locIdx + 1}',
+                          style: AppTypography.labelSmall.copyWith(color: AppColors.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+                ...List.generate(7, (d) {
+                  final entry = loc.hours!.cast<BusinessHours?>().firstWhere(
+                    (h) => h!.dayOfWeek == d,
+                    orElse: () => null,
+                  );
+                  final isToday = d == todayIdx;
+                  final isClosed = entry == null || entry.isClosed;
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isToday ? AppColors.accent.withValues(alpha: 0.08) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            _dayNames[d],
+                            style: (isToday ? AppTypography.labelMedium : AppTypography.bodySmall).copyWith(
+                              color: isToday ? AppColors.textPrimary : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            isClosed ? 'Închis' : '${entry.openTime} – ${entry.closeTime}',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: isClosed
+                                  ? AppColors.textTertiary
+                                  : (isToday ? AppColors.textPrimary : AppColors.textSecondary),
+                              fontStyle: isClosed ? FontStyle.italic : FontStyle.normal,
+                            ),
+                          ),
+                        ),
+                        if (isToday && !isClosed) _buildStatusBadge(entry),
+                        if (isToday && isClosed)
+                          _badge('Închis azi', AppColors.danger.withValues(alpha: 0.12), AppColors.danger),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(BusinessHours entry) {
+    final now = DateTime.now();
+    final nowMins = now.hour * 60 + now.minute;
+    final openParts = entry.openTime?.split(':');
+    final closeParts = entry.closeTime?.split(':');
+    if (openParts == null || closeParts == null || openParts.length < 2 || closeParts.length < 2) {
+      return const SizedBox.shrink();
+    }
+    final openMins = (int.tryParse(openParts[0]) ?? 0) * 60 + (int.tryParse(openParts[1]) ?? 0);
+    final closeMins = (int.tryParse(closeParts[0]) ?? 0) * 60 + (int.tryParse(closeParts[1]) ?? 0);
+    final isOpen = nowMins >= openMins && nowMins < closeMins;
+
+    return isOpen
+        ? _badge('Deschis', AppColors.success.withValues(alpha: 0.15), AppColors.success)
+        : _badge('Închis', AppColors.danger.withValues(alpha: 0.12), AppColors.danger);
+  }
+
+  Widget _badge(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(
+        text,
+        style: AppTypography.caption.copyWith(color: fg, fontWeight: FontWeight.w600, fontSize: 11),
+      ),
+    );
+  }
+}
+
+class _CatalogSection extends StatefulWidget {
+  final List<CatalogCategory> categories;
+  const _CatalogSection({required this.categories});
+
+  @override
+  State<_CatalogSection> createState() => _CatalogSectionState();
+}
+
+class _CatalogSectionState extends State<_CatalogSection> {
+  int _selectedIdx = 0;
+
+  static const _typeColors = <String, Color>{
+    'service': Color(0xFF60A5FA),
+    'product': Color(0xFF4ADE80),
+    'menu_item': Color(0xFFFB923C),
+  };
+
+  static const _typeBgColors = <String, Color>{
+    'service': Color(0x263B82F6),
+    'product': Color(0x2622C55E),
+    'menu_item': Color(0x26FB923C),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final cats = widget.categories;
+    final totalItems = cats.fold<int>(0, (sum, c) => sum + c.items.length);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Icon(Icons.menu_book_outlined, size: 20, color: AppColors.textTertiary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text('Servicii & Produse', style: AppTypography.headlineSmall),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '$totalItems ${totalItems == 1 ? 'articol' : 'articole'}',
+                  style: AppTypography.caption.copyWith(color: AppColors.accent, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Category tabs (if more than one)
+          if (cats.length > 1) ...[
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: cats.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                itemBuilder: (context, i) {
+                  final isActive = i == _selectedIdx;
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedIdx = i),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isActive ? AppColors.accent.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: isActive ? AppColors.accent : Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            cats[i].name,
+                            style: AppTypography.labelSmall.copyWith(
+                              color: isActive ? AppColors.accent : AppColors.textSecondary,
+                              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${cats[i].items.length}',
+                            style: AppTypography.caption.copyWith(
+                              color: isActive ? AppColors.accent.withValues(alpha: 0.7) : AppColors.textTertiary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          // Items list
+          ...cats[_selectedIdx].items.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            final isLast = idx == cats[_selectedIdx].items.length - 1;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                border: isLast
+                    ? null
+                    : Border(bottom: BorderSide(color: Colors.white.withValues(alpha: 0.04))),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Type badge + name
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _typeBgColors[item.type] ?? _typeBgColors['service']!,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          item.typeLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: _typeColors[item.type] ?? _typeColors['service']!,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          item.name,
+                          style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w500),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // Duration + Price
+                  Row(
+                    children: [
+                      if (item.durationMinutes != null) ...[
+                        Icon(Icons.schedule, size: 12, color: AppColors.textTertiary),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${item.durationMinutes} min',
+                          style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Text(
+                        item.priceDisplay ?? 'La cerere',
+                        style: item.priceDisplay != null
+                            ? AppTypography.bodySmall.copyWith(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.w600,
+                              )
+                            : AppTypography.bodySmall.copyWith(
+                                color: AppColors.textTertiary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                      ),
+                    ],
+                  ),
+                  // Description
+                  if (item.description != null && item.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      item.description!,
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

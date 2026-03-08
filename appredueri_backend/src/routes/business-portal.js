@@ -443,6 +443,105 @@ router.delete("/:businessId/images/:imageId", businessAuth, async (req, res) => 
 });
 
 // =====================================
+//   OPENING HOURS — per-location schedule
+// =====================================
+
+// GET hours for a location
+router.get("/:businessId/locations/:locId/hours", businessAuth, async (req, res) => {
+  try {
+    const { businessId, locId } = req.params;
+    const locIdInt = parseInt(locId, 10);
+    if (isNaN(locIdInt)) return res.status(400).json({ message: "ID locație invalid" });
+
+    // Verify ownership
+    const locCheck = await pool.query(
+      "SELECT id FROM business_locations WHERE id = $1 AND business_id = $2",
+      [locIdInt, parseInt(businessId)]
+    );
+    if (locCheck.rows.length === 0) return res.status(404).json({ message: "Locație negăsită" });
+
+    const { rows } = await pool.query(
+      `SELECT id, day_of_week,
+              to_char(open_time, 'HH24:MI') AS open_time,
+              to_char(close_time, 'HH24:MI') AS close_time,
+              is_closed
+       FROM business_hours WHERE location_id = $1 ORDER BY day_of_week`,
+      [locIdInt]
+    );
+
+    if (rows.length === 0) {
+      const defaults = [];
+      for (let d = 0; d < 7; d++) {
+        defaults.push({
+          day_of_week: d,
+          open_time: d < 5 ? '09:00' : null,
+          close_time: d < 5 ? '18:00' : null,
+          is_closed: d >= 5,
+        });
+      }
+      return res.json({ hours: defaults, isDefault: true });
+    }
+    res.json({ hours: rows, isDefault: false });
+  } catch (err) {
+    console.error("[BusinessPortal] Get hours error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea programului" });
+  }
+});
+
+// =====================================
+//   CATALOG — Read (categories + nested items)
+// =====================================
+router.get("/:businessId/catalog", businessAuth, async (req, res) => {
+  try {
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: "ID business invalid" });
+
+    // Get categories
+    const { rows: cats } = await pool.query(
+      "SELECT id, name, sort_order FROM business_catalog_categories WHERE business_id = $1 ORDER BY sort_order, id",
+      [businessId]
+    );
+
+    // Get all active items
+    const { rows: items } = await pool.query(
+      `SELECT id, category_id, type, name, description, price, price_label, duration_minutes, image_url, sort_order
+       FROM business_catalog_items WHERE business_id = $1 AND is_active = TRUE ORDER BY sort_order, id`,
+      [businessId]
+    );
+
+    // Group items by category
+    const itemsByCategory = {};
+    const uncategorized = [];
+    items.forEach(item => {
+      item.price_display = item.price != null ? (item.price / 100).toFixed(2) + ' RON' : (item.price_label || 'La cerere');
+      if (item.category_id) {
+        if (!itemsByCategory[item.category_id]) itemsByCategory[item.category_id] = [];
+        itemsByCategory[item.category_id].push(item);
+      } else {
+        uncategorized.push(item);
+      }
+    });
+
+    // Build nested response
+    const catalog = cats.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      items: itemsByCategory[cat.id] || [],
+    }));
+
+    // Add uncategorized items as a virtual category if any
+    if (uncategorized.length > 0) {
+      catalog.push({ id: null, name: 'Altele', items: uncategorized });
+    }
+
+    res.json({ success: true, catalog });
+  } catch (err) {
+    console.error("[BusinessPortal] Get catalog error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea catalogului" });
+  }
+});
+
+// =====================================
 //   OFFERS - Lista
 // =====================================
 router.get("/:businessId/offers", businessAuth, async (req, res) => {
