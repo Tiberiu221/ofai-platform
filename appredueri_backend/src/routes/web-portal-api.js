@@ -160,67 +160,6 @@ router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwn
 });
 
 // =====================================
-//   OFFER IMAGE UPLOAD / DELETE
-// =====================================
-router.post("/api/web/portal/:businessId/offers/:offerId/image", requireBusinessOwner, portalUpload.single("image"), async (req, res) => {
-  try {
-    const businessId = req.businessId;
-    const offerId = parseInt(req.params.offerId, 10);
-    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
-    if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
-
-    // Verify offer belongs to business
-    const offerRes = await pool.query(
-      "SELECT id, logo_url FROM offers WHERE id = $1 AND business_id = $2",
-      [offerId, businessId]
-    );
-    if (offerRes.rows.length === 0) return res.status(404).json({ message: "Oferta nu există" });
-
-    // Delete old image from Cloudinary if exists
-    const oldUrl = offerRes.rows[0].logo_url;
-    if (oldUrl) {
-      const oldId = getPublicIdFromUrl(oldUrl);
-      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
-    }
-
-    // Upload new image
-    const result = await uploadToCloudinary(req.file.buffer, "offer");
-    await pool.query("UPDATE offers SET logo_url = $1 WHERE id = $2", [result.url, offerId]);
-
-    res.json({ success: true, url: result.url });
-  } catch (err) {
-    console.error("[Web API] Portal upload offer image error:", err);
-    res.status(500).json({ message: "Eroare la upload" });
-  }
-});
-
-router.delete("/api/web/portal/:businessId/offers/:offerId/image", requireBusinessOwner, async (req, res) => {
-  try {
-    const businessId = req.businessId;
-    const offerId = parseInt(req.params.offerId, 10);
-    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
-
-    const offerRes = await pool.query(
-      "SELECT logo_url FROM offers WHERE id = $1 AND business_id = $2",
-      [offerId, businessId]
-    );
-    if (offerRes.rows.length === 0) return res.status(404).json({ message: "Oferta nu există" });
-
-    const oldUrl = offerRes.rows[0].logo_url;
-    if (oldUrl) {
-      const oldId = getPublicIdFromUrl(oldUrl);
-      if (oldId) await deleteFromCloudinary(oldId).catch(() => {});
-    }
-
-    await pool.query("UPDATE offers SET logo_url = NULL WHERE id = $1", [offerId]);
-    res.json({ success: true });
-  } catch (err) {
-    console.error("[Web API] Portal delete offer image error:", err);
-    res.status(500).json({ message: "Eroare la ștergere" });
-  }
-});
-
-// =====================================
 //   PARSE GOOGLE MAPS LINK
 // =====================================
 router.post("/api/web/parse-maps-link", requireWebAuth, mapsParseLimiter, async (req, res) => {
