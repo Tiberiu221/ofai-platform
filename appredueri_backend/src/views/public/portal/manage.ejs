@@ -118,7 +118,7 @@
           </p>
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label">Tip cerere *</label>
-            <select id="concierge-type" class="form-control">
+            <select id="concierge-type" class="form-select">
               <option value="full_setup">Setup complet (catalog + program)</option>
               <option value="catalog">Doar catalog (servicii/produse)</option>
               <option value="hours">Doar program de lucru</option>
@@ -126,7 +126,7 @@
           </div>
           <div class="form-group" style="margin-bottom: 12px;">
             <label class="form-label">Mesaj (opțional)</label>
-            <textarea id="concierge-message" class="form-control" rows="3" maxlength="2000" placeholder="Descrie serviciile, prețurile, programul... orice informații ne ajută."></textarea>
+            <textarea id="concierge-message" class="form-textarea" rows="3" maxlength="2000" placeholder="Descrie serviciile, prețurile, programul... orice informații ne ajută."></textarea>
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label class="form-label">Fișiere atașate (opțional, max 5)</label>
@@ -634,7 +634,7 @@
       var hours = data.hours || [];
       var html = '';
       for (var i = 0; i < 7; i++) {
-        var h = hours.find(function(x) { return x.day_of_week === i; }) || { day_of_week: i, open_time: '09:00', close_time: '18:00', is_closed: i >= 5 };
+        var h = hours.find(function(x) { return x.day_of_week === i; }) || { day_of_week: i, open_time: '09:00', close_time: '18:00', is_closed: false };
         html += '<div class="hrs-day-row" style="display: grid; grid-template-columns: 90px 1fr 12px 1fr 80px; gap: 8px; align-items: center;">';
         html += '<span style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">' + HRS_DAY_NAMES[i] + '</span>';
         html += '<input type="time" class="form-input hrs-open" data-day="' + i + '" value="' + (h.open_time || '09:00') + '" style="font-size:0.8125rem;padding:6px 8px;"' + (h.is_closed ? ' disabled' : '') + '>';

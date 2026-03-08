@@ -562,7 +562,7 @@
 
     <!-- Category panels -->
     <% catalog.forEach(function(cat, ci) { %>
-    <div class="bd-catalog-panel<%= ci === 0 ? ' bd-catalog-panel-active' : '' %>" data-cat-panel="<%= ci %>">
+    <div class="bd-catalog-panel<%= ci === 0 ? ' bd-catalog-panel-active' : '' %><%= cat.items.length > 5 ? ' bd-catalog-capped' : '' %>" data-cat-panel="<%= ci %>">
       <% cat.items.forEach(function(item) { %>
       <div class="bd-catalog-item">
         <div class="bd-catalog-item-main">
@@ -587,6 +587,12 @@
         <% } %>
       </div>
       <% }); %>
+      <% if (cat.items.length > 5) { %>
+      <button class="bd-catalog-expand" data-cat-expand="<%= ci %>" onclick="bdCatalogExpand(<%= ci %>)">
+        Arată toate (<%= cat.items.length %> articole)
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <% } %>
     </div>
     <% }); %>
   </div>
@@ -1131,6 +1137,44 @@ function switchOfferTab(btn) {
 }
 .bd-catalog-panel { display: none; }
 .bd-catalog-panel-active { display: block; }
+.bd-catalog-capped {
+  max-height: 340px;
+  overflow: hidden;
+  position: relative;
+}
+.bd-catalog-capped::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(transparent, var(--bg-card, #18181b));
+  pointer-events: none;
+}
+.bd-catalog-panel.bd-catalog-expanded {
+  max-height: none;
+  overflow: visible;
+}
+.bd-catalog-panel.bd-catalog-expanded::after { display: none; }
+.bd-catalog-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  color: var(--accent, #fb923c);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.bd-catalog-expand:hover { background: rgba(251,146,60,0.08); }
 .bd-catalog-item {
   padding: 10px 0;
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -1198,11 +1242,22 @@ function switchOfferTab(btn) {
 <script>
 function bdCatalogTab(idx) {
   document.querySelectorAll('.bd-catalog-tab').forEach(function(t) { t.classList.remove('bd-catalog-tab-active'); });
-  document.querySelectorAll('.bd-catalog-panel').forEach(function(p) { p.classList.remove('bd-catalog-panel-active'); });
+  document.querySelectorAll('.bd-catalog-panel').forEach(function(p) {
+    p.classList.remove('bd-catalog-panel-active');
+    p.classList.remove('bd-catalog-expanded');
+  });
   var tab = document.querySelector('.bd-catalog-tab[data-cat-idx="' + idx + '"]');
   var panel = document.querySelector('.bd-catalog-panel[data-cat-panel="' + idx + '"]');
   if (tab) tab.classList.add('bd-catalog-tab-active');
   if (panel) panel.classList.add('bd-catalog-panel-active');
+}
+function bdCatalogExpand(idx) {
+  var panel = document.querySelector('.bd-catalog-panel[data-cat-panel="' + idx + '"]');
+  if (panel) {
+    panel.classList.add('bd-catalog-expanded');
+    var btn = panel.querySelector('.bd-catalog-expand');
+    if (btn) btn.style.display = 'none';
+  }
 }
 </script>
 

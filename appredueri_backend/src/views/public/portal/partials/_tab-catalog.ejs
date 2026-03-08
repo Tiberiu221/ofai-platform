@@ -80,12 +80,12 @@
       <input type="hidden" id="catalog-item-id">
       <div class="form-group" style="margin-bottom: 12px;">
         <label class="form-label">Nume *</label>
-        <input type="text" id="catalog-item-name" class="form-control" maxlength="300" placeholder="ex: Tuns clasic">
+        <input type="text" id="catalog-item-name" class="form-input" maxlength="300" placeholder="ex: Tuns clasic">
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
         <div class="form-group">
           <label class="form-label">Tip</label>
-          <select id="catalog-item-type" class="form-control">
+          <select id="catalog-item-type" class="form-select">
             <option value="service">Serviciu</option>
             <option value="product">Produs</option>
             <option value="menu_item">Meniu</option>
@@ -93,7 +93,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Categorie</label>
-          <select id="catalog-item-category" class="form-control">
+          <select id="catalog-item-category" class="form-select">
             <option value="">— Fără categorie —</option>
           </select>
         </div>
@@ -101,20 +101,20 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
         <div class="form-group">
           <label class="form-label">Preț (RON)</label>
-          <input type="number" id="catalog-item-price" class="form-control" step="0.01" min="0" placeholder="ex: 35.00">
+          <input type="number" id="catalog-item-price" class="form-input" step="0.01" min="0" placeholder="ex: 35.00">
         </div>
         <div class="form-group">
           <label class="form-label">Durată (minute)</label>
-          <input type="number" id="catalog-item-duration" class="form-control" min="1" placeholder="ex: 30">
+          <input type="number" id="catalog-item-duration" class="form-input" min="1" placeholder="ex: 30">
         </div>
       </div>
       <div class="form-group" style="margin-bottom: 12px;">
         <label class="form-label">Etichetă preț (opțional, override)</label>
-        <input type="text" id="catalog-item-price-label" class="form-control" maxlength="100" placeholder="ex: de la 50 RON">
+        <input type="text" id="catalog-item-price-label" class="form-input" maxlength="100" placeholder="ex: de la 50 RON">
       </div>
       <div class="form-group" style="margin-bottom: 16px;">
         <label class="form-label">Descriere</label>
-        <textarea id="catalog-item-desc" class="form-control" rows="2" maxlength="500" placeholder="Descriere scurtă..."></textarea>
+        <textarea id="catalog-item-desc" class="form-textarea" rows="2" maxlength="500" placeholder="Descriere scurtă..."></textarea>
       </div>
       <div style="display: flex; gap: 8px; justify-content: flex-end;">
         <button class="btn btn-secondary" onclick="catalog_closeItemModal()">Anulează</button>
