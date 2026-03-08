@@ -241,7 +241,7 @@
               <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Link Google Maps</label>
               <div style="display: flex; gap: 8px;">
                 <input type="text" id="loc-add-maps-url" class="form-input" placeholder="https://maps.app.goo.gl/..." style="flex: 1;">
-                <button type="button" class="btn-secondary" onclick="loc_detectCoords('add')" style="white-space: nowrap; font-size: 0.8125rem;">Detectează</button>
+                <button type="button" class="btn-secondary-portal" onclick="loc_detectCoords('add')" style="white-space: nowrap; font-size: 0.8125rem;">Detectează</button>
               </div>
             </div>
             <div>
@@ -254,7 +254,7 @@
             </div>
           </div>
           <div style="display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;">
-            <button type="button" class="btn-secondary" onclick="loc_hideAddForm()">Anulează</button>
+            <button type="button" class="btn-secondary-portal" onclick="loc_hideAddForm()">Anulează</button>
             <button type="button" class="btn-accent" onclick="loc_create()">Salvează</button>
           </div>
         </div>
@@ -285,7 +285,7 @@
                     <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Link Google Maps</label>
                     <div style="display: flex; gap: 8px;">
                       <input type="text" class="form-input loc-maps-url" value="<%= loc.maps_url || '' %>" data-loc-id="<%= loc.id %>" style="flex: 1;">
-                      <button type="button" class="btn-secondary" onclick="loc_detectCoords('<%= loc.id %>')" style="white-space: nowrap; font-size: 0.8125rem;">Detectează</button>
+                      <button type="button" class="btn-secondary-portal" onclick="loc_detectCoords('<%= loc.id %>')" style="white-space: nowrap; font-size: 0.8125rem;">Detectează</button>
                     </div>
                   </div>
                   <div>
@@ -298,12 +298,12 @@
                   </div>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; align-items: center;">
-                  <button type="button" class="btn-secondary" style="font-size: 0.8125rem;" onclick="hrs_toggle(<%= loc.id %>)">
+                  <button type="button" class="btn-secondary-portal" style="font-size: 0.8125rem;" onclick="hrs_toggle(<%= loc.id %>)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     Program
                   </button>
                   <span style="flex: 1;"></span>
-                  <button type="button" class="btn-secondary" style="color: #ef4444; font-size: 0.8125rem;" onclick="loc_delete(<%= loc.id %>)">Șterge</button>
+                  <button type="button" class="btn-secondary-portal" style="color: #ef4444; font-size: 0.8125rem;" onclick="loc_delete(<%= loc.id %>)">Șterge</button>
                   <button type="button" class="btn-accent" style="font-size: 0.8125rem;" onclick="loc_update(<%= loc.id %>)">Salvează</button>
                 </div>
 
@@ -316,7 +316,7 @@
                   <div id="hrs-grid-<%= loc.id %>" style="display: grid; gap: 6px;"></div>
                   <div style="display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; flex-wrap: wrap;">
                     <% if (typeof locations !== 'undefined' && locations && locations.length > 1) { %>
-                      <button type="button" class="btn-secondary" style="font-size: 0.8125rem;" onclick="hrs_copyAll(<%= loc.id %>)">Copiază la toate</button>
+                      <button type="button" class="btn-secondary-portal" style="font-size: 0.8125rem;" onclick="hrs_copyAll(<%= loc.id %>)">Copiază la toate</button>
                     <% } %>
                     <button type="button" class="btn-accent" style="font-size: 0.8125rem;" onclick="hrs_save(<%= loc.id %>)">Salvează program</button>
                   </div>
