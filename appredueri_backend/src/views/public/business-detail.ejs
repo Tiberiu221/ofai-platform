@@ -521,6 +521,7 @@
                 var isOpen = nowMins >= openMins && nowMins < closeMins;
               %>
               <span class="bd-hours-badge <%= isOpen ? 'bd-hours-open' : 'bd-hours-shut' %>"><%= isOpen ? 'Deschis acum' : 'Închis acum' %></span>
+              <!-- HOURS_DEBUG: serverUTC=<%= new Date().toISOString() %> | roString=<%= new Date().toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }) %> | nowRO=<%= now.toISOString() %> | nowMins=<%= nowMins %> | openMins=<%= openMins %> | closeMins=<%= closeMins %> | isOpen=<%= isOpen %> | entry.open_time=<%= entry.open_time %> | entry.close_time=<%= entry.close_time %> | todayIdx=<%= todayIdx %> | jsDay=<%= jsDay %> -->
             <% } else if (isToday && isClosed) { %>
               <span class="bd-hours-badge bd-hours-shut">Închis azi</span>
             <% } %>
