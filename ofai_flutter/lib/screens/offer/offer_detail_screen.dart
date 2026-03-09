@@ -61,8 +61,9 @@ class OfferDetailScreen extends ConsumerWidget {
                         icon: const Icon(Icons.share_outlined),
                         onPressed: () {
                           Launchers.shareOffer(offer.title, offer.id);
-                          if (offer.business != null) {
-                            AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'share');
+                          final biz = offer.business;
+                          if (biz != null) {
+                            AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'share');
                           }
                         },
                       ),
@@ -408,85 +409,88 @@ class OfferDetailScreen extends ConsumerWidget {
                           if (offer.business != null) ...[
                             _SectionTitle('Business'),
                             const SizedBox(height: AppSpacing.sm),
-                            GestureDetector(
-                              onTap: () => context.push('/business/${offer.business!.id}'),
-                              child: Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: AppColors.bgCard,
-                                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Row(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: SizedBox(
-                                        width: 44,
-                                        height: 44,
-                                        child: offer.business!.logoUrl != null
-                                            ? CachedNetworkImage(
-                                                imageUrl: offer.business!.logoUrl!,
-                                                fit: BoxFit.cover,
-                                                errorWidget: (_, __, ___) => _BusinessInitial(offer.business!.name),
-                                              )
-                                            : _BusinessInitial(offer.business!.name),
+                            Builder(builder: (_) {
+                              final biz = offer.business!;
+                              return GestureDetector(
+                                onTap: () => context.push('/business/${biz.id}'),
+                                child: Container(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bgCard,
+                                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: SizedBox(
+                                          width: 44,
+                                          height: 44,
+                                          child: biz.logoUrl != null
+                                              ? CachedNetworkImage(
+                                                  imageUrl: biz.logoUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorWidget: (_, __, ___) => _BusinessInitial(biz.name),
+                                                )
+                                              : _BusinessInitial(biz.name),
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.md),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Flexible(
-                                                child: Text(
-                                                  offer.business!.name,
-                                                  style: AppTypography.labelLarge,
-                                                  overflow: TextOverflow.ellipsis,
+                                      const SizedBox(width: AppSpacing.md),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Flexible(
+                                                  child: Text(
+                                                    biz.name,
+                                                    style: AppTypography.labelLarge,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
                                                 ),
-                                              ),
-                                              if (offer.business!.badgeType != null) ...[
-                                                const SizedBox(width: 4),
-                                                SubscriptionBadge(
-                                                  badgeType: offer.business!.badgeType,
-                                                  size: 16,
-                                                ),
+                                                if (biz.badgeType != null) ...[
+                                                  const SizedBox(width: 4),
+                                                  SubscriptionBadge(
+                                                    badgeType: biz.badgeType,
+                                                    size: 16,
+                                                  ),
+                                                ],
                                               ],
-                                            ],
-                                          ),
-                                          if (offer.business!.city != null || offer.business!.category != null)
-                                            Text(
-                                              [offer.business!.category, offer.business!.city]
-                                                  .where((s) => s != null && s.isNotEmpty)
-                                                  .join(' \u2022 '),
-                                              style: AppTypography.captionMuted,
                                             ),
-                                        ],
+                                            if (biz.city != null || biz.category != null)
+                                              Text(
+                                                [biz.category, biz.city]
+                                                    .where((s) => s != null && s.isNotEmpty)
+                                                    .join(' \u2022 '),
+                                                style: AppTypography.captionMuted,
+                                              ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    if (offer.business!.rating != null && offer.business!.rating! > 0) ...[
-                                      Icon(Icons.star, size: 16, color: AppColors.accent),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        offer.business!.rating!.toStringAsFixed(1),
-                                        style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
-                                      ),
+                                      if (biz.rating != null && biz.rating! > 0) ...[
+                                        Icon(Icons.star, size: 16, color: AppColors.accent),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          biz.rating!.toStringAsFixed(1),
+                                          style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
+                                        ),
+                                      ],
+                                      const SizedBox(width: 4),
+                                      Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
                                     ],
-                                    const SizedBox(width: 4),
-                                    Icon(Icons.chevron_right, size: 20, color: AppColors.textTertiary),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
                           // Pinch card — show when offer is expired
                           if (!offer.isActive && offer.business != null)
                             _OfferDetailPinchCard(
-                              businessId: offer.business!.id,
+                              businessId: offer.business!.id, // safe: guarded by != null above
                               isLoggedIn: isLoggedIn,
                             ),
 
@@ -500,7 +504,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                 onTap: loc.lat != null && loc.lng != null
                                     ? () {
                                         Launchers.maps(loc.lat!, loc.lng!, address: loc.address);
-                                        if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'navigate');
+                                        final biz = offer.business;
+                                        if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'navigate');
                                       }
                                     : null,
                                 child: Container(
@@ -556,7 +561,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                     label: 'Telefon',
                                     onTap: () {
                                       Launchers.call(booking.phone!);
-                                      if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'phone');
+                                      final biz = offer.business;
+                                      if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'phone');
                                     },
                                   ),
                                 if (booking.whatsapp != null)
@@ -565,7 +571,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                     label: 'WhatsApp',
                                     onTap: () {
                                       Launchers.whatsApp(booking.whatsapp!);
-                                      if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'whatsapp');
+                                      final biz = offer.business;
+                                      if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'whatsapp');
                                     },
                                   ),
                                 if (booking.url != null)
@@ -574,7 +581,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                     label: 'Online',
                                     onTap: () {
                                       Launchers.website(booking.url!);
-                                      if (offer.business != null) AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'booking_url');
+                                      final biz = offer.business;
+                                      if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'booking_url');
                                     },
                                   ),
                               ],
@@ -646,8 +654,9 @@ class OfferDetailScreen extends ConsumerWidget {
                                 offer.gallery!.map((g) => g.url).toList(),
                                 initialIndex: i,
                               );
-                              if (offer.business != null) {
-                                AnalyticsService.trackClick(businessId: offer.business!.id, offerId: offer.id, actionType: 'gallery');
+                              final biz = offer.business;
+                              if (biz != null) {
+                                AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'gallery');
                               }
                             },
                             child: ClipRRect(
@@ -1137,6 +1146,13 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                   ],
                 ),
               ),
+            ),
+          ] else ...[
+            // Fallback: revealed but no code available
+            Text(
+              'Codul nu este disponibil',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
             ),
           ],
         ],

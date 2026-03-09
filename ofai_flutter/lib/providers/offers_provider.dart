@@ -223,7 +223,7 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
 }
 
 // Providers
-final offersListProvider = StateNotifierProvider.autoDispose<OffersListNotifier, OffersListState>((ref) {
+final offersListProvider = StateNotifierProvider<OffersListNotifier, OffersListState>((ref) {
   return OffersListNotifier(ApiClient());
 });
 
