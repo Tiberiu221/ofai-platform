@@ -126,6 +126,6 @@ psql $DATABASE_URL                              # Connect to DB
 - Express pinned to ~5.1.0
 
 ### Known Remaining Issues (non-Stripe)
-- Flutter `offer.business!` force-unwrap (11 occurrences in offer_detail_screen.dart) — crash risk
-- Audit #9 HIGH-priority Flutter provider issues (shared cancel tokens, autoDispose race conditions)
-- Several Audit #9 CRIT items still pending (max_reveals check, gallery limit vs tier, XSS textarea breakout)
+- Audit #9 CRIT/HIGH items verified: most already fixed, remaining CRIT-05/06/09/10/21/22 confirmed fixed
+- Flutter force-unwrap fixed (local var pattern), promo spinner null fixed (fallback else clause)
+- autoDispose removed from offersListProvider, businessesListProvider, userLocationProvider (prevents redundant refetches/GPS re-queries)

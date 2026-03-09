@@ -2,6 +2,12 @@
 
 > Estimare: ~6h ore de lucru activ
 > Prioritate: MUST DO prima, NICE TO DO daca ramane timp
+>
+> **UPDATE (sesiune Claude):** Task-urile 1, 2 (partial), si 3 au fost realizate de Claude.
+> - Task 1 (force-unwrap): ✅ DONE — 12+ offer.business! inlocuite cu local var pattern
+> - Task 2 (CRIT-uri): ✅ DONE — 6/7 confirmate deja fixate, CRIT-13 (spinner null) fixat acum
+> - Task 3 (HIGH Flutter): ✅ DONE — 3/5 confirmate fixate, HIGH-15+16 (autoDispose) fixate acum
+> - Ramas de facut: Task 4 (review & test local) + NICE TO DO
 
 ---
 
