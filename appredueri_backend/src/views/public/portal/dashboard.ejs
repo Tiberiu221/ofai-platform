@@ -126,9 +126,7 @@
 
   /* Logo */
   .portal-card-logo {
-    position: absolute;
-    bottom: -28px;
-    left: 20px;
+    position: relative;
     width: 56px;
     height: 56px;
     border-radius: var(--radius-full);
@@ -139,6 +137,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-top: -28px;
+    margin-bottom: 12px;
+    transition: transform 0.4s var(--ease-smooth),
+                border-color 0.4s var(--ease-smooth);
+  }
+
+  .portal-card:hover .portal-card-logo {
+    transform: scale(1.08);
+    border-color: var(--accent);
   }
 
   .portal-card-logo img {
@@ -156,7 +163,7 @@
 
   /* Card Body */
   .portal-card-body {
-    padding: 40px 20px 20px;
+    padding: 0 20px 20px;
   }
 
   .portal-card-name {
@@ -378,8 +385,11 @@
               <div class="portal-card-cover-fallback"></div>
             <% } %>
             <div class="portal-card-cover-overlay"></div>
+          </div>
 
-            <!-- Logo -->
+          <!-- Card Body -->
+          <div class="portal-card-body">
+            <!-- Logo (negative margin overlaps cover edge) -->
             <div class="portal-card-logo">
               <% if (biz.logo_url) { %>
                 <img src="<%= biz.logo_url %>" alt="<%= biz.name %>" width="48" height="48" loading="lazy">
@@ -387,10 +397,6 @@
                 <span class="portal-card-logo-letter"><%= biz.name.charAt(0).toUpperCase() %></span>
               <% } %>
             </div>
-          </div>
-
-          <!-- Card Body -->
-          <div class="portal-card-body">
             <h3 class="portal-card-name"><%= biz.name %></h3>
 
             <div class="portal-card-badges">
