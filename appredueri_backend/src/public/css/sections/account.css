@@ -223,6 +223,15 @@
   border-radius: 6px;
 }
 
+.account-portal-link {
+  border-color: rgba(251, 146, 60, 0.25);
+}
+
+.account-portal-link:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(251,146,60,0.06), transparent);
+}
+
 /* ═══════════════════════════════════════════════════════════
    COLLECTION PAGE (Colecția mea)
    ═══════════════════════════════════════════════════════════ */

@@ -80,9 +80,17 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
       <% } else if (br && br.status === 'approved') { %>
-      <a href="/portal" class="account-menu-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <span><%= br.name %> — pe platforma!</span>
+      <a href="/portal" class="account-menu-item account-portal-link" id="portalLink"
+         data-biz-name="<%= br.name %>">
+        <svg class="portal-icon-new" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <svg class="portal-icon-return" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" style="display:none"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        <span class="portal-link-text"><%= br.name %> — pe platforma!</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+      <% } else if (typeof hasBusinesses !== 'undefined' && hasBusinesses) { %>
+      <a href="/portal" class="account-menu-item account-portal-link">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+        <span>Spre Business Portal</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
       <% } else if (br && br.status === 'rejected') { %>
@@ -124,6 +132,25 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
     </div>
+
+    <!-- Portal link: transform from celebratory to permanent after first click -->
+    <script>
+    (function() {
+      var link = document.getElementById('portalLink');
+      if (!link) return;
+      if (localStorage.getItem('portal_visited')) {
+        var iconNew = link.querySelector('.portal-icon-new');
+        var iconReturn = link.querySelector('.portal-icon-return');
+        var txt = link.querySelector('.portal-link-text');
+        if (iconNew) iconNew.style.display = 'none';
+        if (iconReturn) iconReturn.style.display = '';
+        if (txt) txt.textContent = 'Spre Business Portal \u2014 ' + link.dataset.bizName;
+      }
+      link.addEventListener('click', function() {
+        localStorage.setItem('portal_visited', '1');
+      });
+    })();
+    </script>
 
     <!-- Logout -->
     <a href="/logout" class="btn btn-secondary" style="width: 100%; margin-top: 24px;">Deconectare</a>

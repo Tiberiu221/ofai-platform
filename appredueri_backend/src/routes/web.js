@@ -1383,18 +1383,20 @@ router.get("/orase", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/cont", requireWebAuth, async (req, res) => {
   try {
-    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails] = await Promise.all([
+    const [pointsRes, favCount, followCount, reviewCount, bizReqRes, userDetails, userBizCount] = await Promise.all([
       pool.query("SELECT total_points FROM user_points WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM favorite_offers WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM followed_businesses WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT COUNT(*) as total FROM reviews WHERE user_id = $1", [req.webUser.id]),
       pool.query("SELECT status, name FROM business_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1", [req.webUser.id]),
       pool.query("SELECT last_profile_edit FROM users WHERE id = $1", [req.webUser.id]),
+      pool.query("SELECT COUNT(*) as total FROM user_businesses WHERE user_id = $1", [req.webUser.id]),
     ]);
 
     const userPoints = pointsRes.rows[0]?.total_points || 0;
     const bizRequest = bizReqRes.rows[0] || null;
     const lastProfileEdit = userDetails.rows[0]?.last_profile_edit || null;
+    const hasBusinesses = parseInt(userBizCount.rows[0].total) > 0;
 
     res.render("public/account", {
       activePage: "cont",
@@ -1405,6 +1407,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
       reviewCount: parseInt(reviewCount.rows[0].total),
       bizRequest,
       lastProfileEdit,
+      hasBusinesses,
     });
   } catch (err) {
     console.error("[Web] Account error:", err);

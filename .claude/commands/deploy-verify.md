@@ -3,15 +3,64 @@
 Verifica starea productiei dupa deploy (Railway auto-deploy pe push to main). Ruleaza migratii pending si health check.
 
 ## Input: $ARGUMENTS
-- **(gol)** — full check: migratii + health check + site verification
+- **(gol)** — full check: env validation + migratii + health check + site verification
 - **`migrate`** — ruleaza doar migratiile pending
 - **`health`** — doar health check (fara migratii)
+- **`env`** — doar environment variable validation
 
 ## Conexiune DB
 ```
 postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway
 ```
 Foloseste `require('pg').Client` cu SSL `{ rejectUnauthorized: false }` din directorul `appredueri_backend/`.
+
+## Step 0: Environment Variable Validation
+
+Verifica ca toate env vars necesare sunt setate pe Railway (fara a expune valorile).
+
+### Required (app crash without these)
+```bash
+# Conecteaza-te la Railway si verifica env vars setate
+# Sau pe production, verifica prin endpoint /health (daca exista)
+
+# Required vars — app nu porneste fara ele:
+DATABASE_URL          # PostgreSQL connection string
+JWT_SECRET            # JWT signing + CSRF (min 32 chars)
+```
+
+### Required for Features
+```bash
+CLOUDINARY_CLOUD_NAME    # Image uploads
+CLOUDINARY_API_KEY       # Image uploads
+CLOUDINARY_API_SECRET    # Image uploads
+RESEND_API_KEY           # Transactional email
+FIREBASE_ADMINSDK_JSON   # Push notifications (ENTIRE JSON file, not just key!)
+GOOGLE_CLIENT_ID         # Google OAuth
+```
+
+### Optional (features degrade gracefully)
+```bash
+STRIPE_SECRET_KEY        # Payments (skeleton — not production yet)
+STRIPE_WEBHOOK_SECRET    # Stripe webhooks
+TIER_GATING_ENABLED      # Subscription gating (default: false)
+SENTRY_DSN               # Error tracking
+OPENROUTER_KEY           # LLM enrichment (scraping only)
+CSRF_SECRET              # Falls back to JWT_SECRET if not set
+```
+
+### Validation Checks
+1. Citeste `.env.example` si compara cu env vars din Railway
+2. Verifica ca `FIREBASE_ADMINSDK_JSON` contine `"type": "service_account"` (JSON valid)
+3. Verifica ca `JWT_SECRET` are minim 32 caractere
+4. Verifica ca `DATABASE_URL` incepe cu `postgresql://`
+5. Daca `TIER_GATING_ENABLED` lipseste, noteaza ca tier gating e OFF
+
+### Secret Leak Detection
+```bash
+# Scaneaza git history pentru secrete accidental committed
+git log --all --diff-filter=A -p -- '*.env' '*.key' '*.pem' | head -20
+grep -rn "STRIPE_SECRET\|JWT_SECRET\|CLOUDINARY_API_SECRET\|password.*=.*[A-Za-z0-9]" appredueri_backend/src/ --include="*.js" --include="*.ejs" | grep -v ".env\|node_modules\|\.example"
+```
 
 ## Step 1: Detecteaza migratii pending
 
@@ -28,8 +77,8 @@ Foloseste `require('pg').Client` cu SSL `{ rejectUnauthorized: false }` din dire
 Verifica urmatoarele endpoint-uri pe `https://ofai.ro`:
 
 1. **Homepage** — `GET /` — status 200, contine "OFAI"
-2. **Offers API** — `GET /api/offers?limit=1` — status 200, returneaza JSON cu data
-3. **Business API** — `GET /api/businesses?limit=1` — status 200
+2. **Offers API** — `GET /offers?limit=1` — status 200, returneaza JSON cu data (ruta mobile mount la root, NU /api/)
+3. **Business API** — `GET /businesses?limit=1` — status 200
 4. **Static assets** — `GET /css/main.css` — status 200
 
 Foloseste `WebFetch` sau `curl` pentru fiecare endpoint.
@@ -46,6 +95,8 @@ Foloseste `WebFetch` sau `curl` pentru fiecare endpoint.
 Afiseaza un rezumat clar:
 ```
 === Deploy Verification ===
+Env Vars:   X required set / Y optional missing
+Secrets:    No leaks detected
 Migrations: X applied / Y already up-to-date
 Homepage:   OK (200)
 Offers API: OK (200, N results)

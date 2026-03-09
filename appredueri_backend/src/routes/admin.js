@@ -407,7 +407,9 @@ router.get("/businesses/new", async (req, res) => {
 
 // POST /admin/businesses/new
 router.post("/businesses/new", async (req, res) => {
+  const client = await pool.connect();
   try {
+    await client.query("BEGIN");
     const {
       name,
       city_id,
@@ -419,9 +421,9 @@ router.post("/businesses/new", async (req, res) => {
       website,
       description,
     } = req.body;
-    await pool.query(
+    const { rows } = await client.query(
       `INSERT INTO businesses (name, city_id, category_id, address, lat, lng, phone, website, description)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
       [
         name,
         city_id ? parseInt(city_id) : null,
@@ -434,10 +436,22 @@ router.post("/businesses/new", async (req, res) => {
         description || null,
       ]
     );
+
+    // Create free-tier subscription for the new business
+    await client.query(`
+      INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+      SELECT $1, sp.id, 'active', 'none'
+      FROM subscription_plans sp WHERE sp.slug = 'free'
+    `, [rows[0].id]);
+
+    await client.query("COMMIT");
     res.redirect("/admin/businesses");
   } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("Eroare:", err);
     res.status(500).send("Eroare la salvare");
+  } finally {
+    client.release();
   }
 });
 
@@ -1575,6 +1589,13 @@ router.post("/business-requests/:id/approve", async (req, res) => {
       "INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)",
       [request.user_id, businessId]
     );
+
+    // Create free-tier subscription for the new business
+    await client.query(`
+      INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+      SELECT $1, sp.id, 'active', 'none'
+      FROM subscription_plans sp WHERE sp.slug = 'free'
+    `, [businessId]);
 
     // Update user role to business_owner if currently just 'user'
     await client.query(

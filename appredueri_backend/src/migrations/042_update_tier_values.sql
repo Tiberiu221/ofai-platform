@@ -24,6 +24,9 @@ UPDATE subscription_plans SET
 WHERE slug = 'standard';
 
 -- PREMIUM plan: cap gallery at 32 (was unlimited)
+-- NOTE (9 Mar 2026): This line was SKIPPED when running on production because
+-- migration 045_premium_gallery_64.sql (already applied) set max_gallery_images = 64.
+-- Running this after 045 would regress the value from 64 → 32.
 UPDATE subscription_plans SET
   max_gallery_images = 32
 WHERE slug = 'premium';
