@@ -294,15 +294,15 @@ Apoi: `(esc(data.reason) || 'Date insuficiente')` la linia 2559.
 | 2 | CSRF bypass | index.js | Mediu | ✅ DONE |
 | 3 | Banned users mobile | auth.js | Zero | ✅ DONE |
 | 4 | onclick XSS | business-detail.ejs, offer-detail.ejs | Scazut | ✅ DONE |
-| 5 | offer.business! null | offer_detail_screen.dart | Zero | ❌ PENDING |
+| 5 | offer.business! null | offer_detail_screen.dart | Zero | ✅ DONE |
 | 6 | debugPrint → print | main.dart, 2 providers | Zero | ✅ DONE |
 | 7 | analytics action types | offer_detail_screen.dart | Zero | ✅ DONE |
 | 8 | delete account OAuth | delete_account_screen.dart | Scazut | ✅ DONE |
 | 9 | _checkAuth offline | auth_provider.dart | Scazut | ✅ DONE |
 | 10 | Migration 041 | migrations/ | Zero (IF NOT EXISTS) | ✅ DONE |
-| 11 | Legacy migrations cleanup | migrations/ | Scazut | ⚠️ PARTIAL (dir exists, not renamed) |
+| 11 | Legacy migrations cleanup | migrations/ | Scazut | ✅ DONE (directory deleted) |
 | 12 | n8n URL cleanup | n8n.js | Zero in prod | ✅ DONE |
 | 13 | Google Client ID | api_endpoints.dart | Mediu (build flow) | ✅ DONE |
 | 14 | Competitive innerHTML | manage.ejs | LOW | ✅ DONE |
 
-**Total: 14 fix-uri — 12 DONE, 1 PARTIAL, 1 PENDING (Flutter force-unwrap)**
+**Total: 14 fix-uri — ALL DONE**
