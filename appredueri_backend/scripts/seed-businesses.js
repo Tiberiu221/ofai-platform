@@ -1,10 +1,8 @@
 /**
- * Seed script: Populeaza baza de date cu 450 business-uri fictive romanesti
+ * Seed script: 150 business-uri in Bucuresti (10 per categorie × 15 categorii)
+ * Fiecare business: 1 locatie + free plan + program + catalog + 2 oferte active
  *
- * Structura: 15 orase x 15 categorii x 2 per pereche = 450 business-uri
- * Fiecare business: 1-2 locatii + 2-3 oferte
- *
- * Rulare: node scripts/seed-businesses.js
+ * Rulare: cd appredueri_backend && node scripts/seed-businesses.js
  */
 
 require("dotenv").config();
@@ -12,7 +10,10 @@ const { Pool } = require("pg");
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false }
+      : false,
   max: 5,
   statement_timeout: 30000,
 });
@@ -36,1027 +37,822 @@ const CATEGORIES = [
   "Foto & Video",
 ];
 
-// ─── ORASE CU COORDONATE ────────────────────────────────────
-const CITIES = [
-  { name: "Bucuresti/Ilfov",     lat: 44.4268, lng: 26.1025, radius: 0.06 },
-  { name: "Cluj-Napoca",   lat: 46.7712, lng: 23.6236, radius: 0.04 },
-  { name: "Timisoara",     lat: 45.7489, lng: 21.2087, radius: 0.04 },
-  { name: "Iasi",          lat: 47.1585, lng: 27.6014, radius: 0.04 },
-  { name: "Constanta",     lat: 44.1598, lng: 28.6348, radius: 0.04 },
-  { name: "Craiova",       lat: 44.3302, lng: 23.7949, radius: 0.03 },
-  { name: "Brasov",        lat: 45.6427, lng: 25.5887, radius: 0.03 },
-  { name: "Galati",        lat: 45.4353, lng: 28.0080, radius: 0.03 },
-  { name: "Oradea",        lat: 47.0465, lng: 21.9189, radius: 0.03 },
-  { name: "Sibiu",         lat: 45.7983, lng: 24.1256, radius: 0.03 },
-  { name: "Ploiesti",      lat: 44.9462, lng: 26.0234, radius: 0.03 },
-  { name: "Arad",          lat: 46.1866, lng: 21.3123, radius: 0.03 },
-  { name: "Pitesti",       lat: 44.8565, lng: 24.8692, radius: 0.02 },
-  { name: "Baia Mare",     lat: 47.6567, lng: 23.5850, radius: 0.02 },
-  { name: "Targu Mures",   lat: 46.5455, lng: 24.5625, radius: 0.02 },
-];
+// ─── BUCURESTI ───────────────────────────────────────────────
+const CITY = {
+  name: "Bucuresti/Ilfov",
+  lat: 44.4268,
+  lng: 26.1025,
+  radius: 0.06,
+};
 
-// ─── STRAZI ROMANESTI ────────────────────────────────────────
+// ─── STRAZI ──────────────────────────────────────────────────
 const STREETS = [
-  "Str. Republicii", "Str. Mihai Eminescu", "Str. Avram Iancu",
-  "Str. Nicolae Balcescu", "Str. Victoriei", "Str. Stefan cel Mare",
-  "Str. Traian", "Str. Decebal", "Str. 1 Decembrie", "Str. Unirii",
-  "Str. Libertatii", "Str. Progresului", "Str. Cuza Voda", "Str. Horea",
-  "Str. Closca", "Str. Crisan", "Str. Tudor Vladimirescu", "Str. Mircea cel Batran",
-  "Str. Alexandru Ioan Cuza", "Str. Gheorghe Doja",
-  "Str. Vasile Alecsandri", "Str. Ion Creanga", "Str. Mihail Kogalniceanu",
-  "Str. Lucian Blaga", "Str. George Enescu", "Str. Nicolae Iorga",
-  "Str. Petru Rares", "Str. Mihai Viteazu", "Str. Carpati",
-  "Str. Florilor", "Str. Primaverii", "Str. Rozelor", "Str. Lalelelor",
-  "Str. Soarelui", "Str. Lunii", "Str. Pacii", "Str. Muncii",
-  "Str. Industriei", "Str. Fabricii", "Str. Teilor",
-  "Bvd. Ferdinand", "Bvd. Republicii", "Bvd. Eroilor", "Bvd. Independentei",
-  "Bvd. Tomis", "Bvd. Brancoveanu", "Calea Victoriei", "Calea Mosilor",
-  "Calea Dorobanti", "Calea Grivitei",
+  "Str. Republicii",
+  "Str. Mihai Eminescu",
+  "Str. Avram Iancu",
+  "Str. Nicolae Balcescu",
+  "Str. Victoriei",
+  "Str. Stefan cel Mare",
+  "Str. Traian",
+  "Str. Decebal",
+  "Str. 1 Decembrie",
+  "Str. Unirii",
+  "Str. Libertatii",
+  "Str. Progresului",
+  "Str. Cuza Voda",
+  "Str. Horea",
+  "Str. Closca",
+  "Str. Crisan",
+  "Str. Tudor Vladimirescu",
+  "Str. Mircea cel Batran",
+  "Str. Alexandru Ioan Cuza",
+  "Str. Gheorghe Doja",
+  "Bvd. Ferdinand",
+  "Bvd. Republicii",
+  "Bvd. Eroilor",
+  "Bvd. Independentei",
+  "Calea Victoriei",
+  "Calea Mosilor",
+  "Calea Dorobanti",
+  "Calea Grivitei",
+  "Str. Florilor",
+  "Str. Primaverii",
 ];
 
-// ─── NUME BUSINESS PER CATEGORIE (15 per categorie) ─────────
-const BUSINESS_NAMES = {
-  "Clinica": [
-    "MedLife", "Sanador", "ProMedic", "CareClinic", "VitaCare",
-    "MedCenter", "HealthPlus", "SanaVita", "MedExpert", "UrgentMed",
-    "PrimaMed", "NovaMed", "EuroClinic", "FamilyMed", "MedPro",
+// ─── UNSPLASH PHOTO IDS PER CATEGORIE ───────────────────────
+// Format: https://images.unsplash.com/{ID}?w=WIDTH&h=HEIGHT&fit=crop
+const UNSPLASH_PHOTOS = {
+  Clinica: [
+    "photo-1629909613654-28e377c37b09",
+    "photo-1631507623121-eaaba8d4e7dc",
+    "photo-1519494026892-80bbd2d6fd0d",
+    "photo-1551076805-e1869033e561",
   ],
-  "Frizerie": [
-    "Gentleman Barber", "The Barber", "ClassicCut", "OldSchool Barber", "ClipArt",
-    "FreshCut", "StyleCut", "TopBarber", "SharpEdge", "BladeMaster",
-    "UrbanBarber", "VintageBarber", "PrimeCut", "RoyalBarber", "BarberShop",
+  Frizerie: [
+    "photo-1661542350224-8e3f095ce053",
+    "photo-1503951914875-452162b0f3f1",
+    "photo-1536520002442-39764a41e987",
+    "photo-1621605815971-fbc98d665033",
   ],
-  "Beauty": [
-    "GlamBeauty", "BeautyZone", "LuxBeauty", "DivaStyle", "NailsArt",
-    "BeautyLab", "GlowUp", "PrettyPlease", "ArtNails", "SilkSkin",
-    "VelvetTouch", "RoseBeauty", "PearlNails", "ShineStar", "BellaVita",
+  Beauty: [
+    "photo-1661281275452-744317772b99",
+    "photo-1616394584738-fc6e612e71b9",
+    "photo-1633681926022-84c23e8cb2d6",
+    "photo-1589710751893-f9a6770ad71b",
   ],
-  "Auto": [
-    "AutoPro", "SpeedService", "TurboFix", "CarCare", "MasterAuto",
-    "QuickFix Auto", "DriveService", "AutoExpert", "MotorPlus", "PitStop",
-    "WheelDeal", "AutoMaster", "TopGear", "RevService", "ProMotor",
+  Auto: [
+    "photo-1661411119301-8cae0adce9a7",
+    "photo-1625047509248-ec889cbff17f",
+    "photo-1619642751034-765dfdf7c58e",
+    "photo-1596986952526-3be237187071",
   ],
   "Magazine Online": [
-    "eShop Romania", "MegaStore", "ShopNow", "OnlineMall", "ClickBuy",
-    "FastShop", "NetMart", "DigiStore", "WebShop", "SmartBuy",
-    "QuickMart", "ProShop", "TopDeal", "BestPrice", "ValueShop",
+    "photo-1681488262364-8aeb1b6aac56",
+    "photo-1563013544-824ae1b704d3",
+    "photo-1664455340023-214c33a9d0bd",
+    "photo-1483985988355-763728e1935b",
   ],
-  "Cafenea": [
-    "Coffee Lab", "Brew & Co", "Espresso Bar", "Cafea de Specialitate", "Bean There",
-    "Morning Cup", "ArtCafe", "UrbanCafe", "Ceainaria", "Latteland",
-    "MochaMix", "Cappuccino Corner", "Roast Republic", "Daily Grind", "Java House",
+  Cafenea: [
+    "photo-1664970900025-1e3099ca757a",
+    "photo-1453614512568-c4024d13c247",
+    "photo-1600093463592-8e36ae95ef56",
+    "photo-1495474472287-4d71bcdd2085",
   ],
-  "Fitness": [
-    "PowerGym", "FitZone", "CrossFit Arena", "Body Shape", "IronClub",
-    "FlexGym", "StrongLife", "MuscleFactory", "FitPro", "ActiveLife",
-    "Olympus Gym", "TitanFit", "EnergyClub", "AthleteZone", "MaxFit",
+  Fitness: [
+    "photo-1534438327276-14e5300c3a48",
+    "photo-1526506118085-60ce8714f8c5",
+    "photo-1517836357463-d25dfeac3438",
+    "photo-1733328015522-c497d190f74b",
   ],
   "Spa & Wellness": [
-    "Zen Spa", "RelaxZone", "OasisSpa", "AquaVita", "Serenity",
-    "HarmonyWell", "PureBliss", "TranquilSpa", "VitaSpa", "NaturaSpa",
-    "GoldenSpa", "EdenWellness", "Lotus Spa", "CloudNine", "PeacefulMind",
+    "photo-1683134297492-cce5fc6dae31",
+    "photo-1696841212541-449ca29397cc",
+    "photo-1600334089648-b0d9d3028eb2",
+    "photo-1741522509438-a120c0bb5e88",
   ],
-  "Optica": [
-    "VisionPlus", "OchelariExpress", "ClearView", "OpticaPro", "EyeCare",
-    "LensCenter", "OptiBest", "SmartOptic", "FocusOptic", "SeeWell",
-    "BrightEyes", "OpticExpert", "ViewMaster", "FrameArt", "OpticStyle",
+  Optica: [
+    "photo-1664304180276-4ef02afe2b5e",
+    "photo-1646083774155-2a40b675641d",
+    "photo-1743183988213-d5e24edf3dc8",
+    "photo-1772470461164-2b71e5d59db1",
   ],
-  "Farmacie": [
-    "FarmVita", "SanFarm", "HealthPharm", "GreenPharm", "PlantaFarm",
-    "FarmaPlus", "NaturaPharm", "BioFarm", "VitaPharm", "MedFarm",
-    "CuraFarm", "PrimFarm", "RoyalPharm", "FarmExpert", "DoroFarm",
+  Farmacie: [
+    "photo-1663047392930-7c1c31d7b785",
+    "photo-1576602976047-174e57a47881",
+    "photo-1642055514517-7b52288890ec",
+    "photo-1631549916768-4119b2e5f926",
   ],
-  "Veterinar": [
-    "VetCare", "PetClinic", "AnimalPlus", "VetExpert", "PawsClinic",
-    "HappyPet", "VetPro", "AnimalCare", "PetHealth", "FurFriend",
-    "VetZone", "PetLife", "WildCare", "VetMaster", "4Paws Clinic",
+  Veterinar: [
+    "photo-1661942274165-00cc8d55a93f",
+    "photo-1654895716780-b4664497420d",
+    "photo-1551076805-e1869033e561",
+    "photo-1602052577122-f73b9710adba",
   ],
-  "Stomatologie": [
-    "DentPro", "SmileCare", "BrightSmile", "DentalExpert", "ToothFairy",
-    "WhiteSmile", "DentCenter", "PerfectSmile", "OralCare", "DentVita",
-    "SmileLab", "DentalArts", "ProDent", "SmileDesign", "ClearDent",
+  Stomatologie: [
+    "photo-1681966962522-546f370bc98e",
+    "photo-1598256989800-fe5f95da9787",
+    "photo-1629909613654-28e377c37b09",
+    "photo-1643660526741-094639fbe53a",
   ],
-  "Florarie": [
-    "FloraDesign", "PetalArt", "BouquetExpress", "RoseGarden", "BloomShop",
-    "FloralMagic", "GardenOfEden", "PetalShop", "FloraVita", "WildFlowers",
-    "FloristPro", "FlowerPower", "Buchetino", "PrimaveraFlori", "FloraLux",
+  Florarie: [
+    "photo-1661292066962-48e5815dc7ce",
+    "photo-1589244159943-460088ed5c92",
+    "photo-1565695951564-007d8f297e48",
+    "photo-1531058240690-006c446962d8",
   ],
-  "Curatatorie": [
-    "CleanPro", "SpotlessClean", "FreshWash", "QuickClean", "Curatatoria",
-    "SparkleClean", "PureClean", "WashExpert", "CleanMaster", "DiamondClean",
-    "ShinyClean", "ProWash", "CrystalClean", "GreenClean", "SwiftClean",
+  Curatatorie: [
+    "photo-1682129257696-dfe914806043",
+    "photo-1549037173-e3b717902c57",
+    "photo-1451933335233-c41672c8f378",
+    "photo-1520434901111-8e9bcb42c628",
   ],
   "Foto & Video": [
-    "SnapStudio", "FotoArt", "PixelPerfect", "CaptureStudio", "LensArt",
-    "FlashFoto", "PhotoExpert", "FrameStudio", "VisionMedia", "ShutterPro",
-    "CreativeShot", "PhotoVision", "StudioLight", "ImagePro", "LensStudio",
+    "photo-1714618939758-84f1dd5e229c",
+    "photo-1617463874381-85b513b3e991",
+    "photo-1471341971476-ae15ff5dd4ea",
+    "photo-1615458509636-856366d3396e",
   ],
 };
 
-// ─── SUFIXE PENTRU UNICITATE ─────────────────────────────────
-const SUFFIXES = [
-  "", " Plus", " Premium", " Pro", " Center", " Studio",
-  " Express", " VIP", " Select", " Elite",
-];
-
-// ─── DESCRIERI PER CATEGORIE (4 per categorie) ──────────────
-const DESCRIPTIONS = {
-  "Clinica": [
-    "Clinica medicala moderna cu echipamente de ultima generatie. Oferim consultatii in peste 15 specialitati medicale, analize de laborator si imagistica. Echipa noastra de medici cu experienta va sta la dispozitie.",
-    "Centru medical multidisciplinar dedicat sanatatii dumneavoastra. Programari rapide, rezultate in aceeasi zi si o echipa de specialisti de top. Acceptam toate asigurarile de sanatate.",
-    "Clinica de familie cu traditie in ingrijirea medicala de calitate. Oferim consultatii, vaccinari, medicina muncii si check-up-uri complete. Medici atenti si profesionisti.",
-    "Centru medical de excelenta cu tehnologie avansata si personal dedicat. Consultatii in toate specialitatile, laborator propriu si radiologie digitala. Grija pentru sanatatea ta este prioritatea noastra.",
+// ─── NUME BUSINESS PER CATEGORIE (10 per categorie) ─────────
+const BUSINESS_NAMES = {
+  Clinica: [
+    "MedLife",
+    "Sanador",
+    "ProMedic",
+    "CareClinic",
+    "VitaCare",
+    "MedCenter",
+    "HealthPlus",
+    "SanaVita",
+    "MedExpert",
+    "UrgentMed",
   ],
-  "Frizerie": [
-    "Frizerie barbateasca cu atmosfera retro si servicii premium. Tuns clasic, barba, si grooming complet cu produse profesionale. Experienta barbieriei traditionale adaptata la stilul modern.",
-    "Barbershop urban cu stil si atitudine. Oferim tunsori moderne, ingrijire barba si tratamente pentru par. Fiecare vizita este o experienta de relaxare si stil.",
-    "Salon barbatesc dedicat celor care apreciaza detaliile. Tunsori personalizate, barba sculptata si produse de calitate superioara. Programari flexibile si atmosfera prietenoasa.",
-    "Frizerie profesionala cu barberi experimentati. De la tuns clasic la fade modern, de la barba traditionala la conturare precisa. Venim cu stilul, tu pleci cu incredere.",
+  Frizerie: [
+    "Gentleman Barber",
+    "The Barber",
+    "ClassicCut",
+    "OldSchool Barber",
+    "ClipArt",
+    "FreshCut",
+    "StyleCut",
+    "TopBarber",
+    "SharpEdge",
+    "BladeMaster",
   ],
-  "Beauty": [
-    "Salon de infrumusetare complet cu servicii de manichiura, pedichiura, cosmetica si extensii gene. Folosim doar produse premium si tehnici de ultima generatie pentru rezultate impecabile.",
-    "Studio de beauty dedicat femeilor moderne. Oferim manichiura semipermanenta, tratamente faciale, epilare si make-up profesional. Atmosfera relaxanta si rezultate vizibile.",
-    "Centru de frumusete cu o gama completa de servicii estetice. De la ingrijirea unghiilor la tratamente corporale avansate, echipa noastra te ajuta sa arati si sa te simti extraordinar.",
-    "Salon premium de beauty cu specialisti certificati. Oferim servicii personalizate de cosmetica, manichiura artistica, tratamente anti-aging si consultatii de imagine. Frumusetea ta, misiunea noastra.",
+  Beauty: [
+    "GlamBeauty",
+    "BeautyZone",
+    "LuxBeauty",
+    "DivaStyle",
+    "NailsArt",
+    "BeautyLab",
+    "GlowUp",
+    "PrettyPlease",
+    "ArtNails",
+    "SilkSkin",
   ],
-  "Auto": [
-    "Service auto complet cu diagnosticare computerizata si mecanici experimentati. Reparatii mecanice, electrice, tinichigerie si vopsitorie. Piese originale si garantie pentru toate lucrarile.",
-    "Centru auto profesional pentru intretinere si reparatii. Schimb ulei, revizie completa, geometrie roti si climatizare. Preturi transparente si lucrari rapide cu programare.",
-    "Atelier auto de incredere cu peste 10 ani de experienta. Diagnosticare, reparatii motor, cutie de viteze si sisteme de franare. Oferim consultanta gratuita si estimari de cost.",
-    "Service auto modern echipat cu tehnologie de ultima generatie. De la revizia periodica la reparatii complexe, echipa noastra asigura siguranta si performanta vehiculului tau.",
+  Auto: [
+    "AutoPro",
+    "SpeedService",
+    "TurboFix",
+    "CarCare",
+    "MasterAuto",
+    "QuickFix Auto",
+    "DriveService",
+    "AutoExpert",
+    "MotorPlus",
+    "PitStop",
   ],
   "Magazine Online": [
-    "Magazin online cu o gama variata de produse la preturi competitive. Livrare rapida in toata tara, retur gratuit in 30 de zile si plata in rate fara dobanda. Cumpara simplu si sigur.",
-    "Platforma de cumparaturi online cu mii de produse din toate categoriile. Oferte zilnice, coduri de reducere si transport gratuit la comenzi peste 150 lei. Experienta de shopping moderna.",
-    "Magazin online de incredere cu produse originale si garantie completa. Livrare in 24h in orasele mari, plata la livrare sau online. Echipa de suport disponibila 7 zile pe saptamana.",
-    "E-commerce romanesc cu focus pe calitate si preturi accesibile. Gama larga de produse, recenzii verificate si program de fidelitate cu puncte de loialitate. Cumpara inteligent!",
+    "eShop Romania",
+    "MegaStore",
+    "ShopNow",
+    "OnlineMall",
+    "ClickBuy",
+    "FastShop",
+    "NetMart",
+    "DigiStore",
+    "WebShop",
+    "SmartBuy",
   ],
-  "Cafenea": [
-    "Cafenea de specialitate cu boabe selectate din cele mai bune plantatii. Preparare manuala, latte art si o atmosfera perfecta pentru lucru sau relaxare. Servim si deserturi artizanale.",
-    "Spatiu creativ dedicat iubitorilor de cafea buna. Espresso, filter, cold brew si specialitati de sezon. Retete proprii de prajituri si un ambient care te inspira.",
-    "Cafenea urbana cu personalitate. Cafea prajita local, ceaiuri premium si smoothie-uri fresh. Loc ideal pentru intalniri, studiu sau pur si simplu o pauza din rutina zilnica.",
-    "Coffee shop cu suflet si aroma. Selectam cu grija fiecare sortiment de cafea, oferim alternative vegetale si deserturi fara gluten. Wi-Fi gratuit si atmosfera prietenoasa.",
+  Cafenea: [
+    "Coffee Lab",
+    "Brew & Co",
+    "Espresso Bar",
+    "Cafea de Specialitate",
+    "Bean There",
+    "Morning Cup",
+    "ArtCafe",
+    "UrbanCafe",
+    "Ceainaria",
+    "Latteland",
   ],
-  "Fitness": [
-    "Sala de fitness complet echipata cu aparate de ultima generatie. Zone dedicate pentru cardio, forta si functional training. Antrenori personali certificati si clase de grup variate.",
-    "Club de fitness premium cu facilitati complete. Sala de forta, zona cardio, studio de cycling si spatiu pentru antrenamente functionale. Dusuri, sauna si parcare gratuita incluse.",
-    "Centru de fitness dedicat performantei si sanatatii. Programe personalizate, nutritie sportiva si evaluari periodice. De la incepatori la avansati, fiecare membru conteaza.",
-    "Gym modern cu o comunitate activa si motivanta. Echipamente Technogym, clase de HIIT, yoga si pilates. Abonamente flexibile si acces extins 6:00-23:00.",
+  Fitness: [
+    "PowerGym",
+    "FitZone",
+    "CrossFit Arena",
+    "Body Shape",
+    "IronClub",
+    "FlexGym",
+    "StrongLife",
+    "MuscleFactory",
+    "FitPro",
+    "ActiveLife",
   ],
   "Spa & Wellness": [
-    "Centru spa premium cu o gama completa de tratamente de relaxare si frumusete. Masaj, sauna, jacuzzi si ritualuri de spa personalizate. O oaza de liniste in mijlocul orasului.",
-    "Spa boutique dedicat bunastarii tale. Tratamente cu produse naturale, masaje terapeutice si ritualuri de detoxifiere. Fiecare vizita este o calatorie spre echilibru si armonie.",
-    "Centru wellness cu abordare holistica. Combinam terapii traditionale cu tehnici moderne pentru o experienta unica. Sauna finlandeza, bai turcesti si zona de relaxare premium.",
-    "Destinatie de relaxare cu facilitati de top. Oferim masaje suedeze, aromaterapie, reflexoterapie si pachet de spa pentru cupluri. Rezerva-ti momentul tau de liniste.",
+    "Zen Spa",
+    "RelaxZone",
+    "OasisSpa",
+    "AquaVita",
+    "Serenity",
+    "HarmonyWell",
+    "PureBliss",
+    "TranquilSpa",
+    "VitaSpa",
+    "NaturaSpa",
   ],
-  "Optica": [
-    "Optica medicala cu o selectie larga de rame si lentile de la branduri de top. Consult oftalmologic, lentile de contact si ochelari de soare. Servicii de calitate la preturi accesibile.",
-    "Centru optic modern cu echipamente de diagnostic avansat. Oferim consultatii, ochelari de vedere, lentile progresive si lentile de contact. Garantie si service post-vanzare incluse.",
-    "Optica premium cu colectii exclusive de rame designer. Lentile Zeiss si Essilor, consultatii personalizate si ajustari gratuite. Investeste in vederea ta cu specialistii nostri.",
-    "Magazin optic cu traditie si profesionalism. Gama variata de ochelari de vedere si soare, lentile de contact zilnice si lunare. Consult gratuit si montaj in aceeasi zi.",
+  Optica: [
+    "VisionPlus",
+    "OchelariExpress",
+    "ClearView",
+    "OpticaPro",
+    "EyeCare",
+    "LensCenter",
+    "OptiBest",
+    "SmartOptic",
+    "FocusOptic",
+    "SeeWell",
   ],
-  "Farmacie": [
-    "Farmacie cu o gama completa de medicamente, suplimente si produse dermato-cosmetice. Consiliere farmaceutica personalizata si preturi competitive. Deschis 7 zile pe saptamana.",
-    "Farmacie comunitara dedicata sanatatii tale. Medicamente cu si fara reteta, produse naturiste si echipamente medicale. Personal calificat gata sa te ajute cu orice intrebare.",
-    "Farmacie moderna cu servicii extinse. Testare rapida, masurare tensiune, consiliere nutritionala si preparare retete magistrale. Farmacisti cu experienta la dispozitia ta.",
-    "Parafarmacia ta de incredere cu produse de calitate. Gama larga de vitamine, suplimente, cosmetice si produse pentru ingrijirea bebelusului. Promotii saptamanale si card de fidelitate.",
+  Farmacie: [
+    "FarmVita",
+    "SanFarm",
+    "HealthPharm",
+    "GreenPharm",
+    "PlantaFarm",
+    "FarmaPlus",
+    "NaturaPharm",
+    "BioFarm",
+    "VitaPharm",
+    "MedFarm",
   ],
-  "Veterinar": [
-    "Clinica veterinara cu servicii complete pentru animalele tale de companie. Consultatii, vaccinari, chirurgie si stomatologie veterinara. Medici cu experienta si dragoste pentru animale.",
-    "Cabinet veterinar modern echipat cu laborator propriu si ecograf. Oferim consultatii, deparazitare, microcipare si consiliere nutritionala. Urgente disponibile 24/7.",
-    "Centru veterinar dedicat sanatatii si bunastarii animalelor. De la consultatii de rutina la interventii chirurgicale, echipa noastra ofera ingrijire de cel mai inalt nivel.",
-    "Clinica veterinara prietenoasa cu personal pasionat. Servicii pentru caini, pisici, rozatoare si pasari. Grooming, pensiune si pet shop integrat. Animalul tau merita ce e mai bun.",
+  Veterinar: [
+    "VetCare",
+    "PetClinic",
+    "AnimalPlus",
+    "VetExpert",
+    "PawsClinic",
+    "HappyPet",
+    "VetPro",
+    "AnimalCare",
+    "PetHealth",
+    "FurFriend",
   ],
-  "Stomatologie": [
-    "Cabinet stomatologic modern cu echipamente digitale de ultima generatie. Oferim tratamente de endodontie, protetice, ortodontie si estetica dentara. Zambet perfect cu grija pentru confortul tau.",
-    "Clinica dentara de familie cu medici specialisti in toate ramurile stomatologiei. Implantologie, fatete dentare, albire profesionala si stomatologie pediatrica. Programari fara timp de asteptare.",
-    "Centru de stomatologie estetica si restaurativa. Folosim materiale premium si tehnici minim invazive pentru rezultate naturale si durabile. Sedare constienta disponibila.",
-    "Cabinet dentar cu abordare moderna si atenta. De la detartraj la reconstructii complexe, fiecare tratament este personalizat. Radiografie digitala si scanner intraoral 3D.",
+  Stomatologie: [
+    "DentPro",
+    "SmileCare",
+    "BrightSmile",
+    "DentalExpert",
+    "ToothFairy",
+    "WhiteSmile",
+    "DentCenter",
+    "PerfectSmile",
+    "OralCare",
+    "DentVita",
   ],
-  "Florarie": [
-    "Florarie cu aranjamente florale unice pentru orice ocazie. Buchete proaspete zilnic, aranjamente pentru evenimente si plante de interior. Livrare rapida in tot orasul.",
-    "Atelier floral creativ cu flori proaspete din Olanda si productie locala. Buchete personalizate, decoratiuni pentru nunti si abonamente florale pentru companii. Fiecare floare spune o poveste.",
-    "Florarie online si fizica cu o selectie variata de flori, plante si cadouri. Livrare in aceeasi zi, ambalaje premium si felicitari personalizate. Surprinde pe cineva drag!",
-    "Magazin de flori cu traditie si pasiune. Aranjamente clasice si moderne, plante rare si accesorii decorative. Consultanta gratuita pentru evenimente si decoruri speciale.",
+  Florarie: [
+    "FloraDesign",
+    "PetalArt",
+    "BouquetExpress",
+    "RoseGarden",
+    "BloomShop",
+    "FloralMagic",
+    "GardenOfEden",
+    "PetalShop",
+    "FloraVita",
+    "WildFlowers",
   ],
-  "Curatatorie": [
-    "Curatatorie profesionala cu tehnologie ecologica si delicata. Curatam haine, covoare, perdele si tapiterii auto cu produse biodegradabile. Ridicare si livrare la domiciliu disponibila.",
-    "Spalatorie si curatatorie chimica cu servicii premium. Tratamente speciale pentru piele, blana si materiale delicate. Calcare profesionala si ambalare pentru transport.",
-    "Curatatorie rapida cu rezultate impecabile. Servicii de curatare uscata, spalare, calcare si reparatii croitorie. Preturi competitive si abonamente pentru clienti fideli.",
-    "Centru profesional de curatare si intretinere textile. Curatam costume, rochii de mireasa, covoare orientale si articole de piele. Garantam calitatea fiecarui articol tratat.",
+  Curatatorie: [
+    "CleanPro",
+    "SpotlessClean",
+    "FreshWash",
+    "QuickClean",
+    "Curatatoria",
+    "SparkleClean",
+    "PureClean",
+    "WashExpert",
+    "CleanMaster",
+    "DiamondClean",
   ],
   "Foto & Video": [
-    "Studio foto profesional cu echipament de top si fotografi experimentati. Sedinte foto portret, corporate, produs si eveniment. Editare profesionala si livrare rapida.",
-    "Studio de fotografie si videografie pentru toate ocaziile. Nunti, botezuri, sesiuni corporate si continut pentru social media. Drone disponibile si editare cinematografica.",
-    "Atelier foto-video cu abordare artistica si moderna. Sedinte foto in studio sau exterior, clipuri promotionale si fotografie de produs. Rezultate creative care impresioneaza.",
-    "Servicii complete de fotografie si productie video. De la portrete profesionale la campanii de marketing vizual. Echipament Canon si Sony de ultima generatie.",
+    "SnapStudio",
+    "FotoArt",
+    "PixelPerfect",
+    "CaptureStudio",
+    "LensArt",
+    "FlashFoto",
+    "PhotoExpert",
+    "FrameStudio",
+    "VisionMedia",
+    "ShutterPro",
+  ],
+};
+
+// ─── DESCRIERI PER CATEGORIE ─────────────────────────────────
+const DESCRIPTIONS = {
+  Clinica: [
+    "Clinica medicala moderna cu echipamente de ultima generatie. Oferim consultatii in peste 15 specialitati medicale, analize de laborator si imagistica.",
+    "Centru medical multidisciplinar dedicat sanatatii dumneavoastra. Programari rapide, rezultate in aceeasi zi si o echipa de specialisti de top.",
+    "Clinica de familie cu traditie in ingrijirea medicala de calitate. Oferim consultatii, vaccinari, medicina muncii si check-up-uri complete.",
+    "Centru medical de excelenta cu tehnologie avansata si personal dedicat. Consultatii in toate specialitatile, laborator propriu si radiologie digitala.",
+  ],
+  Frizerie: [
+    "Frizerie barbateasca cu atmosfera retro si servicii premium. Tuns clasic, barba, si grooming complet cu produse profesionale.",
+    "Barbershop urban cu stil si atitudine. Oferim tunsori moderne, ingrijire barba si tratamente pentru par.",
+    "Salon barbatesc dedicat celor care apreciaza detaliile. Tunsori personalizate, barba sculptata si produse de calitate superioara.",
+    "Frizerie profesionala cu barberi experimentati. De la tuns clasic la fade modern, de la barba traditionala la conturare precisa.",
+  ],
+  Beauty: [
+    "Salon de infrumusetare complet cu servicii de manichiura, pedichiura, cosmetica si extensii gene. Folosim doar produse premium.",
+    "Studio de beauty dedicat femeilor moderne. Oferim manichiura semipermanenta, tratamente faciale, epilare si make-up profesional.",
+    "Centru de frumusete cu o gama completa de servicii estetice. De la ingrijirea unghiilor la tratamente corporale avansate.",
+    "Salon premium de beauty cu specialisti certificati. Oferim servicii personalizate de cosmetica, manichiura artistica si tratamente anti-aging.",
+  ],
+  Auto: [
+    "Service auto complet cu diagnosticare computerizata si mecanici experimentati. Reparatii mecanice, electrice, tinichigerie si vopsitorie.",
+    "Centru auto profesional pentru intretinere si reparatii. Schimb ulei, revizie completa, geometrie roti si climatizare.",
+    "Atelier auto de incredere cu peste 10 ani de experienta. Diagnosticare, reparatii motor, cutie de viteze si sisteme de franare.",
+    "Service auto modern echipat cu tehnologie de ultima generatie. De la revizia periodica la reparatii complexe.",
+  ],
+  "Magazine Online": [
+    "Magazin online cu o gama variata de produse la preturi competitive. Livrare rapida in toata tara, retur gratuit in 30 de zile.",
+    "Platforma de cumparaturi online cu mii de produse din toate categoriile. Oferte zilnice si transport gratuit la comenzi peste 150 lei.",
+    "Magazin online de incredere cu produse originale si garantie completa. Livrare in 24h in orasele mari.",
+    "E-commerce romanesc cu focus pe calitate si preturi accesibile. Gama larga de produse si recenzii verificate.",
+  ],
+  Cafenea: [
+    "Cafenea de specialitate cu boabe selectate din cele mai bune plantatii. Preparare manuala, latte art si deserturi artizanale.",
+    "Spatiu creativ dedicat iubitorilor de cafea buna. Espresso, filter, cold brew si specialitati de sezon.",
+    "Cafenea urbana cu personalitate. Cafea prajita local, ceaiuri premium si smoothie-uri fresh.",
+    "Coffee shop cu suflet si aroma. Selectam cu grija fiecare sortiment de cafea, oferim alternative vegetale si deserturi fara gluten.",
+  ],
+  Fitness: [
+    "Sala de fitness complet echipata cu aparate de ultima generatie. Zone dedicate pentru cardio, forta si functional training.",
+    "Club de fitness premium cu facilitati complete. Sala de forta, zona cardio, studio de cycling si spatiu pentru antrenamente functionale.",
+    "Centru de fitness dedicat performantei si sanatatii. Programe personalizate, nutritie sportiva si evaluari periodice.",
+    "Gym modern cu o comunitate activa si motivanta. Echipamente Technogym, clase de HIIT, yoga si pilates.",
+  ],
+  "Spa & Wellness": [
+    "Centru spa premium cu o gama completa de tratamente de relaxare si frumusete. Masaj, sauna, jacuzzi si ritualuri de spa personalizate.",
+    "Spa boutique dedicat bunastarii tale. Tratamente cu produse naturale, masaje terapeutice si ritualuri de detoxifiere.",
+    "Centru wellness cu abordare holistica. Combinam terapii traditionale cu tehnici moderne pentru o experienta unica.",
+    "Destinatie de relaxare cu facilitati de top. Oferim masaje suedeze, aromaterapie, reflexoterapie si pachet de spa pentru cupluri.",
+  ],
+  Optica: [
+    "Optica medicala cu o selectie larga de rame si lentile de la branduri de top. Consult oftalmologic si ochelari de soare.",
+    "Centru optic modern cu echipamente de diagnostic avansat. Oferim consultatii, ochelari de vedere si lentile progresive.",
+    "Optica premium cu colectii exclusive de rame designer. Lentile Zeiss si Essilor, consultatii personalizate.",
+    "Magazin optic cu traditie si profesionalism. Gama variata de ochelari de vedere si soare, lentile de contact zilnice si lunare.",
+  ],
+  Farmacie: [
+    "Farmacie cu o gama completa de medicamente, suplimente si produse dermato-cosmetice. Consiliere farmaceutica personalizata.",
+    "Farmacie comunitara dedicata sanatatii tale. Medicamente cu si fara reteta, produse naturiste si echipamente medicale.",
+    "Farmacie moderna cu servicii extinse. Testare rapida, masurare tensiune si preparare retete magistrale.",
+    "Parafarmacia ta de incredere cu produse de calitate. Gama larga de vitamine, suplimente si cosmetice.",
+  ],
+  Veterinar: [
+    "Clinica veterinara cu servicii complete pentru animalele tale de companie. Consultatii, vaccinari, chirurgie si stomatologie veterinara.",
+    "Cabinet veterinar modern echipat cu laborator propriu si ecograf. Oferim consultatii, deparazitare si microcipare.",
+    "Centru veterinar dedicat sanatatii si bunastarii animalelor. De la consultatii de rutina la interventii chirurgicale.",
+    "Clinica veterinara prietenoasa cu personal pasionat. Servicii pentru caini, pisici, rozatoare si pasari.",
+  ],
+  Stomatologie: [
+    "Cabinet stomatologic modern cu echipamente digitale de ultima generatie. Endodontie, protetice, ortodontie si estetica dentara.",
+    "Clinica dentara de familie cu medici specialisti. Implantologie, fatete dentare, albire profesionala si stomatologie pediatrica.",
+    "Centru de stomatologie estetica si restaurativa. Materiale premium si tehnici minim invazive pentru rezultate naturale.",
+    "Cabinet dentar cu abordare moderna si atenta. De la detartraj la reconstructii complexe, fiecare tratament este personalizat.",
+  ],
+  Florarie: [
+    "Florarie cu aranjamente florale unice pentru orice ocazie. Buchete proaspete zilnic si plante de interior.",
+    "Atelier floral creativ cu flori proaspete din Olanda si productie locala. Buchete personalizate si decoratiuni pentru nunti.",
+    "Florarie online si fizica cu o selectie variata de flori, plante si cadouri. Livrare in aceeasi zi.",
+    "Magazin de flori cu traditie si pasiune. Aranjamente clasice si moderne, plante rare si accesorii decorative.",
+  ],
+  Curatatorie: [
+    "Curatatorie profesionala cu tehnologie ecologica. Curatam haine, covoare, perdele si tapiterii auto cu produse biodegradabile.",
+    "Spalatorie si curatatorie chimica cu servicii premium. Tratamente speciale pentru piele, blana si materiale delicate.",
+    "Curatatorie rapida cu rezultate impecabile. Curatare uscata, spalare, calcare si reparatii croitorie.",
+    "Centru profesional de curatare si intretinere textile. Curatam costume, rochii de mireasa si covoare orientale.",
+  ],
+  "Foto & Video": [
+    "Studio foto profesional cu echipament de top si fotografi experimentati. Sedinte foto portret, corporate si eveniment.",
+    "Studio de fotografie si videografie pentru toate ocaziile. Nunti, botezuri, sesiuni corporate si continut social media.",
+    "Atelier foto-video cu abordare artistica si moderna. Sedinte foto in studio sau exterior, clipuri promotionale.",
+    "Servicii complete de fotografie si productie video. De la portrete profesionale la campanii de marketing vizual.",
   ],
 };
 
 // ─── BOOKING PER CATEGORIE ──────────────────────────────────
 const CATEGORY_BOOKING = {
-  "Clinica":        { type: "phone",    instructions: "Programare telefonica Luni-Vineri 8:00-18:00" },
-  "Frizerie":       { type: "whatsapp", instructions: "Trimite mesaj pe WhatsApp cu data si ora dorita" },
-  "Beauty":         { type: "whatsapp", instructions: "Programare prin WhatsApp. Raspundem in maxim 2 ore." },
-  "Auto":           { type: "phone",    instructions: "Suna pentru programare. Receptie Luni-Sambata 8:00-17:00" },
-  "Magazine Online": { type: "link",     instructions: "Cumpara direct de pe site. Livrare in toata tara." },
-  "Cafenea":        { type: "none",     instructions: null },
-  "Fitness":        { type: "phone",    instructions: "Suna pentru a te inscrie sau vino direct la receptie." },
-  "Spa & Wellness": { type: "whatsapp", instructions: "Rezervare prin WhatsApp cu minim 24h inainte." },
-  "Optica":         { type: "phone",    instructions: "Programare pentru consult: Luni-Vineri 9:00-17:00" },
-  "Farmacie":       { type: "none",     instructions: null },
-  "Veterinar":      { type: "phone",    instructions: "Programare telefonica. Urgente 24/7." },
-  "Stomatologie":   { type: "phone",    instructions: "Programare telefonica Luni-Vineri 9:00-19:00" },
-  "Florarie":       { type: "whatsapp", instructions: "Comenzi pe WhatsApp. Livrare in aceeasi zi!" },
-  "Curatatorie":    { type: "phone",    instructions: "Ridicare si livrare la domiciliu disponibila." },
-  "Foto & Video":   { type: "link",     instructions: "Rezerva sedinta foto online. Calendar disponibil pe site." },
+  Clinica: {
+    type: "phone",
+    instructions: "Programare telefonica Luni-Vineri 8:00-18:00",
+  },
+  Frizerie: {
+    type: "whatsapp",
+    instructions: "Trimite mesaj pe WhatsApp cu data si ora dorita",
+  },
+  Beauty: {
+    type: "whatsapp",
+    instructions: "Programare prin WhatsApp. Raspundem in maxim 2 ore.",
+  },
+  Auto: {
+    type: "phone",
+    instructions: "Suna pentru programare. Receptie Luni-Sambata 8:00-17:00",
+  },
+  "Magazine Online": {
+    type: "link",
+    instructions: "Cumpara direct de pe site. Livrare in toata tara.",
+  },
+  Cafenea: { type: "none", instructions: null },
+  Fitness: {
+    type: "phone",
+    instructions: "Suna pentru a te inscrie sau vino direct la receptie.",
+  },
+  "Spa & Wellness": {
+    type: "whatsapp",
+    instructions: "Rezervare prin WhatsApp cu minim 24h inainte.",
+  },
+  Optica: {
+    type: "phone",
+    instructions: "Programare pentru consult: Luni-Vineri 9:00-17:00",
+  },
+  Farmacie: { type: "none", instructions: null },
+  Veterinar: {
+    type: "phone",
+    instructions: "Programare telefonica. Urgente 24/7.",
+  },
+  Stomatologie: {
+    type: "phone",
+    instructions: "Programare telefonica Luni-Vineri 9:00-19:00",
+  },
+  Florarie: {
+    type: "whatsapp",
+    instructions: "Comenzi pe WhatsApp. Livrare in aceeasi zi!",
+  },
+  Curatatorie: {
+    type: "phone",
+    instructions: "Ridicare si livrare la domiciliu disponibila.",
+  },
+  "Foto & Video": {
+    type: "link",
+    instructions: "Rezerva sedinta foto online. Calendar disponibil pe site.",
+  },
 };
 
-// ─── DICEBEAR LOGO STYLES PER CATEGORIE ─────────────────────
-const LOGO_STYLES = {
-  "Clinica": "initials",
-  "Frizerie": "bottts",
-  "Beauty": "shapes",
-  "Auto": "identicon",
-  "Magazine Online": "shapes",
-  "Cafenea": "shapes",
-  "Fitness": "identicon",
-  "Spa & Wellness": "shapes",
-  "Optica": "initials",
-  "Farmacie": "initials",
-  "Veterinar": "bottts",
-  "Stomatologie": "initials",
-  "Florarie": "shapes",
-  "Curatatorie": "identicon",
-  "Foto & Video": "shapes",
+// ─── PROGRAM FUNCTIONARE PER CATEGORIE ──────────────────────
+// day_of_week: 0=Monday ... 6=Sunday (ISO)
+const BUSINESS_HOURS_TEMPLATES = {
+  Clinica: {
+    weekday: { open: "08:00", close: "20:00" },
+    saturday: { open: "09:00", close: "14:00" },
+    sunday: null,
+  },
+  Frizerie: {
+    weekday: { open: "09:00", close: "20:00" },
+    saturday: { open: "09:00", close: "18:00" },
+    sunday: null,
+  },
+  Beauty: {
+    weekday: { open: "09:00", close: "20:00" },
+    saturday: { open: "10:00", close: "18:00" },
+    sunday: null,
+  },
+  Auto: {
+    weekday: { open: "08:00", close: "18:00" },
+    saturday: { open: "08:00", close: "14:00" },
+    sunday: null,
+  },
+  "Magazine Online": {
+    weekday: { open: "09:00", close: "18:00" },
+    saturday: { open: "10:00", close: "14:00" },
+    sunday: null,
+  },
+  Cafenea: {
+    weekday: { open: "07:00", close: "22:00" },
+    saturday: { open: "08:00", close: "22:00" },
+    sunday: { open: "09:00", close: "20:00" },
+  },
+  Fitness: {
+    weekday: { open: "06:00", close: "23:00" },
+    saturday: { open: "08:00", close: "20:00" },
+    sunday: { open: "08:00", close: "20:00" },
+  },
+  "Spa & Wellness": {
+    weekday: { open: "10:00", close: "21:00" },
+    saturday: { open: "10:00", close: "20:00" },
+    sunday: { open: "10:00", close: "18:00" },
+  },
+  Optica: {
+    weekday: { open: "09:00", close: "19:00" },
+    saturday: { open: "09:00", close: "14:00" },
+    sunday: null,
+  },
+  Farmacie: {
+    weekday: { open: "08:00", close: "22:00" },
+    saturday: { open: "08:00", close: "20:00" },
+    sunday: { open: "09:00", close: "18:00" },
+  },
+  Veterinar: {
+    weekday: { open: "08:00", close: "20:00" },
+    saturday: { open: "09:00", close: "15:00" },
+    sunday: { open: "10:00", close: "14:00" },
+  },
+  Stomatologie: {
+    weekday: { open: "08:00", close: "20:00" },
+    saturday: { open: "09:00", close: "14:00" },
+    sunday: null,
+  },
+  Florarie: {
+    weekday: { open: "08:00", close: "20:00" },
+    saturday: { open: "08:00", close: "18:00" },
+    sunday: { open: "09:00", close: "14:00" },
+  },
+  Curatatorie: {
+    weekday: { open: "08:00", close: "19:00" },
+    saturday: { open: "09:00", close: "14:00" },
+    sunday: null,
+  },
+  "Foto & Video": {
+    weekday: { open: "09:00", close: "19:00" },
+    saturday: { open: "10:00", close: "16:00" },
+    sunday: null,
+  },
 };
 
-// ─── OFERTE PER CATEGORIE (5-8 per categorie) ──────────────
+// ─── CATALOG PER CATEGORIE ──────────────────────────────────
+// type: 'service' | 'product' | 'menu_item'
+// price in bani (RON × 100), null = "la cerere"
+const CATALOG_TEMPLATES = {
+  Clinica: {
+    categories: ["Consultatii", "Analize de laborator"],
+    items: [
+      { cat: 0, type: "service", name: "Consult medicina generala", price: 15000, duration: 30 },
+      { cat: 0, type: "service", name: "Consult pediatrie", price: 12000, duration: 30 },
+      { cat: 0, type: "service", name: "Consult cardiologie", price: 20000, duration: 45 },
+      { cat: 1, type: "service", name: "Hemoleucograma completa", price: 4500 },
+      { cat: 1, type: "service", name: "Profil lipidic", price: 6000 },
+    ],
+  },
+  Frizerie: {
+    categories: ["Tunsori", "Barba & Grooming"],
+    items: [
+      { cat: 0, type: "service", name: "Tuns clasic", price: 4000, duration: 30 },
+      { cat: 0, type: "service", name: "Tuns fade", price: 5000, duration: 40 },
+      { cat: 0, type: "service", name: "Tuns copii", price: 3000, duration: 20 },
+      { cat: 1, type: "service", name: "Aranjare barba", price: 3000, duration: 20 },
+      { cat: 1, type: "service", name: "Tuns + barba complet", price: 7000, duration: 50 },
+    ],
+  },
+  Beauty: {
+    categories: ["Manichiura", "Tratamente faciale"],
+    items: [
+      { cat: 0, type: "service", name: "Manichiura semipermanenta", price: 8000, duration: 60 },
+      { cat: 0, type: "service", name: "Manichiura cu gel", price: 10000, duration: 75 },
+      { cat: 0, type: "service", name: "Pedichiura spa", price: 9000, duration: 60 },
+      { cat: 1, type: "service", name: "Tratament facial hidratant", price: 12000, duration: 60 },
+      { cat: 1, type: "service", name: "Curatare faciala profunda", price: 15000, duration: 75 },
+    ],
+  },
+  Auto: {
+    categories: ["Revizie & Intretinere", "Caroserie"],
+    items: [
+      { cat: 0, type: "service", name: "Schimb ulei + filtru", price: 12000, duration: 30 },
+      { cat: 0, type: "service", name: "Revizie completa", price: 25000, duration: 120 },
+      { cat: 0, type: "service", name: "Geometrie roti 3D", price: 10000, duration: 45 },
+      { cat: 1, type: "service", name: "Polish caroserie", price: 20000, duration: 180 },
+      { cat: 1, type: "service", name: "Spalare completa interior+exterior", price: 8000, duration: 60 },
+    ],
+  },
+  "Magazine Online": {
+    categories: ["Electronice", "Fashion"],
+    items: [
+      { cat: 0, type: "product", name: "Casti wireless Bluetooth", price: 14900 },
+      { cat: 0, type: "product", name: "Incarcator rapid USB-C", price: 4900 },
+      { cat: 0, type: "product", name: "Husa telefon premium", price: 3900 },
+      { cat: 1, type: "product", name: "Tricou bumbac organic", price: 7900 },
+      { cat: 1, type: "product", name: "Rucsac urban impermeabil", price: 12900 },
+    ],
+  },
+  Cafenea: {
+    categories: ["Cafea", "Deserturi & Snacks"],
+    items: [
+      { cat: 0, type: "menu_item", name: "Espresso", price: 800 },
+      { cat: 0, type: "menu_item", name: "Cappuccino", price: 1200 },
+      { cat: 0, type: "menu_item", name: "Latte", price: 1400 },
+      { cat: 0, type: "menu_item", name: "Cold brew", price: 1600 },
+      { cat: 1, type: "menu_item", name: "Cheesecake", price: 1800 },
+      { cat: 1, type: "menu_item", name: "Croissant cu unt", price: 1000 },
+    ],
+  },
+  Fitness: {
+    categories: ["Abonamente", "Personal Training"],
+    items: [
+      { cat: 0, type: "service", name: "Abonament lunar", price: 12000 },
+      { cat: 0, type: "service", name: "Abonament trimestrial", price: 30000 },
+      { cat: 0, type: "service", name: "Abonament student", price: 8000 },
+      { cat: 1, type: "service", name: "Sedinta personal trainer", price: 8000, duration: 60 },
+      { cat: 1, type: "service", name: "Program nutritional personalizat", price: 15000 },
+    ],
+  },
+  "Spa & Wellness": {
+    categories: ["Masaje", "Tratamente corporale"],
+    items: [
+      { cat: 0, type: "service", name: "Masaj relaxare 60 min", price: 15000, duration: 60 },
+      { cat: 0, type: "service", name: "Masaj terapeutic 60 min", price: 18000, duration: 60 },
+      { cat: 0, type: "service", name: "Masaj cu pietre calde", price: 20000, duration: 75 },
+      { cat: 1, type: "service", name: "Impachetare cu alge", price: 12000, duration: 45 },
+      { cat: 1, type: "service", name: "Acces sauna + jacuzzi", price: 8000, duration: 120 },
+    ],
+  },
+  Optica: {
+    categories: ["Ochelari de vedere", "Lentile de contact"],
+    items: [
+      { cat: 0, type: "product", name: "Rame ochelari designer", price: 35000 },
+      { cat: 0, type: "service", name: "Consult oftalmologic", price: 5000, duration: 30 },
+      { cat: 0, type: "product", name: "Lentile progresive Essilor", price: 45000 },
+      { cat: 1, type: "product", name: "Lentile de contact lunare (cutie)", price: 8000 },
+      { cat: 1, type: "product", name: "Lentile de contact zilnice (30 buc)", price: 12000 },
+    ],
+  },
+  Farmacie: {
+    categories: ["Medicamente & Suplimente", "Dermatocosmetice"],
+    items: [
+      { cat: 0, type: "product", name: "Vitamina C 1000mg (30 cps)", price: 2500 },
+      { cat: 0, type: "product", name: "Omega 3 (60 cps)", price: 4500 },
+      { cat: 0, type: "product", name: "Magneziu + B6 (30 cps)", price: 2000 },
+      { cat: 1, type: "product", name: "Crema hidratanta La Roche-Posay", price: 6500 },
+      { cat: 1, type: "product", name: "Protectie solara SPF50+", price: 5500 },
+    ],
+  },
+  Veterinar: {
+    categories: ["Consultatii", "Interventii"],
+    items: [
+      { cat: 0, type: "service", name: "Consult general", price: 5000, duration: 20 },
+      { cat: 0, type: "service", name: "Vaccinare (schema completa)", price: 8000, duration: 15 },
+      { cat: 0, type: "service", name: "Deparazitare interna + externa", price: 3000, duration: 10 },
+      { cat: 1, type: "service", name: "Sterilizare", price: 30000, duration: 60 },
+      { cat: 1, type: "service", name: "Detartraj", price: 15000, duration: 45 },
+    ],
+  },
+  Stomatologie: {
+    categories: ["Tratamente", "Estetica dentara"],
+    items: [
+      { cat: 0, type: "service", name: "Detartraj + periaj profesional", price: 10000, duration: 45 },
+      { cat: 0, type: "service", name: "Plomba compozit estetica", price: 12000, duration: 30 },
+      { cat: 0, type: "service", name: "Extractie simpla", price: 8000, duration: 20 },
+      { cat: 1, type: "service", name: "Albire profesionala", price: 50000, duration: 60 },
+      { cat: 1, type: "service", name: "Fateta ceramica (per dinte)", price: 150000, duration: 60 },
+    ],
+  },
+  Florarie: {
+    categories: ["Buchete", "Plante de interior"],
+    items: [
+      { cat: 0, type: "product", name: "Buchet mixt de sezon", price: 5000 },
+      { cat: 0, type: "product", name: "Buchet trandafiri rosii (11 buc)", price: 12000 },
+      { cat: 0, type: "product", name: "Aranjament floral cutie", price: 15000 },
+      { cat: 1, type: "product", name: "Monstera Deliciosa", price: 8000 },
+      { cat: 1, type: "product", name: "Ficus Lyrata", price: 12000 },
+    ],
+  },
+  Curatatorie: {
+    categories: ["Haine", "Textile casa"],
+    items: [
+      { cat: 0, type: "service", name: "Curatare costum (2 piese)", price: 3000 },
+      { cat: 0, type: "service", name: "Curatare camasa", price: 1200 },
+      { cat: 0, type: "service", name: "Curatare palton/geaca", price: 4000 },
+      { cat: 1, type: "service", name: "Curatare covor (per mp)", price: 2500 },
+      { cat: 1, type: "service", name: "Curatare perdele (per kg)", price: 2000 },
+    ],
+  },
+  "Foto & Video": {
+    categories: ["Fotografie", "Videografie"],
+    items: [
+      { cat: 0, type: "service", name: "Sedinta foto portret (30 min)", price: 15000, duration: 30 },
+      { cat: 0, type: "service", name: "Fotografie eveniment (3h)", price: 60000, duration: 180 },
+      { cat: 0, type: "service", name: "Poze buletin/pasaport", price: 2000, duration: 10 },
+      { cat: 1, type: "service", name: "Clip promo 1 min (filmare + edit)", price: 40000, duration: 240 },
+      { cat: 1, type: "service", name: "Filmare drona 1h", price: 30000, duration: 60 },
+    ],
+  },
+};
+
+// ─── OFERTE PER CATEGORIE (5+ per categorie) ────────────────
 const OFFER_TEMPLATES = {
-  "Clinica": [
-    {
-      title: "Consult medical gratuit",
-      description: "Consultatia initiala este oferita gratuit pentru pacientii noi. Include evaluare generala si recomandari de investigatii suplimentare daca este necesar.",
-      discount_type: "percent",
-      discount_value: [100],
-      conditions: "Doar prima vizita, cu programare",
-    },
-    {
-      title: "Analize de sange {V}% reducere",
-      description: "Set complet de analize de sange cu reducere speciala. Include hemoleucograma, glicemie, profil lipidic si functie hepatica.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25, 30],
-      conditions: "Cu programare, Luni-Vineri",
-    },
-    {
-      title: "Ecografie abdominala la {V} lei",
-      description: "Ecografie abdominala completa efectuata de medic specialist. Rezultatele sunt disponibile imediat dupa examinare.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Luni-Vineri 8:00-16:00",
-    },
-    {
-      title: "Pachet preventie {V}% off",
-      description: "Pachet complet de medicina preventiva care include consult, analize de laborator, ECG si ecografie. Ideal pentru un check-up anual.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Include consult + analize + ECG",
-    },
-    {
-      title: "Consultatii pediatrice la {V} lei",
-      description: "Consultatii de pediatrie pentru copii intre 0 si 18 ani. Medic pediatru cu experienta, disponibil si pentru urgente.",
-      discount_type: "fixed",
-      discount_value: [60, 80, 100],
-      conditions: "Cu programare, varsta 0-18 ani",
-    },
-    {
-      title: "Pachet cardiologic {V}% reducere",
-      description: "Evaluare cardiologica completa: consult cardiolog, ECG, ecocardiografie si Holter EKG. Ideal pentru persoanele cu factori de risc cardiovascular.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Programare cu minim 48h inainte",
-    },
+  Clinica: [
+    { title: "Consult medical gratuit", description: "Consultatia initiala este oferita gratuit pentru pacientii noi.", discount_type: "percent", discount_value: [100], conditions: "Doar prima vizita, cu programare" },
+    { title: "Analize de sange {V}% reducere", description: "Set complet de analize de sange cu reducere speciala.", discount_type: "percent", discount_value: [15, 20, 25, 30], conditions: "Cu programare, Luni-Vineri" },
+    { title: "Ecografie abdominala la {V} lei", description: "Ecografie abdominala completa efectuata de medic specialist.", discount_type: "fixed", discount_value: [80, 100, 120], conditions: "Luni-Vineri 8:00-16:00" },
+    { title: "Pachet preventie {V}% off", description: "Pachet complet de medicina preventiva: consult, analize, ECG si ecografie.", discount_type: "percent", discount_value: [20, 25, 30], conditions: "Include consult + analize + ECG" },
+    { title: "Pachet cardiologic {V}% reducere", description: "Evaluare cardiologica completa: consult cardiolog, ECG, ecocardiografie.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Programare cu minim 48h inainte" },
   ],
-  "Frizerie": [
-    {
-      title: "Tuns + barba la {V} lei",
-      description: "Pachet complet de tuns si aranjare a barbii cu produse profesionale. Include spalare si styling.",
-      discount_type: "fixed",
-      discount_value: [50, 60, 70, 80],
-      conditions: "Cu programare, Luni-Vineri",
-    },
-    {
-      title: "Tuns copii {V}% reducere",
-      description: "Tuns special pentru copii intr-o atmosfera prietenoasa si relaxata. Barberi cu rabdare si experienta cu cei mici.",
-      discount_type: "percent",
-      discount_value: [20, 30, 40],
-      conditions: "Sub 12 ani, insotiti de un adult",
-    },
-    {
-      title: "Pachet Groom {V} lei",
-      description: "Pachet complet de grooming barbatesc: tuns, barba, spalat si tratament pentru par. Experienta premium cu produse de top.",
-      discount_type: "fixed",
-      discount_value: [100, 120, 150],
-      conditions: "Tuns + barba + spalat + styling",
-    },
-    {
-      title: "Reducere studenti {V}%",
-      description: "Discount special pentru studenti la toate serviciile de frizerie. Arata-ne carnetul de student si beneficiezi de reducere.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Cu carnet de student valid",
-    },
-    {
-      title: "Abonament 4 tunsori la {V} lei",
-      description: "Cumpara un abonament de 4 tunsori si economiseste. Valid 3 luni de la achizitie, transferabil.",
-      discount_type: "fixed",
-      discount_value: [120, 150, 180],
-      conditions: "Valid 3 luni, 4 tunsori incluse",
-    },
-    {
-      title: "Tratament scalp {V}% off",
-      description: "Tratament profesional pentru scalp cu produse specializate. Ideal pentru scalp sensibil, matreata sau par subtire.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Durata 30 min, cu programare",
-    },
-    {
-      title: "Colorare barba la {V} lei",
-      description: "Serviciu de colorare profesionala a barbii pentru acoperirea firelor albe. Rezultat natural si de durata.",
-      discount_type: "fixed",
-      discount_value: [30, 40, 50],
-      conditions: "Durata 20 min, culori naturale",
-    },
+  Frizerie: [
+    { title: "Tuns + barba la {V} lei", description: "Pachet complet de tuns si aranjare a barbii cu produse profesionale.", discount_type: "fixed", discount_value: [50, 60, 70, 80], conditions: "Cu programare, Luni-Vineri" },
+    { title: "Tuns copii {V}% reducere", description: "Tuns special pentru copii intr-o atmosfera prietenoasa si relaxata.", discount_type: "percent", discount_value: [20, 30, 40], conditions: "Sub 12 ani, insotiti de un adult" },
+    { title: "Pachet Groom {V} lei", description: "Pachet complet de grooming: tuns, barba, spalat si tratament par.", discount_type: "fixed", discount_value: [100, 120, 150], conditions: "Tuns + barba + spalat + styling" },
+    { title: "Reducere studenti {V}%", description: "Discount special pentru studenti la toate serviciile de frizerie.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Cu carnet de student valid" },
+    { title: "Abonament 4 tunsori la {V} lei", description: "Abonament de 4 tunsori. Valid 3 luni de la achizitie.", discount_type: "fixed", discount_value: [120, 150, 180], conditions: "Valid 3 luni, 4 tunsori incluse" },
   ],
-  "Beauty": [
-    {
-      title: "Manichiura semipermanenta {V}% off",
-      description: "Manichiura cu lac semipermanent de calitate superioara. Rezistenta de pana la 3 saptamani, gama larga de culori disponibile.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Toate culorile disponibile",
-    },
-    {
-      title: "Epilare laser zona mica la {V} lei",
-      description: "Epilare definitiva cu laser de ultima generatie pentru zone mici (axile, bikini, mustata). Prima sedinta la pret special.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Prima sedinta, o singura zona",
-    },
-    {
-      title: "Tratament facial {V}% reducere",
-      description: "Tratament facial personalizat cu curatare profunda, masaj facial, masca si hidratare. Piele luminoasa si catifelata.",
-      discount_type: "percent",
-      discount_value: [20, 30, 40],
-      conditions: "Sedinta de minim 60 minute",
-    },
-    {
-      title: "Gene individuale la {V} lei",
-      description: "Extensii de gene individuale cu efect natural. Aplicare profesionala si intretinere inclusa la 2 saptamani.",
-      discount_type: "fixed",
-      discount_value: [100, 120, 150],
-      conditions: "Include intretinere la 2 saptamani",
-    },
-    {
-      title: "Pedichiura spa la {V} lei",
-      description: "Pedichiura completa cu tratament spa pentru picioare. Include baie, exfoliere, masaj si lac semipermanent.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Durata aproximativa 60 min",
-    },
-    {
-      title: "Microblading sprancene {V}% off",
-      description: "Microblading profesional pentru sprancene perfecte si naturale. Tehnica fir cu fir, include consultatie si retusare la 30 zile.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Include retusare gratuita la 30 zile",
-    },
-    {
-      title: "Pachet mireasa la {V} lei",
-      description: "Pachet complet pentru mireasa: machiaj profesional, coafura, manichiura si pedichiura. Proba inclusa cu 2 saptamani inainte.",
-      discount_type: "fixed",
-      discount_value: [400, 500, 600],
-      conditions: "Include proba, cu programare",
-    },
+  Beauty: [
+    { title: "Manichiura semipermanenta {V}% off", description: "Manichiura cu lac semipermanent de calitate superioara.", discount_type: "percent", discount_value: [20, 25, 30], conditions: "Toate culorile disponibile" },
+    { title: "Epilare laser zona mica la {V} lei", description: "Epilare definitiva cu laser de ultima generatie.", discount_type: "fixed", discount_value: [80, 100, 120], conditions: "Prima sedinta, o singura zona" },
+    { title: "Tratament facial {V}% reducere", description: "Tratament facial personalizat cu curatare profunda si hidratare.", discount_type: "percent", discount_value: [20, 30, 40], conditions: "Sedinta de minim 60 minute" },
+    { title: "Gene individuale la {V} lei", description: "Extensii de gene individuale cu efect natural.", discount_type: "fixed", discount_value: [100, 120, 150], conditions: "Include intretinere la 2 saptamani" },
+    { title: "Microblading sprancene {V}% off", description: "Microblading profesional pentru sprancene perfecte.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Include retusare gratuita la 30 zile" },
   ],
-  "Auto": [
-    {
-      title: "Schimb ulei + filtru la {V} lei",
-      description: "Schimb de ulei motor si filtru de ulei cu produse de calitate. Include verificare niveluri lichide si presiune roti.",
-      discount_type: "fixed",
-      discount_value: [100, 120, 150],
-      conditions: "Ulei si filtru incluse in pret",
-    },
-    {
-      title: "Spalatorie completa {V}% off",
-      description: "Spalare completa interior si exterior cu produse profesionale. Include aspirare, curatare bord si odorizant.",
-      discount_type: "percent",
-      discount_value: [20, 30, 40],
-      conditions: "Interior + exterior, aspirare inclusa",
-    },
-    {
-      title: "Verificare tehnica gratuita",
-      description: "Inspectie tehnica completa gratuita a vehiculului. Verificam frane, suspensie, directie si sisteme electrice.",
-      discount_type: "percent",
-      discount_value: [100],
-      conditions: "Cu programare, durata 30 min",
-    },
-    {
-      title: "Anvelope {V}% reducere",
-      description: "Reducere la setul complet de anvelope noi. Montaj, echilibrare si aliniere directie incluse in oferta.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Set complet 4 anvelope, montaj inclus",
-    },
-    {
-      title: "Revizie completa la {V} lei",
-      description: "Revizie completa conform specificatiilor producatorului. Include schimb ulei, filtre, verificare frane si sisteme de siguranta.",
-      discount_type: "fixed",
-      discount_value: [200, 250, 300],
-      conditions: "Programare cu minim 24h inainte",
-    },
-    {
-      title: "Climatizare auto {V}% off",
-      description: "Verificare si reincarcare sistem de climatizare auto. Include test etanseitate, curatare filtru habitaclu si dezinfectare.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Freon inclus, durata 45 min",
-    },
-    {
-      title: "Polish + ceruire la {V} lei",
-      description: "Tratament complet de polish si ceruire caroserie pentru un aspect ca nou. Protectie UV si hidrofoba pe termen lung.",
-      discount_type: "fixed",
-      discount_value: [150, 200, 250],
-      conditions: "Durata 3-4 ore, cu programare",
-    },
-    {
-      title: "Geometrie roti la {V} lei",
-      description: "Serviciu de geometrie a rotilor cu echipament 3D de precizie. Previne uzura inegala a anvelopelor si imbunatateste stabilitatea.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Fata + spate, raport inclus",
-    },
+  Auto: [
+    { title: "Schimb ulei + filtru la {V} lei", description: "Schimb de ulei motor si filtru cu produse de calitate.", discount_type: "fixed", discount_value: [100, 120, 150], conditions: "Ulei si filtru incluse in pret" },
+    { title: "Spalatorie completa {V}% off", description: "Spalare completa interior si exterior cu produse profesionale.", discount_type: "percent", discount_value: [20, 30, 40], conditions: "Interior + exterior, aspirare inclusa" },
+    { title: "Verificare tehnica gratuita", description: "Inspectie tehnica completa gratuita a vehiculului.", discount_type: "percent", discount_value: [100], conditions: "Cu programare, durata 30 min" },
+    { title: "Revizie completa la {V} lei", description: "Revizie completa conform specificatiilor producatorului.", discount_type: "fixed", discount_value: [200, 250, 300], conditions: "Programare cu minim 24h inainte" },
+    { title: "Climatizare auto {V}% off", description: "Verificare si reincarcare sistem de climatizare auto.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Freon inclus, durata 45 min" },
   ],
   "Magazine Online": [
-    {
-      title: "Transport gratuit la comenzi peste {V} lei",
-      description: "Beneficiezi de livrare gratuita in toata tara pentru comenzile care depasesc valoarea minima. Livrare rapida prin curier.",
-      discount_type: "fixed",
-      discount_value: [100, 150, 200],
-      conditions: "Valabil pentru toate produsele din stoc",
-    },
-    {
-      title: "{V}% reducere la prima comanda",
-      description: "Reducere speciala de bun venit pentru clientii noi. Aplica codul de reducere la checkout si economiseste la prima ta comanda.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Doar prima comanda, un cod per client",
-    },
-    {
-      title: "Flash Sale: {V}% la toate produsele",
-      description: "Reduceri masive la intreaga gama de produse pentru o perioada limitata. Nu rata ocazia de a cumpara ce ai nevoie la preturi imbatabile.",
-      discount_type: "percent",
-      discount_value: [20, 30, 40, 50],
-      conditions: "Stoc limitat, pe perioada campaniei",
-    },
-    {
-      title: "Voucher {V} lei cadou",
-      description: "Primesti un voucher de cumparaturi cadou pe care il poti folosi la urmatoarea comanda. Ideal si ca idee de cadou pentru cei dragi.",
-      discount_type: "fixed",
-      discount_value: [25, 50, 75],
-      conditions: "Valabil 30 de zile de la emitere",
-    },
-    {
-      title: "Pachet {V}% reducere la 3+ produse",
-      description: "Cumpara 3 sau mai multe produse si primesti reducere automata la cosul de cumparaturi. Cu cat cumperi mai mult, economisesti mai mult.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Minim 3 produse din aceeasi categorie",
-    },
-    {
-      title: "Retur gratuit {V} zile",
-      description: "Cumpara fara griji! Returul este gratuit pentru orice produs, fara explicatii suplimentare. Banii inapoi in maxim 5 zile lucratoare.",
-      discount_type: "fixed",
-      discount_value: [14, 30, 60],
-      conditions: "Produsul trebuie sa fie in ambalajul original",
-    },
+    { title: "Transport gratuit la comenzi peste {V} lei", description: "Livrare gratuita in toata tara pentru comenzile peste valoarea minima.", discount_type: "fixed", discount_value: [100, 150, 200], conditions: "Valabil pentru toate produsele din stoc" },
+    { title: "{V}% reducere la prima comanda", description: "Reducere speciala de bun venit pentru clientii noi.", discount_type: "percent", discount_value: [10, 15, 20], conditions: "Doar prima comanda, un cod per client" },
+    { title: "Flash Sale: {V}% la toate produsele", description: "Reduceri masive la intreaga gama de produse.", discount_type: "percent", discount_value: [20, 30, 40, 50], conditions: "Stoc limitat, pe perioada campaniei" },
+    { title: "Voucher {V} lei cadou", description: "Voucher de cumparaturi cadou pentru urmatoarea comanda.", discount_type: "fixed", discount_value: [25, 50, 75], conditions: "Valabil 30 de zile de la emitere" },
+    { title: "Retur gratuit {V} zile", description: "Returul este gratuit fara explicatii suplimentare.", discount_type: "fixed", discount_value: [14, 30, 60], conditions: "Produsul trebuie sa fie in ambalajul original" },
   ],
-  "Cafenea": [
-    {
-      title: "Cafea {V}% reducere dimineata",
-      description: "Reducere la orice cafea din meniu in primele ore ale diminetii. Start perfect de zi cu cafea de specialitate.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "7:00-10:00, orice tip de cafea",
-    },
-    {
-      title: "Combo cafea + prajitura {V} lei",
-      description: "Combina orice cafea din meniu cu o prajitura artizanala la un pret special. Prajituri proaspete zilnic.",
-      discount_type: "fixed",
-      discount_value: [15, 18, 20],
-      conditions: "Orice cafea + orice prajitura",
-    },
-    {
-      title: "Al doilea frappe {V}% off",
-      description: "Cumpara un frappe si al doilea primeste reducere. Perfect pentru o iesire cu prietenii pe timp de vara.",
-      discount_type: "percent",
-      discount_value: [30, 40, 50],
-      conditions: "La aceeasi comanda, acelasi tip",
-    },
-    {
-      title: "Abonament cafea {V} lei/luna",
-      description: "Abonament lunar pentru o cafea pe zi. Alege din espresso, cappuccino sau latte. Economisesti peste 50% fata de pretul normal.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "1 cafea/zi, valid 30 zile",
-    },
-    {
-      title: "Ceai premium {V}% off",
-      description: "Selectie de ceaiuri premium din toata lumea cu reducere. De la ceai verde japonez la rooibos african si infuzii romanesti.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Gama selectata de ceaiuri premium",
-    },
-    {
-      title: "Smoothie fresh la {V} lei",
-      description: "Smoothie proaspat preparat cu fructe de sezon, lapte vegetal si superfoods. Alegeti din 5 combinatii delicioase.",
-      discount_type: "fixed",
-      discount_value: [12, 15, 18],
-      conditions: "Fructe proaspete, preparare la comanda",
-    },
-    {
-      title: "Brunch combo {V} lei",
-      description: "Combo de brunch cu sandwich artizanal, cafea de specialitate si suc proaspat. Meniu diferit in fiecare saptamana.",
-      discount_type: "fixed",
-      discount_value: [25, 30, 35],
-      conditions: "Sambata-Duminica 9:00-13:00",
-    },
+  Cafenea: [
+    { title: "Cafea {V}% reducere dimineata", description: "Reducere la orice cafea din meniu dimineata devreme.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "7:00-10:00, orice tip de cafea" },
+    { title: "Combo cafea + prajitura {V} lei", description: "Orice cafea din meniu cu o prajitura artizanala.", discount_type: "fixed", discount_value: [15, 18, 20], conditions: "Orice cafea + orice prajitura" },
+    { title: "Al doilea frappe {V}% off", description: "Cumpara un frappe si al doilea primeste reducere.", discount_type: "percent", discount_value: [30, 40, 50], conditions: "La aceeasi comanda, acelasi tip" },
+    { title: "Abonament cafea {V} lei/luna", description: "Abonament lunar pentru o cafea pe zi.", discount_type: "fixed", discount_value: [80, 100, 120], conditions: "1 cafea/zi, valid 30 zile" },
+    { title: "Brunch combo {V} lei", description: "Combo de brunch: sandwich artizanal, cafea si suc proaspat.", discount_type: "fixed", discount_value: [25, 30, 35], conditions: "Sambata-Duminica 9:00-13:00" },
   ],
-  "Fitness": [
-    {
-      title: "Abonament lunar {V} lei",
-      description: "Abonament lunar cu acces nelimitat la toate zonele salii. Include cardio, forta, zona functionala si dusuri.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120, 150],
-      conditions: "Acces nelimitat, 7 zile/saptamana",
-    },
-    {
-      title: "Prima luna {V}% off",
-      description: "Reducere speciala pentru clientii noi la primul abonament lunar. Include evaluare corporala si program personalizat.",
-      discount_type: "percent",
-      discount_value: [30, 40, 50],
-      conditions: "Doar clienti noi, o singura data",
-    },
-    {
-      title: "Personal trainer {V} lei/sedinta",
-      description: "Sedinta de antrenament personalizat cu trainer certificat. Program adaptat obiectivelor tale de fitness.",
-      discount_type: "fixed",
-      discount_value: [60, 80, 100],
-      conditions: "Minim 4 sedinte, programare obligatorie",
-    },
-    {
-      title: "Abonament trimestrial {V}% reducere",
-      description: "Economiseste cu abonamentul pe 3 luni. Acces complet la toate facilitatile si clasele de grup incluse.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Plata integrala, acces complet",
-    },
-    {
-      title: "Clase de grup {V} lei/luna",
-      description: "Acces la toate clasele de grup: spinning, yoga, pilates, HIIT si zumba. Peste 20 clase pe saptamana.",
-      discount_type: "fixed",
-      discount_value: [50, 70, 90],
-      conditions: "Program disponibil la receptie",
-    },
-    {
-      title: "Abonament student {V}% off",
-      description: "Abonament cu reducere pentru studenti la toate facilitatile salii. Acces complet inclusiv clase de grup.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Cu carnet de student valid",
-    },
-    {
-      title: "Evaluare corporala gratuita",
-      description: "Evaluare completa a compozitiei corporale cu aparatura InBody. Include masuratori, analiza si recomandari de antrenament.",
-      discount_type: "percent",
-      discount_value: [100],
-      conditions: "La achizitia oricarui abonament",
-    },
+  Fitness: [
+    { title: "Abonament lunar {V} lei", description: "Abonament lunar cu acces nelimitat la toate zonele salii.", discount_type: "fixed", discount_value: [80, 100, 120, 150], conditions: "Acces nelimitat, 7 zile/saptamana" },
+    { title: "Prima luna {V}% off", description: "Reducere speciala la primul abonament lunar.", discount_type: "percent", discount_value: [30, 40, 50], conditions: "Doar clienti noi, o singura data" },
+    { title: "Personal trainer {V} lei/sedinta", description: "Sedinta de antrenament personalizat cu trainer certificat.", discount_type: "fixed", discount_value: [60, 80, 100], conditions: "Minim 4 sedinte, programare obligatorie" },
+    { title: "Abonament trimestrial {V}% reducere", description: "Abonamentul pe 3 luni cu acces complet.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Plata integrala, acces complet" },
+    { title: "Evaluare corporala gratuita", description: "Evaluare completa a compozitiei corporale cu aparatura InBody.", discount_type: "percent", discount_value: [100], conditions: "La achizitia oricarui abonament" },
   ],
   "Spa & Wellness": [
-    {
-      title: "Masaj relaxare {V}% off",
-      description: "Masaj de relaxare pe tot corpul cu uleiuri esentiale premium. Sedinta de 60 minute pentru eliminarea stresului si tensiunilor.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Sedinta de 60 minute, cu programare",
-    },
-    {
-      title: "Pachet spa complet {V} lei",
-      description: "Experienta spa completa cu sauna finlandeza, masaj relaxant si acces jacuzzi. Include halat, papuci si ceai detox.",
-      discount_type: "fixed",
-      discount_value: [150, 200, 250],
-      conditions: "Sauna + masaj + jacuzzi, 3 ore acces",
-    },
-    {
-      title: "Tratament anticelulitic {V}% reducere",
-      description: "Program de tratamente anticelulitice cu tehnologie avansata. Rezultate vizibile dupa 5 sedinte.",
-      discount_type: "percent",
-      discount_value: [20, 30, 40],
-      conditions: "Pachet de 5 sedinte, o sedinta/saptamana",
-    },
-    {
-      title: "Zi de relaxare {V} lei",
-      description: "Acces integral pe o zi la toate facilitatile spa: piscina, sauna, hamam, zona de relaxare si bar cu sucuri fresh.",
-      discount_type: "fixed",
-      discount_value: [200, 250, 300],
-      conditions: "Acces integral 10:00-20:00",
-    },
-    {
-      title: "Masaj terapeutic {V} lei/sedinta",
-      description: "Masaj terapeutic pentru ameliorarea durerilor de spate, gat si umeri. Terapeut certificat cu experienta clinica.",
-      discount_type: "fixed",
-      discount_value: [100, 130, 160],
-      conditions: "60 min, recomandare medicala optionala",
-    },
-    {
-      title: "Pachet spa cuplu {V} lei",
-      description: "Experienta romantica de spa pentru doi: masaj simultan, sauna privata si sampanie. Cadoul perfect pentru aniversari.",
-      discount_type: "fixed",
-      discount_value: [300, 400, 500],
-      conditions: "Cu rezervare, minim 48h inainte",
-    },
-    {
-      title: "Ritual detox {V}% off",
-      description: "Ritual complet de detoxifiere cu impachetare cu alge marine, masaj limfatic si ceai purificator. Elimina toxinele si revitalizeaza.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Durata 90 min, cu programare",
-    },
+    { title: "Masaj relaxare {V}% off", description: "Masaj de relaxare pe tot corpul cu uleiuri esentiale premium.", discount_type: "percent", discount_value: [20, 25, 30], conditions: "Sedinta de 60 minute, cu programare" },
+    { title: "Pachet spa complet {V} lei", description: "Sauna finlandeza, masaj relaxant si acces jacuzzi.", discount_type: "fixed", discount_value: [150, 200, 250], conditions: "Sauna + masaj + jacuzzi, 3 ore acces" },
+    { title: "Zi de relaxare {V} lei", description: "Acces integral pe o zi la toate facilitatile spa.", discount_type: "fixed", discount_value: [200, 250, 300], conditions: "Acces integral 10:00-20:00" },
+    { title: "Masaj terapeutic {V} lei/sedinta", description: "Masaj terapeutic pentru durerile de spate, gat si umeri.", discount_type: "fixed", discount_value: [100, 130, 160], conditions: "60 min, recomandare medicala optionala" },
+    { title: "Ritual detox {V}% off", description: "Impachetare cu alge marine, masaj limfatic si ceai purificator.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Durata 90 min, cu programare" },
   ],
-  "Optica": [
-    {
-      title: "Consult oftalmologic la {V} lei",
-      description: "Consultatie oftalmologica completa cu autorefractometrie si examen de fund de ochi. Reteta pentru ochelari inclusa.",
-      discount_type: "fixed",
-      discount_value: [30, 50, 70],
-      conditions: "Cu programare, durata 30 min",
-    },
-    {
-      title: "Rame + lentile {V}% off",
-      description: "Reducere la pachetul complet de rame si lentile de vedere. Gama variata de rame de la branduri de top.",
-      discount_type: "percent",
-      discount_value: [20, 30, 40],
-      conditions: "Din gama selectata, montaj inclus",
-    },
-    {
-      title: "Lentile de contact {V}% reducere",
-      description: "Reducere la lentile de contact zilnice sau lunare. Branduri premium pentru confort maxim toata ziua.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Cutie lunara sau pachet trimestrial",
-    },
-    {
-      title: "Al doilea perete ochelari {V}% off",
-      description: "Reducere la a doua pereche de ochelari din aceeasi comanda. Ideal pentru ochelari de rezerva sau de soare cu dioptrii.",
-      discount_type: "percent",
-      discount_value: [40, 50, 60],
-      conditions: "Aceeasi comanda, rame din stoc",
-    },
-    {
-      title: "Ochelari de soare {V}% off",
-      description: "Reducere la colectia de ochelari de soare cu protectie UV400. Branduri Ray-Ban, Oakley, Polaroid si altele.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Gama selectata, stoc limitat",
-    },
-    {
-      title: "Lentile progresive la {V} lei",
-      description: "Lentile progresive de calitate superioara la pret special. Tranzitie lina intre distante, fara linii vizibile.",
-      discount_type: "fixed",
-      discount_value: [200, 250, 300],
-      conditions: "Include consult si montaj",
-    },
+  Optica: [
+    { title: "Consult oftalmologic la {V} lei", description: "Consultatie oftalmologica completa cu autorefractometrie.", discount_type: "fixed", discount_value: [30, 50, 70], conditions: "Cu programare, durata 30 min" },
+    { title: "Rame + lentile {V}% off", description: "Reducere la pachetul complet de rame si lentile de vedere.", discount_type: "percent", discount_value: [20, 30, 40], conditions: "Din gama selectata, montaj inclus" },
+    { title: "Lentile de contact {V}% reducere", description: "Reducere la lentile de contact zilnice sau lunare.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Cutie lunara sau pachet trimestrial" },
+    { title: "Al doilea perete ochelari {V}% off", description: "Reducere la a doua pereche de ochelari din aceeasi comanda.", discount_type: "percent", discount_value: [40, 50, 60], conditions: "Aceeasi comanda, rame din stoc" },
+    { title: "Ochelari de soare {V}% off", description: "Reducere la colectia de ochelari de soare cu protectie UV400.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Gama selectata, stoc limitat" },
   ],
-  "Farmacie": [
-    {
-      title: "Vitamine {V}% reducere",
-      description: "Reducere la gama de vitamine si minerale esentiale. De la vitamina C si D la complexe multivitamine pentru intreaga familie.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Gama selectata de vitamine",
-    },
-    {
-      title: "Produse dermato-cosmetice {V}% off",
-      description: "Reducere la produse dermato-cosmetice de farmacia. Branduri La Roche-Posay, Vichy, Bioderma si altele.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Brand selectat, stoc disponibil",
-    },
-    {
-      title: "Suplimente nutritive la {V} lei",
-      description: "Pachete promotionale de suplimente nutritive pentru imunitate, energie si bunastare generala.",
-      discount_type: "fixed",
-      discount_value: [30, 40, 50],
-      conditions: "Pachete promo, stoc limitat",
-    },
-    {
-      title: "Testare tensiune gratuita",
-      description: "Masurare gratuita a tensiunii arteriale in farmacie. Rezultatul este notat pe cardul personal de sanatate.",
-      discount_type: "percent",
-      discount_value: [100],
-      conditions: "Disponibil zilnic in orarul farmaciei",
-    },
-    {
-      title: "Protectie solara {V}% off",
-      description: "Reducere la produsele de protectie solara pentru adulti si copii. SPF 30 si 50+ de la branduri de incredere.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Sezon estival, stoc limitat",
-    },
-    {
-      title: "Ceaiuri medicinale {V}% reducere",
-      description: "Gama completa de ceaiuri medicinale si infuzii naturiste. De la ceai de musetel la amestecuri specializate.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Gama completa de ceaiuri naturiste",
-    },
-    {
-      title: "Card fidelitate {V}% extra reducere",
-      description: "Beneficiezi de reducere suplimentara cu cardul de fidelitate al farmaciei. Cumulabil cu alte oferte in limita stocului.",
-      discount_type: "percent",
-      discount_value: [5, 8, 10],
-      conditions: "Cu card de fidelitate activ",
-    },
+  Farmacie: [
+    { title: "Vitamine {V}% reducere", description: "Reducere la gama de vitamine si minerale esentiale.", discount_type: "percent", discount_value: [10, 15, 20], conditions: "Gama selectata de vitamine" },
+    { title: "Produse dermato-cosmetice {V}% off", description: "Reducere la La Roche-Posay, Vichy, Bioderma.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Brand selectat, stoc disponibil" },
+    { title: "Suplimente nutritive la {V} lei", description: "Pachete promotionale de suplimente pentru imunitate.", discount_type: "fixed", discount_value: [30, 40, 50], conditions: "Pachete promo, stoc limitat" },
+    { title: "Testare tensiune gratuita", description: "Masurare gratuita a tensiunii arteriale in farmacie.", discount_type: "percent", discount_value: [100], conditions: "Disponibil zilnic in orarul farmaciei" },
+    { title: "Protectie solara {V}% off", description: "Reducere la produsele de protectie solara SPF 30 si 50+.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Sezon estival, stoc limitat" },
   ],
-  "Veterinar": [
-    {
-      title: "Consult veterinar la {V} lei",
-      description: "Consultatie veterinara completa cu examinare fizica detaliata. Include recomandari de tratament si reteta daca este necesar.",
-      discount_type: "fixed",
-      discount_value: [30, 50, 60],
-      conditions: "Cu programare, caini si pisici",
-    },
-    {
-      title: "Vaccinare {V}% off",
-      description: "Reducere la schema completa de vaccinare pentru caini si pisici. Include carnet de vaccinari si consultatie.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Caini si pisici, cu programare",
-    },
-    {
-      title: "Deparazitare la {V} lei",
-      description: "Tratament complet de deparazitare interna si externa. Produse de calitate si dozare corecta in functie de greutate.",
-      discount_type: "fixed",
-      discount_value: [20, 30, 40],
-      conditions: "Include tratament intern si extern",
-    },
-    {
-      title: "Sterilizare {V}% reducere",
-      description: "Interventie de sterilizare efectuata de chirurg veterinar cu experienta. Include anestezie, operatie si control post-operator.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Cu programare, include control postoperator",
-    },
-    {
-      title: "Detartraj veterinar la {V} lei",
-      description: "Curatare dentara profesionala pentru cainele sau pisica ta. Include anestezie usoara si control stomatologic.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Cu programare, include anestezie",
-    },
-    {
-      title: "Microcipare la {V} lei",
-      description: "Implantare microcip de identificare conform legislatiei in vigoare. Include inregistrare in baza de date nationala.",
-      discount_type: "fixed",
-      discount_value: [40, 50, 60],
-      conditions: "Include inregistrare, fara programare",
-    },
-    {
-      title: "Pachet preventie {V}% off",
-      description: "Pachet complet de prevenire: consult, vaccinare, deparazitare si microcipare. Tot ce are nevoie animalul tau de companie.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Pachet complet, cu programare",
-    },
+  Veterinar: [
+    { title: "Consult veterinar la {V} lei", description: "Consultatie veterinara completa cu examinare fizica detaliata.", discount_type: "fixed", discount_value: [30, 50, 60], conditions: "Cu programare, caini si pisici" },
+    { title: "Vaccinare {V}% off", description: "Reducere la schema completa de vaccinare pentru caini si pisici.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Caini si pisici, cu programare" },
+    { title: "Deparazitare la {V} lei", description: "Tratament complet de deparazitare interna si externa.", discount_type: "fixed", discount_value: [20, 30, 40], conditions: "Include tratament intern si extern" },
+    { title: "Microcipare la {V} lei", description: "Implantare microcip de identificare conform legislatiei.", discount_type: "fixed", discount_value: [40, 50, 60], conditions: "Include inregistrare, fara programare" },
+    { title: "Pachet preventie {V}% off", description: "Consult, vaccinare, deparazitare si microcipare.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Pachet complet, cu programare" },
   ],
-  "Stomatologie": [
-    {
-      title: "Detartraj + periaj {V} lei",
-      description: "Sedinta completa de igiena dentara profesionala cu detartraj ultrasonic si periaj profesional. Rezultate imediate.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Sedinta completa, durata 45 min",
-    },
-    {
-      title: "Albire dentara {V}% off",
-      description: "Albire dentara profesionala cu gel activat de lumina LED. Rezultate cu pana la 8 nuante mai alb intr-o singura sedinta.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Metoda profesionala, o singura sedinta",
-    },
-    {
-      title: "Plomba estetica la {V} lei",
-      description: "Obturatie estetica din compozit nano-hibrid cu aspect natural. Culoare adaptata perfect la dintele natural.",
-      discount_type: "fixed",
-      discount_value: [100, 120, 150],
-      conditions: "Compozit premium, garantie 2 ani",
-    },
-    {
-      title: "Consult + radiografie {V}% reducere",
-      description: "Prima consultatie stomatologica cu radiografie panoramica digitala inclusa. Plan de tratament complet si transparent.",
-      discount_type: "percent",
-      discount_value: [30, 40, 50],
-      conditions: "Prima vizita, include plan tratament",
-    },
-    {
-      title: "Extractie dentara la {V} lei",
-      description: "Extractie dentara simpla cu anestezie locala inclusa. Recomandari postextractie si control gratuit la 7 zile.",
-      discount_type: "fixed",
-      discount_value: [60, 80, 100],
-      conditions: "Include anestezie si control",
-    },
-    {
-      title: "Fatete dentare {V}% off",
-      description: "Fatete dentare din ceramica pentru un zambet de Hollywood. Consultatie de planificare si simulare digitala incluse.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Minim 4 fatete, include planificare",
-    },
-    {
-      title: "Implant dentar la {V} lei",
-      description: "Implant dentar de calitate superioara cu bont protetic inclus. Garantie pe viata pentru implant, montare de catre specialist.",
-      discount_type: "fixed",
-      discount_value: [500, 600, 700],
-      conditions: "Include bont, fara coroana",
-    },
-    {
-      title: "Aparat dentar {V}% reducere",
-      description: "Reducere la aparatul ortodontic fix sau mobil. Consultatie ortodontica si plan de tratament incluse in oferta.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Include consultatie si plan tratament",
-    },
+  Stomatologie: [
+    { title: "Detartraj + periaj {V} lei", description: "Igiena dentara profesionala cu detartraj ultrasonic.", discount_type: "fixed", discount_value: [80, 100, 120], conditions: "Sedinta completa, durata 45 min" },
+    { title: "Albire dentara {V}% off", description: "Albire dentara profesionala cu gel activat de LED.", discount_type: "percent", discount_value: [20, 25, 30], conditions: "O singura sedinta" },
+    { title: "Plomba estetica la {V} lei", description: "Obturatie estetica din compozit nano-hibrid.", discount_type: "fixed", discount_value: [100, 120, 150], conditions: "Compozit premium, garantie 2 ani" },
+    { title: "Consult + radiografie {V}% reducere", description: "Prima consultatie cu radiografie panoramica digitala.", discount_type: "percent", discount_value: [30, 40, 50], conditions: "Prima vizita, include plan tratament" },
+    { title: "Implant dentar la {V} lei", description: "Implant dentar de calitate superioara cu bont protetic.", discount_type: "fixed", discount_value: [500, 600, 700], conditions: "Include bont, fara coroana" },
   ],
-  "Florarie": [
-    {
-      title: "Buchet mixt la {V} lei",
-      description: "Buchet de flori mixte proaspete de sezon, aranjat cu grija de floristii nostri. Ideal pentru orice ocazie.",
-      discount_type: "fixed",
-      discount_value: [40, 50, 60],
-      conditions: "Flori de sezon, disponibilitate zilnica",
-    },
-    {
-      title: "Aranjament {V}% off",
-      description: "Reducere la aranjamente florale pentru evenimente: nunti, botezuri, aniversari si decoruri corporate.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Pentru evenimente, comanda cu 3 zile inainte",
-    },
-    {
-      title: "Livrare gratuita peste {V} lei",
-      description: "Beneficiezi de livrare gratuita in oras pentru comenzi peste valoarea specificata. Livrare in 2-4 ore de la comanda.",
-      discount_type: "fixed",
-      discount_value: [100, 120, 150],
-      conditions: "In oras, livrare in 2-4 ore",
-    },
-    {
-      title: "Plante de interior {V}% reducere",
-      description: "Reducere la gama de plante de interior: monstera, ficus, suculente si cactusi. Ghivece decorative incluse.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Gama selectata, ghiveci inclus",
-    },
-    {
-      title: "Abonament floral {V} lei/luna",
-      description: "Abonament lunar de flori proaspete livrate la usa ta sau la birou. 4 buchete pe luna, flori de sezon.",
-      discount_type: "fixed",
-      discount_value: [100, 150, 200],
-      conditions: "4 livrari/luna, flori de sezon",
-    },
-    {
-      title: "Coronita funerara la {V} lei",
-      description: "Coronite si aranjamente funerare realizate cu respect si bun gust. Livrare rapida si mesaj de condoleante inclus.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Include panglica cu mesaj personalizat",
-    },
-    {
-      title: "Cutie cu trandafiri la {V} lei",
-      description: "Cutie eleganta cu trandafiri proaspeti in diverse culori. Cadoul perfect pentru persoane speciale.",
-      discount_type: "fixed",
-      discount_value: [120, 150, 200],
-      conditions: "9 sau 15 trandafiri, culoare la alegere",
-    },
+  Florarie: [
+    { title: "Buchet mixt la {V} lei", description: "Buchet de flori mixte proaspete de sezon.", discount_type: "fixed", discount_value: [40, 50, 60], conditions: "Flori de sezon, disponibilitate zilnica" },
+    { title: "Aranjament {V}% off", description: "Reducere la aranjamente florale pentru evenimente.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Comanda cu 3 zile inainte" },
+    { title: "Livrare gratuita peste {V} lei", description: "Livrare gratuita in oras pentru comenzi peste valoarea specificata.", discount_type: "fixed", discount_value: [100, 120, 150], conditions: "In oras, livrare in 2-4 ore" },
+    { title: "Plante de interior {V}% reducere", description: "Reducere la monstera, ficus, suculente si cactusi.", discount_type: "percent", discount_value: [10, 15, 20], conditions: "Gama selectata, ghiveci inclus" },
+    { title: "Cutie cu trandafiri la {V} lei", description: "Cutie eleganta cu trandafiri proaspeti.", discount_type: "fixed", discount_value: [120, 150, 200], conditions: "9 sau 15 trandafiri, culoare la alegere" },
   ],
-  "Curatatorie": [
-    {
-      title: "Curatare costum la {V} lei",
-      description: "Curatare chimica profesionala pentru costum barbatesc sau taior. Include calcare si ambalare pe umeras.",
-      discount_type: "fixed",
-      discount_value: [25, 30, 35],
-      conditions: "2 piese (sacou + pantalon), pe umeras",
-    },
-    {
-      title: "{V}% la curatare covoare",
-      description: "Reducere la serviciul de curatare profesionala a covoarelor. Aspirare, spalare si uscare profesionala.",
-      discount_type: "percent",
-      discount_value: [20, 25, 30],
-      conditions: "Minim 2 mp, ridicare de la domiciliu",
-    },
-    {
-      title: "Spalare haine {V}% off",
-      description: "Reducere la serviciul de spalare si calcare a hainelor de zi cu zi. Predare curata si calcata in 24-48 ore.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Minim 3 kg, livrare in 48h",
-    },
-    {
-      title: "Curatare canapea la {V} lei",
-      description: "Serviciu de curatare profesionala a canapelei la domiciliu. Include aspirare, tratare pete si dezinfectare.",
-      discount_type: "fixed",
-      discount_value: [80, 100, 120],
-      conditions: "Cu deplasare la domiciliu inclusa",
-    },
-    {
-      title: "Curatare perdele {V}% off",
-      description: "Serviciu complet de curatare si calcare perdele. Ridicare, curatare profesionala si montare la loc incluse.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Include ridicare si montare",
-    },
-    {
-      title: "Rochie de mireasa la {V} lei",
-      description: "Curatare profesionala si conservare rochie de mireasa. Tratament special pentru tesaturi delicate si aplicatii.",
-      discount_type: "fixed",
-      discount_value: [100, 150, 200],
-      conditions: "Include ambalare speciala",
-    },
-    {
-      title: "Curatare tapiterie auto {V}% off",
-      description: "Curatare profesionala a tapiteriei auto: scaune, bancheta, plafon si covoras. Aspect ca nou si miros proaspat.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Programare la sediu sau deplasare",
-    },
+  Curatatorie: [
+    { title: "Curatare costum la {V} lei", description: "Curatare chimica profesionala pentru costum.", discount_type: "fixed", discount_value: [25, 30, 35], conditions: "2 piese (sacou + pantalon), pe umeras" },
+    { title: "{V}% la curatare covoare", description: "Reducere la curatare profesionala covoare.", discount_type: "percent", discount_value: [20, 25, 30], conditions: "Minim 2 mp, ridicare de la domiciliu" },
+    { title: "Spalare haine {V}% off", description: "Reducere la spalare si calcare haine de zi cu zi.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Minim 3 kg, livrare in 48h" },
+    { title: "Curatare canapea la {V} lei", description: "Curatare profesionala canapea la domiciliu.", discount_type: "fixed", discount_value: [80, 100, 120], conditions: "Cu deplasare la domiciliu inclusa" },
+    { title: "Rochie de mireasa la {V} lei", description: "Curatare profesionala si conservare rochie de mireasa.", discount_type: "fixed", discount_value: [100, 150, 200], conditions: "Include ambalare speciala" },
   ],
   "Foto & Video": [
-    {
-      title: "Sedinta foto portret {V} lei",
-      description: "Sedinta foto de portret in studio cu iluminare profesionala. Include 30 minute de fotografiere si 10 poze editate.",
-      discount_type: "fixed",
-      discount_value: [100, 150, 200],
-      conditions: "30 minute + 10 poze editate",
-    },
-    {
-      title: "Fotografie eveniment {V}% off",
-      description: "Reducere la pachetele de fotografie pentru evenimente: nunti, botezuri, petreceri corporate si aniversari.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Minim 3 ore de fotografiere",
-    },
-    {
-      title: "Video promo {V} lei",
-      description: "Clip video promotional de 1 minut complet editat. Include filmare, montaj, color grading si muzica de fundal.",
-      discount_type: "fixed",
-      discount_value: [300, 400, 500],
-      conditions: "1 minut editat, include filmare",
-    },
-    {
-      title: "Poze buletin/pasaport {V} lei",
-      description: "Fotografii pentru acte oficiale: buletin, pasaport, permis de conducere. Gata in 10 minute, conform standardelor.",
-      discount_type: "fixed",
-      discount_value: [15, 20, 25],
-      conditions: "Gata in 10 min, 4 bucati",
-    },
-    {
-      title: "Pachet nunta {V}% off",
-      description: "Pachet complet foto-video pentru nunta: toata ziua, album premium, clip cinematografic si poze editate profesional.",
-      discount_type: "percent",
-      discount_value: [10, 15, 20],
-      conditions: "Toata ziua, album + clip incluse",
-    },
-    {
-      title: "Sedinta foto produs la {V} lei",
-      description: "Fotografie profesionala de produs pentru cataloage online si e-commerce. Include 10 produse fotografiate pe fundal alb.",
-      discount_type: "fixed",
-      discount_value: [200, 250, 300],
-      conditions: "10 produse, fundal alb, editare inclusa",
-    },
-    {
-      title: "Fotografie corporativa {V}% off",
-      description: "Sedinta foto corporativa pentru echipa ta: portrete profesionale individuale si foto de grup. Ideal pentru site si LinkedIn.",
-      discount_type: "percent",
-      discount_value: [15, 20, 25],
-      conditions: "Minim 5 persoane, in studio sau la sediu",
-    },
-    {
-      title: "Drona aeriana {V} lei/ora",
-      description: "Filmare si fotografie aeriana cu drona profesionala 4K. Ideal pentru imobiliare, evenimente si continut de marketing.",
-      discount_type: "fixed",
-      discount_value: [200, 300, 400],
-      conditions: "Minim 1 ora, editare de baza inclusa",
-    },
+    { title: "Sedinta foto portret {V} lei", description: "Sedinta foto portret in studio cu iluminare profesionala.", discount_type: "fixed", discount_value: [100, 150, 200], conditions: "30 minute + 10 poze editate" },
+    { title: "Fotografie eveniment {V}% off", description: "Reducere la pachetele de fotografie pentru evenimente.", discount_type: "percent", discount_value: [10, 15, 20], conditions: "Minim 3 ore de fotografiere" },
+    { title: "Video promo {V} lei", description: "Clip video promotional de 1 minut complet editat.", discount_type: "fixed", discount_value: [300, 400, 500], conditions: "1 minut editat, include filmare" },
+    { title: "Poze buletin/pasaport {V} lei", description: "Fotografii pentru acte oficiale, gata in 10 minute.", discount_type: "fixed", discount_value: [15, 20, 25], conditions: "Gata in 10 min, 4 bucati" },
+    { title: "Fotografie corporativa {V}% off", description: "Portrete profesionale individuale si foto de grup.", discount_type: "percent", discount_value: [15, 20, 25], conditions: "Minim 5 persoane, in studio sau la sediu" },
   ],
 };
 
@@ -1086,14 +882,8 @@ function slugify(text) {
     .replace(/(^-|-$)/g, "");
 }
 
-function generateLogoUrl(businessName, categoryName) {
-  const style = LOGO_STYLES[categoryName] || "shapes";
-  const seed = encodeURIComponent(businessName);
-  return `https://api.dicebear.com/9.x/${style}/png?seed=${seed}&size=400`;
-}
-
-function generateCoverUrl(categoryName, index) {
-  return `https://picsum.photos/seed/${slugify(categoryName)}-${index}/1200/600`;
+function unsplashUrl(photoId, w, h) {
+  return `https://images.unsplash.com/${photoId}?w=${w}&h=${h}&fit=crop&auto=format&q=80`;
 }
 
 function generateBookingData(categoryName, phone, name) {
@@ -1116,18 +906,22 @@ async function seedBusinesses() {
 
   try {
     console.log("Starting seed process...\n");
-    console.log(`Target: ${CITIES.length} cities x ${CATEGORIES.length} categories x 2 = ${CITIES.length * CATEGORIES.length * 2} businesses\n`);
+    console.log(`Target: ${CATEGORIES.length} categories x 10 = 150 businesses in Bucuresti\n`);
 
     await client.query("BEGIN");
 
-    // ── 1. Insert categorii ───────────────────────────────
-    console.log("Inserting categories...");
-    const categoryMap = {}; // name -> id
+    // ── 1. Cleanup old seed data ────────────────────────
+    console.log("Cleaning up old seed data...");
+    const deleted = await client.query(
+      "DELETE FROM businesses WHERE source = 'seed' RETURNING id"
+    );
+    console.log(`  Deleted ${deleted.rowCount} old seed businesses (CASCADE)\n`);
 
+    // ── 2. Ensure categories exist ──────────────────────
+    console.log("Checking categories...");
+    const categoryMap = {};
     for (const catName of CATEGORIES) {
-      const existing = await client.query(
-        "SELECT id FROM categories WHERE name = $1", [catName]
-      );
+      const existing = await client.query("SELECT id FROM categories WHERE name = $1", [catName]);
       if (existing.rows.length > 0) {
         categoryMap[catName] = existing.rows[0].id;
       } else {
@@ -1140,281 +934,229 @@ async function seedBusinesses() {
     }
     console.log(`  ${Object.keys(categoryMap).length} categories ready`);
 
-    // ── 2. Insert orase ───────────────────────────────────
-    console.log("Inserting cities...");
-    const cityMap = {}; // name -> { id, lat, lng, radius }
-
-    for (const city of CITIES) {
-      const existing = await client.query(
-        "SELECT id FROM cities WHERE name = $1", [city.name]
-      );
-      let cityId;
-      if (existing.rows.length > 0) {
-        cityId = existing.rows[0].id;
-      } else {
-        const result = await client.query(
-          "INSERT INTO cities (name) VALUES ($1) RETURNING id",
-          [city.name]
-        );
-        cityId = result.rows[0].id;
-      }
-      cityMap[city.name] = {
-        id: cityId,
-        lat: city.lat,
-        lng: city.lng,
-        radius: city.radius,
-      };
+    // ── 3. Ensure Bucuresti exists ──────────────────────
+    console.log("Checking city...");
+    let cityId;
+    const existingCity = await client.query("SELECT id FROM cities WHERE name = $1", [CITY.name]);
+    if (existingCity.rows.length > 0) {
+      cityId = existingCity.rows[0].id;
+    } else {
+      const result = await client.query("INSERT INTO cities (name) VALUES ($1) RETURNING id", [CITY.name]);
+      cityId = result.rows[0].id;
     }
-    console.log(`  ${Object.keys(cityMap).length} cities ready\n`);
+    console.log(`  City '${CITY.name}' ready (id=${cityId})`);
 
-    // ── 3. Generate business-uri (15 cities x 15 categories x 2) ──
-    console.log("Generating 450 businesses...");
+    // ── 4. Get free plan ID ─────────────────────────────
+    console.log("Looking up free plan...");
+    const freePlan = await client.query("SELECT id FROM subscription_plans WHERE slug = 'free'");
+    if (freePlan.rows.length === 0) {
+      throw new Error("Free plan not found in subscription_plans! Run migrations first.");
+    }
+    const freePlanId = freePlan.rows[0].id;
+    console.log(`  Free plan id=${freePlanId}\n`);
 
-    const usedNames = new Set();
-    const businessRecords = []; // { id, categoryName, cityName, name }
-    let batchCount = 0;
+    // ── 5. Generate 150 businesses ──────────────────────
+    console.log("Generating 150 businesses...\n");
+
+    let totalBiz = 0;
     let totalLocations = 0;
     let totalOffers = 0;
-    let bizIndex = 0;
+    let totalHours = 0;
+    let totalCatalogCats = 0;
+    let totalCatalogItems = 0;
+    let totalSubs = 0;
 
-    for (const city of CITIES) {
-      const cityData = cityMap[city.name];
+    for (const categoryName of CATEGORIES) {
+      const names = BUSINESS_NAMES[categoryName];
+      const descriptions = DESCRIPTIONS[categoryName];
+      const photos = UNSPLASH_PHOTOS[categoryName];
+      const hoursTemplate = BUSINESS_HOURS_TEMPLATES[categoryName];
+      const catalogTemplate = CATALOG_TEMPLATES[categoryName];
 
-      for (const categoryName of CATEGORIES) {
-        const names = BUSINESS_NAMES[categoryName];
-        const descriptions = DESCRIPTIONS[categoryName];
+      for (let i = 0; i < 10; i++) {
+        const name = names[i];
+        const description = descriptions[i % descriptions.length];
 
-        for (let i = 0; i < 2; i++) {
-          // ── Generate unique business name ──
-          let name;
-          let attempts = 0;
-          do {
-            const baseName = names[(bizIndex + attempts) % names.length];
-            const suffix = SUFFIXES[(bizIndex + i + attempts) % SUFFIXES.length];
-            name = `${baseName}${suffix}`;
-            if (usedNames.has(name) && attempts > 5) {
-              name = `${baseName} ${city.name}${suffix}`;
-            }
-            attempts++;
-          } while (usedNames.has(name) && attempts < 30);
+        // Address
+        const street = STREETS[(totalBiz) % STREETS.length];
+        const streetNr = randomInt(1, 150);
+        const address = `${street} ${streetNr}, ${CITY.name}`;
 
-          if (usedNames.has(name)) {
-            name = `${name} ${bizIndex}`;
+        // Coordinates (within Bucuresti radius)
+        const lat = parseFloat(randomCoord(CITY.lat, CITY.radius).toFixed(6));
+        const lng = parseFloat(randomCoord(CITY.lng, CITY.radius).toFixed(6));
+
+        // Phone & Website
+        const phone = generatePhone();
+        const website = `https://${slugify(name)}.ro`;
+
+        // Images (rotate through category photos)
+        const logoPhoto = photos[i % photos.length];
+        const coverPhoto = photos[(i + 1) % photos.length];
+        const logoUrl = unsplashUrl(logoPhoto, 400, 400);
+        const coverUrl = unsplashUrl(coverPhoto, 1200, 600);
+
+        // Booking
+        const bookingData = generateBookingData(categoryName, phone, name);
+
+        // ── INSERT BUSINESS ──
+        const bizResult = await client.query(
+          `INSERT INTO businesses
+            (name, description, address, phone, website, lat, lng, city_id, category_id,
+             logo_url, cover_image_url, source,
+             booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+           RETURNING id`,
+          [
+            name, description, address, phone, website, lat, lng,
+            cityId, categoryMap[categoryName],
+            logoUrl, coverUrl, "seed",
+            bookingData.type, bookingData.phone, bookingData.whatsapp, bookingData.url, bookingData.instructions,
+          ]
+        );
+        const businessId = bizResult.rows[0].id;
+        totalBiz++;
+
+        // ── INSERT LOCATION ──
+        const locResult = await client.query(
+          `INSERT INTO business_locations
+            (business_id, city_id, address, lat, lng, phone,
+             booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+           RETURNING id`,
+          [
+            businessId, cityId, address, lat, lng, phone,
+            bookingData.type, bookingData.phone, bookingData.whatsapp, bookingData.url, bookingData.instructions,
+          ]
+        );
+        const locationId = locResult.rows[0].id;
+        totalLocations++;
+
+        // ── INSERT BUSINESS SUBSCRIPTION (free plan) ──
+        await client.query(
+          `INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
+           VALUES ($1, $2, 'active', 'none')`,
+          [businessId, freePlanId]
+        );
+        totalSubs++;
+
+        // ── INSERT BUSINESS HOURS (7 days) ──
+        for (let day = 0; day < 7; day++) {
+          let schedule;
+          if (day >= 0 && day <= 4) {
+            schedule = hoursTemplate.weekday;
+          } else if (day === 5) {
+            schedule = hoursTemplate.saturday;
+          } else {
+            schedule = hoursTemplate.sunday;
           }
-          usedNames.add(name);
 
-          // ── Address ──
-          const street = STREETS[bizIndex % STREETS.length];
-          const streetNr = randomInt(1, 150);
-          const address = `${street} ${streetNr}, ${city.name}`;
+          if (schedule) {
+            await client.query(
+              `INSERT INTO business_hours (location_id, day_of_week, open_time, close_time, is_closed)
+               VALUES ($1, $2, $3, $4, false)`,
+              [locationId, day, schedule.open, schedule.close]
+            );
+          } else {
+            await client.query(
+              `INSERT INTO business_hours (location_id, day_of_week, open_time, close_time, is_closed)
+               VALUES ($1, $2, '00:00', '00:00', true)`,
+              [locationId, day]
+            );
+          }
+          totalHours++;
+        }
 
-          // ── Coordinates ──
-          const lat = parseFloat(randomCoord(cityData.lat, cityData.radius).toFixed(6));
-          const lng = parseFloat(randomCoord(cityData.lng, cityData.radius).toFixed(6));
-
-          // ── Phone & Website ──
-          const phone = generatePhone();
-          const website = `https://${slugify(name)}.ro`;
-
-          // ── Description ──
-          const description = descriptions[bizIndex % descriptions.length];
-
-          // ── Logo & Cover ──
-          const logoUrl = generateLogoUrl(name, categoryName);
-          const coverUrl = generateCoverUrl(categoryName, bizIndex);
-
-          // ── Booking ──
-          const bookingData = generateBookingData(categoryName, phone, name);
-
-          // ── INSERT BUSINESS ──
-          const bizResult = await client.query(
-            `INSERT INTO businesses
-              (name, description, address, phone, website, lat, lng, city_id, category_id,
-               logo_url, cover_image_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-             RETURNING id`,
-            [
-              name, description, address, phone, website, lat, lng,
-              cityData.id, categoryMap[categoryName],
-              logoUrl, coverUrl,
-              bookingData.type, bookingData.phone, bookingData.whatsapp, bookingData.url, bookingData.instructions,
-            ]
+        // ── INSERT CATALOG CATEGORIES + ITEMS ──
+        const catIds = [];
+        for (let ci = 0; ci < catalogTemplate.categories.length; ci++) {
+          const catResult = await client.query(
+            `INSERT INTO business_catalog_categories (business_id, name, sort_order)
+             VALUES ($1, $2, $3) RETURNING id`,
+            [businessId, catalogTemplate.categories[ci], ci]
           );
+          catIds.push(catResult.rows[0].id);
+          totalCatalogCats++;
+        }
 
-          const businessId = bizResult.rows[0].id;
-
-          businessRecords.push({
-            id: businessId,
-            categoryName,
-            cityName: city.name,
-            name,
-          });
-
-          // ── INSERT LOCATION 1 (main, same as business) ──
+        for (let ii = 0; ii < catalogTemplate.items.length; ii++) {
+          const item = catalogTemplate.items[ii];
           await client.query(
-            `INSERT INTO business_locations
-              (business_id, city_id, address, lat, lng, phone, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            `INSERT INTO business_catalog_items
+              (business_id, category_id, type, name, description, price, duration_minutes, is_active, sort_order)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8)`,
             [
-              businessId, cityData.id, address, lat, lng, phone,
-              bookingData.type, bookingData.phone, bookingData.whatsapp, bookingData.url, bookingData.instructions,
+              businessId,
+              catIds[item.cat],
+              item.type,
+              item.name,
+              null,
+              item.price,
+              item.duration || null,
+              ii,
             ]
           );
-          totalLocations++;
+          totalCatalogItems++;
+        }
 
-          // ── INSERT LOCATION 2 (optional, ~50% chance) ──
-          if (Math.random() < 0.5) {
-            const street2 = STREETS[(bizIndex + 7) % STREETS.length];
-            const streetNr2 = randomInt(1, 150);
-            const address2 = `${street2} ${streetNr2}, ${city.name}`;
-            const lat2 = parseFloat(randomCoord(cityData.lat, cityData.radius).toFixed(6));
-            const lng2 = parseFloat(randomCoord(cityData.lng, cityData.radius).toFixed(6));
-            const phone2 = generatePhone();
-            const bookingData2 = generateBookingData(categoryName, phone2, name);
+        // ── INSERT 2 OFFERS ──
+        const templates = OFFER_TEMPLATES[categoryName];
+        const shuffled = [...templates].sort(() => Math.random() - 0.5);
+        const selectedOffers = shuffled.slice(0, 2);
 
-            await client.query(
-              `INSERT INTO business_locations
-                (business_id, city_id, address, lat, lng, phone, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-              [
-                businessId, cityData.id, address2, lat2, lng2, phone2,
-                bookingData2.type, bookingData2.phone, bookingData2.whatsapp, bookingData2.url, bookingData2.instructions,
-              ]
-            );
-            totalLocations++;
-          }
+        for (const tpl of selectedOffers) {
+          const discountValue = Array.isArray(tpl.discount_value)
+            ? randomFrom(tpl.discount_value)
+            : tpl.discount_value;
+          const title = tpl.title.replace("{V}", discountValue);
 
-          // ── INSERT 2-3 OFFERS ──
-          const templates = OFFER_TEMPLATES[categoryName];
-          const numOffers = randomInt(2, 3);
-          const shuffled = [...templates].sort(() => Math.random() - 0.5);
-          const selectedOffers = shuffled.slice(0, numOffers);
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - randomInt(0, 15));
+          const endDate = new Date();
+          endDate.setDate(endDate.getDate() + randomInt(30, 90));
 
-          for (const tpl of selectedOffers) {
-            // Discount value
-            let discountValue;
-            if (Array.isArray(tpl.discount_value)) {
-              discountValue = randomFrom(tpl.discount_value);
-            } else {
-              discountValue = tpl.discount_value;
-            }
+          await client.query(
+            `INSERT INTO offers
+              (business_id, title, description, discount_type, discount_value,
+               conditions, start_date, end_date, is_active, moderation_status,
+               booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,'auto_approved',$9,$10,$11,$12,$13)`,
+            [
+              businessId,
+              title,
+              tpl.description,
+              tpl.discount_type,
+              discountValue,
+              tpl.conditions,
+              startDate.toISOString().split("T")[0],
+              endDate.toISOString().split("T")[0],
+              "inherit", null, null, null, null,
+            ]
+          );
+          totalOffers++;
+        }
 
-            // Title with value substituted
-            const title = tpl.title.replace("{V}", discountValue);
-
-            // Dates: start = random within last 15 days, end = 30-90 days from now
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - randomInt(0, 15));
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + randomInt(30, 90));
-
-            // Offer booking: 70% inherit, 30% own
-            let offerBookingType, offerBookingPhone, offerBookingWhatsapp, offerBookingUrl, offerBookingInstructions;
-            if (Math.random() < 0.7) {
-              offerBookingType = "inherit";
-              offerBookingPhone = null;
-              offerBookingWhatsapp = null;
-              offerBookingUrl = null;
-              offerBookingInstructions = null;
-            } else {
-              const offerBooking = generateBookingData(categoryName, phone, name);
-              offerBookingType = offerBooking.type;
-              offerBookingPhone = offerBooking.phone;
-              offerBookingWhatsapp = offerBooking.whatsapp;
-              offerBookingUrl = offerBooking.url;
-              offerBookingInstructions = offerBooking.instructions;
-            }
-
-            await client.query(
-              `INSERT INTO offers
-                (business_id, title, description, discount_type, discount_value,
-                 conditions, start_date, end_date, is_active,
-                 booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-              [
-                businessId,
-                title,
-                tpl.description,
-                tpl.discount_type,
-                discountValue,
-                tpl.conditions,
-                startDate.toISOString().split("T")[0],
-                endDate.toISOString().split("T")[0],
-                true,
-                offerBookingType,
-                offerBookingPhone,
-                offerBookingWhatsapp,
-                offerBookingUrl,
-                offerBookingInstructions,
-              ]
-            );
-            totalOffers++;
-          }
-
-          batchCount++;
-          bizIndex++;
-
-          if (batchCount % 50 === 0) {
-            console.log(`  ${batchCount}/450 businesses inserted...`);
-          }
+        if (totalBiz % 30 === 0) {
+          console.log(`  ${totalBiz}/150 businesses inserted...`);
         }
       }
     }
-    console.log(`  ${businessRecords.length} businesses inserted!`);
-    console.log(`  ${totalLocations} locations inserted!`);
-    console.log(`  ${totalOffers} offers inserted!\n`);
 
-    // ── 4. Commit ─────────────────────────────────────────
+    // ── 6. Commit ───────────────────────────────────────
     await client.query("COMMIT");
 
-    // ── 5. Summary ────────────────────────────────────────
-    console.log("===================================================");
+    // ── 7. Summary ──────────────────────────────────────
+    console.log("\n===================================================");
     console.log("SEED COMPLETE!");
     console.log("===================================================");
-    console.log(`  Categories: ${CATEGORIES.length}`);
-    console.log(`  Cities:     ${CITIES.length}`);
-    console.log(`  Businesses: ${businessRecords.length}`);
-    console.log(`  Locations:  ${totalLocations}`);
-    console.log(`  Offers:     ${totalOffers}`);
+    console.log(`  Businesses:        ${totalBiz}`);
+    console.log(`  Locations:         ${totalLocations}`);
+    console.log(`  Subscriptions:     ${totalSubs}`);
+    console.log(`  Business Hours:    ${totalHours}`);
+    console.log(`  Catalog Categories:${totalCatalogCats}`);
+    console.log(`  Catalog Items:     ${totalCatalogItems}`);
+    console.log(`  Offers:            ${totalOffers}`);
     console.log("===================================================");
-
-    // ── Distribution by city ──
-    console.log("\nDistribution by city:");
-    const cityCounts = {};
-    for (const biz of businessRecords) {
-      cityCounts[biz.cityName] = (cityCounts[biz.cityName] || 0) + 1;
-    }
-    for (const [cityName, count] of Object.entries(cityCounts).sort((a, b) => b[1] - a[1])) {
-      console.log(`  ${cityName}: ${count}`);
-    }
-
-    // ── Distribution by category ──
-    console.log("\nDistribution by category:");
-    const catCounts = {};
-    for (const biz of businessRecords) {
-      catCounts[biz.categoryName] = (catCounts[biz.categoryName] || 0) + 1;
-    }
-    for (const [cat, count] of Object.entries(catCounts).sort((a, b) => b[1] - a[1])) {
-      console.log(`  ${cat}: ${count}`);
-    }
-
-    // ── Verify 2-per-pair guarantee ──
-    console.log("\nVerifying 2-per-pair guarantee...");
-    const pairCounts = {};
-    for (const biz of businessRecords) {
-      const key = `${biz.cityName} | ${biz.categoryName}`;
-      pairCounts[key] = (pairCounts[key] || 0) + 1;
-    }
-    let allPairsOk = true;
-    for (const [pair, count] of Object.entries(pairCounts)) {
-      if (count !== 2) {
-        console.log(`  WARNING: ${pair} has ${count} businesses (expected 2)`);
-        allPairsOk = false;
-      }
-    }
-    if (allPairsOk) {
-      console.log(`  All ${Object.keys(pairCounts).length} city/category pairs have exactly 2 businesses.`);
-    }
 
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1429,7 +1171,7 @@ async function seedBusinesses() {
 // ── RUN ──────────────────────────────────────────────────────
 seedBusinesses()
   .then(() => {
-    console.log("\nDone! You can now start the server.");
+    console.log("\nDone!");
     process.exit(0);
   })
   .catch((err) => {

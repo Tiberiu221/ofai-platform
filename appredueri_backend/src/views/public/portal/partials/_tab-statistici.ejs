@@ -109,15 +109,15 @@
           <div class="stat-label">Oferte active</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value"><%= analytics.offerRequests ? analytics.offerRequests.total : 0 %></div>
-          <div class="stat-label">Cereri de ofertă</div>
+          <div class="stat-value"><%= analytics.offerRequests ? analytics.offerRequests.last30d : 0 %></div>
+          <div class="stat-label">Cereri de ofertă (30 zile)</div>
           <% if (analytics.offerRequests && analytics.offerRequests.uniqueRequesters > 0) { %>
             <div class="stat-subtext"><%= analytics.offerRequests.uniqueRequesters %> utilizator<%= analytics.offerRequests.uniqueRequesters === 1 ? '' : 'i' %> unic<%= analytics.offerRequests.uniqueRequesters === 1 ? '' : 'i' %></div>
           <% } %>
         </div>
         <div class="stat-card">
           <div class="stat-value"><%= analytics.codeReveals ? analytics.codeReveals.last30d : 0 %></div>
-          <div class="stat-label">Coduri folosite</div>
+          <div class="stat-label">Coduri folosite (30 zile)</div>
         </div>
         <%
           var actionCards = {
@@ -140,8 +140,13 @@
             });
           }
         %>
+        <% if (clickCards.length > 0) { %>
+          <div class="stats-grid-separator">
+            <span class="stats-grid-separator-text">Interacțiuni (30 zile)</span>
+          </div>
+        <% } %>
         <% clickCards.forEach(function(card) { %>
-          <div class="stat-card">
+          <div class="stat-card stat-card-accent">
             <div class="stat-value"><%= card.value %></div>
             <div class="stat-label"><%= card.icon %> <%= card.label %></div>
           </div>

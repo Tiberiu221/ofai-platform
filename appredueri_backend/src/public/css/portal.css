@@ -374,6 +374,15 @@
   .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
   .stat-label { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px; }
   .stat-subtext { font-size: 0.7rem; color: var(--text-tertiary); margin-top: 4px; opacity: 0.7; }
+  .stat-card-accent { border-color: rgba(251, 146, 60, 0.15); }
+  .stats-grid-separator {
+    grid-column: 1 / -1; text-align: left; padding: 8px 0 0;
+    border-top: 1px solid var(--border); margin-top: 4px;
+  }
+  .stats-grid-separator-text {
+    font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
 
   /* ── Score Card ── */
   .score-card { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
