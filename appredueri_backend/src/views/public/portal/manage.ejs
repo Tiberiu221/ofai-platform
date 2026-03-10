@@ -1621,7 +1621,7 @@
     apiFetch('/api/web/portal/' + businessId + '/reviews/' + reviewId + '/respond', {
       method: method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text })
+      body: JSON.stringify({ response_text: text })
     })
     .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, data: j }; }); })
     .then(function(result) {
