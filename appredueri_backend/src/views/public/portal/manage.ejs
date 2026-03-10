@@ -169,6 +169,9 @@
       analyticsDays: tier.plan.analytics_days || 7,
       hasConcierge: !!tier.plan.has_concierge,
       hasAiSuggestedResponses: !!tier.plan.has_ai_suggested_responses,
+      hasCompetitiveInsights: !!tier.plan.has_competitive_insights,
+      hasCustomPush: !!tier.plan.has_custom_push,
+      hasAnalyticsExport: !!tier.plan.has_analytics_export,
     } : {}
   }).replace(/<\//g, '<\\/') %>;
 
@@ -1271,6 +1274,12 @@
 
     // Analytics charts — Standard+
     gateSection('analytics-charts-section', plan.hasAnalyticsCharts, 'Grafice statistici', 'Standard');
+
+    // Competitive insights — Premium+
+    gateSection('competitive-insights-section', plan.hasCompetitiveInsights, 'Analiza Competitiva', 'Premium');
+
+    // Custom push notifications — Premium+
+    gateSection('push-notifications-section', plan.hasCustomPush, 'Notificari Push', 'Premium');
 
     // Concierge onboarding — Standard+ (multiple elements via class)
     document.querySelectorAll('.concierge-section').forEach(function(el) {

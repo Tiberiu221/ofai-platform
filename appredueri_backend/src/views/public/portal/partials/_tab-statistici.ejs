@@ -224,12 +224,42 @@
             </select>
             <div class="chart-container">
               <canvas id="views-chart"></canvas>
+              <% if (!(tier && tier.plan && tier.plan.has_analytics_charts)) { %>
+                <div class="chart-placeholder-teaser">
+                  <svg width="100%" height="100%" viewBox="0 0 400 140" preserveAspectRatio="none">
+                    <rect x="20" y="100" width="30" height="30" rx="3" fill="rgba(251,146,60,0.3)"/>
+                    <rect x="65" y="70" width="30" height="60" rx="3" fill="rgba(251,146,60,0.4)"/>
+                    <rect x="110" y="85" width="30" height="45" rx="3" fill="rgba(251,146,60,0.35)"/>
+                    <rect x="155" y="40" width="30" height="90" rx="3" fill="rgba(251,146,60,0.5)"/>
+                    <rect x="200" y="60" width="30" height="70" rx="3" fill="rgba(251,146,60,0.45)"/>
+                    <rect x="245" y="30" width="30" height="100" rx="3" fill="rgba(251,146,60,0.55)"/>
+                    <rect x="290" y="50" width="30" height="80" rx="3" fill="rgba(251,146,60,0.4)"/>
+                    <rect x="335" y="75" width="30" height="55" rx="3" fill="rgba(251,146,60,0.35)"/>
+                    <line x1="10" y1="130" x2="390" y2="130" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  </svg>
+                </div>
+              <% } %>
             </div>
           </div>
           <div class="chart-section">
             <div class="chart-title">Abonați noi</div>
             <div class="chart-container">
               <canvas id="subscribers-chart"></canvas>
+              <% if (!(tier && tier.plan && tier.plan.has_analytics_charts)) { %>
+                <div class="chart-placeholder-teaser">
+                  <svg width="100%" height="100%" viewBox="0 0 400 140" preserveAspectRatio="none">
+                    <rect x="20" y="90" width="30" height="40" rx="3" fill="rgba(251,146,60,0.3)"/>
+                    <rect x="65" y="105" width="30" height="25" rx="3" fill="rgba(251,146,60,0.25)"/>
+                    <rect x="110" y="80" width="30" height="50" rx="3" fill="rgba(251,146,60,0.4)"/>
+                    <rect x="155" y="60" width="30" height="70" rx="3" fill="rgba(251,146,60,0.45)"/>
+                    <rect x="200" y="95" width="30" height="35" rx="3" fill="rgba(251,146,60,0.3)"/>
+                    <rect x="245" y="50" width="30" height="80" rx="3" fill="rgba(251,146,60,0.5)"/>
+                    <rect x="290" y="70" width="30" height="60" rx="3" fill="rgba(251,146,60,0.4)"/>
+                    <rect x="335" y="110" width="30" height="20" rx="3" fill="rgba(251,146,60,0.2)"/>
+                    <line x1="10" y1="130" x2="390" y2="130" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  </svg>
+                </div>
+              <% } %>
             </div>
           </div>
           <div class="chart-section">
@@ -241,36 +271,90 @@
             </select>
             <div class="chart-container">
               <canvas id="clicks-chart"></canvas>
+              <% if (!(tier && tier.plan && tier.plan.has_analytics_charts)) { %>
+                <div class="chart-placeholder-teaser">
+                  <svg width="100%" height="100%" viewBox="0 0 400 140" preserveAspectRatio="none">
+                    <rect x="20" y="80" width="30" height="50" rx="3" fill="rgba(251,146,60,0.35)"/>
+                    <rect x="65" y="55" width="30" height="75" rx="3" fill="rgba(251,146,60,0.45)"/>
+                    <rect x="110" y="95" width="30" height="35" rx="3" fill="rgba(251,146,60,0.3)"/>
+                    <rect x="155" y="70" width="30" height="60" rx="3" fill="rgba(251,146,60,0.4)"/>
+                    <rect x="200" y="45" width="30" height="85" rx="3" fill="rgba(251,146,60,0.5)"/>
+                    <rect x="245" y="90" width="30" height="40" rx="3" fill="rgba(251,146,60,0.3)"/>
+                    <rect x="290" y="60" width="30" height="70" rx="3" fill="rgba(251,146,60,0.45)"/>
+                    <rect x="335" y="85" width="30" height="45" rx="3" fill="rgba(251,146,60,0.35)"/>
+                    <line x1="10" y1="130" x2="390" y2="130" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                  </svg>
+                </div>
+              <% } %>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Competitive Insights (Premium only) -->
-      <% if (tier && tier.plan && tier.plan.has_competitive_insights) { %>
-        <div class="glass-card" id="competitive-insights-card" style="margin-top: 16px;">
-          <h3 class="section-title">Analiza Competitiva</h3>
-          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
-            Cum te compari cu business-urile similare din aceeasi categorie si oras.
-          </p>
+      <!-- Competitive Insights (Premium real / teaser for others) -->
+      <div class="glass-card" id="competitive-insights-section" style="margin-top: 16px;">
+        <h3 class="section-title">Analiza Competitiva</h3>
+        <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+          Cum te compari cu business-urile similare din aceeasi categorie si oras.
+        </p>
+
+        <% if (tier && tier.plan && tier.plan.has_competitive_insights) { %>
+          <!-- Real content loaded via JS -->
           <div id="competitive-content">
             <div style="text-align: center; padding: 24px; color: var(--text-tertiary);">
               Se incarca...
             </div>
           </div>
-        </div>
-      <% } %>
+        <% } else { %>
+          <!-- Fake teaser data -->
+          <div class="comp-legend">
+            <span><span class="comp-legend-dot" style="background:#fb923c;"></span>Tu</span>
+            <span><span class="comp-legend-dot" style="background:#3b82f6;"></span>Media categoriei (10 business-uri)</span>
+          </div>
+          <% var fakeInsights = [
+               { metric: 'Vizualizari (30 zile)', yours: 245, avg: 180 },
+               { metric: 'Abonati', yours: 12, avg: 8 },
+               { metric: 'Oferte active', yours: 3, avg: 2 },
+               { metric: 'Rating', yours: 4.5, avg: 3.8 },
+               { metric: 'Recenzii', yours: 15, avg: 6 }
+             ];
+             fakeInsights.forEach(function(ins) {
+               var rowMax = Math.max(ins.yours, ins.avg, 1);
+               var yoursPct = Math.round((ins.yours / rowMax) * 100);
+               var avgPct = Math.round((ins.avg / rowMax) * 100);
+               var diffPct = ins.avg > 0 ? Math.round(((ins.yours - ins.avg) / ins.avg) * 100) : 0;
+               var diffSign = diffPct >= 0 ? '+' : '';
+          %>
+            <div class="comp-row">
+              <div class="comp-metric"><%= ins.metric %></div>
+              <div class="comp-bars">
+                <div class="comp-bar-wrap">
+                  <div class="comp-bar-label">Tu</div>
+                  <div class="comp-bar-track"><div class="comp-bar-fill yours" style="width:<%= yoursPct %>%"></div></div>
+                  <div class="comp-bar-value"><%= ins.yours %></div>
+                </div>
+                <div class="comp-bar-wrap">
+                  <div class="comp-bar-label">Media</div>
+                  <div class="comp-bar-track"><div class="comp-bar-fill avg" style="width:<%= avgPct %>%"></div></div>
+                  <div class="comp-bar-value"><%= ins.avg %></div>
+                </div>
+              </div>
+              <div class="comp-diff <%= diffPct >= 0 ? 'positive' : 'negative' %>"><%= diffSign %><%= diffPct %>%</div>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
 
-      <!-- Custom Push Notifications (Premium only) -->
-      <% if (tier && tier.plan && tier.plan.has_custom_push) { %>
-        <div class="glass-card" style="margin-top: 16px;">
-          <h3 class="section-title">Notificari catre abonati</h3>
-          <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
-            Trimite notificari push personalizate catre abonatii business-ului tau.
-            Limita: 2 notificari pe saptamana.
-          </p>
+      <!-- Custom Push Notifications (Premium real / teaser for others) -->
+      <div class="glass-card" id="push-notifications-section" style="margin-top: 16px;">
+        <h3 class="section-title">Notificari catre abonati</h3>
+        <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+          Trimite notificari push personalizate catre abonatii business-ului tau.
+          Limita: 2 notificari pe saptamana.
+        </p>
 
-          <!-- Send Form -->
+        <% if (tier && tier.plan && tier.plan.has_custom_push) { %>
+          <!-- Real form -->
           <form id="push-form" onsubmit="return sendCustomPush(event)">
             <div class="form-group">
               <label class="form-label">Titlu <span style="color: var(--text-tertiary); font-weight: 400;">(max 100 caractere)</span></label>
@@ -297,7 +381,7 @@
             </div>
           </form>
 
-          <!-- Push History -->
+          <!-- Push History (real) -->
           <div style="margin-top: 24px;">
             <h4 style="font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px;">
               Istoric notificari
@@ -308,6 +392,56 @@
               </div>
             </div>
           </div>
-        </div>
-      <% } %>
+        <% } else { %>
+          <!-- Fake teaser (static, non-interactive) -->
+          <div class="form-group">
+            <label class="form-label">Titlu <span style="color: var(--text-tertiary); font-weight: 400;">(max 100 caractere)</span></label>
+            <div class="form-input" style="opacity: 0.6; pointer-events: none;">Oferta speciala de weekend!</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Mesaj <span style="color: var(--text-tertiary); font-weight: 400;">(max 300 caractere)</span></label>
+            <div class="form-input" style="opacity: 0.6; pointer-events: none; min-height: 72px;">Vino sa profiti de 30% reducere la toate produsele, doar in acest weekend.</div>
+            <div style="text-align: right; font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">0/300</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="btn-primary" disabled style="min-width: 160px; opacity: 0.6;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              Trimite notificarea
+            </button>
+            <span style="font-size: 12px; color: var(--text-tertiary);">2 notificari ramase saptamana aceasta</span>
+          </div>
+
+          <!-- Fake push history -->
+          <div style="margin-top: 24px;">
+            <h4 style="font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px;">
+              Istoric notificari
+            </h4>
+            <div>
+              <div class="push-history-item">
+                <div class="push-history-header">
+                  <div class="push-history-title">Weekend cu reduceri!</div>
+                  <div class="push-history-date">8 mar. 2026, 14:30</div>
+                </div>
+                <div class="push-history-message">Vino la noi in acest weekend pentru 25% reducere la toate serviciile.</div>
+                <div class="push-history-stats">
+                  <span class="success">45 trimise</span> &middot; 45 destinatari
+                </div>
+              </div>
+              <div class="push-history-item">
+                <div class="push-history-header">
+                  <div class="push-history-title">Produs nou in stoc!</div>
+                  <div class="push-history-date">3 mar. 2026, 10:15</div>
+                </div>
+                <div class="push-history-message">Am adaugat produse noi in catalog. Verifica cele mai recente oferte!</div>
+                <div class="push-history-stats">
+                  <span class="success">38 trimise</span> &middot; 38 destinatari
+                </div>
+              </div>
+            </div>
+          </div>
+        <% } %>
+      </div>
 
