@@ -1387,7 +1387,182 @@
     html += '</div>';
     html += '</div>';  // end glass-card
 
+    // ── Detailed Comparison Table ──
+    var plans = subscription && subscription.allPlans ? subscription.allPlans : [];
+    if (plans.length === 3) {
+      html += buildComparisonTable(plans, tier);
+    }
+
     container.innerHTML = html;
+  }
+
+  /**
+   * Build the detailed comparison table HTML (mirrors pricing.ejs)
+   * @param {Array} plans - [free, standard, premium] plan objects
+   * @param {string} currentTier - 'free' | 'standard' | 'premium'
+   */
+  function buildComparisonTable(plans, currentTier) {
+    var free = plans[0], std = plans[1], prem = plans[2];
+
+    // SVG helpers
+    var checkSvg = '<svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+    var checkPremSvg = '<svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+    var xSvg = '<svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+    function yn(val, premium) { return val ? (premium ? checkPremSvg : checkSvg) : xSvg; }
+    function limitText(val) { return val === null || val === undefined ? 'Nelimitate' : val; }
+    function highlightClass(slug) { return slug === currentTier ? ' class="sub-cmp-current"' : ''; }
+
+    // Column header labels
+    var colHeaders = [
+      { slug: 'free', label: 'Gratuit' },
+      { slug: 'standard', label: 'Standard' },
+      { slug: 'premium', label: 'Premium' },
+    ];
+
+    var h = '';
+    h += '<div class="glass-card sub-comparison-card" style="margin-top: 24px;">';
+    h += '<h3 class="section-title" style="border: none; margin: 0 0 16px; padding: 0;">Comparatie detaliata</h3>';
+    h += '<div class="pricing-comparison-table-wrapper">';
+    h += '<table class="pricing-comparison-table sub-cmp-table">';
+
+    // thead
+    h += '<thead><tr><th class="pricing-comparison-feature-col">Functionalitate</th>';
+    colHeaders.forEach(function(c) {
+      var isCurrent = c.slug === currentTier;
+      var cls = c.slug === 'standard' ? ' pricing-col-standard' : (c.slug === 'premium' ? ' pricing-col-premium' : '');
+      if (isCurrent) cls += ' sub-cmp-current-col';
+      h += '<th class="' + cls.trim() + '">' + c.label;
+      if (isCurrent) h += ' <span class="sub-cmp-badge">Actual</span>';
+      h += '</th>';
+    });
+    h += '</tr></thead>';
+
+    // tbody
+    h += '<tbody>';
+
+    // ── Limite ──
+    h += '<tr class="pricing-comparison-category"><td colspan="4">Limite</td></tr>';
+    h += '<tr><td>Oferte active</td>';
+    h += '<td' + highlightClass('free') + '>' + limitText(free.maxActiveOffers) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + limitText(std.maxActiveOffers) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + limitText(prem.maxActiveOffers) + '</td></tr>';
+
+    h += '<tr><td>Imagini galerie</td>';
+    h += '<td' + highlightClass('free') + '>' + limitText(free.maxGalleryImages) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + limitText(std.maxGalleryImages) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + limitText(prem.maxGalleryImages) + '</td></tr>';
+
+    h += '<tr><td>Locatii</td>';
+    h += '<td' + highlightClass('free') + '>' + limitText(free.maxLocations) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + limitText(std.maxLocations) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + limitText(prem.maxLocations) + '</td></tr>';
+
+    h += '<tr><td>Coduri promo / oferta</td>';
+    h += '<td' + highlightClass('free') + '>' + limitText(free.maxPromoCodesPerOffer) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + limitText(std.maxPromoCodesPerOffer) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + limitText(prem.maxPromoCodesPerOffer) + '</td></tr>';
+
+    h += '<tr><td>Perioada statistici</td>';
+    h += '<td' + highlightClass('free') + '>' + (free.analyticsDays || 7) + ' zile</td>';
+    h += '<td' + highlightClass('standard') + '>' + (std.analyticsDays || 30) + ' zile</td>';
+    h += '<td' + highlightClass('premium') + '>' + (prem.analyticsDays || 90) + ' zile</td></tr>';
+
+    h += '<tr><td>Badge</td>';
+    h += '<td' + highlightClass('free') + '>' + xSvg + '</td>';
+    h += '<td' + highlightClass('standard') + '><span style="color: #fb923c;">Verificat</span></td>';
+    h += '<td' + highlightClass('premium') + '><span style="color: #a78bfa;">Premium</span></td></tr>';
+
+    // ── Interactiune clienti ──
+    h += '<tr class="pricing-comparison-category"><td colspan="4">Interactiune clienti</td></tr>';
+
+    h += '<tr><td>Raspunsuri la recenzii</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.canRespondReviews) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.canRespondReviews) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.canRespondReviews) + '</td></tr>';
+
+    h += '<tr><td>Rezumat AI recenzii</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasAiSummary) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasAiSummary) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasAiSummary) + '</td></tr>';
+
+    h += '<tr><td>Raspunsuri sugerate AI</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasAiSuggestedResponses, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasAiSuggestedResponses, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasAiSuggestedResponses, true) + '</td></tr>';
+
+    h += '<tr><td>Rezervari</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasBooking) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasBooking) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasBooking) + '</td></tr>';
+
+    // ── Notificari ──
+    h += '<tr class="pricing-comparison-category"><td colspan="4">Notificari</td></tr>';
+
+    h += '<tr><td>Push la oferta noua</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasPushOnOffer) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasPushOnOffer) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasPushOnOffer) + '</td></tr>';
+
+    h += '<tr><td>Notificari push personalizate</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasCustomPush, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasCustomPush, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasCustomPush, true) + '</td></tr>';
+
+    // ── Statistici & Analize ──
+    h += '<tr class="pricing-comparison-category"><td colspan="4">Statistici & Analize</td></tr>';
+
+    h += '<tr><td>Grafice statistici</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasAnalyticsCharts) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasAnalyticsCharts) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasAnalyticsCharts) + '</td></tr>';
+
+    h += '<tr><td>Export CSV statistici</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasAnalyticsExport, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasAnalyticsExport, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasAnalyticsExport, true) + '</td></tr>';
+
+    h += '<tr><td>Analize competitive</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasCompetitiveInsights, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasCompetitiveInsights, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasCompetitiveInsights, true) + '</td></tr>';
+
+    // ── Vizibilitate & Promovare ──
+    h += '<tr class="pricing-comparison-category"><td colspan="4">Vizibilitate & Promovare</td></tr>';
+
+    h += '<tr><td>Plasare promovata</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasPromotedPlacement) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasPromotedPlacement) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasPromotedPlacement) + '</td></tr>';
+
+    h += '<tr><td>Prioritate in cautare</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasSearchPriority, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasSearchPriority, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasSearchPriority, true) + '</td></tr>';
+
+    // ── Suport ──
+    h += '<tr class="pricing-comparison-category"><td colspan="4">Suport</td></tr>';
+
+    h += '<tr><td>Configurare asistata de echipa</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasConcierge) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasConcierge) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasConcierge) + '</td></tr>';
+
+    h += '<tr><td>Suport prioritar</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasPrioritySupport, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasPrioritySupport, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasPrioritySupport, true) + '</td></tr>';
+
+    h += '</tbody></table></div>';
+
+    // Link to full pricing page
+    h += '<div style="text-align: center; margin-top: 16px;">';
+    h += '<a href="/preturi" target="_blank" style="color: var(--accent); font-size: 0.8125rem; text-decoration: none; font-weight: 500;">Vezi pagina de preturi completa &rarr;</a>';
+    h += '</div>';
+
+    h += '</div>';  // end glass-card
+
+    return h;
   }
 
   // Cancel subscription handler

@@ -8,7 +8,7 @@ const pool = require("../db");
 const { requireWebAuth } = require("../middleware/webAuth");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier, requireFeature, requireLimit } = require('../middleware/tierAuth');
-const { countActiveOffers, countGalleryImages, countLocations, getBusinessTier } = require('../helpers/tiers');
+const { countActiveOffers, countGalleryImages, countLocations, getBusinessTier, getPlans } = require('../helpers/tiers');
 const { searchLimiter, mapsParseLimiter } = require("../middleware/rateLimiter");
 const { parseMapsLink } = require("../helpers/mapsParser");
 const { sanitizeString } = require("../helpers/validate");
@@ -1942,36 +1942,50 @@ router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, asy
     const tierInfo = await getBusinessTier(pool, businessId);
     const { plan, tier, isTrial, subscription } = tierInfo;
 
+    // Helper to serialise a plan row for the client
+    function serialisePlan(p) {
+      return {
+        slug: p.slug,
+        name: p.name,
+        priceMonthly: p.price_monthly,
+        priceYearly: p.price_yearly,
+        maxActiveOffers: p.max_active_offers,
+        maxGalleryImages: p.max_gallery_images,
+        maxLocations: p.max_locations,
+        maxPromoCodesPerOffer: p.max_promo_codes_per_offer,
+        analyticsDays: p.analytics_days,
+        canRespondReviews: p.can_respond_reviews,
+        canUploadLogo: p.can_upload_logo,
+        canUploadCover: p.can_upload_cover,
+        hasVerifiedBadge: p.has_verified_badge,
+        hasAiSummary: p.has_ai_summary,
+        hasAiSuggestedResponses: p.has_ai_suggested_responses,
+        hasPushOnOffer: p.has_push_on_offer,
+        hasCustomPush: p.has_custom_push,
+        hasAnalyticsCharts: p.has_analytics_charts,
+        hasAnalyticsExport: p.has_analytics_export,
+        hasCompetitiveInsights: p.has_competitive_insights,
+        hasPromotedPlacement: p.has_promoted_placement,
+        hasSearchPriority: p.has_search_priority,
+        hasCompetitorBlocking: p.has_competitor_blocking,
+        hasDealNomination: p.has_deal_nomination,
+        hasBooking: p.has_booking,
+        hasPrioritySupport: p.has_priority_support,
+        hasConcierge: p.has_concierge,
+        badgeType: p.badge_type,
+      };
+    }
+
+    // Fetch all plans for comparison table
+    const allPlansRaw = await getPlans(pool);
+    const allPlans = ['free', 'standard', 'premium']
+      .filter(slug => allPlansRaw[slug])
+      .map(slug => serialisePlan(allPlansRaw[slug]));
+
     res.json({
       tier,
-      plan: {
-        slug: plan.slug,
-        name: plan.name,
-        priceMonthly: plan.price_monthly,
-        priceYearly: plan.price_yearly,
-        maxActiveOffers: plan.max_active_offers,
-        maxGalleryImages: plan.max_gallery_images,
-        maxLocations: plan.max_locations,
-        maxPromoCodesPerOffer: plan.max_promo_codes_per_offer,
-        analyticsDays: plan.analytics_days,
-        canRespondReviews: plan.can_respond_reviews,
-        canUploadLogo: plan.can_upload_logo,
-        canUploadCover: plan.can_upload_cover,
-        hasVerifiedBadge: plan.has_verified_badge,
-        hasAiSummary: plan.has_ai_summary,
-        hasPushOnOffer: plan.has_push_on_offer,
-        hasCustomPush: plan.has_custom_push,
-        hasAnalyticsCharts: plan.has_analytics_charts,
-        hasAnalyticsExport: plan.has_analytics_export,
-        hasCompetitiveInsights: plan.has_competitive_insights,
-        hasPromotedPlacement: plan.has_promoted_placement,
-        hasSearchPriority: plan.has_search_priority,
-        hasCompetitorBlocking: plan.has_competitor_blocking,
-        hasDealNomination: plan.has_deal_nomination,
-        hasBooking: plan.has_booking,
-        hasPrioritySupport: plan.has_priority_support,
-        badgeType: plan.badge_type,
-      },
+      plan: serialisePlan(plan),
+      allPlans,
       isTrial,
       trialEnd: subscription?.trial_end || null,
       periodEnd: subscription?.current_period_end || null,
