@@ -2026,7 +2026,7 @@
     var newValue = !isOn;
 
     try {
-      var res = await apiFetch('/my-businesses/' + businessId + '/competitor-blocking', {
+      var res = await apiFetch('/api/web/portal/' + businessId + '/competitor-blocking', {
         method: 'PUT',
         body: JSON.stringify({ enabled: newValue }),
       });

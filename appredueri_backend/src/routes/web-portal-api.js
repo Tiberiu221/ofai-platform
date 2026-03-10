@@ -2144,4 +2144,33 @@ router.post(
   }
 );
 
+// =====================================
+//   COMPETITOR BLOCKING — Toggle
+// =====================================
+router.put(
+  "/api/web/portal/:businessId/competitor-blocking",
+  requireBusinessOwner,
+  requireFeature('has_competitor_blocking'),
+  async (req, res) => {
+    const { businessId } = req.params;
+    const { enabled } = req.body;
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled trebuie sa fie boolean' });
+    }
+
+    try {
+      await pool.query(
+        'UPDATE businesses SET competitor_blocking_enabled = $1 WHERE id = $2',
+        [enabled, parseInt(businessId, 10)]
+      );
+
+      res.json({ competitor_blocking_enabled: enabled });
+    } catch (err) {
+      console.error('[Portal API] Competitor blocking toggle error:', err);
+      res.status(500).json({ error: 'Eroare server' });
+    }
+  }
+);
+
 module.exports = router;

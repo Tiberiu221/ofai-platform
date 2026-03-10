@@ -173,7 +173,8 @@
       <div class="glass-card" id="gallery-section" style="margin-top: 16px;">
         <h3 class="section-title">Galerie foto</h3>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
-          Maximum <%= tier && tier.plan && tier.plan.max_gallery_images ? tier.plan.max_gallery_images : 8 %> imagini. Recomandat: format landscape, minim 1200x800px.
+          <% var _gMax = (tier && tier.plan) ? tier.plan.max_gallery_images : 8; %>
+          <%= _gMax == null ? 'Nelimitat' : ('Maximum ' + _gMax) %> imagini. Recomandat: format landscape, minim 1200x800px.
         </p>
         <div class="gallery-upload-grid" id="gallery-grid">
           <% if (business.images && business.images.length > 0) { %>
@@ -184,8 +185,9 @@
               </div>
             <% }); %>
           <% } %>
-          <% const galleryMax = (tier && tier.plan && tier.plan.max_gallery_images) || 8;
-             if (!business.images || business.images.length < galleryMax) { %>
+          <% const galleryMax = (tier && tier.plan) ? tier.plan.max_gallery_images : 8;
+             const galleryUnlimited = galleryMax === null || galleryMax === undefined;
+             if (galleryUnlimited || !business.images || business.images.length < galleryMax) { %>
             <label class="gallery-upload-add" id="gallery-add-btn">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>Adaugă</span>
@@ -201,9 +203,10 @@
       <div class="glass-card" id="locations-section" style="margin-top: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
           <h3 class="section-title" style="margin-bottom: 0;">Locații</h3>
-          <% const maxLocs = (tier && tier.plan && tier.plan.max_locations) || 1;
-             const currentLocs = (typeof locations !== 'undefined' && locations) ? locations.length : 0; %>
-          <% if (currentLocs < maxLocs) { %>
+          <% const maxLocs = (tier && tier.plan) ? tier.plan.max_locations : 1;
+             const currentLocs = (typeof locations !== 'undefined' && locations) ? locations.length : 0;
+             const isUnlimited = maxLocs === null || maxLocs === undefined; %>
+          <% if (isUnlimited || currentLocs < maxLocs) { %>
             <button type="button" class="btn-accent" onclick="loc_showAddForm()" style="font-size: 0.8125rem; padding: 6px 14px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Adaugă locație
