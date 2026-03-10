@@ -1574,6 +1574,66 @@
   /* ════════════════════════════════
      TAB 3: REVIEWS
      ════════════════════════════════ */
+
+  /* ── Review Filtering & Sorting ── */
+  var _activeRating = 0; // 0 = all
+  var _filterTimer = null;
+
+  window.setRatingFilter = function(rating, btn) {
+    _activeRating = (_activeRating === rating) ? 0 : rating;
+    var pills = document.querySelectorAll('.rating-pill');
+    pills.forEach(function(p) { p.classList.remove('active'); });
+    if (_activeRating === 0) {
+      pills[0].classList.add('active'); // "Toate" pill
+    } else if (btn) {
+      btn.classList.add('active');
+    }
+    filterReviews();
+  };
+
+  window.debounceFilterReviews = function() {
+    clearTimeout(_filterTimer);
+    _filterTimer = setTimeout(filterReviews, 300);
+  };
+
+  window.filterReviews = function() {
+    var cards = document.querySelectorAll('#reviews-list .review-card');
+    if (!cards.length) return;
+
+    var statusVal = document.getElementById('reviews-status-filter').value;
+    var sortVal = document.getElementById('reviews-sort').value;
+    var searchVal = (document.getElementById('reviews-search').value || '').toLowerCase().trim();
+
+    var visible = [];
+    cards.forEach(function(card) {
+      var show = true;
+      // Rating filter
+      if (_activeRating > 0 && parseInt(card.dataset.rating) !== _activeRating) show = false;
+      // Status filter
+      if (statusVal !== 'all' && card.dataset.responded !== statusVal) show = false;
+      // Search filter
+      if (searchVal && card.dataset.text.indexOf(searchVal) === -1) show = false;
+
+      card.style.display = show ? '' : 'none';
+      if (show) visible.push(card);
+    });
+
+    // Sort visible cards
+    var container = document.getElementById('reviews-list');
+    visible.sort(function(a, b) {
+      if (sortVal === 'newest') return parseInt(b.dataset.date) - parseInt(a.dataset.date);
+      if (sortVal === 'oldest') return parseInt(a.dataset.date) - parseInt(b.dataset.date);
+      if (sortVal === 'rating-desc') return parseInt(b.dataset.rating) - parseInt(a.dataset.rating);
+      if (sortVal === 'rating-asc') return parseInt(a.dataset.rating) - parseInt(b.dataset.rating);
+      return 0;
+    });
+    visible.forEach(function(card) { container.appendChild(card); });
+
+    // No results message
+    var noResults = document.getElementById('reviews-no-results');
+    if (noResults) noResults.style.display = visible.length === 0 ? '' : 'none';
+  };
+
   window.updateCharCount = function(reviewId) {
     var textarea = document.getElementById('response-text-' + reviewId);
     var counter = document.getElementById('char-count-' + reviewId);

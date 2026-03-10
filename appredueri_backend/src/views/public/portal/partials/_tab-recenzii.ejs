@@ -4,8 +4,41 @@
           <p>Nu ai nicio recenzie încă.<br>Recenziile vor apărea pe măsură ce clienții vizitează pagina ta.</p>
         </div>
       <% } else { %>
+        <!-- Filter Bar -->
+        <div class="reviews-filter-bar">
+          <div class="reviews-filter-group">
+            <button class="rating-pill active" onclick="setRatingFilter(0, this)">Toate</button>
+            <% for (var r = 5; r >= 1; r--) { %>
+              <button class="rating-pill" onclick="setRatingFilter(<%= r %>, this)" data-rating="<%= r %>">★<%= r %></button>
+            <% } %>
+          </div>
+          <div class="reviews-filter-group">
+            <select class="form-select reviews-filter-select" onchange="filterReviews()" id="reviews-status-filter">
+              <option value="all">Toate</option>
+              <option value="0">Fără răspuns</option>
+              <option value="1">Cu răspuns</option>
+            </select>
+            <select class="form-select reviews-filter-select" onchange="filterReviews()" id="reviews-sort">
+              <option value="newest">Cele mai noi</option>
+              <option value="oldest">Cele mai vechi</option>
+              <option value="rating-desc">Rating descrescător</option>
+              <option value="rating-asc">Rating crescător</option>
+            </select>
+          </div>
+          <div class="reviews-filter-group reviews-search-group">
+            <input type="text" class="form-input reviews-search" id="reviews-search" placeholder="Caută în recenzii..." oninput="debounceFilterReviews()">
+          </div>
+        </div>
+        <div class="reviews-no-results" id="reviews-no-results" style="display: none;">
+          <p>Nicio recenzie nu corespunde filtrelor.</p>
+        </div>
+        <div id="reviews-list">
         <% reviews.forEach(function(review) { %>
-          <div class="review-card" id="review-<%= review.id %>">
+          <div class="review-card" id="review-<%= review.id %>"
+               data-rating="<%= review.rating %>"
+               data-responded="<%= review.response_id ? '1' : '0' %>"
+               data-date="<%= new Date(review.created_at).getTime() %>"
+               data-text="<%- ((review.first_name || '') + ' ' + (review.last_name || '') + ' ' + (review.comment || '')).toLowerCase().replace(/"/g, '&quot;') %>">
             <div class="review-header">
               <div class="review-avatar">
                 <%= review.first_name ? review.first_name.charAt(0).toUpperCase() : '?' %>
@@ -81,4 +114,5 @@
             <% } %>
           </div>
         <% }); %>
+        </div><!-- /reviews-list -->
       <% } %>
