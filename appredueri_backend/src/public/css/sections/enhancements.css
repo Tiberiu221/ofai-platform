@@ -1465,4 +1465,77 @@
   line-height: 1.6;
   margin: 0;
 }
+.pricing-trial-note {
+  font-size: 0.75rem;
+  color: var(--text-tertiary, #71717a);
+  margin: 8px 0 0;
+}
+
+/* ═══ COMPARISON TABLE ═══ */
+.pricing-comparison {
+  max-width: 900px;
+  margin: 0 auto 64px;
+}
+.pricing-comparison-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.75rem;
+  color: var(--text-primary, #f4f4f5);
+  text-align: center;
+  margin: 0 0 32px;
+}
+.pricing-comparison-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.pricing-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.pricing-comparison-table thead th {
+  padding: 12px 16px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text-primary, #f4f4f5);
+  border-bottom: 2px solid var(--border, rgba(255,255,255,0.08));
+}
+.pricing-comparison-feature-col {
+  text-align: left !important;
+  min-width: 200px;
+}
+.pricing-col-standard { color: #fb923c !important; }
+.pricing-col-premium { color: #a78bfa !important; }
+.pricing-comparison-table tbody td {
+  padding: 10px 16px;
+  text-align: center;
+  color: var(--text-secondary, #a1a1aa);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.pricing-comparison-table tbody td:first-child {
+  text-align: left;
+  color: var(--text-primary, #f4f4f5);
+  font-weight: 500;
+}
+.pricing-comparison-table tbody tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+.pricing-comparison-category td {
+  padding: 16px 16px 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary, #71717a) !important;
+  border-bottom: 1px solid var(--border, rgba(255,255,255,0.08)) !important;
+}
+.cmp-check { color: #22c55e; }
+.cmp-check--premium { color: #a78bfa; }
+.cmp-x { color: var(--text-tertiary, #71717a); opacity: 0.4; }
+@media (max-width: 600px) {
+  .pricing-comparison-table { font-size: 0.8125rem; }
+  .pricing-comparison-table thead th,
+  .pricing-comparison-table tbody td { padding: 8px 10px; }
+  .pricing-comparison-feature-col { min-width: 140px; }
+}
 

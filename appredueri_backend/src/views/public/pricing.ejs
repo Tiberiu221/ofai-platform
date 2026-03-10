@@ -153,17 +153,184 @@
             <% if (plan.slug === 'free') { %>
               <a href="/pentru-business" class="pricing-cta pricing-cta--free">Incepe gratuit</a>
             <% } else if (plan.slug === 'standard') { %>
-              <a href="<%= webUser ? '/portal' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
-                Alege Standard
+              <a href="<%= webUser ? '/cont' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
+                Incepe trial gratuit
               </a>
+              <p class="pricing-trial-note">14 zile gratuit, fara card</p>
             <% } else { %>
-              <a href="<%= webUser ? '/portal' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
+              <a href="<%= webUser ? '/cont' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
                 Alege Premium
               </a>
             <% } %>
           </div>
         </div>
       <% }); %>
+    </div>
+
+    <!-- Detailed Comparison Table -->
+    <div class="pricing-comparison">
+      <h2 class="pricing-comparison-title">Comparatie detaliata</h2>
+      <div class="pricing-comparison-table-wrapper">
+        <table class="pricing-comparison-table">
+          <thead>
+            <tr>
+              <th class="pricing-comparison-feature-col">Functionalitate</th>
+              <th>Gratuit</th>
+              <th class="pricing-col-standard">Standard</th>
+              <th class="pricing-col-premium">Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Limite</td>
+            </tr>
+            <tr>
+              <td>Oferte active</td>
+              <td>2</td>
+              <td>6</td>
+              <td>Nelimitate</td>
+            </tr>
+            <tr>
+              <td>Imagini galerie</td>
+              <td>3</td>
+              <td>8</td>
+              <td>64</td>
+            </tr>
+            <tr>
+              <td>Locatii</td>
+              <td>1</td>
+              <td>3</td>
+              <td>Nelimitate</td>
+            </tr>
+            <tr>
+              <td>Coduri promo / oferta</td>
+              <td>1</td>
+              <td>1</td>
+              <td>Nelimitate</td>
+            </tr>
+            <tr>
+              <td>Perioada statistici</td>
+              <td>7 zile</td>
+              <td>30 zile</td>
+              <td>90 zile</td>
+            </tr>
+
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Branding & Media</td>
+            </tr>
+            <tr>
+              <td>Upload logo</td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Upload cover</td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Badge</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><span style="color: #fb923c;">Verificat</span></td>
+              <td><span style="color: #a78bfa;">Premium</span></td>
+            </tr>
+
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Interactiune clienti</td>
+            </tr>
+            <tr>
+              <td>Raspunsuri la recenzii</td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Rezumat AI recenzii</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Rezervari</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Notificari</td>
+            </tr>
+            <tr>
+              <td>Push la oferta noua</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Notificari push personalizate</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Statistici & Analize</td>
+            </tr>
+            <tr>
+              <td>Grafice statistici</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Export CSV statistici</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Analize competitive</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Vizibilitate & Promovare</td>
+            </tr>
+            <tr>
+              <td>Plasare promovata</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Prioritate in cautare</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+
+            <tr class="pricing-comparison-category">
+              <td colspan="4">Suport</td>
+            </tr>
+            <tr>
+              <td>Onboarding concierge</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
+              <td>Suport prioritar</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- FAQ Section -->
@@ -173,6 +340,10 @@
         <div class="pricing-faq-item">
           <h3>Pot schimba planul oricand?</h3>
           <p>Da, poti face upgrade sau downgrade oricand. La upgrade, platesti diferenta pro-rata. La downgrade, pastrezi beneficiile pana la sfarsitul perioadei platite.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce se intampla dupa trial?</h3>
+          <p>Dupa cele 14 zile de trial Standard, business-ul revine automat la planul Gratuit. Nu iti cerem datele cardului pentru trial.</p>
         </div>
         <div class="pricing-faq-item">
           <h3>Cum functioneaza facturarea anuala?</h3>
