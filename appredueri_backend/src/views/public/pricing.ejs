@@ -79,24 +79,6 @@
                 <% } %>
               </li>
               <li class="pricing-feature">
-                <% if (plan.can_upload_logo) { %>
-                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Upload logo</span>
-                <% } else { %>
-                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Upload logo</span>
-                <% } %>
-              </li>
-              <li class="pricing-feature">
-                <% if (plan.can_upload_cover) { %>
-                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Upload cover</span>
-                <% } else { %>
-                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Upload cover</span>
-                <% } %>
-              </li>
-              <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 <span>Statistici (<%= plan.analytics_days %> zile)</span>
               </li>
@@ -133,10 +115,10 @@
               <li class="pricing-feature">
                 <% if (plan.has_concierge) { %>
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Onboarding Concierge (setup asistat)</span>
+                  <span>Configurare asistata de echipa</span>
                 <% } else { %>
                   <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Onboarding Concierge</span>
+                  <span class="pricing-feature--disabled">Configurare asistata</span>
                 <% } %>
               </li>
               <% if (plan.has_priority_support) { %>
@@ -193,7 +175,7 @@
               <td>Imagini galerie</td>
               <td>3</td>
               <td>8</td>
-              <td>64</td>
+              <td>Nelimitate</td>
             </tr>
             <tr>
               <td>Locatii</td>
@@ -214,21 +196,6 @@
               <td>90 zile</td>
             </tr>
 
-            <tr class="pricing-comparison-category">
-              <td colspan="4">Branding & Media</td>
-            </tr>
-            <tr>
-              <td>Upload logo</td>
-              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-            </tr>
-            <tr>
-              <td>Upload cover</td>
-              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-              <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
-            </tr>
             <tr>
               <td>Badge</td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
@@ -316,7 +283,7 @@
               <td colspan="4">Suport</td>
             </tr>
             <tr>
-              <td>Onboarding concierge</td>
+              <td>Configurare asistata de echipa</td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
@@ -337,20 +304,36 @@
       <h2 class="pricing-faq-title">Intrebari frecvente</h2>
       <div class="pricing-faq-grid">
         <div class="pricing-faq-item">
-          <h3>Pot schimba planul oricand?</h3>
-          <p>Da, poti face upgrade sau downgrade oricand. La upgrade, platesti diferenta pro-rata. La downgrade, pastrezi beneficiile pana la sfarsitul perioadei platite.</p>
+          <h3>Ce inseamna „plasare promovata"?</h3>
+          <p>Afacerea ta apare in pozitii vizibile pe pagina principala si in listele de oferte, inaintea celor fara promovare. Ideal pentru a atrage mai multi clienti rapid.</p>
         </div>
         <div class="pricing-faq-item">
-          <h3>Cum functioneaza facturarea anuala?</h3>
-          <p>Platesti o singura data pe an si economisesti ~17% fata de plata lunara. Factura se emite automat la inceputul perioadei.</p>
+          <h3>Ce inseamna „prioritate in cautare"?</h3>
+          <p>Cand un utilizator cauta oferte sau afaceri, rezultatele tale apar mai sus in lista. Cu cat esti mai vizibil, cu atat ai mai multe sanse de conversie.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce inseamna „export CSV statistici"?</h3>
+          <p>Poti descarca datele statistice (vizualizari, click-uri, conversii) intr-un fisier CSV pe care il poti deschide in Excel sau Google Sheets pentru analize proprii.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce sunt „analizele competitive"?</h3>
+          <p>Vezi cum se pozitioneaza afacerea ta fata de competitorii din aceeasi zona si categorie: comparatii de vizualizari, recenzii si activitate.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce inseamna „configurare asistata de echipa"?</h3>
+          <p>Echipa noastra te ajuta sa iti configurezi profilul de business: completam informatiile, incarcam imaginile si optimizam prezentarea pentru tine.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce sunt notificarile push personalizate?</h3>
+          <p>Poti trimite notificari push direct catre utilizatorii care ti-au salvat afacerea in favorite, cu mesajul si oferta dorita, oricand vrei.</p>
         </div>
         <div class="pricing-faq-item">
           <h3>Ce se intampla cu datele mele la downgrade?</h3>
           <p>Datele tale raman in siguranta. Nu stergem niciodata continutul existent. Doar optiunile noi vor fi limitate conform planului ales.</p>
         </div>
         <div class="pricing-faq-item">
-          <h3>Pot anula abonamentul?</h3>
-          <p>Da, poti anula oricand din Business Portal. Beneficiile raman active pana la sfarsitul perioadei platite.</p>
+          <h3>Pot schimba sau anula planul oricand?</h3>
+          <p>Da. La upgrade platesti diferenta pro-rata, la downgrade pastrezi beneficiile pana la sfarsitul perioadei platite. Poti anula oricand din Business Portal.</p>
         </div>
       </div>
     </div>
