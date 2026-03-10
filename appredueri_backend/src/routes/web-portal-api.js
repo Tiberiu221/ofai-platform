@@ -99,14 +99,18 @@ router.delete("/api/web/portal/:businessId/cover", requireBusinessOwner, async (
 
 // Upload gallery image (atomic count check to prevent race condition)
 router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, requireLimit('max_gallery_images', countGalleryImages), portalUpload.single("image"), async (req, res) => {
-  const client = await pool.connect();
+  let client;
+  let step = 'pool.connect';
   try {
+    client = await pool.connect();
     const businessId = req.businessId;
     if (!req.file) return res.status(400).json({ message: "Niciun fișier" });
 
+    step = 'BEGIN';
     await client.query("BEGIN");
 
     // Atomic count check with row lock to prevent race condition
+    step = 'count_check';
     const countRes = await client.query(
       "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1 FOR UPDATE",
       [businessId]
@@ -120,21 +124,26 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
       return res.status(400).json({ message: `Maximum ${galleryLimit} imagini permise` });
     }
 
+    step = 'cloudinary_upload';
+    console.log(`[Gallery] Uploading for business ${businessId}, file size: ${req.file.size}, mime: ${req.file.mimetype}`);
     const result = await uploadToCloudinary(req.file.buffer, "gallery");
     const sortOrder = parseInt(countRes.rows[0].cnt) + 1;
+
+    step = 'db_insert';
     const insertRes = await client.query(
       "INSERT INTO business_images (business_id, image_url, sort_order) VALUES ($1, $2, $3) RETURNING id",
       [businessId, result.url, sortOrder]
     );
 
+    step = 'COMMIT';
     await client.query("COMMIT");
     res.json({ success: true, image: { id: insertRes.rows[0].id, url: result.url, sort_order: sortOrder } });
   } catch (err) {
-    await client.query("ROLLBACK").catch(() => {});
-    console.error("[Web API] Portal upload gallery error:", err);
-    res.status(500).json({ message: "Eroare la upload" });
+    if (client) await client.query("ROLLBACK").catch(() => {});
+    console.error(`[Web API] Portal gallery error at step="${step}":`, err.message || err);
+    res.status(500).json({ message: "Eroare la upload", _debug: { step, error: err.message } });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 
