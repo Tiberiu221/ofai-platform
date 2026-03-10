@@ -55,11 +55,21 @@
                         oninput="updateCharCount(<%= review.id %>)"></textarea>
               <script>document.getElementById('response-text-<%= review.id %>').value = <%- JSON.stringify(review.response_id ? (review.response_text || '') : '').replace(/<\//g, '<\\/') %>;</script>
               <div class="response-char-count" id="char-count-<%= review.id %>">0 / 500</div>
+              <!-- AI Suggestions (Premium only) -->
+              <div class="ai-suggestions-container" id="ai-suggestions-<%= review.id %>" style="display: none;"></div>
               <div class="response-form-actions">
-                <button class="btn-sm" onclick="cancelResponse(<%= review.id %>)">Anulează</button>
-                <button class="btn-accent" style="padding: 6px 16px; font-size: 0.8rem;" onclick="submitResponse(<%= review.id %>)">
-                  <span id="response-btn-text-<%= review.id %>">Trimite</span>
-                </button>
+                <% if (review.comment) { %>
+                  <button class="btn-ai-suggest" id="ai-suggest-btn-<%= review.id %>" onclick="generateSuggestions(<%= review.id %>)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l1.09 3.26L16 6l-2.18 1.74L14.72 11 12 9.27 9.28 11l.82-3.26L8 6l2.91-.74L12 2z"/><path d="M5 16l.55 1.64L7 18l-1.09.87L6.45 21 5 19.91 3.55 21l.54-2.13L3 18l1.45-.36L5 16z"/><path d="M19 16l.55 1.64L21 18l-1.09.87.54 2.13L19 19.91 17.55 21l.54-2.13L17 18l1.45-.36L19 16z"/></svg>
+                    <span>Sugestii AI</span>
+                  </button>
+                <% } %>
+                <div style="margin-left: auto; display: flex; gap: 8px;">
+                  <button class="btn-sm" onclick="cancelResponse(<%= review.id %>)">Anulează</button>
+                  <button class="btn-accent" style="padding: 6px 16px; font-size: 0.8rem;" onclick="submitResponse(<%= review.id %>)">
+                    <span id="response-btn-text-<%= review.id %>">Trimite</span>
+                  </button>
+                </div>
               </div>
             </div>
 

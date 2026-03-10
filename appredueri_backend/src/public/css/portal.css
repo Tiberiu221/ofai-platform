@@ -756,3 +756,62 @@
   @media (max-width: 400px) {
     .gallery-upload-grid { grid-template-columns: repeat(2, 1fr); }
   }
+
+  /* ═══ AI SUGGESTION PILLS ═══ */
+  .btn-ai-suggest {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.08);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ai-suggest:hover { background: rgba(167, 139, 250, 0.15); border-color: rgba(167, 139, 250, 0.4); }
+  .btn-ai-suggest:disabled { opacity: 0.5; cursor: wait; }
+  .btn-ai-suggest svg { flex-shrink: 0; }
+
+  .ai-suggestions-container {
+    margin: 10px 0;
+  }
+  .ai-suggestions-label {
+    font-size: 0.75rem;
+    color: var(--text-tertiary, #71717a);
+    margin-bottom: 8px;
+  }
+  .ai-suggestion-pill {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    background: rgba(167, 139, 250, 0.05);
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-primary, #f4f4f5);
+  }
+  .ai-suggestion-pill:hover {
+    background: rgba(167, 139, 250, 0.12);
+    border-color: rgba(167, 139, 250, 0.35);
+  }
+  .ai-pill-tone {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .ai-pill-text {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #a1a1aa);
+    line-height: 1.4;
+  }

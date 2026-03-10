@@ -11,6 +11,8 @@ const { validateOfferData } = require("../services/llm/offerValidation");
 const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");
 const { attachTier, requireFeature, requireLimit } = require("../middleware/tierAuth");
 const { countActiveOffers, countGalleryImages } = require("../helpers/tiers");
+const { generateReviewSuggestions } = require("../services/llm/reviewSuggestions");
+const { formatError } = require("../services/llm/anthropicClient");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage pentru Cloudinary)
@@ -1323,6 +1325,46 @@ router.delete("/:businessId/reviews/:reviewId/respond", businessAuth, async (req
   } catch (err) {
     console.error("[BusinessPortal] Delete response error:", err);
     res.status(500).json({ message: "Eroare la ștergere" });
+  }
+});
+
+// =====================================
+//   REVIEWS - Sugestii AI (Premium only)
+// =====================================
+router.post("/:businessId/reviews/:reviewId/suggestions", businessAuth, requireFeature('has_ai_suggested_responses'), async (req, res) => {
+  try {
+    const { businessId, reviewId } = req.params;
+
+    const { rows } = await pool.query(`
+      SELECT r.rating, r.comment,
+             b.name AS business_name, c.name AS category_name,
+             u.first_name AS customer_name
+      FROM reviews r
+      JOIN businesses b ON b.id = r.business_id
+      LEFT JOIN categories c ON c.id = b.category_id
+      LEFT JOIN users u ON u.id = r.user_id
+      WHERE r.id = $1 AND r.business_id = $2
+    `, [reviewId, businessId]);
+
+    if (rows.length === 0) return res.status(404).json({ message: "Recenzia nu există" });
+    const review = rows[0];
+    if (!review.comment || !review.comment.trim()) {
+      return res.status(400).json({ message: "Recenzia nu are comentariu" });
+    }
+
+    const result = await generateReviewSuggestions({
+      rating: review.rating,
+      comment: review.comment,
+      businessName: review.business_name,
+      businessCategory: review.category_name,
+      customerName: review.customer_name,
+    });
+
+    res.json({ suggestions: result.suggestions });
+  } catch (err) {
+    console.error("[BusinessPortal] AI review suggestions error:", err);
+    const formatted = formatError(err);
+    res.status(500).json({ message: formatted.userMessage });
   }
 });
 

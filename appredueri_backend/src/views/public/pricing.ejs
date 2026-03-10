@@ -113,6 +113,15 @@
                 <% } %>
               </li>
               <li class="pricing-feature">
+                <% if (plan.has_ai_suggested_responses) { %>
+                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span style="color: #a78bfa;">Raspunsuri sugerate AI</span>
+                <% } else { %>
+                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span class="pricing-feature--disabled">Raspunsuri sugerate AI</span>
+                <% } %>
+              </li>
+              <li class="pricing-feature">
                 <% if (plan.has_concierge) { %>
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>Configurare asistata de echipa</span>
@@ -219,6 +228,12 @@
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
             <tr>
+              <td>Raspunsuri sugerate AI</td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
+              <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
+            </tr>
+            <tr>
               <td>Rezervari</td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
@@ -318,6 +333,10 @@
         <div class="pricing-faq-item">
           <h3>Ce sunt „analizele competitive"?</h3>
           <p>Vezi cum se pozitioneaza afacerea ta fata de competitorii din aceeasi zona si categorie: comparatii de vizualizari, recenzii si activitate.</p>
+        </div>
+        <div class="pricing-faq-item">
+          <h3>Ce sunt „raspunsurile sugerate AI"?</h3>
+          <p>Cand primesti o recenzie, AI-ul propune 3 variante de raspuns (profesional, prietenos, empatic) pe baza comentariului clientului. Tu alegi, editezi si trimiti — fara sa scrii de la zero.</p>
         </div>
         <div class="pricing-faq-item">
           <h3>Ce inseamna „configurare asistata de echipa"?</h3>

@@ -168,6 +168,7 @@
       hasAiSummary: !!tier.plan.has_ai_summary,
       analyticsDays: tier.plan.analytics_days || 7,
       hasConcierge: !!tier.plan.has_concierge,
+      hasAiSuggestedResponses: !!tier.plan.has_ai_suggested_responses,
     } : {}
   }).replace(/<\//g, '<\\/') %>;
 
@@ -1656,6 +1657,78 @@
     .catch(function(err) {
       if (err.message !== 'Unauthorized') showToast('Eroare de rețea', 'error');
     });
+  };
+
+  /* ── AI Review Suggestions (Premium) ── */
+  window.generateSuggestions = function(reviewId) {
+    if (!_serverTier.plan.hasAiSuggestedResponses) {
+      showToast('Sugestiile AI sunt disponibile în planul Premium', 'error');
+      return;
+    }
+
+    var btn = document.getElementById('ai-suggest-btn-' + reviewId);
+    var container = document.getElementById('ai-suggestions-' + reviewId);
+    if (!btn || !container) return;
+
+    // Loading state
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Se genereaza...';
+
+    apiFetch('/api/web/portal/' + businessId + '/reviews/' + reviewId + '/suggestions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(function(res) { return res.json().then(function(j) { return { ok: res.ok, status: res.status, data: j }; }); })
+    .then(function(result) {
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Sugestii AI';
+
+      if (!result.ok) {
+        if (result.status === 403) {
+          showToast('Aceasta functie necesita planul Premium', 'error');
+        } else {
+          showToast(result.data.message || 'Eroare la generare', 'error');
+        }
+        return;
+      }
+
+      var suggestions = result.data.suggestions;
+      if (!suggestions || !suggestions.length) {
+        showToast('Nu s-au putut genera sugestii', 'error');
+        return;
+      }
+
+      var labels = ['Profesional', 'Prietenos', 'Empatic'];
+      container.innerHTML = '<div class="ai-suggestions-label">Alege o sugestie:</div>' +
+        suggestions.map(function(s, i) {
+          return '<button class="ai-suggestion-pill" onclick="pickSuggestion(' + reviewId + ',' + i + ')" data-text="' +
+            s.replace(/"/g, '&quot;') + '">' +
+            '<span class="ai-pill-tone">' + labels[i] + '</span>' +
+            '<span class="ai-pill-text">' + (s.length > 120 ? s.substring(0, 120) + '...' : s) + '</span>' +
+            '</button>';
+        }).join('');
+      container.style.display = '';
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.querySelector('span').textContent = 'Sugestii AI';
+      if (err.message !== 'Unauthorized') showToast('Eroare de retea', 'error');
+    });
+  };
+
+  window.pickSuggestion = function(reviewId, index) {
+    var container = document.getElementById('ai-suggestions-' + reviewId);
+    var pills = container ? container.querySelectorAll('.ai-suggestion-pill') : [];
+    if (!pills[index]) return;
+
+    var text = pills[index].getAttribute('data-text');
+    var textarea = document.getElementById('response-text-' + reviewId);
+    if (textarea) {
+      textarea.value = text;
+      updateCharCount(reviewId);
+      textarea.focus();
+    }
+    container.style.display = 'none';
   };
 
   /* ════════════════════════════════
