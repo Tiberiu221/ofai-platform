@@ -1465,11 +1465,6 @@
   line-height: 1.6;
   margin: 0;
 }
-.pricing-trial-note {
-  font-size: 0.75rem;
-  color: var(--text-tertiary, #71717a);
-  margin: 8px 0 0;
-}
 
 /* ═══ COMPARISON TABLE ═══ */
 .pricing-comparison {

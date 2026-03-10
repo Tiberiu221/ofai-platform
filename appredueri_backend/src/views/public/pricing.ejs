@@ -154,9 +154,8 @@
               <a href="/pentru-business" class="pricing-cta pricing-cta--free">Incepe gratuit</a>
             <% } else if (plan.slug === 'standard') { %>
               <a href="<%= webUser ? '/cont' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
-                Incepe trial gratuit
+                Alege Standard
               </a>
-              <p class="pricing-trial-note">14 zile gratuit, fara card</p>
             <% } else { %>
               <a href="<%= webUser ? '/cont' : '/register?returnTo=/preturi' %>" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
                 Alege Premium
@@ -340,10 +339,6 @@
         <div class="pricing-faq-item">
           <h3>Pot schimba planul oricand?</h3>
           <p>Da, poti face upgrade sau downgrade oricand. La upgrade, platesti diferenta pro-rata. La downgrade, pastrezi beneficiile pana la sfarsitul perioadei platite.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce se intampla dupa trial?</h3>
-          <p>Dupa cele 14 zile de trial Standard, business-ul revine automat la planul Gratuit. Nu iti cerem datele cardului pentru trial.</p>
         </div>
         <div class="pricing-faq-item">
           <h3>Cum functioneaza facturarea anuala?</h3>
