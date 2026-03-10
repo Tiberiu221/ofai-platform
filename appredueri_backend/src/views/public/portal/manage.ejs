@@ -1704,7 +1704,7 @@
           return '<button class="ai-suggestion-pill" onclick="pickSuggestion(' + reviewId + ',' + i + ')" data-text="' +
             s.replace(/"/g, '&quot;') + '">' +
             '<span class="ai-pill-tone">' + labels[i] + '</span>' +
-            '<span class="ai-pill-text">' + (s.length > 120 ? s.substring(0, 120) + '...' : s) + '</span>' +
+            '<span class="ai-pill-text">' + s + '</span>' +
             '</button>';
         }).join('');
       container.style.display = '';
