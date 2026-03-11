@@ -1240,6 +1240,10 @@
     section.style.position = 'relative';
     section.style.overflow = 'hidden';
 
+    // Prevent duplicate overlays on repeated applyTierGating calls
+    var existing = section.querySelector('.tier-gate-overlay');
+    if (existing) existing.remove();
+
     var overlay = document.createElement('div');
     overlay.className = 'tier-gate-overlay';
     overlay.innerHTML = '<div class="tier-gate-content">' +

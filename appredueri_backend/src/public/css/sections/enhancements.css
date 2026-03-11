@@ -483,15 +483,11 @@
 
   /* Offer detail hero - intermediate size */
   .offer-detail-hero {
-    height: 260px;
-    border-radius: 12px;
     margin-bottom: 24px;
   }
 
   .offer-detail-hero-overlay {
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
+    padding: 32px 16px 20px;
   }
 
   /* Offer detail content */
