@@ -1286,8 +1286,8 @@
     gateSection('push-notifications-section', plan.hasCustomPush, 'Notificari Push', 'Premium');
 
     // Concierge onboarding — Standard+ (multiple elements via class)
-    document.querySelectorAll('.concierge-section').forEach(function(el) {
-      el.id = 'concierge-gate-' + Math.random().toString(36).slice(2, 6);
+    document.querySelectorAll('.concierge-section').forEach(function(el, idx) {
+      el.id = 'concierge-gate-' + idx;
       gateSection(el.id, plan.hasConcierge, 'Concierge Onboarding', 'Standard');
     });
   }

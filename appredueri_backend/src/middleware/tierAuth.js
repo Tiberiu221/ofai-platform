@@ -1,9 +1,9 @@
 const { getBusinessTier } = require('../helpers/tiers');
 const pool = require('../db');
 
-// W3: Warn once at startup if tier gating is disabled
-if (process.env.TIER_GATING_ENABLED !== 'true') {
-  console.warn('[TierAuth] WARNING: TIER_GATING_ENABLED is not set to "true" — all tier limits and feature gates are BYPASSED. Set TIER_GATING_ENABLED=true in production.');
+// Fail-closed: tier gating is ON by default. Only disabled with explicit flag.
+if (process.env.TIER_GATING_DISABLED === 'true') {
+  console.warn('[TierAuth] WARNING: TIER_GATING_DISABLED is set — all tier limits and feature gates are BYPASSED. Remove this flag in production.');
 }
 
 /**
@@ -21,10 +21,10 @@ function attachTier() {
     } catch (err) {
       console.error('Tier lookup error:', err);
       req.tier = null;
-      if (process.env.TIER_GATING_ENABLED === 'true') {
+      if (process.env.TIER_GATING_DISABLED !== 'true') {
         return res.status(503).json({ error: 'Serviciu temporar indisponibil' });
       }
-      next(); // fail open only when gating disabled
+      next(); // fail open only when gating explicitly disabled
     }
   };
 }
@@ -35,8 +35,8 @@ function attachTier() {
  */
 function requireFeature(featureKey) {
   return (req, res, next) => {
-    // Feature flag: bypass gating if disabled
-    if (process.env.TIER_GATING_ENABLED !== 'true') return next();
+    // Fail-closed: gating ON by default, bypass only if explicitly disabled
+    if (process.env.TIER_GATING_DISABLED === 'true') return next();
 
     if (!req.tier) return res.status(500).json({ error: 'Tier info missing' });
     if (!req.tier.plan[featureKey]) {
@@ -58,8 +58,8 @@ function requireFeature(featureKey) {
  */
 function requireLimit(limitKey, countFn) {
   return async (req, res, next) => {
-    // Feature flag: bypass gating if disabled
-    if (process.env.TIER_GATING_ENABLED !== 'true') return next();
+    // Fail-closed: gating ON by default, bypass only if explicitly disabled
+    if (process.env.TIER_GATING_DISABLED === 'true') return next();
 
     if (!req.tier) return res.status(500).json({ error: 'Tier info missing' });
     const businessId = parseInt(req.params.businessId || req.params.bid);

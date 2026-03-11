@@ -881,7 +881,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
     const { name, description, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
 
     const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
-    const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
+    const bookingGated = process.env.TIER_GATING_DISABLED !== 'true' && req.tier && !req.tier.plan.has_booking;
 
     if (bookingGated) {
       await pool.query(`
@@ -1164,7 +1164,7 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
     }
 
     // If activating, check tier limit atomically
-    if (!isCurrentlyActive && process.env.TIER_GATING_ENABLED === 'true' && req.tier) {
+    if (!isCurrentlyActive && process.env.TIER_GATING_DISABLED !== 'true' && req.tier) {
       const limit = req.tier.plan.max_active_offers;
       if (limit !== null) {
         const countRes = await client.query(

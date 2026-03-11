@@ -224,7 +224,7 @@ router.put("/:businessId", businessAuth, async (req, res) => {
 
     const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
 
-    const bookingGated = process.env.TIER_GATING_ENABLED === 'true' && req.tier && !req.tier.plan.has_booking;
+    const bookingGated = process.env.TIER_GATING_DISABLED !== 'true' && req.tier && !req.tier.plan.has_booking;
 
     if (bookingGated) {
       // Update without touching booking columns (preserves existing data)
@@ -845,7 +845,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
           const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
 
           // Enforce tier limit on promo codes
-          if (req.tier && req.tier.plan && process.env.TIER_GATING_ENABLED === 'true') {
+          if (req.tier && req.tier.plan && process.env.TIER_GATING_DISABLED !== 'true') {
             const promoLimit = req.tier.plan.max_promo_codes_per_offer;
             if (promoLimit !== null && validCodes.length > promoLimit) {
               await client.query("ROLLBACK");
@@ -952,7 +952,7 @@ router.patch("/:businessId/offers/:offerId/toggle", businessAuth, async (req, re
       }
 
       // If activating, check tier limit atomically within transaction
-      if (!isCurrentlyActive && process.env.TIER_GATING_ENABLED === 'true' && req.tier) {
+      if (!isCurrentlyActive && process.env.TIER_GATING_DISABLED !== 'true' && req.tier) {
         const limit = req.tier.plan.max_active_offers;
         if (limit !== null) {
           const countRes = await client.query(
