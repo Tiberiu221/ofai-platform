@@ -23,6 +23,7 @@ import '../../core/network/api_endpoints.dart';
 import '../../services/analytics_service.dart';
 import '../../providers/offer_requests_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
+import '../../providers/recently_viewed_provider.dart';
 import '../../widgets/report_dialog.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
@@ -36,6 +37,13 @@ class OfferDetailScreen extends ConsumerWidget {
     final favState = ref.watch(favoritesProvider);
     final auth = ref.watch(authProvider);
     final isLoggedIn = auth.status == AuthStatus.authenticated;
+
+    // Record as recently viewed when offer first loads
+    ref.listen(offerDetailProvider(offerId), (prev, next) {
+      if (prev?.hasValue != true && next.hasValue) {
+        recordRecentlyViewed(offerId, ref);
+      }
+    });
 
     return Scaffold(
       body: offerAsync.when(

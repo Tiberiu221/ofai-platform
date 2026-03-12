@@ -19,6 +19,7 @@ import '../../widgets/section_header.dart';
 import '../../widgets/featured_offer_card.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/location_banner.dart';
+import '../../providers/recently_viewed_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -77,6 +78,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(categoriesProvider);
             ref.invalidate(citiesProvider);
             ref.invalidate(dealOfDayProvider);
+            ref.invalidate(recentlyViewedOffersProvider);
           },
           child: CustomScrollView(
             slivers: [
@@ -287,6 +289,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+              // Recently Viewed (hidden when empty)
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final recentAsync = ref.watch(recentlyViewedOffersProvider);
+                    return recentAsync.when(
+                      data: (offers) {
+                        if (offers.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(title: 'Vazute recent'),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              height: 288,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.pagePadding,
+                                ),
+                                itemCount: offers.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: AppSpacing.md),
+                                itemBuilder: (context, index) => OfferCard(
+                                  offer: offers[index],
+                                  horizontal: true,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ),
 
               // Location banner (hidden when location granted or dismissed)
               SliverToBoxAdapter(child: LocationBanner()),

@@ -303,8 +303,14 @@ class FeaturedOfferCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
 
-                    // Metadata row: distance left, countdown/CTA right
-                    Row(
+                    // Metadata row: distance left, social proof center, countdown/CTA right
+                    Builder(builder: (context) {
+                      final isNew = offer.startDate != null &&
+                          DateTime.tryParse(offer.startDate!) != null &&
+                          DateTime.now().difference(DateTime.parse(offer.startDate!)).inDays <= 3;
+                      final hasLeftContent = dist != null || offer.business?.city != null;
+
+                      return Row(
                       children: [
                         // Left side: distance or city
                         if (dist != null) ...[
@@ -326,6 +332,31 @@ class FeaturedOfferCard extends ConsumerWidget {
                             style: AppTypography.labelSmall.copyWith(
                               color: AppColors.textTertiary,
                             ),
+                          ),
+                        ],
+
+                        // "Nou" indicator
+                        if (isNew) ...[
+                          if (hasLeftContent)
+                            Text(' \u2022 ', style: AppTypography.labelSmall.copyWith(color: AppColors.textTertiary)),
+                          Text(
+                            'Nou',
+                            style: AppTypography.labelSmall.copyWith(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+
+                        // Saves count
+                        if (offer.saveCount != null && offer.saveCount! >= 1) ...[
+                          if (hasLeftContent || isNew)
+                            Text(' \u2022 ', style: AppTypography.labelSmall.copyWith(color: AppColors.textTertiary)),
+                          Icon(Icons.bookmark_outline, size: 12, color: AppColors.textTertiary),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${offer.saveCount}',
+                            style: AppTypography.labelSmall.copyWith(color: AppColors.textTertiary),
                           ),
                         ],
 
@@ -365,7 +396,8 @@ class FeaturedOfferCard extends ConsumerWidget {
                           ),
                         ],
                       ],
-                    ),
+                    );
+                    }),
                   ],
                 ),
               ),

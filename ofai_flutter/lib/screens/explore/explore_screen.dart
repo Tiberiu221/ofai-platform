@@ -22,6 +22,7 @@ import '../../widgets/error_state.dart' as w;
 import '../../widgets/search_suggest_dropdown.dart';
 import '../../widgets/fade_in_item.dart';
 import '../../providers/search_suggest_provider.dart';
+import '../../providers/search_history_provider.dart';
 import '../../core/utils/distance.dart';
 import '../../models/offer.dart';
 import '../../widgets/location_banner.dart';
@@ -55,6 +56,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     _tabController = TabController(length: 2, vsync: this);
     _offersScrollController.addListener(_onOffersScroll);
     _businessesScrollController.addListener(_onBusinessesScroll);
+    _searchFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -141,6 +145,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       } else {
         ref.read(businessesListProvider.notifier).setFilter(query: query);
       }
+      // Save to search history
+      if (query.trim().length >= 3) {
+        ref.read(searchHistoryProvider.notifier).addQuery(query.trim());
+      }
     });
   }
 
@@ -225,6 +233,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                   ),
                   if (_showSuggest)
                     SearchSuggestDropdown(
+                      onDismiss: _dismissSuggest,
+                    )
+                  else if (_searchFocusNode.hasFocus && _searchController.text.isEmpty)
+                    _SearchHistoryDropdown(
+                      onSelect: (query) {
+                        _searchController.text = query;
+                        _searchController.selection = TextSelection.fromPosition(
+                          TextPosition(offset: query.length),
+                        );
+                        _onSearchChanged(query);
+                      },
                       onDismiss: _dismissSuggest,
                     ),
                 ],
@@ -682,6 +701,105 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       return aDist.compareTo(bDist);
     });
     _distanceSortedOffers = sorted;
+  }
+}
+
+// Search history dropdown — shown when search focused + empty text
+class _SearchHistoryDropdown extends ConsumerWidget {
+  final ValueChanged<String> onSelect;
+  final VoidCallback onDismiss;
+
+  const _SearchHistoryDropdown({
+    required this.onSelect,
+    required this.onDismiss,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final history = ref.watch(searchHistoryProvider);
+    if (history.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 8, 4),
+            child: Row(
+              children: [
+                Icon(Icons.history, size: 14, color: AppColors.textTertiary),
+                const SizedBox(width: 6),
+                Text(
+                  'Căutări recente',
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    ref.read(searchHistoryProvider.notifier).clearAll();
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Text(
+                      'Șterge tot',
+                      style: AppTypography.labelSmall.copyWith(
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Items
+          ...history.map((query) => InkWell(
+            onTap: () => onSelect(query),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      query,
+                      style: AppTypography.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      ref.read(searchHistoryProvider.notifier).removeQuery(query);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.close, size: 14, color: AppColors.textTertiary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
   }
 }
 

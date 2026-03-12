@@ -320,9 +320,12 @@ class OfferCard extends ConsumerWidget {
     final locationLabel = hasDistance ? '$dist distanță' : biz.city;
     final hasLocation = locationLabel != null && locationLabel.isNotEmpty;
     final hasCategory = biz.category != null && biz.category!.isNotEmpty;
-    final hasSaves = offer.saveCount != null && offer.saveCount! >= 3;
+    final hasSaves = offer.saveCount != null && offer.saveCount! >= 1;
+    final isNew = offer.startDate != null &&
+        DateTime.tryParse(offer.startDate!) != null &&
+        DateTime.now().difference(DateTime.parse(offer.startDate!)).inDays <= 3;
 
-    if (!hasLocation && !hasCategory && !hasSaves) {
+    if (!hasLocation && !hasCategory && !hasSaves && !isNew) {
       return const SizedBox.shrink();
     }
 
@@ -357,12 +360,32 @@ class OfferCard extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+        if (isNew) ...[
+          if (hasLocation || hasCategory)
+            Text(' \u2022 ', style: AppTypography.captionMuted),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              'Nou',
+              style: TextStyle(
+                color: AppColors.accent,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
         if (hasSaves) ...[
           const Spacer(),
           Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
           const SizedBox(width: 2),
           Text(
-            '${offer.saveCount} salvari',
+            '${offer.saveCount} ${offer.saveCount == 1 ? 'salvare' : 'salvari'}',
             style: AppTypography.captionMuted,
           ),
         ],
