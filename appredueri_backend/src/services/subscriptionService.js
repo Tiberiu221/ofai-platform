@@ -4,10 +4,13 @@
  * Eliminates copy-paste duplication between business-portal.js and web.js.
  */
 
+const stripeService = require('./stripe');
+
 /**
  * Cancel a business subscription (mark as cancel_at_period_end).
  * Does NOT immediately downgrade — benefits remain active until period end.
  * Cron job handles actual downgrade + badge sync at expiry.
+ * For Stripe-managed subscriptions, also calls Stripe API.
  *
  * @param {Pool} pool - PostgreSQL connection pool
  * @param {number} businessId - Business ID
@@ -26,7 +29,7 @@ async function cancelSubscription(pool, businessId, source = 'api') {
       WHERE business_id = $1
         AND status IN ('active')
         AND billing_cycle != 'none'
-      RETURNING id, current_period_end
+      RETURNING id, current_period_end, stripe_subscription_id
     `, [businessId]);
 
     if (result.rows.length === 0) {
@@ -55,6 +58,23 @@ async function cancelSubscription(pool, businessId, source = 'api') {
     `, [result.rows[0].id, freePlan.rows[0].id, `User requested cancellation (${source})`]);
 
     await client.query('COMMIT');
+
+    // Call Stripe API AFTER commit (DB state consistent even if Stripe fails)
+    const { stripe_subscription_id } = result.rows[0];
+    if (stripe_subscription_id) {
+      try {
+        const stripe = stripeService.getStripe();
+        if (stripe) {
+          await stripe.subscriptions.update(stripe_subscription_id, {
+            cancel_at_period_end: true,
+          });
+          console.log(`[SubscriptionService] Stripe subscription ${stripe_subscription_id} set to cancel at period end`);
+        }
+      } catch (stripeErr) {
+        // Log but don't fail — DB is already updated
+        console.error('[SubscriptionService] Stripe cancel error (non-fatal):', stripeErr.message);
+      }
+    }
 
     const periodEnd = result.rows[0].current_period_end;
     console.log(`[SubscriptionService] Subscription cancelled for business ${businessId} (${source}), active until ${periodEnd}`);

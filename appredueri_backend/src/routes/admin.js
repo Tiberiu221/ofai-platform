@@ -16,7 +16,7 @@ const {
 } = require("../services/llm/summarizationService");
 const { sendBusinessApprovedEmail, sendBusinessRejectedEmail, sendOfferApprovedEmail, sendOfferRejectedEmail } = require("../services/email");
 const { parsePagination, createImageFilter } = require("../helpers/validate");
-const { getBusinessTier, countLocations } = require("../helpers/tiers");
+const { getBusinessTier, countLocations, syncBadgeType } = require("../helpers/tiers");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage → Cloudinary)
@@ -443,6 +443,8 @@ router.post("/businesses/new", async (req, res) => {
       SELECT $1, sp.id, 'active', 'none'
       FROM subscription_plans sp WHERE sp.slug = 'free'
     `, [rows[0].id]);
+
+    await syncBadgeType(client, rows[0].id, null);
 
     await client.query("COMMIT");
     res.redirect("/admin/businesses");
@@ -1596,6 +1598,8 @@ router.post("/business-requests/:id/approve", async (req, res) => {
       SELECT $1, sp.id, 'active', 'none'
       FROM subscription_plans sp WHERE sp.slug = 'free'
     `, [businessId]);
+
+    await syncBadgeType(client, businessId, null);
 
     // Update user role to business_owner if currently just 'user'
     await client.query(

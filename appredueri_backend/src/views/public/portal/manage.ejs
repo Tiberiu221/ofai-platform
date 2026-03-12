@@ -1366,10 +1366,10 @@
     html += '<div style="display: flex; gap: 12px; flex-wrap: wrap;">';
 
     if (tier === 'free') {
-      html += '<a href="/preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Alege Standard</a>';
-      html += '<a href="/preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Alege Premium</a>';
+      html += '<button onclick="handleUpgrade(\'standard\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Standard</button>';
+      html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Premium</button>';
     } else if (tier === 'standard') {
-      html += '<a href="/preturi" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: opacity 0.2s;">Upgrade la Premium</a>';
+      html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Upgrade la Premium</button>';
       if (!cancelAtEnd && !isTrial) {
         html += '<button onclick="handleCancelSubscription()" style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); color: var(--text-tertiary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Anuleaza abonament</button>';
       }
@@ -1586,6 +1586,36 @@
     });
   };
 
+  // Stripe checkout handler
+  window.handleUpgrade = function(planSlug, billingCycle) {
+    showToast('Se pregateste pagina de plata...', 'info');
+
+    apiFetch('/billing/' + businessId + '/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planSlug: planSlug, billingCycle: billingCycle }),
+    })
+    .then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(data) {
+          throw new Error(data.error || 'Eroare la crearea sesiunii de plata');
+        });
+      }
+      return r.json();
+    })
+    .then(function(data) {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast('Eroare: nu s-a putut genera link-ul de plata', 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Checkout error:', err);
+      showToast(err.message || 'Eroare la checkout', 'error');
+    });
+  };
+
   /* ════════════════════════════════
      TAB SWITCHING
      ════════════════════════════════ */
@@ -1649,7 +1679,14 @@
     var q = window.location.search;
     var msg = null;
     var type = 'success';
-    if (q.indexOf('offer_pending=1') !== -1) {
+    if (q.indexOf('subscription=success') !== -1) {
+      msg = 'Abonamentul a fost activat cu succes!';
+      switchTab('subscription');
+    } else if (q.indexOf('subscription=cancelled') !== -1) {
+      msg = 'Procesul de plata a fost anulat.';
+      type = 'info';
+      switchTab('subscription');
+    } else if (q.indexOf('offer_pending=1') !== -1) {
       msg = 'Oferta ta a fost creată și este în curs de verificare. Va fi activată după aprobarea unui admin.';
       type = 'info';
     } else if (q.indexOf('offer_created=1') !== -1) {

@@ -101,8 +101,8 @@ async function createCheckoutSession(pool, { userId, businessId, planSlug, billi
       planSlug,
       billingCycle,
     },
-    success_url: `${process.env.BASE_URL || 'https://ofai.ro'}/my-businesses/${businessId}?subscription=success`,
-    cancel_url: `${process.env.BASE_URL || 'https://ofai.ro'}/my-businesses/${businessId}?subscription=cancelled`,
+    success_url: `${process.env.BASE_URL || 'https://ofai.ro'}/portal/${businessId}?subscription=success`,
+    cancel_url: `${process.env.BASE_URL || 'https://ofai.ro'}/portal/${businessId}?subscription=cancelled`,
     allow_promotion_codes: true,
   });
 
@@ -129,10 +129,36 @@ async function createPortalSession(pool, businessId) {
 
   const session = await stripe.billingPortal.sessions.create({
     customer: rows[0].stripe_customer_id,
-    return_url: `${process.env.BASE_URL || 'https://ofai.ro'}/my-businesses/${businessId}`,
+    return_url: `${process.env.BASE_URL || 'https://ofai.ro'}/portal/${businessId}`,
   });
 
   return { url: session.url };
+}
+
+/**
+ * Look up a subscription plan by slug.
+ */
+async function getPlanBySlug(pool, slug) {
+  const { rows } = await pool.query(
+    'SELECT * FROM subscription_plans WHERE slug = $1',
+    [slug]
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Map a Stripe unit_amount (in bani) + interval to a local plan.
+ * Used by handleSubscriptionUpdated when plan changes via Stripe Portal.
+ */
+async function mapStripePriceToPlan(pool, unitAmount, interval) {
+  const priceColumn = interval === 'year' ? 'price_yearly' : 'price_monthly';
+  const billingCycle = interval === 'year' ? 'yearly' : 'monthly';
+  const { rows } = await pool.query(
+    `SELECT * FROM subscription_plans WHERE ${priceColumn} = $1 AND slug != 'free'`,
+    [unitAmount]
+  );
+  if (rows.length === 0) return null;
+  return { plan: rows[0], billingCycle };
 }
 
 module.exports = {
@@ -140,4 +166,6 @@ module.exports = {
   getOrCreateCustomer,
   createCheckoutSession,
   createPortalSession,
+  getPlanBySlug,
+  mapStripePriceToPlan,
 };
