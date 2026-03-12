@@ -47,7 +47,13 @@ class BusinessDetailScreen extends ConsumerWidget {
 
           return Stack(
             children: [
-              CustomScrollView(
+              RefreshIndicator(
+                color: AppColors.accent,
+                backgroundColor: AppColors.bgCard,
+                onRefresh: () async {
+                  ref.invalidate(businessDetailProvider(businessId));
+                },
+                child: CustomScrollView(
                 slivers: [
                   // Cover with parallax
                   SliverAppBar(
@@ -56,15 +62,22 @@ class BusinessDetailScreen extends ConsumerWidget {
                     stretch: true,
                     backgroundColor: AppColors.bgPrimary,
                     actions: [
-                      IconButton(
-                        icon: const Icon(Icons.share_outlined),
-                        onPressed: () {
-                          Launchers.shareBusiness(business.name, business.id);
-                          AnalyticsService.trackClick(businessId: business.id, actionType: 'share');
-                        },
+                      Semantics(
+                        label: 'Distribuie business',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(Icons.share_outlined),
+                          onPressed: () {
+                            Launchers.shareBusiness(business.name, business.id);
+                            AnalyticsService.trackClick(businessId: business.id, actionType: 'share');
+                          },
+                        ),
                       ),
                       if (isLoggedIn)
-                        PopupMenuButton<String>(
+                        Semantics(
+                          label: 'Raporteaza business',
+                          button: true,
+                          child: PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert),
                           onSelected: (value) async {
                             if (value == 'report') {
@@ -92,6 +105,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
+                        ),
                         ),
                     ],
                     flexibleSpace: LayoutBuilder(
@@ -541,23 +555,27 @@ class BusinessDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                           itemCount: business.images!.length,
                           separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) => GestureDetector(
-                            onTap: () {
-                              FullscreenGallery.open(
-                                context,
-                                business.images!.map((img) => img.url).toList(),
-                                initialIndex: i,
-                              );
-                              AnalyticsService.trackClick(businessId: business.id, actionType: 'gallery');
-                            },
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                              child: CachedNetworkImage(
-                                imageUrl: business.images![i].url,
-                                width: 200,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(width: 200, color: AppColors.bgSecondary),
-                                errorWidget: (_, __, ___) => Container(width: 200, color: AppColors.bgSecondary),
+                          itemBuilder: (_, i) => Semantics(
+                            label: 'Imagine galerie',
+                            image: true,
+                            child: GestureDetector(
+                              onTap: () {
+                                FullscreenGallery.open(
+                                  context,
+                                  business.images!.map((img) => img.url).toList(),
+                                  initialIndex: i,
+                                );
+                                AnalyticsService.trackClick(businessId: business.id, actionType: 'gallery');
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                child: CachedNetworkImage(
+                                  imageUrl: business.images![i].url,
+                                  width: 200,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => Container(width: 200, color: AppColors.bgSecondary),
+                                  errorWidget: (_, __, ___) => Container(width: 200, color: AppColors.bgSecondary),
+                                ),
                               ),
                             ),
                           ),
@@ -636,6 +654,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                   // Bottom padding for FAB
                   const SliverToBoxAdapter(child: SizedBox(height: 100)),
                 ],
+              ),
               ),
 
               // Subscribe FAB with bounce animation

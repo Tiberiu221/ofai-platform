@@ -31,8 +31,8 @@ class CategoriesScreen extends ConsumerWidget {
           }
           return GridView.builder(
             padding: const EdgeInsets.all(AppSpacing.pagePadding),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
               crossAxisSpacing: AppSpacing.md,
               mainAxisSpacing: AppSpacing.md,
               childAspectRatio: 1.3,

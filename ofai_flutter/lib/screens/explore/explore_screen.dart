@@ -287,6 +287,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                     label: _selectedCityName(citiesAsync, offersState.cityId ?? businessesState.cityId) ?? 'Oraș',
                     isActive: (offersState.cityId ?? businessesState.cityId) != null,
                     onTap: () => _showCityPicker(citiesAsync),
+                    semanticsLabel: 'Filtreaza dupa oras',
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   // Category dropdown
@@ -294,6 +295,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                     label: _selectedCategoryName(categoriesAsync, offersState.categoryId ?? businessesState.categoryId) ?? 'Categorie',
                     isActive: (offersState.categoryId ?? businessesState.categoryId) != null,
                     onTap: () => _showCategoryPicker(categoriesAsync),
+                    semanticsLabel: 'Filtreaza dupa categorie',
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   // Sort (only for offers tab)
@@ -302,6 +304,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                       label: _sortLabel(offersState.sort),
                       isActive: offersState.sort != null,
                       onTap: () => _showSortPicker(),
+                      semanticsLabel: 'Sorteaza ofertele',
                     ),
                   ],
                   // Save search — shown when any meaningful filter is active and user is authenticated
@@ -328,6 +331,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                       isActive: false,
                       icon: Icons.close,
                       onTap: _clearFilters,
+                      semanticsLabel: 'Reseteaza filtrele',
                     ),
                   ],
                 ],
@@ -424,10 +428,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       );
     }
     if (state.offers.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.local_offer_outlined,
         title: 'Nicio ofertă găsită',
         subtitle: 'Încearcă alte filtre sau caută altceva',
+        actionLabel: 'Reseteaza filtrele',
+        onAction: _clearFilters,
       );
     }
     // Use distance-sorted list if active, otherwise normal provider list
@@ -478,10 +484,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       );
     }
     if (state.businesses.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.store_outlined,
         title: 'Niciun business găsit',
         subtitle: 'Încearcă alte filtre sau caută altceva',
+        actionLabel: 'Reseteaza filtrele',
+        onAction: _clearFilters,
       );
     }
     return RefreshIndicator(
@@ -853,56 +861,61 @@ class _PrefsFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        if (hasPrefs) {
-          onToggle(!isActive);
-        } else {
-          onNavigateToPrefs();
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.accentMuted : AppColors.bgCard,
-          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-          border: Border.all(
-            color: isActive ? AppColors.accent : AppColors.border,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? Icons.tune : Icons.tune_outlined,
-              size: 14,
-              color: isActive
-                  ? AppColors.accent
-                  : hasPrefs
-                      ? AppColors.textSecondary
-                      : AppColors.textTertiary,
+    return Semantics(
+      label: 'Preferinte',
+      button: true,
+      selected: isActive,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          if (hasPrefs) {
+            onToggle(!isActive);
+          } else {
+            onNavigateToPrefs();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accentMuted : AppColors.bgCard,
+            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+            border: Border.all(
+              color: isActive ? AppColors.accent : AppColors.border,
             ),
-            const SizedBox(width: 6),
-            Text(
-              'Preferințele mele',
-              style: AppTypography.labelMedium.copyWith(
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isActive ? Icons.tune : Icons.tune_outlined,
+                size: 14,
                 color: isActive
                     ? AppColors.accent
                     : hasPrefs
                         ? AppColors.textSecondary
                         : AppColors.textTertiary,
               ),
-            ),
-            if (isActive) ...[
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.check_circle,
-                size: 14,
-                color: AppColors.accent,
+              const SizedBox(width: 6),
+              Text(
+                'Preferințele mele',
+                style: AppTypography.labelMedium.copyWith(
+                  color: isActive
+                      ? AppColors.accent
+                      : hasPrefs
+                          ? AppColors.textSecondary
+                          : AppColors.textTertiary,
+                ),
               ),
+              if (isActive) ...[
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.check_circle,
+                  size: 14,
+                  color: AppColors.accent,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -915,50 +928,56 @@ class _FilterChip extends StatelessWidget {
   final bool isActive;
   final IconData? icon;
   final VoidCallback onTap;
+  final String? semanticsLabel;
 
   const _FilterChip({
     required this.label,
     required this.isActive,
     this.icon,
     required this.onTap,
+    this.semanticsLabel,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.selectionClick();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.accentMuted : AppColors.bgCard,
-          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-          border: Border.all(
-            color: isActive ? AppColors.accent : AppColors.border,
+    return Semantics(
+      label: semanticsLabel ?? label,
+      button: true,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accentMuted : AppColors.bgCard,
+            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+            border: Border.all(
+              color: isActive ? AppColors.accent : AppColors.border,
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: isActive ? AppColors.accent : AppColors.textSecondary),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: AppTypography.labelMedium.copyWith(
-                color: isActive ? AppColors.accent : AppColors.textSecondary,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 14, color: isActive ? AppColors.accent : AppColors.textSecondary),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: AppTypography.labelMedium.copyWith(
+                  color: isActive ? AppColors.accent : AppColors.textSecondary,
+                ),
               ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 16,
-              color: isActive ? AppColors.accent : AppColors.textTertiary,
-            ),
-          ],
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: 16,
+                color: isActive ? AppColors.accent : AppColors.textTertiary,
+              ),
+            ],
+          ),
         ),
       ),
     );

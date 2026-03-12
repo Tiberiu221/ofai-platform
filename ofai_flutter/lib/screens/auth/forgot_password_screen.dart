@@ -78,7 +78,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: ParticleBackground(pointerPosition: _pointerNotifier),
+              child: ExcludeSemantics(
+                child: ParticleBackground(pointerPosition: _pointerNotifier),
+              ),
             ),
             SafeArea(
               child: SingleChildScrollView(

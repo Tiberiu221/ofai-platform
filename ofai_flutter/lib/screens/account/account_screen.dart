@@ -59,7 +59,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       return Scaffold(
         body: Stack(
           children: [
-            const Positioned.fill(child: OrangeGlowWave()),
+            const Positioned.fill(child: ExcludeSemantics(child: OrangeGlowWave())),
             SafeArea(
               child: Padding(
                 padding: AppSpacing.pageH,
@@ -380,6 +380,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 icon: Icons.saved_search,
                 label: 'Cautari salvate',
                 onTap: () => context.push('/account/saved-searches'),
+              ),
+              _MenuItem(
+                icon: Icons.flag_outlined,
+                label: 'Rapoartele mele',
+                onTap: () => context.push('/account/my-reports'),
               ),
               if (user?.hasPassword ?? true)
                 _MenuItem(

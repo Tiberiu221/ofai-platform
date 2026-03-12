@@ -96,7 +96,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         children: [
           // Orange glow wave background (matches web auth-shader.js)
           const Positioned.fill(
-            child: OrangeGlowWave(),
+            child: ExcludeSemantics(child: OrangeGlowWave()),
           ),
           SafeArea(
               child: SingleChildScrollView(

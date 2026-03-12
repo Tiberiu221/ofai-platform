@@ -53,10 +53,10 @@ class SavedSearchesNotifier extends StateNotifier<SavedSearchesState> {
   }) async {
     try {
       await _api.dio.post(ApiEndpoints.savedSearches, data: {
-        ?if (label != null) 'label': label,
-        ?if (query != null) 'query': query,
-        ?if (cityId != null) 'city_id': cityId,
-        ?if (categoryId != null) 'category_id': categoryId,
+        if (label != null) 'label': label,
+        if (query != null) 'query': query,
+        if (cityId != null) 'city_id': cityId,
+        if (categoryId != null) 'category_id': categoryId,
       });
       await fetch();
       return true;

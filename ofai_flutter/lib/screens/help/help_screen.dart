@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -57,11 +58,11 @@ class HelpScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             _LinkItem(
               label: 'Termeni si conditii',
-              onTap: () => Navigator.of(context).pushNamed('/terms'),
+              onTap: () => context.push('/terms'),
             ),
             _LinkItem(
               label: 'Politica de confidentialitate',
-              onTap: () => Navigator.of(context).pushNamed('/privacy'),
+              onTap: () => context.push('/privacy'),
             ),
 
             const SizedBox(height: AppSpacing.huge),
@@ -156,7 +157,7 @@ final _faqItems = [
   _Faq(
     question: 'Cum pot folosi punctele?',
     answer:
-        'Punctele acumulate pot fi folosite pentru a debloca oferte exclusive sau beneficii speciale pe platforma.',
+        'Punctele acumulate contribuie la progresul tau pe platforma. Cu cat ai mai multe puncte, cu atat urci in nivel si deblochezi badge-uri noi.',
   ),
   _Faq(
     question: 'Cum schimb orasul?',

@@ -81,7 +81,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: ParticleBackground(pointerPosition: _pointerNotifier),
+              child: ExcludeSemantics(
+                child: ParticleBackground(pointerPosition: _pointerNotifier),
+              ),
             ),
             SafeArea(
               child: SingleChildScrollView(

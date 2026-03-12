@@ -63,7 +63,6 @@ class ApiEndpoints {
 
   // Push
   static const String pushTokens = '/push-tokens';
-  static const String pushTokensMyDevices = '/push-tokens/my-devices';
 
   // Offer Requests (Pinch)
   static const String offerRequests = '/offer-requests';
@@ -82,6 +81,8 @@ class ApiEndpoints {
 
   // Reports
   static const String reports = '/reports';
+  static const String myReports = '/reports/mine';
+  static String deleteReport(int id) => '/reports/$id';
 
   // Static data
   static const String cities = '/cities';

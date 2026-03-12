@@ -58,7 +58,13 @@ class OfferDetailScreen extends ConsumerWidget {
 
           return Stack(
             children: [
-              CustomScrollView(
+              RefreshIndicator(
+                color: AppColors.accent,
+                backgroundColor: AppColors.bgCard,
+                onRefresh: () async {
+                  ref.invalidate(offerDetailProvider(offerId));
+                },
+                child: CustomScrollView(
                 slivers: [
                   // Hero image with parallax effect
                   SliverAppBar(
@@ -67,18 +73,25 @@ class OfferDetailScreen extends ConsumerWidget {
                     backgroundColor: AppColors.bgPrimary,
                     stretch: true,
                     actions: [
-                      IconButton(
-                        icon: const Icon(Icons.share_outlined),
-                        onPressed: () {
-                          Launchers.shareOffer(offer.title, offer.id);
-                          final biz = offer.business;
-                          if (biz != null) {
-                            AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'share');
-                          }
-                        },
+                      Semantics(
+                        label: 'Distribuie oferta',
+                        button: true,
+                        child: IconButton(
+                          icon: const Icon(Icons.share_outlined),
+                          onPressed: () {
+                            Launchers.shareOffer(offer.title, offer.id);
+                            final biz = offer.business;
+                            if (biz != null) {
+                              AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'share');
+                            }
+                          },
+                        ),
                       ),
                       if (isLoggedIn)
-                        PopupMenuButton<String>(
+                        Semantics(
+                          label: 'Raporteaza oferta',
+                          button: true,
+                          child: PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert),
                           onSelected: (value) async {
                             if (value == 'report') {
@@ -106,6 +119,7 @@ class OfferDetailScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
+                        ),
                         ),
                     ],
                     flexibleSpace: LayoutBuilder(
@@ -691,22 +705,25 @@ class OfferDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                           itemCount: offer.gallery!.length,
                           separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) => GestureDetector(
-                            onTap: () {
-                              FullscreenGallery.open(
-                                context,
-                                offer.gallery!.map((g) => g.url).toList(),
-                                initialIndex: i,
-                              );
-                              final biz = offer.business;
-                              if (biz != null) {
-                                AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'gallery');
-                              }
-                            },
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                              child: CachedNetworkImage(
-                                imageUrl: offer.gallery![i].url,
+                          itemBuilder: (_, i) => Semantics(
+                            label: 'Imagine galerie',
+                            image: true,
+                            child: GestureDetector(
+                              onTap: () {
+                                FullscreenGallery.open(
+                                  context,
+                                  offer.gallery!.map((g) => g.url).toList(),
+                                  initialIndex: i,
+                                );
+                                final biz = offer.business;
+                                if (biz != null) {
+                                  AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'gallery');
+                                }
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                child: CachedNetworkImage(
+                                  imageUrl: offer.gallery![i].url,
                                 width: 220,
                                 fit: BoxFit.cover,
                                 placeholder: (_, __) => Container(width: 220, color: AppColors.bgSecondary),
@@ -721,6 +738,7 @@ class OfferDetailScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                  ),
 
                   // Bottom padding for FAB + booking bar
                   SliverToBoxAdapter(
@@ -729,6 +747,7 @@ class OfferDetailScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
               ),
 
               // Sticky booking CTA bar

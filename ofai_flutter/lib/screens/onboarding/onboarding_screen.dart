@@ -70,7 +70,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         children: [
           // Orange glow wave background
           const Positioned.fill(
-            child: OrangeGlowWave(),
+            child: ExcludeSemantics(child: OrangeGlowWave()),
           ),
           // Content
           SafeArea(

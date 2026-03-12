@@ -80,7 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         children: [
           // Orange glow wave background (matches web auth-shader.js)
           const Positioned.fill(
-            child: OrangeGlowWave(),
+            child: ExcludeSemantics(child: OrangeGlowWave()),
           ),
 
           // Content

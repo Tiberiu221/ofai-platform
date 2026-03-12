@@ -35,6 +35,7 @@ import 'screens/legal/terms_screen.dart';
 import 'screens/legal/privacy_screen.dart';
 import 'screens/help/help_screen.dart';
 import 'screens/collection_detail/collection_detail_screen.dart';
+import 'screens/account/my_reports_screen.dart';
 
 // Shell for bottom navigation with liquid glass effect
 class _ShellScreen extends StatefulWidget {
@@ -374,6 +375,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/account/saved-searches',
             builder: (context, state) => const SavedSearchesScreen(),
+          ),
+          GoRoute(
+            path: '/account/my-reports',
+            builder: (context, state) => const MyReportsScreen(),
           ),
 
           // Browse routes

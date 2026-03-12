@@ -358,10 +358,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                     const SizedBox(width: AppSpacing.md),
                                 itemBuilder: (context, index) {
                                   final coll = collections[index];
+                                  final screenWidth = MediaQuery.of(context).size.width;
+                                  final collCardWidth = screenWidth * 0.6 < 240 ? screenWidth * 0.6 : 240.0;
                                   return GestureDetector(
                                     onTap: () => context.push('/collection-detail/${coll.id}'),
                                     child: Container(
-                                      width: 240,
+                                      width: collCardWidth,
                                       clipBehavior: Clip.hardEdge,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -538,10 +540,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                                 itemCount: promoted.length,
                                 separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
-                                itemBuilder: (_, i) => SizedBox(
-                                  width: 280,
-                                  child: OfferCard(offer: promoted[i], horizontal: true),
-                                ),
+                                itemBuilder: (_, i) {
+                                  final screenWidth = MediaQuery.of(context).size.width;
+                                  final cardWidth = screenWidth * 0.7 < 280 ? screenWidth * 0.7 : 280.0;
+                                  return SizedBox(
+                                    width: cardWidth,
+                                    child: OfferCard(offer: promoted[i], horizontal: true),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xxl),
