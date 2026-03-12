@@ -291,7 +291,8 @@ class OfferCard extends ConsumerWidget {
 
   /// Business name row: [badge] full-width name
   Widget _buildBusinessRow() {
-    final biz = offer.business!;
+    final biz = offer.business;
+    if (biz == null) return const SizedBox.shrink();
     return Row(
       children: [
         if (biz.badgeType != null) ...[
@@ -312,7 +313,8 @@ class OfferCard extends ConsumerWidget {
 
   /// Location + category row: [icon] distance/city . category ... [bookmark] saves
   Widget _buildLocationRow(WidgetRef ref) {
-    final biz = offer.business!;
+    final biz = offer.business;
+    if (biz == null) return const SizedBox.shrink();
     final dist = _distanceText(ref);
     final hasDistance = dist != null;
     final locationLabel = hasDistance ? '$dist distanță' : biz.city;

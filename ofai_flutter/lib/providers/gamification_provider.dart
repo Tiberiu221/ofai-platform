@@ -56,7 +56,9 @@ class GamificationState {
 class GamificationNotifier extends StateNotifier<GamificationState> {
   final ApiClient _api;
 
-  GamificationNotifier(this._api) : super(const GamificationState());
+  GamificationNotifier(this._api) : super(const GamificationState()) {
+    Future.microtask(fetch);
+  }
 
   Future<void> fetch() async {
     state = state.copyWith(isLoading: true, clearError: true);

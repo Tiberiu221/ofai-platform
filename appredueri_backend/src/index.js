@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
 const { doubleCsrf } = require("csrf-csrf");
 const path = require("path");
 
@@ -158,18 +159,33 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
+// Anonymous CSRF session cookie — per-session nonce for unauthenticated users
+app.use((req, res, next) => {
+  if (!req.cookies?.ofai_token && !req.cookies?._csrf_session) {
+    res.cookie('_csrf_session', crypto.randomUUID(), {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000, // 24h
+    });
+  }
+  next();
+});
+
 // ============================================
 // CSRF PROTECTION (Web routes only)
 // ============================================
+if (!process.env.CSRF_SECRET) {
+  console.warn('[SECURITY] CSRF_SECRET not set — falling back to JWT_SECRET. Set a unique CSRF_SECRET in production.');
+}
+
 const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
-  // CSRF_SECRET is preferred; falls back to JWT_SECRET for backward compatibility.
-  // Set CSRF_SECRET in production for proper secret separation.
   getSecret: () => process.env.CSRF_SECRET || process.env.JWT_SECRET,
   getSessionIdentifier: (req) => {
-    // Use auth cookie as session identifier; fall back to stable "anonymous"
+    // Prefer auth cookie; for anonymous users, use per-session nonce cookie
     // NOTE: req.ip is unreliable behind Railway's reverse proxy (can change
     // between GET and POST), causing CSRF validation failures on register/login.
-    return req.cookies?.ofai_token || "anonymous";
+    return req.cookies?.ofai_token || req.cookies?._csrf_session || "anonymous";
   },
   cookieName: "__csrf",
   cookieOptions: {

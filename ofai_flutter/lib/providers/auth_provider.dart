@@ -61,7 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Re-register push on app restart
       PushNotificationService().initialize().catchError((e) {
-        print('[Push] Init failed: $e');
+        debugPrint('[Push] Init failed: $e');
       });
     } on DioException catch (e) {
       // Only log out on auth errors (401/403). Network errors keep current state.
@@ -99,7 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
-        print('[Push] Init failed: $e');
+        debugPrint('[Push] Init failed: $e');
       });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la autentificare';
@@ -144,7 +144,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
-        print('[Push] Init failed: $e');
+        debugPrint('[Push] Init failed: $e');
       });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la înregistrare';
@@ -193,7 +193,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.invalidate(followedBusinessesProvider);
 
       PushNotificationService().initialize().catchError((e) {
-        print('[Push] Init failed: $e');
+        debugPrint('[Push] Init failed: $e');
       });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la autentificarea cu Google';

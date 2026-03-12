@@ -134,10 +134,10 @@ router.get("/", optionalAuth, async (req, res) => {
 
         c.name as city_name, cat.name as category_name,
 
-        (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
-        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
-        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
-        (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending,
+        COALESCE(rev_agg.rating_avg, 0) as rating_avg,
+        COALESCE(rev_agg.rating_count, 0) as rating_count,
+        COALESCE(fav_agg.save_count, 0) as save_count,
+        COALESCE(fav_agg.recent_favs, 0) >= 5 as is_trending,
 
         COALESCE(splan.has_promoted_placement, FALSE) as is_promoted,
         locs.locations as locations
@@ -145,6 +145,16 @@ router.get("/", optionalAuth, async (req, res) => {
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN (
+        SELECT business_id, AVG(rating) AS rating_avg, COUNT(*) AS rating_count
+        FROM reviews GROUP BY business_id
+      ) rev_agg ON rev_agg.business_id = b.id
+      LEFT JOIN (
+        SELECT offer_id,
+          COUNT(*) AS save_count,
+          COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days') AS recent_favs
+        FROM favorite_offers GROUP BY offer_id
+      ) fav_agg ON fav_agg.offer_id = o.id
       LEFT JOIN business_subscriptions bsub
         ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
       LEFT JOIN subscription_plans splan

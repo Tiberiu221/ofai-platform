@@ -131,7 +131,7 @@ final offerRequestProvider =
     StateNotifierProvider.autoDispose.family<OfferRequestNotifier, OfferRequestState, int>(
   (ref, businessId) {
     final notifier = OfferRequestNotifier(ApiClient(), businessId);
-    notifier.fetch();
+    Future.microtask(() => notifier.fetch());
     return notifier;
   },
 );

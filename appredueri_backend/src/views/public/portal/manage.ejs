@@ -873,7 +873,7 @@
     html += '<span class="catalog-cat-count">' + items.length + ' articol' + (items.length !== 1 ? 'e' : '') + '</span>';
     if (isReal) {
       html += '<span class="catalog-cat-actions" onclick="event.stopPropagation()">';
-      html += '<button title="Redenumește" onclick="catalog_renameCategory(' + cat.id + ',\'' + escapeHtml(cat.name).replace(/'/g, "\\'") + '\')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
+      html += '<button title="Redenumește" onclick="catalog_renameCategory(' + cat.id + ',' + JSON.stringify(cat.name) + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
       html += '<button class="catalog-del" title="Șterge" onclick="catalog_deleteCategory(' + cat.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>';
       html += '</span>';
     }
@@ -881,10 +881,11 @@
     html += '<div class="catalog-items-list">';
     items.forEach(function(item) {
       html += '<div class="catalog-item-row">';
-      html += '<span class="catalog-item-type-badge ' + item.type + '">' + (TYPE_LABELS[item.type] || item.type) + '</span>';
+      var safeType = ['service','product','menu_item'].indexOf(item.type) >= 0 ? item.type : 'unknown';
+      html += '<span class="catalog-item-type-badge ' + safeType + '">' + escapeHtml(TYPE_LABELS[item.type] || item.type) + '</span>';
       html += '<span class="catalog-item-name">' + escapeHtml(item.name) + '</span>';
       if (item.duration_minutes) html += '<span class="catalog-item-dur">' + item.duration_minutes + ' min</span>';
-      html += '<span class="catalog-item-price">' + (item.price_display || 'La cerere') + '</span>';
+      html += '<span class="catalog-item-price">' + escapeHtml(item.price_display || 'La cerere') + '</span>';
       html += '<span class="catalog-item-actions">';
       html += '<button title="Editează" onclick="catalog_openItemModal(' + item.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>';
       html += '<button class="catalog-del" title="Șterge" onclick="catalog_deleteItem(' + item.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>';
@@ -1058,7 +1059,7 @@
       var errDiv = document.getElementById('csv-errors');
       if (data.errors && data.errors.length > 0) {
         errDiv.style.display = '';
-        errDiv.innerHTML = data.errors.join('<br>');
+        errDiv.innerHTML = data.errors.map(function(e) { return escapeHtml(e); }).join('<br>');
       } else {
         errDiv.style.display = 'none';
       }
@@ -1290,13 +1291,6 @@
       el.id = 'concierge-gate-' + idx;
       gateSection(el.id, plan.hasConcierge, 'Concierge Onboarding', 'Standard');
     });
-  }
-
-  // Helper: escape HTML to prevent XSS in dynamic content
-  function escapeHtml(text) {
-    var el = document.createElement('span');
-    el.textContent = text;
-    return el.innerHTML;
   }
 
   function renderSubscriptionSection(subscription) {
@@ -1952,7 +1946,7 @@
           return '<button class="ai-suggestion-pill" onclick="pickSuggestion(' + reviewId + ',' + i + ')" data-text="' +
             s.replace(/"/g, '&quot;') + '">' +
             '<span class="ai-pill-tone">' + labels[i] + '</span>' +
-            '<span class="ai-pill-text">' + s + '</span>' +
+            '<span class="ai-pill-text">' + escapeHtml(s) + '</span>' +
             '</button>';
         }).join('');
       container.style.display = '';

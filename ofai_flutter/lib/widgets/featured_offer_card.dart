@@ -322,7 +322,7 @@ class FeaturedOfferCard extends ConsumerWidget {
                               size: 14, color: AppColors.textTertiary),
                           const SizedBox(width: 4),
                           Text(
-                            offer.business!.city!,
+                            offer.business!.city ?? '',
                             style: AppTypography.labelSmall.copyWith(
                               color: AppColors.textTertiary,
                             ),

@@ -11,6 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
 // Toast System
 // ============================================
 
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
 function adminToast(message, type = 'success') {
   const container = document.getElementById('toast-container');
   if (!container) {
@@ -35,7 +41,7 @@ function adminToast(message, type = 'success') {
 
   toast.innerHTML = `
     <div class="a-toast-icon">${icon}</div>
-    <div class="a-toast-message">${message}</div>
+    <div class="a-toast-message">${escapeHtml(message)}</div>
     <button class="a-toast-close" onclick="dismissToast(this)">&times;</button>
   `;
 

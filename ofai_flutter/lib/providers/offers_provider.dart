@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -154,13 +153,14 @@ class OffersListNotifier extends StateNotifier<OffersListState> {
     if (state.isLoadingMore || !state.hasMore) return;
     if (state.offers.length >= _maxItems) return;
     state = state.copyWith(isLoadingMore: true);
-    final loadMoreToken = CancelToken();
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
     try {
       final nextPage = state.page + 1;
       final response = await _api.dio.get(
         ApiEndpoints.offers,
         queryParameters: _params(nextPage),
-        cancelToken: loadMoreToken,
+        cancelToken: _cancelToken,
       );
       final paginated = PaginatedResponse.fromJson(response.data, Offer.fromJson);
       // Interleave only the new page items, then append (avoids visual jumps)

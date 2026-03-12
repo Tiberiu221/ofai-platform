@@ -139,7 +139,8 @@ router.get("/:businessId/subscription", businessAuth, async (req, res) => {
 // =====================================
 router.get("/:businessId", businessAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     console.log("[BusinessPortal] GET /my-businesses/:id - ID:", businessId);
 
     const result = await pool.query(`
@@ -214,7 +215,8 @@ router.get("/:businessId", businessAuth, async (req, res) => {
 // =====================================
 router.put("/:businessId", businessAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const {
       name, description, address, phone, website, city_id, category_id, lat, lng,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions
@@ -282,7 +284,8 @@ router.put("/:businessId", businessAuth, async (req, res) => {
 // =====================================
 router.post("/:businessId/logo", businessAuth, requireFeature('can_upload_logo'), upload.single("logo"), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     console.log("[BusinessPortal] POST logo - Starting upload for business:", businessId);
 
     if (!req.file) {
@@ -319,7 +322,8 @@ router.post("/:businessId/logo", businessAuth, requireFeature('can_upload_logo')
 // =====================================
 router.post("/:businessId/cover", businessAuth, requireFeature('can_upload_cover'), upload.single("cover"), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     console.log("[BusinessPortal] POST cover - Starting upload for business:", businessId);
 
     if (!req.file) {
@@ -356,7 +360,8 @@ router.post("/:businessId/cover", businessAuth, requireFeature('can_upload_cover
 router.post("/:businessId/images", businessAuth, requireLimit('max_gallery_images', countGalleryImages), upload.single("image"), async (req, res) => {
   const client = await pool.connect();
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
 
     if (!req.file) {
       client.release();
@@ -548,7 +553,8 @@ router.get("/:businessId/catalog", businessAuth, async (req, res) => {
 // =====================================
 router.get("/:businessId/offers", businessAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     console.log("[BusinessPortal] GET offers - Business ID:", businessId);
 
     const result = await pool.query(`
@@ -574,7 +580,8 @@ router.get("/:businessId/offers", businessAuth, async (req, res) => {
 // =====================================
 router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers', countActiveOffers), upload.single("image"), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, is_active,
@@ -995,7 +1002,8 @@ router.patch("/:businessId/offers/:offerId/toggle", businessAuth, async (req, re
 // =====================================
 router.get("/:businessId/analytics", businessAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
 
     const [viewsRes, subscribersRes, reviewsRes, offersRes, ratingRes, offerRequestsRes, codeRevealsRes] = await Promise.all([
       pool.query(
@@ -1103,7 +1111,8 @@ router.get("/:businessId/analytics", businessAuth, async (req, res) => {
 // =====================================
 router.get("/:businessId/analytics/views", businessAuth, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const period = req.query.period || "30d";
 
     const intervalMap = { "7d": 7, "30d": 30, "90d": 90 };
@@ -1145,7 +1154,8 @@ router.get("/:businessId/analytics/views", businessAuth, requireFeature('has_ana
 // =====================================
 router.get("/:businessId/analytics/subscribers", businessAuth, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const period = req.query.period || "30d";
 
     const intervalMap = { "7d": 7, "30d": 30, "90d": 90 };
@@ -1188,7 +1198,8 @@ router.get("/:businessId/analytics/subscribers", businessAuth, requireFeature('h
 // =====================================
 router.get("/:businessId/reviews", businessAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const { page, limit, offset } = parsePagination(req.query);
 
     const [result, countResult] = await Promise.all([
@@ -1373,7 +1384,8 @@ router.post("/:businessId/reviews/:reviewId/suggestions", businessAuth, requireF
 // =====================================
 router.get("/:businessId/score", businessAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
 
     const [bizRes, imagesRes, offersRes, reviewsRes, responsesRes, subscribersRes] = await Promise.all([
       pool.query(
@@ -1453,7 +1465,8 @@ router.post(
   businessAuth,
   requireFeature('has_deal_nomination'),
   async (req, res) => {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const { offerId } = req.body;
 
     if (!offerId) {
@@ -1572,8 +1585,10 @@ router.delete(
 router.get(
   '/:businessId/nominations',
   businessAuth,
+  requireFeature('has_deal_nomination'),
   async (req, res) => {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
 
     try {
       const nominations = await pool.query(`
@@ -1641,7 +1656,8 @@ router.put(
   businessAuth,
   requireFeature('has_competitor_blocking'),
   async (req, res) => {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const { enabled } = req.body;
 
     if (typeof enabled !== 'boolean') {

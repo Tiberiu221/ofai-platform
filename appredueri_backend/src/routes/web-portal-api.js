@@ -141,7 +141,7 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
   } catch (err) {
     if (client) await client.query("ROLLBACK").catch(() => {});
     console.error(`[Web API] Portal gallery error at step="${step}":`, err.message || err);
-    res.status(500).json({ message: "Eroare la upload", _debug: { step, error: err.message } });
+    res.status(500).json({ message: "Eroare la upload" });
   } finally {
     if (client) client.release();
   }
@@ -806,6 +806,37 @@ router.post("/api/web/portal/:businessId/catalog/import-csv/confirm", requireBus
     if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: "Lista de articole este goală" });
     if (items.length > 500) return res.status(400).json({ message: "Maximum 500 articole per import" });
 
+    // Re-validate each item to prevent tampered requests
+    const VALID_TYPES = ['service', 'product', 'menu_item'];
+    const errors = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.name || typeof item.name !== 'string' || !item.name.trim()) {
+        errors.push(`Rândul ${i + 1}: Numele lipsește`);
+      } else if (item.name.length > 200) {
+        errors.push(`Rândul ${i + 1}: Numele depășește 200 caractere`);
+      }
+      if (item.type && !VALID_TYPES.includes(item.type)) {
+        errors.push(`Rândul ${i + 1}: Tip invalid "${item.type}"`);
+      }
+      if (item.price !== null && item.price !== undefined) {
+        if (typeof item.price !== 'number' || item.price < 0 || !Number.isFinite(item.price)) {
+          errors.push(`Rândul ${i + 1}: Preț invalid`);
+        }
+      }
+      if (item.description && (typeof item.description !== 'string' || item.description.length > 2000)) {
+        errors.push(`Rândul ${i + 1}: Descriere invalidă sau prea lungă`);
+      }
+      if (item.duration_minutes !== null && item.duration_minutes !== undefined) {
+        if (typeof item.duration_minutes !== 'number' || item.duration_minutes < 0 || !Number.isInteger(item.duration_minutes)) {
+          errors.push(`Rândul ${i + 1}: Durată invalidă`);
+        }
+      }
+    }
+    if (errors.length > 0) {
+      return res.status(400).json({ message: "Validare eșuată", errors: errors.slice(0, 20) });
+    }
+
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -1083,6 +1114,11 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
 
       if (Array.isArray(promoCodesArr)) {
         const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
+        // Enforce promo code limit per tier
+        const promoLimit = req.tier && req.tier.plan ? req.tier.plan.max_promo_codes_per_offer : null;
+        if (promoLimit !== null && validCodes.length > promoLimit) {
+          return res.status(403).json({ error: 'limit_reached', message: `Maximum ${promoLimit} coduri promoționale per ofertă.` });
+        }
         for (const pc of validCodes) {
           await pool.query(
             "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
@@ -2075,7 +2111,7 @@ const onboardingUpload = require("multer")({
 });
 
 // GET active onboarding request
-router.get("/api/web/portal/:businessId/onboarding/request", requireBusinessOwner, async (req, res) => {
+router.get("/api/web/portal/:businessId/onboarding/request", requireBusinessOwner, requireFeature('has_concierge'), async (req, res) => {
   try {
     const { businessId } = req.params;
     const result = await pool.query(

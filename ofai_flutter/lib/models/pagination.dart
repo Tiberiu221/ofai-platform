@@ -14,7 +14,7 @@ class PaginatedResponse<T> {
     T Function(Map<String, dynamic>) fromJson,
   ) {
     return PaginatedResponse(
-      data: (json['data'] as List<dynamic>)
+      data: ((json['data'] as List<dynamic>?) ?? [])
           .map((e) => fromJson(e as Map<String, dynamic>))
           .toList(),
       pagination: PaginationMeta.fromJson(

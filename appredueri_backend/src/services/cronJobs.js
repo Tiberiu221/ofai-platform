@@ -110,28 +110,33 @@ function initCronJobs() {
         RETURNING business_id, plan_id
       `);
 
-      // Downgrade expired trials to free + sync badge (per-business transaction)
-      for (const row of trialResult.rows) {
+      // Batch downgrade expired trials to free + sync badges (single transaction)
+      if (trialResult.rows.length > 0) {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          const insertRes = await client.query(`
+          const bizIds = trialResult.rows.map(r => r.business_id);
+          const fromPlanIds = trialResult.rows.map(r => r.plan_id);
+          const toPlanIds = trialResult.rows.map(() => freePlanId);
+          // Batch insert free subscriptions
+          await client.query(`
             INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-            VALUES ($1, $2, 'active', 'none')
-            ON CONFLICT DO NOTHING
-          `, [row.business_id, freePlanId]);
-          if (insertRes.rowCount === 0) {
-            console.warn(`[Cron] Free plan insert skipped for business ${row.business_id} — active subscription already exists`);
-          }
+            SELECT unnest($1::int[]), unnest($2::int[]), 'active', 'none'
+            ON CONFLICT (business_id) DO NOTHING
+          `, [bizIds, toPlanIds]);
+          // Batch insert subscription history
           await client.query(`
             INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-            VALUES ($1, $2, $3, 'trial_expired', 'Trial period ended')
-          `, [row.business_id, row.plan_id, freePlanId]);
-          await syncBadgeType(client, row.business_id, freeBadgeType);
+            SELECT unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), 'trial_expired', 'Trial period ended'
+          `, [bizIds, fromPlanIds, toPlanIds]);
+          // syncBadgeType must run per-business (updates different rows)
+          for (const row of trialResult.rows) {
+            await syncBadgeType(client, row.business_id, freeBadgeType);
+          }
           await client.query('COMMIT');
         } catch (txErr) {
           await client.query('ROLLBACK');
-          console.error(`[Cron] Trial downgrade tx failed for business ${row.business_id}:`, txErr.message);
+          console.error(`[Cron] Trial batch downgrade tx failed:`, txErr.message);
         } finally {
           client.release();
         }
@@ -149,28 +154,33 @@ function initCronJobs() {
         RETURNING business_id, plan_id
       `);
 
-      // Downgrade expired paid subs to free + sync badge + log history
-      for (const row of paidResult.rows) {
+      // Batch downgrade expired paid subs to free + sync badges (single transaction)
+      if (paidResult.rows.length > 0) {
         const client = await pool.connect();
         try {
           await client.query('BEGIN');
-          const insertRes = await client.query(`
+          const bizIds = paidResult.rows.map(r => r.business_id);
+          const fromPlanIds = paidResult.rows.map(r => r.plan_id);
+          const toPlanIds = paidResult.rows.map(() => freePlanId);
+          // Batch insert free subscriptions
+          await client.query(`
             INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-            VALUES ($1, $2, 'active', 'none')
-            ON CONFLICT DO NOTHING
-          `, [row.business_id, freePlanId]);
-          if (insertRes.rowCount === 0) {
-            console.warn(`[Cron] Free plan insert skipped for business ${row.business_id} — active subscription already exists`);
-          }
+            SELECT unnest($1::int[]), unnest($2::int[]), 'active', 'none'
+            ON CONFLICT (business_id) DO NOTHING
+          `, [bizIds, toPlanIds]);
+          // Batch insert subscription history
           await client.query(`
             INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
-            VALUES ($1, $2, $3, 'expired', 'Paid subscription period ended without renewal')
-          `, [row.business_id, row.plan_id, freePlanId]);
-          await syncBadgeType(client, row.business_id, freeBadgeType);
+            SELECT unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), 'expired', 'Paid subscription period ended without renewal'
+          `, [bizIds, fromPlanIds, toPlanIds]);
+          // syncBadgeType must run per-business (updates different rows)
+          for (const row of paidResult.rows) {
+            await syncBadgeType(client, row.business_id, freeBadgeType);
+          }
           await client.query('COMMIT');
         } catch (txErr) {
           await client.query('ROLLBACK');
-          console.error(`[Cron] Paid downgrade tx failed for business ${row.business_id}:`, txErr.message);
+          console.error(`[Cron] Paid batch downgrade tx failed:`, txErr.message);
         } finally {
           client.release();
         }
@@ -284,9 +294,12 @@ function initCronJobs() {
 
   // 10. Expire stale deal nominations — Daily 00:15 UTC
   cron.schedule('15 0 * * *', async () => {
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+
       // Expire nominations older than 14 days that are still pending
-      const expiredAge = await pool.query(`
+      const expiredAge = await client.query(`
         UPDATE deal_nominations
         SET status = 'expired'
         WHERE status = 'pending'
@@ -295,7 +308,7 @@ function initCronJobs() {
       `);
 
       // Cancel nominations whose offer became inactive or expired
-      const expiredOffer = await pool.query(`
+      const expiredOffer = await client.query(`
         UPDATE deal_nominations dn
         SET status = 'cancelled'
         FROM offers o
@@ -306,7 +319,7 @@ function initCronJobs() {
       `);
 
       // Cancel nominations whose business lost Premium subscription
-      const expiredTier = await pool.query(`
+      const expiredTier = await client.query(`
         UPDATE deal_nominations dn
         SET status = 'cancelled'
         WHERE dn.status = 'pending'
@@ -320,12 +333,17 @@ function initCronJobs() {
         RETURNING dn.id
       `);
 
+      await client.query('COMMIT');
+
       const total = (expiredAge.rowCount || 0) + (expiredOffer.rowCount || 0) + (expiredTier.rowCount || 0);
       if (total > 0) {
         console.log(`[Cron] Nomination cleanup: ${expiredAge.rowCount} aged out, ${expiredOffer.rowCount} offer invalid, ${expiredTier.rowCount} tier lost`);
       }
     } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
       console.error('[Cron] Nomination expiry error:', err.message);
+    } finally {
+      client.release();
     }
   });
 

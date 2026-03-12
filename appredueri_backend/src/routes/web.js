@@ -42,13 +42,14 @@ async function _getDealOfDay() {
                b.name as business_name, b.logo_url as business_logo,
                COALESCE(b.cover_image_url, o.logo_url) as image_url,
                ci2.name as city_name,
-               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
+               COALESCE(fav_agg.cnt, 0) as save_count
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities ci2 ON b.city_id = ci2.id
+        LEFT JOIN (SELECT offer_id, COUNT(*) AS cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
+        LEFT JOIN (SELECT offer_id, COUNT(*) AS cnt FROM business_clicks GROUP BY offer_id) click_agg ON click_agg.offer_id = o.id
         WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-        ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
-                 (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
+        ORDER BY COALESCE(fav_agg.cnt, 0) + COALESCE(click_agg.cnt, 0) DESC
         LIMIT 1
       `);
     }
@@ -81,13 +82,19 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
            COALESCE(b.cover_image_url, o.logo_url) as image_url,
            COALESCE(AVG(r.rating), 0) as rating_avg,
            COUNT(DISTINCT r.id) as rating_count,
-           (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
-           (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending
+           COALESCE(fav_agg.favorite_count, 0) as favorite_count,
+           COALESCE(fav_agg.recent_favs, 0) >= 5 as is_trending
     FROM offers o
     JOIN businesses b ON o.business_id = b.id
     LEFT JOIN cities ci ON b.city_id = ci.id
     LEFT JOIN categories cat ON b.category_id = cat.id
     LEFT JOIN reviews r ON r.business_id = b.id
+    LEFT JOIN (
+      SELECT offer_id,
+        COUNT(*) AS favorite_count,
+        COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days') AS recent_favs
+      FROM favorite_offers GROUP BY offer_id
+    ) fav_agg ON fav_agg.offer_id = o.id
     LEFT JOIN business_subscriptions bsub
       ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
     LEFT JOIN subscription_plans splan
@@ -95,7 +102,8 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
     WHERE ${where.join(" AND ")}
     GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
-             ci.name, cat.name, o.logo_url, splan.slug
+             ci.name, cat.name, o.logo_url, splan.slug,
+             fav_agg.favorite_count, fav_agg.recent_favs
     ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC
     LIMIT 6
   `, params);
@@ -188,14 +196,18 @@ router.get("/", async (req, res) => {
         ORDER BY business_count DESC
         LIMIT 15
       `),
-      // 6. Featured businesses (logo strip)
-      pool.query(`
-        SELECT id, name, logo_url
-        FROM businesses
-        WHERE logo_url IS NOT NULL
-        ORDER BY RANDOM()
-        LIMIT 20
-      `),
+      // 6. Featured businesses (logo strip) — cached pool, shuffled in-process
+      (async () => {
+        const CACHE_TTL = 10 * 60 * 1000; // 10 min
+        if (!req.app.locals._featBizPool || Date.now() - (req.app.locals._featBizPoolTs || 0) > CACHE_TTL) {
+          const { rows } = await pool.query("SELECT id, name, logo_url FROM businesses WHERE logo_url IS NOT NULL LIMIT 100");
+          req.app.locals._featBizPool = rows;
+          req.app.locals._featBizPoolTs = Date.now();
+        }
+        const pool_ = [...req.app.locals._featBizPool];
+        for (let i = pool_.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool_[i], pool_[j]] = [pool_[j], pool_[i]]; }
+        return { rows: pool_.slice(0, 20) };
+      })(),
       // 7. Top businesses
       pool.query(`
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,

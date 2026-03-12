@@ -16,8 +16,8 @@ const pool = require("../db");
  */
 const BADGE_CONDITIONS = {
   early_adopter: {
-    countQuery: "SELECT id FROM users ORDER BY id LIMIT 100",
-    check: (userId, rows) => rows.some((r) => r.id === userId),
+    customQuery: "SELECT CASE WHEN $1 IN (SELECT id FROM users ORDER BY id ASC LIMIT 100) THEN 1 ELSE 0 END AS cnt",
+    minCount: 1,
   },
   first_review: { table: "reviews", minCount: 1 },
   reviewer_bronze: { table: "reviews", minCount: 5 },

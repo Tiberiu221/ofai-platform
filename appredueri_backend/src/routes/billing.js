@@ -93,11 +93,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       default:
         console.log(`[Billing] Unhandled webhook event: ${event.type}`);
     }
+    res.json({ received: true });
   } catch (err) {
     console.error(`[Billing] Webhook handler error for ${event.type}:`, err);
+    return res.status(500).json({ error: 'Webhook handler failed' });
   }
-
-  res.json({ received: true });
 });
 
 // --- Webhook handlers (skeleton — implement when Stripe goes live) ---

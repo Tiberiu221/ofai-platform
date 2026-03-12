@@ -38,7 +38,7 @@
                data-rating="<%= review.rating %>"
                data-responded="<%= review.response_id ? '1' : '0' %>"
                data-date="<%= new Date(review.created_at).getTime() %>"
-               data-text="<%- ((review.first_name || '') + ' ' + (review.last_name || '') + ' ' + (review.comment || '')).toLowerCase().replace(/"/g, '&quot;') %>">
+               data-text="<%= ((review.first_name || '') + ' ' + (review.last_name || '') + ' ' + (review.comment || '')).toLowerCase() %>">
             <div class="review-header">
               <div class="review-avatar">
                 <%= review.first_name ? review.first_name.charAt(0).toUpperCase() : '?' %>

@@ -49,6 +49,7 @@ class FavoritesState {
 
 class FavoritesNotifier extends StateNotifier<FavoritesState> {
   final ApiClient _api;
+  final Set<int> _pendingToggles = {};
 
   FavoritesNotifier(this._api) : super(const FavoritesState());
 
@@ -104,6 +105,9 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
   bool isFavorite(int offerId) => state.favoriteIds.contains(offerId);
 
   Future<void> toggleFavorite(int offerId) async {
+    if (_pendingToggles.contains(offerId)) return;
+    _pendingToggles.add(offerId);
+
     final wasFavorite = state.favoriteIds.contains(offerId);
 
     // Capture analytics data BEFORE optimistic removal (offer disappears from list on unfavorite)
@@ -147,6 +151,8 @@ class FavoritesNotifier extends StateNotifier<FavoritesState> {
       state = state.copyWith(favoriteIds: newIds);
       // Re-fetch to get correct state
       fetch();
+    } finally {
+      _pendingToggles.remove(offerId);
     }
   }
 }
