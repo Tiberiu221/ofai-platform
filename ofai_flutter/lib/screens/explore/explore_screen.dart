@@ -146,14 +146,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       } else {
         ref.read(businessesListProvider.notifier).setFilter(query: query);
       }
-      // Save to search history
-      if (query.trim().length >= 3) {
-        ref.read(searchHistoryProvider.notifier).addQuery(query.trim());
-      }
+      // Search history saved on dismiss/unfocus, not on every keystroke
     });
   }
 
   void _dismissSuggest() {
+    // Save search to history on dismiss (not on every keystroke)
+    final query = _searchController.text.trim();
+    if (query.length >= 3) {
+      ref.read(searchHistoryProvider.notifier).addQuery(query);
+    }
     setState(() => _showSuggest = false);
     _searchFocusNode.unfocus();
   }

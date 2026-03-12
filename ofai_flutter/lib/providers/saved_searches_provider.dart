@@ -80,6 +80,6 @@ class SavedSearchesNotifier extends StateNotifier<SavedSearchesState> {
 }
 
 final savedSearchesProvider =
-    StateNotifierProvider<SavedSearchesNotifier, SavedSearchesState>((ref) {
+    StateNotifierProvider.autoDispose<SavedSearchesNotifier, SavedSearchesState>((ref) {
   return SavedSearchesNotifier(ApiClient());
 });

@@ -5,14 +5,15 @@ import '../core/storage/preferences.dart';
 import '../models/offer.dart';
 
 // Bump this counter to re-fetch recently viewed offers
-final _recentlyViewedRefresh = StateProvider<int>((ref) => 0);
+final _recentlyViewedRefresh = StateProvider.autoDispose<int>((ref) => 0);
 
 final recentlyViewedOffersProvider =
     FutureProvider.autoDispose<List<Offer>>((ref) async {
   ref.watch(_recentlyViewedRefresh);
 
-  final ids = await AppPreferences.getRecentlyViewedOfferIds();
-  if (ids.isEmpty) return [];
+  final allIds = await AppPreferences.getRecentlyViewedOfferIds();
+  if (allIds.isEmpty) return [];
+  final ids = allIds.take(5).toList();
 
   final api = ApiClient();
   final futures = ids.map((idStr) async {

@@ -38,6 +38,6 @@ class NotificationPreferencesNotifier extends StateNotifier<Map<String, bool>> {
 }
 
 final notificationPreferencesProvider =
-    StateNotifierProvider<NotificationPreferencesNotifier, Map<String, bool>>((ref) {
+    StateNotifierProvider.autoDispose<NotificationPreferencesNotifier, Map<String, bool>>((ref) {
   return NotificationPreferencesNotifier(ApiClient());
 });

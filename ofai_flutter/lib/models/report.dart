@@ -25,7 +25,7 @@ class UserReport {
       reason: json['reason'] as String,
       details: json['details'] as String?,
       status: json['status'] as String? ?? 'pending',
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 

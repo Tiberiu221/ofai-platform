@@ -322,9 +322,8 @@ class OfferCard extends ConsumerWidget {
     final hasLocation = locationLabel != null && locationLabel.isNotEmpty;
     final hasCategory = biz.category != null && biz.category!.isNotEmpty;
     final hasSaves = offer.saveCount != null && offer.saveCount! >= 1;
-    final isNew = offer.startDate != null &&
-        DateTime.tryParse(offer.startDate!) != null &&
-        DateTime.now().difference(DateTime.parse(offer.startDate!)).inDays <= 3;
+    final startParsed = offer.startDate != null ? DateTime.tryParse(offer.startDate!) : null;
+    final isNew = startParsed != null && DateTime.now().difference(startParsed).inDays <= 3;
 
     if (!hasLocation && !hasCategory && !hasSaves && !isNew) {
       return const SizedBox.shrink();

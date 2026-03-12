@@ -306,9 +306,8 @@ class FeaturedOfferCard extends ConsumerWidget {
 
                     // Metadata row: distance left, social proof center, countdown/CTA right
                     Builder(builder: (context) {
-                      final isNew = offer.startDate != null &&
-                          DateTime.tryParse(offer.startDate!) != null &&
-                          DateTime.now().difference(DateTime.parse(offer.startDate!)).inDays <= 3;
+                      final startParsed = offer.startDate != null ? DateTime.tryParse(offer.startDate!) : null;
+                      final isNew = startParsed != null && DateTime.now().difference(startParsed).inDays <= 3;
                       final hasLeftContent = dist != null || offer.business?.city != null;
 
                       return Row(

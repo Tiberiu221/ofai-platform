@@ -132,9 +132,13 @@ class PushNotificationService {
     final data = message.data;
     final type = data['type'];
 
-    // Use explicit deepLink from notification data if present
+    // Use explicit deepLink from notification data if present (allowlist only)
     if (data['deepLink'] != null) {
-      _pendingDeepLink = data['deepLink'].toString();
+      final link = data['deepLink'].toString();
+      const allowed = ['/offer/', '/oferta/', '/business/', '/collection-detail/', '/explore', '/account'];
+      if (allowed.any((p) => link.startsWith(p))) {
+        _pendingDeepLink = link;
+      }
     } else if (type == 'new_offer' && data['offerId'] != null) {
       final id = int.tryParse(data['offerId'].toString());
       if (id != null) _pendingDeepLink = '/offer/$id';

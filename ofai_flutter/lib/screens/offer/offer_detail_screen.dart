@@ -42,7 +42,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
     // Record as recently viewed when offer first loads
     ref.listen(offerDetailProvider(offerId), (prev, next) {
-      if (prev?.hasValue != true && next.hasValue) {
+      if (prev == null && next.hasValue) {
         recordRecentlyViewed(offerId, ref);
       }
     });
