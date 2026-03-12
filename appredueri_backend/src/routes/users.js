@@ -231,6 +231,66 @@ router.put("/me/preferences", auth, async (req, res) => {
   }
 });
 
+// GET /users/me/notification-preferences
+router.get("/me/notification-preferences", auth, async (req, res) => {
+  try {
+    const { PREF_KEYS } = require("../helpers/notificationPrefs");
+    const result = await pool.query(
+      "SELECT pref_key, enabled FROM notification_preferences WHERE user_id = $1",
+      [req.user.id]
+    );
+    const dbPrefs = {};
+    for (const row of result.rows) {
+      dbPrefs[row.pref_key] = row.enabled;
+    }
+    // Merge with defaults (missing = enabled)
+    const preferences = {};
+    for (const key of PREF_KEYS) {
+      preferences[key] = dbPrefs[key] !== undefined ? dbPrefs[key] : true;
+    }
+    res.json({ preferences });
+  } catch (err) {
+    console.error("Error GET notification-preferences:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// PUT /users/me/notification-preferences
+router.put("/me/notification-preferences", auth, async (req, res) => {
+  try {
+    const { PREF_KEYS } = require("../helpers/notificationPrefs");
+    const { preferences } = req.body || {};
+    if (!preferences || typeof preferences !== 'object') {
+      return res.status(400).json({ message: "preferences object required" });
+    }
+    for (const [key, value] of Object.entries(preferences)) {
+      if (!PREF_KEYS.includes(key)) continue;
+      await pool.query(`
+        INSERT INTO notification_preferences (user_id, pref_key, enabled)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (user_id, pref_key) DO UPDATE SET enabled = $3, updated_at = NOW()
+      `, [req.user.id, key, value === true]);
+    }
+    // Return updated state
+    const result = await pool.query(
+      "SELECT pref_key, enabled FROM notification_preferences WHERE user_id = $1",
+      [req.user.id]
+    );
+    const dbPrefs = {};
+    for (const row of result.rows) {
+      dbPrefs[row.pref_key] = row.enabled;
+    }
+    const updated = {};
+    for (const k of PREF_KEYS) {
+      updated[k] = dbPrefs[k] !== undefined ? dbPrefs[k] : true;
+    }
+    res.json({ preferences: updated });
+  } catch (err) {
+    console.error("Error PUT notification-preferences:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
 // GET /users/me/gamification - gamification data (level, points, streak)
 router.get("/me/gamification", auth, async (req, res) => {
   const userId = req.user.id;

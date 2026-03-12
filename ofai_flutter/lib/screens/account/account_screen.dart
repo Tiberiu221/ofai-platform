@@ -306,6 +306,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 label: 'Preferinte',
                 onTap: () => context.push('/account/preferences'),
               ),
+              _MenuItem(
+                icon: Icons.saved_search,
+                label: 'Cautari salvate',
+                onTap: () => context.push('/account/saved-searches'),
+              ),
               if (user?.hasPassword ?? true)
                 _MenuItem(
                   icon: Icons.lock_outline,

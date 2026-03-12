@@ -32,6 +32,7 @@ class ApiEndpoints {
   static String offerDetail(int id) => '/offers/$id';
   static String revealCode(int id) => '/offers/$id/reveal-code';
   static const String dealOfDay = '/offers/deal-of-day';
+  static const String flashOffers = '/offers/flash';
   static String similarOffers(int id) => '/offers/$id/similar';
 
   // Businesses
@@ -58,6 +59,7 @@ class ApiEndpoints {
   static const String userExport = '/users/me/export';
   static const String userDelete = '/users/me';
   static const String userProfilePicture = '/users/me/profile-picture';
+  static const String notificationPreferences = '/users/me/notification-preferences';
 
   // Push
   static const String pushTokens = '/push-tokens';
@@ -84,6 +86,10 @@ class ApiEndpoints {
   // Static data
   static const String cities = '/cities';
   static const String categories = '/categories';
+
+  // Saved Searches
+  static const String savedSearches = '/saved-searches';
+  static String deleteSavedSearch(int id) => '/saved-searches/$id';
 
   // Gamification
   static const String gamification = '/users/me/gamification';

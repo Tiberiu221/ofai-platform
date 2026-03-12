@@ -289,6 +289,17 @@ final dealOfDayProvider = FutureProvider.autoDispose<Offer?>((ref) async {
   }
 });
 
+// Flash deals — active offers with flash_expires_at in the future
+final flashOffersProvider = FutureProvider.autoDispose<List<Offer>>((ref) async {
+  try {
+    final response = await ApiClient().dio.get(ApiEndpoints.flashOffers);
+    final List<dynamic> data = response.data['data'] ?? [];
+    return data.map((e) => Offer.fromJson(e as Map<String, dynamic>)).toList();
+  } catch (_) {
+    return [];
+  }
+});
+
 // Similar offers for offer detail (filtered by category for relevance)
 // businessId is passed for competitor blocking — backend decides whether to apply
 final similarOffersProvider = FutureProvider.autoDispose.family<List<Offer>, ({int offerId, int? categoryId, int? businessId})>((ref, params) async {

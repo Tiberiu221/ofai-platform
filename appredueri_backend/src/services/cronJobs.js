@@ -347,7 +347,194 @@ function initCronJobs() {
     }
   });
 
-  console.log('[Cron] All 10 scheduled jobs registered.');
+  // 11. Clear expired flash deals — Every 5 minutes
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      const result = await pool.query(
+        `UPDATE offers SET flash_expires_at = NULL
+         WHERE flash_expires_at IS NOT NULL AND flash_expires_at < NOW()`
+      );
+      if (result.rowCount > 0) console.log(`[Cron] Cleared ${result.rowCount} expired flash deals`);
+    } catch (err) {
+      console.error('[Cron] flash deals cleanup failed:', err.message);
+    }
+  });
+
+  // 12. Post-redemption review prompt — Daily 10:00 UTC (12:00 Romania)
+  cron.schedule('0 10 * * *', async () => {
+    const { sendToUser } = require('./pushNotifications');
+
+    try {
+      const { rows } = await pool.query(`
+        SELECT DISTINCT ON (cr.user_id, o.business_id)
+          cr.user_id, o.business_id, b.name AS business_name, o.title AS offer_title
+        FROM code_reveals cr
+        JOIN offers o ON o.id = cr.offer_id
+        JOIN businesses b ON b.id = o.business_id
+        WHERE cr.revealed_at BETWEEN NOW() - INTERVAL '48 hours' AND NOW() - INTERVAL '24 hours'
+          AND cr.user_id IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM reviews r
+            WHERE r.user_id = cr.user_id AND r.business_id = o.business_id
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM notification_preferences np
+            WHERE np.user_id = cr.user_id AND np.pref_key = 'review_prompt' AND np.enabled = FALSE
+          )
+        LIMIT 50
+      `);
+
+      let sent = 0;
+      for (const row of rows) {
+        try {
+          await sendToUser(pool, row.user_id, {
+            title: `Cum a fost la ${row.business_name}?`,
+            body: `Ai folosit "${row.offer_title}". Lasă un review!`,
+            data: { type: 'review_prompt', deepLink: `/business/${row.business_id}` },
+          });
+          sent++;
+        } catch (e) {
+          console.error(`[Cron] Review prompt push failed for user ${row.user_id}:`, e.message);
+        }
+      }
+      if (sent > 0) console.log(`[Cron] Sent ${sent} post-redemption review prompts`);
+    } catch (err) {
+      console.error('[Cron] Review prompt cron error:', err.message);
+    }
+  });
+
+  // 13. Weekly digest — Sunday 17:00 UTC (19:00 Romania)
+  cron.schedule('0 17 * * 0', async () => {
+    const { sendToUser } = require('./pushNotifications');
+
+    try {
+      // Get users with active push tokens who haven't disabled weekly_digest
+      const { rows: users } = await pool.query(`
+        SELECT DISTINCT u.id AS user_id,
+          (SELECT array_agg(pc.city_id) FROM user_preferred_cities pc WHERE pc.user_id = u.id) AS city_ids,
+          (SELECT c.name FROM user_preferred_cities pc JOIN cities c ON c.id = pc.city_id WHERE pc.user_id = u.id LIMIT 1) AS city_name
+        FROM users u
+        JOIN push_tokens pt ON pt.user_id = u.id AND pt.is_active = TRUE
+        WHERE NOT EXISTS (
+          SELECT 1 FROM notification_preferences np
+          WHERE np.user_id = u.id AND np.pref_key = 'weekly_digest' AND np.enabled = FALSE
+        )
+        LIMIT 500
+      `);
+
+      let sent = 0;
+      for (const user of users) {
+        try {
+          const cityIds = user.city_ids || [];
+          if (cityIds.length === 0) continue;
+
+          const { rows: countRows } = await pool.query(`
+            SELECT COUNT(*) AS cnt FROM offers
+            WHERE is_active = TRUE
+              AND moderation_status = 'approved'
+              AND start_date >= CURRENT_DATE - 7
+              AND city_id = ANY($1::int[])
+          `, [cityIds]);
+
+          const count = parseInt(countRows[0]?.cnt || '0', 10);
+          if (count === 0) continue;
+
+          const cityLabel = user.city_name || 'orașul tău';
+          await sendToUser(pool, user.user_id, {
+            title: `${count} oferte noi săptămâna asta`,
+            body: `Descoperă cele mai noi reduceri în ${cityLabel}!`,
+            data: { type: 'weekly_digest', deepLink: '/explore' },
+          });
+          sent++;
+        } catch (e) {
+          console.error(`[Cron] Weekly digest push failed for user ${user.user_id}:`, e.message);
+        }
+      }
+      if (sent > 0) console.log(`[Cron] Sent ${sent} weekly digest notifications`);
+    } catch (err) {
+      console.error('[Cron] Weekly digest cron error:', err.message);
+    }
+  });
+
+  // 14. Saved search alerts — Daily 11:00 UTC (13:00 Romania)
+  cron.schedule('0 11 * * *', async () => {
+    const { sendToUser } = require('./pushNotifications');
+
+    try {
+      const { rows: searches } = await pool.query(`
+        SELECT ss.id, ss.user_id, ss.query, ss.city_id, ss.category_id, ss.last_notified_offer_id,
+               c.name AS city_name, cat.name AS category_name
+        FROM saved_searches ss
+        LEFT JOIN cities c ON c.id = ss.city_id
+        LEFT JOIN categories cat ON cat.id = ss.category_id
+        JOIN push_tokens pt ON pt.user_id = ss.user_id AND pt.is_active = TRUE
+        WHERE NOT EXISTS (
+          SELECT 1 FROM notification_preferences np
+          WHERE np.user_id = ss.user_id AND np.pref_key = 'saved_search' AND np.enabled = FALSE
+        )
+        LIMIT 200
+      `);
+
+      let sent = 0;
+      for (const search of searches) {
+        try {
+          // Build dynamic WHERE clause with parameterized queries
+          const conditions = [
+            'o.is_active = TRUE',
+            "o.moderation_status = 'approved'",
+            `o.id > $1`,
+          ];
+          const params = [search.last_notified_offer_id];
+          let paramIdx = 2;
+
+          if (search.city_id) {
+            conditions.push(`o.city_id = $${paramIdx++}`);
+            params.push(search.city_id);
+          }
+          if (search.category_id) {
+            conditions.push(`o.category_id = $${paramIdx++}`);
+            params.push(search.category_id);
+          }
+          if (search.query) {
+            conditions.push(`(o.title ILIKE $${paramIdx} OR o.description ILIKE $${paramIdx})`);
+            params.push(`%${search.query}%`);
+            paramIdx++;
+          }
+
+          const countResult = await pool.query(
+            `SELECT COUNT(*) AS cnt, MAX(o.id) AS max_id FROM offers o WHERE ${conditions.join(' AND ')}`,
+            params
+          );
+
+          const count = parseInt(countResult.rows[0]?.cnt || '0', 10);
+          if (count === 0) continue;
+
+          const maxId = countResult.rows[0].max_id;
+          const label = search.city_name || search.category_name || search.query || 'căutarea ta';
+
+          await sendToUser(pool, search.user_id, {
+            title: `${count} oferte noi pentru "${label}"`,
+            body: 'Verifică cele mai recente rezultate!',
+            data: { type: 'saved_search', deepLink: '/explore' },
+          });
+
+          // Update last_notified_offer_id
+          await pool.query(
+            'UPDATE saved_searches SET last_notified_offer_id = $1 WHERE id = $2',
+            [maxId, search.id]
+          );
+          sent++;
+        } catch (e) {
+          console.error(`[Cron] Saved search alert failed for search ${search.id}:`, e.message);
+        }
+      }
+      if (sent > 0) console.log(`[Cron] Sent ${sent} saved search alerts`);
+    } catch (err) {
+      console.error('[Cron] Saved search alerts cron error:', err.message);
+    }
+  });
+
+  console.log('[Cron] All 14 scheduled jobs registered.');
 }
 
 module.exports = { initCronJobs };

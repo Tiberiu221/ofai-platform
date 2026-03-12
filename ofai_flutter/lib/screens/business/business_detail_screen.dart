@@ -1120,19 +1120,35 @@ class _PinchRequestCardState extends ConsumerState<_PinchRequestCard>
               ),
               const SizedBox(height: AppSpacing.lg),
 
-              // Request count badge
+              // Request count badge — emphatic when > 5
               if (pinchState.total > 0)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.bgSecondary,
+                      color: pinchState.total > 5
+                          ? AppColors.accent.withValues(alpha: 0.15)
+                          : AppColors.bgSecondary,
                       borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
                     ),
-                    child: Text(
-                      '${pinchState.total} ${pinchState.total == 1 ? 'persoană a cerut' : 'persoane au cerut'} deja',
-                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (pinchState.total > 5) ...[
+                          Icon(Icons.local_fire_department, size: 14, color: AppColors.accent),
+                          const SizedBox(width: 4),
+                        ],
+                        Text(
+                          pinchState.total > 5
+                              ? '${pinchState.total} persoane asteapta o oferta!'
+                              : '${pinchState.total} ${pinchState.total == 1 ? 'persoana a cerut' : 'persoane au cerut'} deja',
+                          style: AppTypography.caption.copyWith(
+                            color: pinchState.total > 5 ? AppColors.accent : AppColors.textSecondary,
+                            fontWeight: pinchState.total > 5 ? FontWeight.w600 : FontWeight.w400,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

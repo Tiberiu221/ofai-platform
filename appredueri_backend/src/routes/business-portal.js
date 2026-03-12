@@ -584,7 +584,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
     if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
     const {
       title, description, discount_type, discount_value, conditions,
-      start_date, end_date, is_active,
+      start_date, end_date, flash_expires_at, is_active,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
     } = req.body;
 
@@ -706,7 +706,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
 
     const {
       title, description, discount_type, discount_value, conditions,
-      start_date, end_date, is_active,
+      start_date, end_date, flash_expires_at, is_active,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
     } = req.body;
 
@@ -746,6 +746,10 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     if (end_date !== undefined) {
       updates.push(`end_date = $${paramIndex++}`);
       values.push(end_date || null);
+    }
+    if (flash_expires_at !== undefined) {
+      updates.push(`flash_expires_at = $${paramIndex++}`);
+      values.push(flash_expires_at || null);
     }
     if (is_active !== undefined) {
       updates.push(`is_active = $${paramIndex++}`);

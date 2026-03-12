@@ -957,7 +957,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireLimit('max_active_offers', countActiveOffers), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
@@ -1033,7 +1033,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     const businessId = req.businessId;
     const offerId = parseInt(req.params.offerId, 10);
     if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
 
     const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'special', 'free', 'bogo', 'other'];
     if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
@@ -1072,14 +1072,15 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         conditions = $5,
         start_date = COALESCE($6, start_date),
         end_date = COALESCE($7, end_date),
+        flash_expires_at = $8,
         is_active = false,
-        booking_type = COALESCE($8, booking_type),
-        booking_phone = $9, booking_whatsapp = $10, booking_url = $11, booking_instructions = $12,
-        max_reveals = $13,
+        booking_type = COALESCE($9, booking_type),
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
+        max_reveals = $14,
         moderation_status = 'pending_review',
         rejection_reason = NULL,
-        ai_score = $14, ai_flags = $15::jsonb, ai_reasoning = $16
-      WHERE id = $17 AND business_id = $18
+        ai_score = $15, ai_flags = $16::jsonb, ai_reasoning = $17
+      WHERE id = $18 AND business_id = $19
     `, [
       sanitizeString(title, 200),
       sanitizeString(description, 2000) || null,
@@ -1088,6 +1089,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       sanitizeString(conditions, 2000) || null,
       start_date || null,
       end_date || null,
+      flash_expires_at || null,
       booking_type || 'inherit',
       booking_phone || null,
       booking_whatsapp || null,

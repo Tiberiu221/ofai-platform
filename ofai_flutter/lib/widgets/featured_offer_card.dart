@@ -9,6 +9,7 @@ import '../core/utils/formatters.dart';
 import '../core/utils/distance.dart';
 import '../models/offer.dart';
 import 'subscription_badge.dart';
+import 'flash_countdown_badge.dart';
 import '../providers/location_provider.dart';
 
 class FeaturedOfferCard extends ConsumerWidget {
@@ -362,8 +363,10 @@ class FeaturedOfferCard extends ConsumerWidget {
 
                         const Spacer(),
 
-                        // Right side: countdown or "Vezi oferta"
-                        if (timeLeft != null && urgency > 0) ...[
+                        // Right side: flash countdown, end-date countdown, or "Vezi oferta"
+                        if (offer.isFlashDeal) ...[
+                          FlashCountdownBadge(expiresAt: offer.flashExpiresAt!, compact: true),
+                        ] else if (timeLeft != null && urgency > 0) ...[
                           Icon(
                             urgency >= 2
                                 ? Icons.timer_outlined

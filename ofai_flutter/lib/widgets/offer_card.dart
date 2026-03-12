@@ -14,6 +14,7 @@ import '../providers/location_provider.dart';
 import '../core/utils/distance.dart';
 import 'subscription_badge.dart';
 import 'tap_scale.dart';
+import 'flash_countdown_badge.dart';
 
 class OfferCard extends ConsumerWidget {
   final Offer offer;
@@ -530,10 +531,18 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
-  /// Expiry countdown pill — only visible when offer expires within 7 days.
-  /// Colors: warning (3-7d), danger (<3d / <24h).
-  /// Critical level (<24h) uses bold text for extra emphasis.
+  /// Expiry countdown pill — shows flash countdown for flash deals,
+  /// or end-date countdown when offer expires within 7 days.
   Widget _buildCountdown() {
+    // Flash deal: live HH:MM:SS countdown takes priority
+    if (offer.isFlashDeal) {
+      return Positioned(
+        bottom: 12,
+        left: 12,
+        child: FlashCountdownBadge(expiresAt: offer.flashExpiresAt!),
+      );
+    }
+
     final text = Formatters.timeLeft(offer.endDate);
     if (text == null) return const SizedBox.shrink();
 

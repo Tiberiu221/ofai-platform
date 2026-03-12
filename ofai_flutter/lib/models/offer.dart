@@ -22,6 +22,7 @@ class Offer {
   final int? maxReveals;
   final int? revealCount;
   final String? moderationStatus;
+  final DateTime? flashExpiresAt;
 
   Offer({
     required this.id,
@@ -45,6 +46,7 @@ class Offer {
     this.maxReveals,
     this.revealCount,
     this.moderationStatus,
+    this.flashExpiresAt,
   });
 
   String get discountLabel {
@@ -87,6 +89,9 @@ class Offer {
       maxReveals: json['max_reveals'] as int?,
       revealCount: json['reveal_count'] as int?,
       moderationStatus: json['moderation_status'] as String?,
+      flashExpiresAt: json['flash_expires_at'] != null
+          ? DateTime.tryParse(json['flash_expires_at'] as String)
+          : null,
     );
   }
 
@@ -98,6 +103,10 @@ class Offer {
 
   /// Whether codes are exhausted
   bool get codesExhausted => maxReveals != null && remainingCodes == 0;
+
+  /// Whether this is an active flash deal
+  bool get isFlashDeal =>
+      flashExpiresAt != null && flashExpiresAt!.isAfter(DateTime.now());
 }
 
 class OfferBusiness {

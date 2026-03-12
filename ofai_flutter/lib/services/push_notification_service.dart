@@ -132,7 +132,10 @@ class PushNotificationService {
     final data = message.data;
     final type = data['type'];
 
-    if (type == 'new_offer' && data['offerId'] != null) {
+    // Use explicit deepLink from notification data if present
+    if (data['deepLink'] != null) {
+      _pendingDeepLink = data['deepLink'].toString();
+    } else if (type == 'new_offer' && data['offerId'] != null) {
       final id = int.tryParse(data['offerId'].toString());
       if (id != null) _pendingDeepLink = '/offer/$id';
     } else if (data['businessId'] != null) {

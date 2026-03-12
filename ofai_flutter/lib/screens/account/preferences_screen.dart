@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/static_data_provider.dart';
+import '../../providers/notification_preferences_provider.dart';
 import '../../core/network/api_exceptions.dart';
 
 class PreferencesScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final user = ref.read(authProvider).user;
     _selectedCityIds = Set<int>.from(user?.preferredCityIds ?? []);
     _selectedCategoryIds = Set<int>.from(user?.preferredCategoryIds ?? []);
+    ref.read(notificationPreferencesProvider.notifier).ensureLoaded();
   }
 
   Future<void> _submit() async {
@@ -169,6 +171,60 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
             const SizedBox(height: AppSpacing.xxxl),
 
+            // Notification preferences
+            Text('Notificări', style: AppTypography.headlineSmall),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Alege ce notificări primești',
+              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            Consumer(builder: (context, ref, _) {
+              final prefs = ref.watch(notificationPreferencesProvider);
+              return Column(
+                children: [
+                  _NotifToggle(
+                    label: 'Oferta Zilei',
+                    prefKey: 'deal_of_day',
+                    prefs: prefs,
+                  ),
+                  _NotifToggle(
+                    label: 'Business-uri urmărite',
+                    prefKey: 'followed_business',
+                    prefs: prefs,
+                  ),
+                  _NotifToggle(
+                    label: 'Oferte flash',
+                    prefKey: 'flash_deals',
+                    prefs: prefs,
+                  ),
+                  _NotifToggle(
+                    label: 'Rezumat săptămânal',
+                    prefKey: 'weekly_digest',
+                    prefs: prefs,
+                  ),
+                  _NotifToggle(
+                    label: 'Cerere recenzie',
+                    prefKey: 'review_prompt',
+                    prefs: prefs,
+                  ),
+                  _NotifToggle(
+                    label: 'Căutări salvate',
+                    prefKey: 'saved_search',
+                    prefs: prefs,
+                  ),
+                  _NotifToggle(
+                    label: 'Marketing',
+                    prefKey: 'marketing',
+                    prefs: prefs,
+                  ),
+                ],
+              );
+            }),
+
+            const SizedBox(height: AppSpacing.xxxl),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -190,6 +246,32 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NotifToggle extends ConsumerWidget {
+  final String label;
+  final String prefKey;
+  final Map<String, bool> prefs;
+
+  const _NotifToggle({
+    required this.label,
+    required this.prefKey,
+    required this.prefs,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = prefs[prefKey] ?? true;
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(label, style: AppTypography.bodyMedium),
+      value: enabled,
+      activeColor: AppColors.accent,
+      onChanged: (v) {
+        ref.read(notificationPreferencesProvider.notifier).toggle(prefKey, v);
+      },
     );
   }
 }

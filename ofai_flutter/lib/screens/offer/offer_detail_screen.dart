@@ -25,6 +25,7 @@ import '../../providers/offer_requests_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
 import '../../providers/recently_viewed_provider.dart';
 import '../../widgets/report_dialog.dart';
+import '../../widgets/flash_countdown_badge.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -185,6 +186,40 @@ class OfferDetailScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Flash deal banner
+                          if (offer.isFlashDeal) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.accent.withValues(alpha: 0.15),
+                                    AppColors.danger.withValues(alpha: 0.1),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.bolt, size: 18, color: AppColors.accent),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Oferta flash',
+                                    style: AppTypography.labelMedium.copyWith(
+                                      color: AppColors.accent,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  FlashCountdownBadge(expiresAt: offer.flashExpiresAt!, compact: true),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
+
                           // Title
                           Text(offer.title, style: AppTypography.headlineLarge),
 

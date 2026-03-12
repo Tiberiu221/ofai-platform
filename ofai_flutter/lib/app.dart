@@ -26,6 +26,7 @@ import 'screens/account/preferences_screen.dart';
 import 'screens/account/change_password_screen.dart';
 import 'screens/account/data_export_screen.dart';
 import 'screens/account/delete_account_screen.dart';
+import 'screens/account/saved_searches_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/categories/categories_screen.dart';
 import 'screens/cities/cities_screen.dart';
@@ -339,6 +340,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/account/delete-account',
             builder: (context, state) => const DeleteAccountScreen(),
+          ),
+          GoRoute(
+            path: '/account/saved-searches',
+            builder: (context, state) => const SavedSearchesScreen(),
           ),
 
           // Browse routes
