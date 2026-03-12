@@ -26,6 +26,7 @@ import '../../providers/followed_businesses_provider.dart';
 import '../../providers/recently_viewed_provider.dart';
 import '../../widgets/report_dialog.dart';
 import '../../widgets/flash_countdown_badge.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -1011,6 +1012,57 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
     }
   }
 
+  void _showFullscreenQR(BuildContext context, String code) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Cod Promoțional',
+                style: AppTypography.headlineSmall.copyWith(color: const Color(0xFF06060A)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                code,
+                style: AppTypography.labelLarge.copyWith(
+                  color: const Color(0xFF06060A),
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 24),
+              QrImageView(
+                data: code,
+                version: QrVersions.auto,
+                size: 280,
+                backgroundColor: Colors.white,
+                eyeStyle: const QrEyeStyle(
+                  eyeShape: QrEyeShape.square,
+                  color: Color(0xFF06060A),
+                ),
+                dataModuleStyle: const QrDataModuleStyle(
+                  dataModuleShape: QrDataModuleShape.square,
+                  color: Color(0xFF06060A),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Arată acest cod la casă',
+                style: AppTypography.bodySmall.copyWith(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _copyCode() async {
     if (_code == null) return;
 
@@ -1189,6 +1241,37 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                   ],
                 ),
               ),
+            ),
+            // QR Code
+            const SizedBox(height: AppSpacing.lg),
+            GestureDetector(
+              onTap: () => _showFullscreenQR(context, _code!),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: QrImageView(
+                  data: _code!,
+                  version: QrVersions.auto,
+                  size: 160,
+                  backgroundColor: Colors.white,
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: Color(0xFF06060A),
+                  ),
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: Color(0xFF06060A),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Apasă pentru ecran complet',
+              style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
             ),
           ] else ...[
             // Fallback: revealed but no code available

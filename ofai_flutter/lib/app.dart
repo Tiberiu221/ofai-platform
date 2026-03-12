@@ -34,6 +34,7 @@ import 'screens/business_request/business_request_screen.dart';
 import 'screens/legal/terms_screen.dart';
 import 'screens/legal/privacy_screen.dart';
 import 'screens/help/help_screen.dart';
+import 'screens/collection_detail/collection_detail_screen.dart';
 
 // Shell for bottom navigation with liquid glass effect
 class _ShellScreen extends StatefulWidget {
@@ -306,6 +307,20 @@ final routerProvider = Provider<GoRouter>((ref) {
               );
             },
           ),
+          // Web URL alias (ofai.ro/oferta/123 → same screen)
+          GoRoute(
+            path: '/oferta/:id',
+            pageBuilder: (context, state) {
+              final id = int.tryParse(state.pathParameters['id'] ?? '');
+              if (id == null) {
+                return fadeTransition(state: state, child: const HomeScreen());
+              }
+              return slideUpTransition(
+                state: state,
+                child: OfferDetailScreen(offerId: id),
+              );
+            },
+          ),
           GoRoute(
             path: '/business/:id',
             pageBuilder: (context, state) {
@@ -316,6 +331,21 @@ final routerProvider = Provider<GoRouter>((ref) {
               return slideUpTransition(
                 state: state,
                 child: BusinessDetailScreen(businessId: id),
+              );
+            },
+          ),
+
+          // Collection detail route
+          GoRoute(
+            path: '/collection-detail/:id',
+            pageBuilder: (context, state) {
+              final id = int.tryParse(state.pathParameters['id'] ?? '');
+              if (id == null) {
+                return fadeTransition(state: state, child: const HomeScreen());
+              }
+              return slideUpTransition(
+                state: state,
+                child: CollectionDetailScreen(collectionId: id),
               );
             },
           ),

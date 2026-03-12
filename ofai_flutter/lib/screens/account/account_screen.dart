@@ -11,6 +11,7 @@ import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
+import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../core/network/api_exceptions.dart';
@@ -34,7 +35,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       _didFetch = true;
       ref.read(favoritesProvider.notifier).fetch();
       ref.read(followedBusinessesProvider.notifier).fetch();
-      // gamification fetch removed — points/levels no longer shown
+      ref.read(gamificationProvider.notifier).fetch();
     }
   }
 
@@ -115,6 +116,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
     final favState = ref.watch(favoritesProvider);
     final subState = ref.watch(followedBusinessesProvider);
+    final gamState = ref.watch(gamificationProvider);
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -194,6 +196,74 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   ),
                 ],
               ),
+
+              // Gamification card
+              if (!gamState.isLoading && gamState.points > 0) ...[
+                const SizedBox(height: AppSpacing.lg),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.emoji_events, color: AppColors.accent, size: 20),
+                              const SizedBox(width: 8),
+                              Text(gamState.levelName, style: AppTypography.labelLarge),
+                              const Spacer(),
+                              Text(
+                                '${gamState.points} puncte',
+                                style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Progress bar
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: gamState.progress,
+                              backgroundColor: AppColors.bgSecondary,
+                              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                              minHeight: 6,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            gamState.progress < 1.0
+                                ? 'Inca ${gamState.nextLevelPoints - gamState.points} puncte pana la nivelul urmator'
+                                : 'Nivel maxim atins!',
+                            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                          ),
+                          if (gamState.currentStreak > 0) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.local_fire_department, size: 16, color: AppColors.accent),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${gamState.currentStreak} zile consecutive',
+                                  style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
 
               // Badges card (glassmorphism)
               if (user?.badges != null && user!.badges!.isNotEmpty) ...[

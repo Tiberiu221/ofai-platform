@@ -2413,4 +2413,111 @@ router.post("/onboarding/:requestId", async (req, res) => {
   }
 });
 
+// ============================================
+// COLLECTIONS (Curated editorial lists)
+// ============================================
+
+// GET /admin/collections — list all collections
+router.get("/collections", async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT c.*, COUNT(co.offer_id) AS offer_count
+      FROM collections c
+      LEFT JOIN collection_offers co ON co.collection_id = c.id
+      GROUP BY c.id
+      ORDER BY c.sort_order ASC, c.created_at DESC
+    `);
+    res.json({ data: rows });
+  } catch (err) {
+    console.error("[Admin] Collections list error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// POST /admin/collections — create collection
+router.post("/collections", async (req, res) => {
+  try {
+    const { title, description, image_url, sort_order } = req.body;
+    if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
+
+    const { rows } = await pool.query(
+      `INSERT INTO collections (title, description, image_url, sort_order)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [title, description || null, image_url || null, sort_order || 0]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) {
+    console.error("[Admin] Create collection error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// PUT /admin/collections/:id — update collection
+router.put("/collections/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { title, description, image_url, is_active, sort_order } = req.body;
+
+    const { rows } = await pool.query(
+      `UPDATE collections SET title = COALESCE($2, title), description = $3,
+       image_url = $4, is_active = COALESCE($5, is_active), sort_order = COALESCE($6, sort_order)
+       WHERE id = $1 RETURNING *`,
+      [id, title, description ?? null, image_url ?? null, is_active, sort_order]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: "Colecție negăsită" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("[Admin] Update collection error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// DELETE /admin/collections/:id — delete collection
+router.delete("/collections/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const result = await pool.query("DELETE FROM collections WHERE id = $1", [id]);
+    if (result.rowCount === 0) return res.status(404).json({ message: "Colecție negăsită" });
+    res.json({ message: "Colecție ștearsă" });
+  } catch (err) {
+    console.error("[Admin] Delete collection error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// POST /admin/collections/:id/offers — add offer to collection
+router.post("/collections/:id/offers", async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.id, 10);
+    const { offer_id, sort_order } = req.body;
+    if (!offer_id) return res.status(400).json({ message: "offer_id obligatoriu" });
+
+    await pool.query(
+      `INSERT INTO collection_offers (collection_id, offer_id, sort_order)
+       VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+      [collectionId, offer_id, sort_order || 0]
+    );
+    res.status(201).json({ message: "Ofertă adăugată" });
+  } catch (err) {
+    console.error("[Admin] Add offer to collection error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
+// DELETE /admin/collections/:id/offers/:offerId — remove offer from collection
+router.delete("/collections/:id/offers/:offerId", async (req, res) => {
+  try {
+    const collectionId = parseInt(req.params.id, 10);
+    const offerId = parseInt(req.params.offerId, 10);
+    await pool.query(
+      "DELETE FROM collection_offers WHERE collection_id = $1 AND offer_id = $2",
+      [collectionId, offerId]
+    );
+    res.json({ message: "Ofertă eliminată din colecție" });
+  } catch (err) {
+    console.error("[Admin] Remove offer from collection error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
 module.exports = router;

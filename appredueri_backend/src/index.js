@@ -44,6 +44,7 @@ const offerRequestsRouter = require("./routes/offer-requests");
 const webRouter = require("./routes/web");
 const reportsRouter = require("./routes/reports");
 const savedSearchesRouter = require("./routes/saved-searches");
+const collectionsRouter = require("./routes/collections");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -373,6 +374,7 @@ app.use("/push-tokens", pushTokensRouter);
 app.use("/offer-requests", offerRequestsRouter);
 app.use("/reports", reportsRouter);
 app.use("/saved-searches", savedSearchesRouter);
+app.use("/collections", collectionsRouter);
 
 // Rute Admin (Securizat cu Basic Auth + Rate Limiting)
 app.use("/admin", adminLimiter, adminAuth, adminRouter);
@@ -442,7 +444,7 @@ app.use((req, res) => {
   if (req.path.startsWith('/auth') || req.path.startsWith('/users') || req.path.startsWith('/offers') ||
       req.path.startsWith('/businesses') || req.path.startsWith('/favorites') || req.path.startsWith('/subscriptions') ||
       req.path.startsWith('/reviews') || req.path.startsWith('/cities') || req.path.startsWith('/categories') ||
-      req.path.startsWith('/push-tokens') || req.path.startsWith('/my-businesses') || req.path.startsWith('/billing') || req.path.startsWith('/reports') || req.path.startsWith('/saved-searches') || req.path.startsWith('/api')) {
+      req.path.startsWith('/push-tokens') || req.path.startsWith('/my-businesses') || req.path.startsWith('/billing') || req.path.startsWith('/reports') || req.path.startsWith('/saved-searches') || req.path.startsWith('/collections') || req.path.startsWith('/api')) {
     return res.status(404).json({ message: "Endpoint negăsit" });
   }
   // Web pages render 404 EJS — try to pass webUser if cookie exists

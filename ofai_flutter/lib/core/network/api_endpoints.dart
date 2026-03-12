@@ -93,4 +93,8 @@ class ApiEndpoints {
 
   // Gamification
   static const String gamification = '/users/me/gamification';
+
+  // Collections
+  static const String collections = '/collections';
+  static String collectionDetail(int id) => '/collections/$id';
 }

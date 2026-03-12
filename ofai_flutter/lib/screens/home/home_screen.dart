@@ -20,6 +20,7 @@ import '../../widgets/featured_offer_card.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/location_banner.dart';
 import '../../providers/recently_viewed_provider.dart';
+import '../../providers/collections_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -79,6 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(citiesProvider);
             ref.invalidate(dealOfDayProvider);
             ref.invalidate(flashOffersProvider);
+            ref.invalidate(collectionsProvider);
             ref.invalidate(recentlyViewedOffersProvider);
           },
           child: CustomScrollView(
@@ -318,6 +320,94 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                   offer: offers[index],
                                   horizontal: true,
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ),
+
+              // Curated Collections (hidden when empty)
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final collectionsAsync = ref.watch(collectionsProvider);
+                    return collectionsAsync.when(
+                      data: (collections) {
+                        if (collections.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(title: 'Colectii'),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              height: 160,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.pagePadding,
+                                ),
+                                itemCount: collections.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: AppSpacing.md),
+                                itemBuilder: (context, index) {
+                                  final coll = collections[index];
+                                  return GestureDetector(
+                                    onTap: () => context.push('/collection-detail/${coll.id}'),
+                                    child: Container(
+                                      width: 240,
+                                      clipBehavior: Clip.hardEdge,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                                        color: AppColors.bgCard,
+                                        border: Border.all(color: AppColors.border),
+                                      ),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          if (coll.imageUrl != null)
+                                            CachedNetworkImage(
+                                              imageUrl: coll.imageUrl!,
+                                              fit: BoxFit.cover,
+                                              color: Colors.black.withValues(alpha: 0.4),
+                                              colorBlendMode: BlendMode.darken,
+                                            ),
+                                          Positioned(
+                                            bottom: 12,
+                                            left: 12,
+                                            right: 12,
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  coll.title,
+                                                  style: AppTypography.headlineSmall.copyWith(
+                                                    color: Colors.white,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  '${coll.offerCount} oferte',
+                                                  style: AppTypography.caption.copyWith(
+                                                    color: Colors.white70,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xxl),

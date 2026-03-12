@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.ro.ofai.app",
+        "paths": [
+          "/oferta/*",
+          "/business/*",
+          "/offer/*"
+        ]
+      }
+    ]
+  }
+}
