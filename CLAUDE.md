@@ -16,7 +16,7 @@ OFAI is a Romanian local deals/offers platform connecting consumers with verifie
 ```
 appredueri_backend/
   src/
-    routes/         # Express route files (21 total)
+    routes/         # Express route files (23 total)
       web.js                  # Main web routes (~2050 lines)
       web-auth.js             # Web auth (split from web.js)
       web-account-api.js      # Web account/profile API (split from web.js)
@@ -29,16 +29,18 @@ appredueri_backend/
       push-tokens.js, businessRequests.js             # Mobile API
       offer-requests.js       # Pinch feature
       reports.js              # User report system
-      billing.js              # Stripe billing
+      billing.js              # Stripe billing (expanded with full webhook + subscription lifecycle)
+      collections.js          # Curated collections API
+      saved-searches.js       # Saved searches with alerts
       categories.js, cities.js  # Static data
     middleware/     # Auth, CSRF, tierAuth.js (7 files)
-    helpers/        # tiers.js (subscription tier logic)
+    helpers/        # tiers.js (subscription tier logic), notificationPrefs.js
     services/       # Core services + LLM sub-directory
       cronJobs.js, email.js, offerService.js, stripe.js, cloudinary.js
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
       llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, prompts)
-    migrations/     # SQL migration files (006-054)
+    migrations/     # SQL migration files (006-061)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
       public/portal/partials/           # 7 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support)
@@ -49,16 +51,19 @@ appredueri_backend/
       portal.css              # Business portal styles
       admin.css               # Admin panel styles
       onboarding.css          # Onboarding page styles
+    public/.well-known/       # Deep link config (apple-app-site-association, assetlinks.json)
 ofai_flutter/
   lib/
-    screens/        # 15 screen directories
-    models/         # 9 data models (business, catalog, offer, review, user, category, city, business_request, pagination)
-    providers/      # 12 state providers
+    screens/        # 18 screen directories (added collection_detail, saved_searches, my_reports, preferences)
+    models/         # 12 data models (+collection, report, saved_search)
+    providers/      # 18 state providers (+collections, saved_searches, search_history, notification_preferences, reports, recently_viewed)
     core/network/   # API client (ApiClient, ApiEndpoints, ApiExceptions)
+    core/storage/   # SharedPreferences, SecureStorage
     services/       # Push notifications, etc.
-    widgets/        # Reusable widgets
+    widgets/        # Reusable widgets (+flash_countdown_badge)
 docs/plans/         # Implementation plans
   subscriptions/    # 17 subscription plan docs (00-16)
+  flutter/          # 5 Flutter plan docs (gaps, scorcard, tier1-3)
 ```
 
 ## Key Architectural Decisions
@@ -102,30 +107,54 @@ psql $DATABASE_URL                              # Connect to DB
 - **CSS split:** `main.css` is now just an import loader; actual styles in `css/sections/` (7 files). Portal/admin/onboarding have separate CSS files
 - **web.js split:** Split into 4 sub-routers: `web.js`, `web-auth.js`, `web-account-api.js`, `web-portal-api.js` + `web-shared.js` utility
 - **LLM services:** AI validation/moderation in `services/llm/` (5 files). Uses Anthropic Claude API via `anthropicClient.js`
-- **Route count:** 21 route files total — don't forget to update both web and mobile routes when changing shared logic
+- **Route count:** 23 route files total — don't forget to update both web and mobile routes when changing shared logic
 
 ## Language
 - UI text and user-facing strings: Romanian
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (9 March 2026)
+## Current State (13 March 2026)
 - Subscription system (Plans 00-16) fully planned with docs
-- Audit #8+#9 fixes: ALL applied (v0.9.0 — 60+ fixes from Audit #9)
-- Migrations up to **054** (business_hours, business_catalog, onboarding_requests)
-- Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials: Info, Oferte, Catalog, Recenzii, Statistici, Suport, Abonament
-- web.js split into 4 sub-routers (web.js, web-auth.js, web-account-api.js, web-portal-api.js)
+- Audit #8+#9+#10 fixes: ALL applied (v0.9.0+ — 110+ fixes total)
+- Migrations up to **061** (flash_deals, notification_preferences, saved_searches, collections)
+- Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
+- web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
-- **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer display with Deschis/Închis badge
-- **Unified Catalog:** Categories + items CRUD, CSV import (2-step: upload→preview→confirm), consumer display with category tabs
-- **Concierge Onboarding:** Standard+ tier only, request form + file upload, admin queue at /admin/onboarding
-- **Report System:** User reports with categories, admin review queue
-- **AI Validation:** Business validation (two-pass pipeline), offer moderation, review summarization via Claude API (services/llm/)
+- **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
+- **Unified Catalog:** Categories + items CRUD, CSV import, consumer display with category tabs
+- **Concierge Onboarding:** Standard+ tier, request form + file upload, admin queue
+- **Report System:** User reports with categories, admin review queue, Flutter "My Reports" screen
+- **AI Validation:** Business validation (two-pass), offer moderation, review summarization via Claude API
 - **Location Management:** Multi-location support, Google Maps URL parsing
-- Stripe integration is skeleton (not production-ready)
+- **Flash Deals:** flash_expires_at on offers, countdown badge widget, Home section
+- **Notification Preferences:** Granular per-category toggles (daily, flash, weekly, marketing)
+- **Saved Searches:** Save query+filters, alert on new matches, Flutter screen + provider
+- **Collections:** Curated editorial lists, admin CRUD, Flutter collection detail screen
+- **Social Proof Badges:** "Nou", "Se termina curand", trending badges on offer cards
+- **Recently Viewed:** Local storage of last viewed offers/businesses, Home section
+- **Search History:** Persistent local search history on Explore
+- **Gamification UI:** Points, level, streak, badges visible on Account screen
+- **Pinch Social Pressure:** Request count with fire icon on business detail
+- **Weekly Digest:** Sunday 19:00 push with personalized offer count per city
+- **Deep Links:** apple-app-site-association + assetlinks.json served, AndroidManifest intent filters, iOS entitlements
+- **Pull-to-Refresh:** On both offer and business detail screens
+- **Responsive Quick Wins:** Categories grid adapts to tablet width
+- **OG Tags:** Backend has full Open Graph meta tags (head.ejs) for rich share previews
+- **Billing:** Expanded Stripe integration with webhook lifecycle, subscription management
+- Stripe integration expanded but not yet production-ready
 - Express pinned to ~5.1.0
+- 23 route files, 18 providers, 61 migrations
 
-### Known Remaining Issues (non-Stripe)
-- Audit #9 CRIT/HIGH items verified: most already fixed, remaining CRIT-05/06/09/10/21/22 confirmed fixed
-- Flutter force-unwrap fixed (local var pattern), promo spinner null fixed (fallback else clause)
-- autoDispose removed from offersListProvider, businessesListProvider, userLocationProvider (prevents redundant refetches/GPS re-queries)
+### Remaining Gaps (from Flutter plans)
+- `similarOffers()` dead code still in api_endpoints.dart
+- `deleteRequest()` missing from business_requests_provider.dart
+- Offline connectivity indicator not implemented
+- Semantics labels only on explore_screen (missing on detail screens)
+- Reset filters button missing from Explore empty state
+- Referral system not implemented (no backend migration or Flutter UI)
+- Rich Share in Flutter missing (backend OG tags ready, Flutter share not wired)
+- "Gestioneaza pe Web" banner missing from business_detail_screen
+- Post-redemption review cron job not implemented
+- Offline voucher storage not implemented
+- Light mode / theme toggle not implemented
