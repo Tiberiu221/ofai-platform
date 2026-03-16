@@ -21,6 +21,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/location_banner.dart';
 import '../../providers/recently_viewed_provider.dart';
 import '../../providers/collections_provider.dart';
+import '../../providers/category_feed_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -36,11 +37,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load first batch of category feed
+    Future.microtask(() {
+      ref.read(categoryFeedProvider.notifier).loadNextBatch();
+    });
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 500) {
+      ref.read(categoryFeedProvider.notifier).loadNextBatch();
+    }
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -82,8 +102,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(flashOffersProvider);
             ref.invalidate(collectionsProvider);
             ref.invalidate(recentlyViewedOffersProvider);
+            ref.read(categoryFeedProvider.notifier).reset();
+            ref.read(categoryFeedProvider.notifier).loadNextBatch();
           },
           child: CustomScrollView(
+            controller: _scrollController,
             slivers: [
               // Header
               SliverToBoxAdapter(
@@ -561,6 +584,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 ),
               ),
 
+              // Category Feed — lazy-loaded sections
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final feedState = ref.watch(categoryFeedProvider);
+                    if (feedState.categories.isEmpty && !feedState.isLoading) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final cat in feedState.categories) ...[
+                          SectionHeader(
+                            title: cat.name,
+                            onViewAll: () => context.push(
+                              '/explore?category=${cat.id}',
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          SizedBox(
+                            height: 288,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.pagePadding,
+                              ),
+                              itemCount: cat.offers.length + 1,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: AppSpacing.md),
+                              itemBuilder: (context, index) {
+                                if (index == cat.offers.length) {
+                                  return _SeeAllCard(
+                                    categoryId: cat.id,
+                                    offerCount: cat.offerCount,
+                                  );
+                                }
+                                return SizedBox(
+                                  width: 280,
+                                  child: OfferCard(
+                                    offer: cat.offers[index],
+                                    horizontal: true,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxl),
+                        ],
+                        if (feedState.isLoading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.accent,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+
               // Marquee logos
               SliverToBoxAdapter(
                 child: businessesAsync.when(
@@ -762,6 +853,63 @@ class _MarqueeInitial extends StatelessWidget {
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : 'B',
           style: AppTypography.labelLarge.copyWith(color: AppColors.textSecondary),
+        ),
+      ),
+    );
+  }
+}
+
+class _SeeAllCard extends StatelessWidget {
+  final int categoryId;
+  final int offerCount;
+
+  const _SeeAllCard({required this.categoryId, required this.offerCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/explore?category=$categoryId'),
+      child: Container(
+        width: 160,
+        decoration: BoxDecoration(
+          color: AppColors.bgSecondary,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppColors.accent,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Vezi toate',
+                  style: AppTypography.labelLarge.copyWith(
+                    color: AppColors.accent,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '$offerCount oferte',
+                  style: AppTypography.captionMuted,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

@@ -21,6 +21,36 @@ function makeAbsoluteUrl(req, relativePath) {
   return `${protocol}://${host}${cleanPath}`;
 }
 
+// Helper: Interleave offers so same business doesn't appear consecutively
+function interleaveOffers(offers) {
+  if (offers.length <= 2) return offers;
+  const buckets = {};
+  for (const offer of offers) {
+    const bizId = offer.business?.id || 0;
+    if (!buckets[bizId]) buckets[bizId] = [];
+    buckets[bizId].push(offer);
+  }
+  const bucketList = Object.values(buckets);
+  if (bucketList.length === offers.length) return offers;
+  bucketList.sort((a, b) => b.length - a.length);
+  const result = [];
+  const indices = new Array(bucketList.length).fill(0);
+  let placed = 0;
+  while (placed < offers.length) {
+    let placedThisRound = false;
+    for (let i = 0; i < bucketList.length; i++) {
+      if (indices[i] < bucketList[i].length) {
+        result.push(bucketList[i][indices[i]]);
+        indices[i]++;
+        placed++;
+        placedThisRound = true;
+      }
+    }
+    if (!placedThisRound) break;
+  }
+  return result;
+}
+
 // ==============================
 // GET / (Listare oferte)
 // ==============================
@@ -441,6 +471,160 @@ router.get("/feed", auth, async (req, res) => {
 
   } catch (err) {
     console.error("[Feed Error]", err);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// ==============================
+// GET /category-feed — Home feed categories with offers
+// ==============================
+router.get("/category-feed", async (req, res) => {
+  try {
+    const offset = Math.max(0, parseInt(req.query.offset) || 0);
+    const batch = Math.min(4, Math.max(1, parseInt(req.query.batch) || 2));
+
+    // 1. Get ranked categories for this batch
+    const rankResult = await pool.query(`
+      SELECT cr.category_id, c.name as category_name, cr.offer_count, cr.rank
+      FROM category_rankings cr
+      JOIN categories c ON c.id = cr.category_id
+      ORDER BY cr.rank ASC
+      LIMIT $1 OFFSET $2
+    `, [batch, offset]);
+
+    // 2. Get total ranked categories count
+    const totalResult = await pool.query('SELECT COUNT(*) as total FROM category_rankings');
+    const totalCategories = parseInt(totalResult.rows[0].total);
+
+    // 3. For each category, fetch popular offers (max 20)
+    const categories = [];
+    for (const cat of rankResult.rows) {
+      const offersResult = await pool.query(`
+        SELECT
+          o.id, o.title, o.description, o.discount_type, o.discount_value,
+          o.start_date, o.end_date,
+          o.logo_url as offer_logo,
+          EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
+
+          b.id as business_id, b.name as business_name,
+          b.lat, b.lng, b.logo_url as business_logo,
+          b.cover_image_url as business_cover,
+          b.is_verified as business_verified,
+          b.subscription_badge_type as business_badge_type,
+
+          c.name as city_name, cat.name as category_name,
+
+          COALESCE(rev_agg.rating_avg, 0) as rating_avg,
+          COALESCE(rev_agg.rating_count, 0) as rating_count,
+          COALESCE(fav_agg.save_count, 0) as save_count,
+          COALESCE(fav_agg.recent_favs, 0) >= 5 as is_trending,
+
+          COALESCE(splan.has_promoted_placement, FALSE) as is_promoted,
+          locs.locations as locations
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        LEFT JOIN cities c ON b.city_id = c.id
+        LEFT JOIN categories cat ON b.category_id = cat.id
+        LEFT JOIN (
+          SELECT business_id, AVG(rating) AS rating_avg, COUNT(*) AS rating_count
+          FROM reviews GROUP BY business_id
+        ) rev_agg ON rev_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT offer_id,
+            COUNT(*) AS save_count,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days') AS recent_favs
+          FROM favorite_offers GROUP BY offer_id
+        ) fav_agg ON fav_agg.offer_id = o.id
+        LEFT JOIN business_subscriptions bsub
+          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+        LEFT JOIN subscription_plans splan
+          ON splan.id = bsub.plan_id
+        LEFT JOIN LATERAL (
+          SELECT COALESCE(
+            json_agg(
+              json_build_object(
+                'id', bl.id,
+                'address', bl.address,
+                'lat', bl.lat,
+                'lng', bl.lng,
+                'city_name', c2.name
+              )
+              ORDER BY bl.id
+            ) FILTER (WHERE bl.id IS NOT NULL),
+            '[]'::json
+          ) AS locations
+          FROM business_locations bl
+          LEFT JOIN cities c2 ON c2.id = bl.city_id
+          WHERE bl.business_id = b.id
+            AND (
+              NOT EXISTS (SELECT 1 FROM offer_locations ol WHERE ol.offer_id = o.id)
+              OR bl.id IN (SELECT ol.location_id FROM offer_locations ol WHERE ol.offer_id = o.id)
+            )
+        ) locs ON true
+        WHERE o.is_active = TRUE
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          AND b.category_id = $1
+        ORDER BY (
+          (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id)
+          + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
+        ) DESC NULLS LAST, o.id DESC
+        LIMIT 20
+      `, [cat.category_id]);
+
+      // Map rows to response shape (same as GET /offers)
+      const offers = offersResult.rows.map(row => {
+        const avg = parseFloat(row.rating_avg || 0);
+        const count = parseInt(row.rating_count || 0);
+        return {
+          id: row.id,
+          title: row.title,
+          description: row.description,
+          discount_type: row.discount_type,
+          discount_value: row.discount_value,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          has_promo_code: !!row.has_promo_code,
+          save_count: parseInt(row.save_count || 0),
+          is_trending: row.is_trending === true,
+          is_promoted: row.is_promoted || false,
+          image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+          locations: Array.isArray(row.locations) ? row.locations : [],
+          business: {
+            id: row.business_id,
+            name: row.business_name,
+            logo_url: makeAbsoluteUrl(req, row.business_logo),
+            cover_image_url: makeAbsoluteUrl(req, row.business_cover),
+            city: row.city_name,
+            category: row.category_name,
+            lat: row.lat,
+            lng: row.lng,
+            rating: parseFloat(avg.toFixed(1)),
+            rating_count: count,
+            is_verified: row.business_verified || false,
+            subscription_badge_type: row.business_badge_type || null,
+            badge_type: row.business_badge_type || (row.business_verified ? 'verified' : null),
+          }
+        };
+      });
+
+      // Interleave offers (avoid consecutive same-business)
+      const interleaved = interleaveOffers(offers);
+
+      categories.push({
+        id: cat.category_id,
+        name: cat.category_name,
+        offerCount: parseInt(cat.offer_count),
+        offers: interleaved,
+      });
+    }
+
+    res.json({
+      categories,
+      hasMore: offset + batch < totalCategories,
+      totalCategories,
+    });
+  } catch (err) {
+    console.error("[Category Feed Error]", err);
     res.status(500).send("Eroare server");
   }
 });

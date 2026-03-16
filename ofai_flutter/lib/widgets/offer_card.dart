@@ -572,8 +572,11 @@ class OfferCard extends ConsumerWidget {
           )
         : AppTypography.labelSmall.copyWith(color: textColor);
 
+    // If promoted badge is also at bottom-left, shift countdown up above it
+    final double bottomOffset = offer.isPromoted ? 38 : 12;
+
     return Positioned(
-      bottom: 12,
+      bottom: bottomOffset,
       left: 12,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -593,13 +596,13 @@ class OfferCard extends ConsumerWidget {
     );
   }
 
-  /// Promoted badge — shown at top left (next to fav icon) when offer is promoted.
+  /// Promoted badge — shown at bottom left of image when offer is promoted.
   Widget _buildPromotedBadge() {
     if (!offer.isPromoted) return const SizedBox.shrink();
 
     return Positioned(
-      top: 12,
-      left: 56,
+      bottom: 12,
+      left: 12,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(

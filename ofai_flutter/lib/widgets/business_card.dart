@@ -77,6 +77,10 @@ class BusinessCard extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
+                            if (business.hasBadge) ...[
+                              SubscriptionBadge(badgeType: business.badgeType, size: 16),
+                              const SizedBox(width: 4),
+                            ],
                             Expanded(
                               child: Text(
                                 business.name,
@@ -85,11 +89,6 @@ class BusinessCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (business.hasBadge)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 4),
-                                child: SubscriptionBadge(badgeType: business.badgeType, size: 16),
-                              ),
                           ],
                         ),
                         const SizedBox(height: 2),
