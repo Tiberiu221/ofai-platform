@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
 import '../models/category_feed.dart';
-import '../core/utils/interleave.dart';
 
 class CategoryFeedState {
   final List<CategoryWithOffers> categories;
@@ -57,16 +56,9 @@ class CategoryFeedNotifier extends StateNotifier<CategoryFeedState> {
       final rawCategories = data['categories'] as List<dynamic>? ?? [];
       final hasMore = data['hasMore'] as bool? ?? false;
 
-      final newCategories = rawCategories.map((e) {
-        final cat = CategoryWithOffers.fromJson(e as Map<String, dynamic>);
-        // Interleave offers within each category
-        return CategoryWithOffers(
-          id: cat.id,
-          name: cat.name,
-          offerCount: cat.offerCount,
-          offers: interleaveOffers(cat.offers),
-        );
-      }).toList();
+      final newCategories = rawCategories
+          .map((e) => CategoryWithOffers.fromJson(e as Map<String, dynamic>))
+          .toList();
 
       state = state.copyWith(
         categories: [...state.categories, ...newCategories],

@@ -562,10 +562,11 @@ router.get("/category-feed", async (req, res) => {
             )
         ) locs ON true
         WHERE o.is_active = TRUE
+          AND o.moderation_status IN ('approved', 'auto_approved')
           AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND b.category_id = $1
         ORDER BY (
-          (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id)
+          COALESCE(rev_agg.rating_avg, 0)
           + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
         ) DESC NULLS LAST, o.id DESC
         LIMIT 20

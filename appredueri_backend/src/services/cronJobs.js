@@ -2,6 +2,79 @@ const cron = require('node-cron');
 const pool = require('../db');
 
 /**
+ * Compute and upsert category rankings based on review scores + tier boost.
+ * Shared between the scheduled cron job and the first-startup seed.
+ * @returns {Promise<number>} Number of categories ranked
+ */
+async function computeCategoryRankings() {
+  const result = await pool.query(`
+    WITH category_scores AS (
+      SELECT
+        b.category_id,
+        AVG(
+          COALESCE(r.avg_rating, 0)
+          + CASE
+              WHEN sp.slug = 'premium' THEN 0.3
+              WHEN sp.slug = 'standard' THEN 0.1
+              ELSE 0
+            END
+        ) as score,
+        COUNT(DISTINCT o.id) FILTER (
+          WHERE o.is_active = TRUE
+            AND o.moderation_status IN ('approved', 'auto_approved')
+            AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        ) as offer_count
+      FROM businesses b
+      LEFT JOIN (
+        SELECT business_id, AVG(rating) as avg_rating
+        FROM reviews GROUP BY business_id
+      ) r ON r.business_id = b.id
+      LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active', 'trial')
+      LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
+      LEFT JOIN offers o ON o.business_id = b.id
+      WHERE b.category_id IS NOT NULL
+      GROUP BY b.category_id
+      HAVING COUNT(DISTINCT o.id) FILTER (
+        WHERE o.is_active = TRUE
+          AND o.moderation_status IN ('approved', 'auto_approved')
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+      ) >= 6
+    )
+    INSERT INTO category_rankings (category_id, rank, score, offer_count, updated_at)
+    SELECT
+      category_id,
+      ROW_NUMBER() OVER (ORDER BY score DESC),
+      ROUND(score::numeric, 2),
+      offer_count,
+      NOW()
+    FROM category_scores
+    ON CONFLICT (category_id) DO UPDATE SET
+      rank = EXCLUDED.rank,
+      score = EXCLUDED.score,
+      offer_count = EXCLUDED.offer_count,
+      updated_at = NOW()
+  `);
+
+  // Remove categories that no longer qualify
+  await pool.query(`
+    DELETE FROM category_rankings
+    WHERE category_id NOT IN (
+      SELECT b.category_id
+      FROM businesses b
+      LEFT JOIN offers o ON o.business_id = b.id
+      WHERE b.category_id IS NOT NULL
+        AND o.is_active = TRUE
+        AND o.moderation_status IN ('approved', 'auto_approved')
+        AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+      GROUP BY b.category_id
+      HAVING COUNT(DISTINCT o.id) >= 6
+    )
+  `);
+
+  return result.rowCount;
+}
+
+/**
  * Initializes all scheduled cleanup jobs.
  * Called once from index.js on server start.
  */
@@ -537,62 +610,8 @@ function initCronJobs() {
   // 15. Update category rankings for home feed — Every 2 days at 02:00 UTC
   cron.schedule('0 2 */2 * *', async () => {
     try {
-      const result = await pool.query(`
-        WITH category_scores AS (
-          SELECT
-            b.category_id,
-            AVG(
-              COALESCE(r.avg_rating, 0)
-              + CASE
-                  WHEN sp.slug = 'premium' THEN 0.3
-                  WHEN sp.slug = 'standard' THEN 0.1
-                  ELSE 0
-                END
-            ) as score,
-            COUNT(DISTINCT o.id) FILTER (WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)) as offer_count
-          FROM businesses b
-          LEFT JOIN (
-            SELECT business_id, AVG(rating) as avg_rating
-            FROM reviews GROUP BY business_id
-          ) r ON r.business_id = b.id
-          LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active', 'trial')
-          LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
-          LEFT JOIN offers o ON o.business_id = b.id
-          WHERE b.category_id IS NOT NULL
-          GROUP BY b.category_id
-          HAVING COUNT(DISTINCT o.id) FILTER (WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)) >= 6
-        )
-        INSERT INTO category_rankings (category_id, rank, score, offer_count, updated_at)
-        SELECT
-          category_id,
-          ROW_NUMBER() OVER (ORDER BY score DESC),
-          ROUND(score::numeric, 2),
-          offer_count,
-          NOW()
-        FROM category_scores
-        ON CONFLICT (category_id) DO UPDATE SET
-          rank = EXCLUDED.rank,
-          score = EXCLUDED.score,
-          offer_count = EXCLUDED.offer_count,
-          updated_at = NOW()
-      `);
-
-      // Remove categories that no longer qualify
-      await pool.query(`
-        DELETE FROM category_rankings
-        WHERE category_id NOT IN (
-          SELECT b.category_id
-          FROM businesses b
-          LEFT JOIN offers o ON o.business_id = b.id
-          WHERE b.category_id IS NOT NULL
-            AND o.is_active = TRUE
-            AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          GROUP BY b.category_id
-          HAVING COUNT(DISTINCT o.id) >= 6
-        )
-      `);
-
-      console.log(`[Cron] Category rankings updated: ${result.rowCount} categories ranked`);
+      const count = await computeCategoryRankings();
+      console.log(`[Cron] Category rankings updated: ${count} categories ranked`);
     } catch (err) {
       console.error('[Cron] Category rankings update failed:', err.message);
     }
@@ -604,46 +623,8 @@ function initCronJobs() {
       const check = await pool.query('SELECT COUNT(*) as cnt FROM category_rankings');
       if (parseInt(check.rows[0].cnt) === 0) {
         console.log('[Cron] Category rankings table empty — seeding now...');
-        const seedResult = await pool.query(`
-          WITH category_scores AS (
-            SELECT
-              b.category_id,
-              AVG(
-                COALESCE(r.avg_rating, 0)
-                + CASE
-                    WHEN sp.slug = 'premium' THEN 0.3
-                    WHEN sp.slug = 'standard' THEN 0.1
-                    ELSE 0
-                  END
-              ) as score,
-              COUNT(DISTINCT o.id) FILTER (WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)) as offer_count
-            FROM businesses b
-            LEFT JOIN (
-              SELECT business_id, AVG(rating) as avg_rating
-              FROM reviews GROUP BY business_id
-            ) r ON r.business_id = b.id
-            LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active', 'trial')
-            LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
-            LEFT JOIN offers o ON o.business_id = b.id
-            WHERE b.category_id IS NOT NULL
-            GROUP BY b.category_id
-            HAVING COUNT(DISTINCT o.id) FILTER (WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)) >= 6
-          )
-          INSERT INTO category_rankings (category_id, rank, score, offer_count, updated_at)
-          SELECT
-            category_id,
-            ROW_NUMBER() OVER (ORDER BY score DESC),
-            ROUND(score::numeric, 2),
-            offer_count,
-            NOW()
-          FROM category_scores
-          ON CONFLICT (category_id) DO UPDATE SET
-            rank = EXCLUDED.rank,
-            score = EXCLUDED.score,
-            offer_count = EXCLUDED.offer_count,
-            updated_at = NOW()
-        `);
-        console.log(`[Cron] Category rankings seeded: ${seedResult.rowCount} categories`);
+        const count = await computeCategoryRankings();
+        console.log(`[Cron] Category rankings seeded: ${count} categories`);
       }
     } catch (err) {
       console.error('[Cron] Category rankings seed check failed:', err.message);
