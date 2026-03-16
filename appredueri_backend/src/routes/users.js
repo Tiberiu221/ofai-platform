@@ -537,14 +537,12 @@ router.delete("/me", auth, async (req, res) => {
   try {
     // Verificam parola pentru confirmare
     if (!password) {
-      client.release();
       return res.status(400).json({ message: "Parola este necesara pentru confirmare" });
     }
 
     const userRes = await client.query("SELECT password_hash FROM users WHERE id = $1", [userId]);
 
     if (userRes.rowCount === 0) {
-      client.release();
       return res.status(404).json({ message: "Utilizator negasit" });
     }
 
@@ -554,7 +552,6 @@ router.delete("/me", auth, async (req, res) => {
     if (hash) {
       const isValid = await bcrypt.compare(password, hash);
       if (!isValid) {
-        client.release();
         return res.status(401).json({ message: "Parola este incorecta" });
       }
     }

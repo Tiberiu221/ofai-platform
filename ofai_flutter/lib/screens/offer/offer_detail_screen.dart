@@ -996,7 +996,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
   String? _error;
 
   Future<void> _revealCode() async {
-    if (!widget.isLoggedIn) return;
+    if (!widget.isLoggedIn || _loading) return;
 
     setState(() {
       _loading = true;

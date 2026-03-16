@@ -69,6 +69,7 @@ router.get("/", optionalAuth, async (req, res) => {
     let idx = 1;
 
     filters.push("o.is_active = TRUE");
+    filters.push("o.moderation_status IN ('approved', 'auto_approved')");
     filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"); // NULL = nu expiră
 
     if (city_id) { filters.push(`(b.city_id = $${idx++} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`); values.push(parseInt(city_id)); }
@@ -318,7 +319,7 @@ router.get("/flash", async (req, res) => {
       WHERE o.is_active = TRUE
         AND o.flash_expires_at IS NOT NULL
         AND o.flash_expires_at > NOW()
-        AND o.moderation_status = 'approved'
+        AND o.moderation_status IN ('approved', 'auto_approved')
       ORDER BY o.flash_expires_at ASC
       LIMIT 10
     `);
@@ -383,8 +384,9 @@ router.get("/feed", auth, async (req, res) => {
     const values = [];
     let idx = 1;
 
-    // A. Filtre de bază (Active & Valabile)
+    // A. Filtre de bază (Active & Valabile & Aprobate)
     filters.push("o.is_active = TRUE");
+    filters.push("o.moderation_status IN ('approved', 'auto_approved')");
     filters.push("(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)");
 
     // B. Filtru Oraș (Dacă userul are unul setat) — Magazine Online apare în toate orașele

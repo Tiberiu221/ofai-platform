@@ -59,6 +59,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = User.fromJson(response.data['user'] ?? response.data);
       state = AuthState(status: AuthStatus.authenticated, user: user);
 
+      // Re-fetch favorites and follows on app restart
+      _ref.read(favoritesProvider.notifier).fetch();
+      _ref.read(followedBusinessesProvider.notifier).fetch();
+
       // Re-register push on app restart
       PushNotificationService().initialize().catchError((e) {
         debugPrint('[Push] Init failed: $e');

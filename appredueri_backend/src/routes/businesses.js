@@ -400,11 +400,12 @@ router.get("/:id", async (req, res) => {
       // reviewSummary stays null
     }
 
-    // 5. Active offers for this business
+    // 5. Active offers for this business (only approved/auto_approved)
     const activeOffersRes = await pool.query(
       `SELECT id, title, discount_type, discount_value, start_date, end_date
        FROM offers
        WHERE business_id = $1 AND is_active = TRUE
+         AND moderation_status IN ('approved', 'auto_approved')
        ORDER BY id DESC`,
       [id]
     );

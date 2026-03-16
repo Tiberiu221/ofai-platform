@@ -484,14 +484,17 @@ function initCronJobs() {
       // Get users with active push tokens who haven't disabled weekly_digest
       const { rows: users } = await pool.query(`
         SELECT DISTINCT u.id AS user_id,
-          (SELECT array_agg(pc.city_id) FROM user_preferred_cities pc WHERE pc.user_id = u.id) AS city_ids,
-          (SELECT c.name FROM user_preferred_cities pc JOIN cities c ON c.id = pc.city_id WHERE pc.user_id = u.id LIMIT 1) AS city_name
+          u.preferred_city_ids AS city_ids,
+          (SELECT c.name FROM cities c
+           WHERE c.id = ANY(u.preferred_city_ids) LIMIT 1) AS city_name
         FROM users u
         JOIN push_tokens pt ON pt.user_id = u.id AND pt.is_active = TRUE
-        WHERE NOT EXISTS (
-          SELECT 1 FROM notification_preferences np
-          WHERE np.user_id = u.id AND np.pref_key = 'weekly_digest' AND np.enabled = FALSE
-        )
+        WHERE u.preferred_city_ids IS NOT NULL
+          AND array_length(u.preferred_city_ids, 1) > 0
+          AND NOT EXISTS (
+            SELECT 1 FROM notification_preferences np
+            WHERE np.user_id = u.id AND np.pref_key = 'weekly_digest' AND np.enabled = FALSE
+          )
         LIMIT 500
       `);
 
@@ -502,11 +505,12 @@ function initCronJobs() {
           if (cityIds.length === 0) continue;
 
           const { rows: countRows } = await pool.query(`
-            SELECT COUNT(*) AS cnt FROM offers
-            WHERE is_active = TRUE
-              AND moderation_status = 'approved'
-              AND start_date >= CURRENT_DATE - 7
-              AND city_id = ANY($1::int[])
+            SELECT COUNT(*) AS cnt FROM offers o
+            JOIN businesses b ON b.id = o.business_id
+            WHERE o.is_active = TRUE
+              AND o.moderation_status IN ('approved', 'auto_approved')
+              AND o.start_date >= CURRENT_DATE - 7
+              AND b.city_id = ANY($1::int[])
           `, [cityIds]);
 
           const count = parseInt(countRows[0]?.cnt || '0', 10);
@@ -554,19 +558,22 @@ function initCronJobs() {
           // Build dynamic WHERE clause with parameterized queries
           const conditions = [
             'o.is_active = TRUE',
-            "o.moderation_status = 'approved'",
+            "o.moderation_status IN ('approved', 'auto_approved')",
             `o.id > $1`,
           ];
           const params = [search.last_notified_offer_id];
           let paramIdx = 2;
+          let needsBusinessJoin = false;
 
           if (search.city_id) {
-            conditions.push(`o.city_id = $${paramIdx++}`);
+            conditions.push(`b.city_id = $${paramIdx++}`);
             params.push(search.city_id);
+            needsBusinessJoin = true;
           }
           if (search.category_id) {
-            conditions.push(`o.category_id = $${paramIdx++}`);
+            conditions.push(`b.category_id = $${paramIdx++}`);
             params.push(search.category_id);
+            needsBusinessJoin = true;
           }
           if (search.query) {
             conditions.push(`(o.title ILIKE $${paramIdx} OR o.description ILIKE $${paramIdx})`);
@@ -574,8 +581,11 @@ function initCronJobs() {
             paramIdx++;
           }
 
+          const fromClause = needsBusinessJoin
+            ? 'FROM offers o JOIN businesses b ON b.id = o.business_id'
+            : 'FROM offers o';
           const countResult = await pool.query(
-            `SELECT COUNT(*) AS cnt, MAX(o.id) AS max_id FROM offers o WHERE ${conditions.join(' AND ')}`,
+            `SELECT COUNT(*) AS cnt, MAX(o.id) AS max_id ${fromClause} WHERE ${conditions.join(' AND ')}`,
             params
           );
 
