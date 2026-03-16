@@ -486,7 +486,7 @@ router.get("/feed", auth, async (req, res) => {
 router.get("/category-feed", searchLimiter, async (req, res) => {
   try {
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
-    const batch = Math.min(4, Math.max(1, parseInt(req.query.batch) || 2));
+    const batch = Math.min(50, Math.max(1, parseInt(req.query.batch) || 50));
 
     // 1. Get ranked categories for this batch
     const rankResult = await pool.query(`

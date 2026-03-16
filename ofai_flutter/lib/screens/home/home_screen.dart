@@ -37,30 +37,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    // Load first batch of category feed
     Future.microtask(() {
-      ref.read(categoryFeedProvider.notifier).loadNextBatch();
+      ref.read(categoryFeedProvider.notifier).loadAll();
     });
-    _scrollController.addListener(_onScroll);
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 500) {
-      ref.read(categoryFeedProvider.notifier).loadNextBatch();
-    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -103,10 +92,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             ref.invalidate(collectionsProvider);
             ref.invalidate(recentlyViewedOffersProvider);
             ref.read(categoryFeedProvider.notifier).reset();
-            ref.read(categoryFeedProvider.notifier).loadNextBatch();
+            ref.read(categoryFeedProvider.notifier).loadAll();
           },
           child: CustomScrollView(
-            controller: _scrollController,
             slivers: [
               // Header
               SliverToBoxAdapter(
@@ -584,7 +572,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 ),
               ),
 
-              // Category Feed — lazy-loaded sections
+              // Category Feed sections
               SliverToBoxAdapter(
                 child: Consumer(
                   builder: (context, ref, _) {
@@ -601,7 +589,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                             ref.read(categoryFeedProvider.notifier).reset();
                             ref
                                 .read(categoryFeedProvider.notifier)
-                                .loadNextBatch();
+                                .loadAll();
                           },
                         ),
                       );
@@ -650,20 +638,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                           ),
                           const SizedBox(height: AppSpacing.xxl),
                         ],
-                        if (feedState.isLoading)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                            child: Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.accent,
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     );
                   },
