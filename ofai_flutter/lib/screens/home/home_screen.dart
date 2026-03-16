@@ -589,9 +589,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 child: Consumer(
                   builder: (context, ref, _) {
                     final feedState = ref.watch(categoryFeedProvider);
+                    // Error state — show retry when no categories loaded
+                    if (feedState.error != null &&
+                        feedState.categories.isEmpty &&
+                        !feedState.isLoading) {
+                      return Padding(
+                        padding: AppSpacing.pageH,
+                        child: w.ErrorState(
+                          message: feedState.error!,
+                          onRetry: () {
+                            ref.read(categoryFeedProvider.notifier).reset();
+                            ref
+                                .read(categoryFeedProvider.notifier)
+                                .loadNextBatch();
+                          },
+                        ),
+                      );
+                    }
                     if (feedState.categories.isEmpty && !feedState.isLoading) {
                       return const SizedBox.shrink();
                     }
+                    const categoryCarouselHeight = 288.0;
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -604,7 +622,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                           ),
                           const SizedBox(height: AppSpacing.md),
                           SizedBox(
-                            height: 288,
+                            height: categoryCarouselHeight,
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               padding: const EdgeInsets.symmetric(

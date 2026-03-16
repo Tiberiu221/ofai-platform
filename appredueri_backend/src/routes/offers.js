@@ -4,7 +4,7 @@ const pool = require("../db");
 const auth = require("../middleware/auth");
 const { optionalAuth } = require("../middleware/auth");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
-const { revealLimiter } = require("../middleware/rateLimiter");
+const { revealLimiter, searchLimiter } = require("../middleware/rateLimiter");
 
 // ==============================
 // Helper: Construire URL absolut
@@ -21,7 +21,12 @@ function makeAbsoluteUrl(req, relativePath) {
   return `${protocol}://${host}${cleanPath}`;
 }
 
-// Helper: Interleave offers so same business doesn't appear consecutively
+/**
+ * Interleave offers so the same business doesn't appear consecutively.
+ * Round-robin from business-grouped buckets, sorted by bucket size DESC.
+ * @param {Array<Object>} offers - Mapped response objects (must have offer.business.id, not raw DB rows)
+ * @returns {Array<Object>} Reordered offers
+ */
 function interleaveOffers(offers) {
   if (offers.length <= 2) return offers;
   const buckets = {};
@@ -478,7 +483,7 @@ router.get("/feed", auth, async (req, res) => {
 // ==============================
 // GET /category-feed — Home feed categories with offers
 // ==============================
-router.get("/category-feed", async (req, res) => {
+router.get("/category-feed", searchLimiter, async (req, res) => {
   try {
     const offset = Math.max(0, parseInt(req.query.offset) || 0);
     const batch = Math.min(4, Math.max(1, parseInt(req.query.batch) || 2));
