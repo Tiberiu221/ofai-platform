@@ -1369,7 +1369,7 @@
       html += '<button onclick="handleUpgrade(\'standard\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Standard (49 RON/luna)</button>';
       html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Premium (199 RON/luna)</button>';
     } else if (tier === 'standard') {
-      html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Upgrade la Premium</button>';
+      html += '<button onclick="handleChangePlan(\'premium\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Upgrade la Premium</button>';
     } else if (tier === 'premium') {
       html += '<button onclick="handleChangePlan(\'standard\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Downgrade la Standard</button>';
     }
@@ -1594,7 +1594,11 @@
   // Stripe plan change handler (downgrade/upgrade via subscription update)
   window.handleChangePlan = function(planSlug) {
     var planName = planSlug === 'standard' ? 'Standard' : 'Premium';
-    if (!confirm('Vrei sa treci pe planul ' + planName + '? Schimbarea se aplica la sfarsitul perioadei curente.')) return;
+    var isUpgrade = planSlug === 'premium';
+    var msg = isUpgrade
+      ? 'Vrei sa faci upgrade la ' + planName + '? Vei plati doar diferenta pro-rata pentru zilele ramase din luna curenta.'
+      : 'Vrei sa treci pe planul ' + planName + '? Schimbarea se aplica la sfarsitul perioadei curente.';
+    if (!confirm(msg)) return;
 
     showToast('Se proceseaza schimbarea planului...', 'info');
 
