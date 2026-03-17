@@ -2044,11 +2044,24 @@ router.get('/preturi', async (req, res) => {
       'SELECT * FROM subscription_plans ORDER BY sort_order ASC'
     );
 
+    // If logged in, find user's first business for portal redirect
+    let userBusinessId = null;
+    if (req.webUser) {
+      const bizResult = await pool.query(
+        'SELECT business_id FROM user_businesses WHERE user_id = $1 LIMIT 1',
+        [req.webUser.id]
+      );
+      if (bizResult.rows[0]) {
+        userBusinessId = bizResult.rows[0].business_id;
+      }
+    }
+
     res.render('public/pricing', {
       pageTitle: 'Preturi - OFAI',
       activePage: 'preturi',
       plans,
       webUser: req.webUser || null,
+      userBusinessId,
     });
   } catch (err) {
     console.error('[Web] Pricing page error:', err);

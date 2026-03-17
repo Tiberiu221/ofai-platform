@@ -37,6 +37,85 @@ router.post('/:businessId/checkout', requireBusinessOwner, async (req, res) => {
   }
 });
 
+// POST /billing/:businessId/change-plan — Downgrade/upgrade via Stripe subscription update
+router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) => {
+  try {
+    const { planSlug } = req.body;
+    const bizId = parseInt(req.params.businessId, 10);
+
+    const stripe = stripeService.getStripe();
+    if (!stripe) {
+      return res.status(501).json({ error: 'Stripe not configured' });
+    }
+
+    // Validate target plan + get stripe_price_monthly_id
+    if (!['standard', 'premium'].includes(planSlug)) {
+      return res.status(400).json({ error: 'Plan invalid' });
+    }
+
+    const targetPlan = await pool.query(
+      'SELECT id, slug, stripe_price_monthly_id, sort_order FROM subscription_plans WHERE slug = $1',
+      [planSlug]
+    );
+    if (!targetPlan.rows[0] || !targetPlan.rows[0].stripe_price_monthly_id) {
+      return res.status(400).json({ error: 'Planul nu are un Price ID Stripe configurat' });
+    }
+    const newPriceId = targetPlan.rows[0].stripe_price_monthly_id;
+    const newSortOrder = targetPlan.rows[0].sort_order;
+
+    // Get current subscription (must have stripe_subscription_id)
+    const currentSub = await pool.query(
+      `SELECT bs.stripe_subscription_id, sp.sort_order AS current_sort_order, sp.slug AS current_slug
+       FROM business_subscriptions bs
+       JOIN subscription_plans sp ON sp.id = bs.plan_id
+       WHERE bs.business_id = $1 AND bs.status = 'active' AND bs.stripe_subscription_id IS NOT NULL
+       LIMIT 1`,
+      [bizId]
+    );
+
+    if (!currentSub.rows[0]) {
+      return res.status(400).json({ error: 'Nu exista un abonament Stripe activ' });
+    }
+
+    const { stripe_subscription_id: stripeSubId, current_sort_order: currentSortOrder, current_slug: currentSlug } = currentSub.rows[0];
+
+    // Don't allow changing to same plan
+    if (currentSlug === planSlug) {
+      return res.status(400).json({ error: 'Esti deja pe acest plan' });
+    }
+
+    // Retrieve Stripe subscription to get the item ID
+    const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
+    const itemId = stripeSub.items?.data?.[0]?.id;
+    if (!itemId) {
+      return res.status(500).json({ error: 'Subscriptia Stripe nu are items' });
+    }
+
+    const isDowngrade = newSortOrder < currentSortOrder;
+
+    // Update Stripe subscription
+    await stripe.subscriptions.update(stripeSubId, {
+      items: [{ id: itemId, price: newPriceId }],
+      proration_behavior: isDowngrade ? 'none' : 'create_prorations',
+    });
+
+    // Webhook `customer.subscription.updated` will handle DB update automatically
+    const action = isDowngrade ? 'downgrade' : 'upgrade';
+    console.log(`[Billing] Plan change (${action}): business ${bizId}, ${currentSlug} -> ${planSlug}`);
+
+    res.json({
+      success: true,
+      message: isDowngrade
+        ? `Planul se va schimba la ${planSlug === 'standard' ? 'Standard' : 'Premium'} la sfarsitul perioadei curente.`
+        : `Upgrade-ul la ${planSlug === 'standard' ? 'Standard' : 'Premium'} a fost aplicat.`,
+      action,
+    });
+  } catch (err) {
+    console.error('[Billing] Change plan error:', err);
+    res.status(500).json({ error: 'Eroare la schimbarea planului' });
+  }
+});
+
 // POST /billing/:businessId/portal — Manage subscription (Stripe portal)
 router.post('/:businessId/portal', requireBusinessOwner, async (req, res) => {
   try {
@@ -131,26 +210,19 @@ async function handleCheckoutCompleted(session) {
     // Get current subscription for history
     const currentSub = await client.query(
       `SELECT id, plan_id FROM business_subscriptions
-       WHERE business_id = $1 AND status IN ('active', 'trial')
-       LIMIT 1`,
+       WHERE business_id = $1 LIMIT 1`,
       [bizId]
     );
     const fromPlanId = currentSub.rows[0]?.plan_id || null;
 
-    // Cancel old subscription(s) — satisfies unique partial index
+    // Update existing row (UNIQUE constraint on business_id — one row per business)
     await client.query(
       `UPDATE business_subscriptions
-       SET status = 'cancelled', updated_at = NOW()
-       WHERE business_id = $1 AND status IN ('active', 'trial')`,
-      [bizId]
-    );
-
-    // Insert new active subscription with Stripe IDs
-    await client.query(
-      `INSERT INTO business_subscriptions
-       (business_id, plan_id, status, billing_cycle, stripe_subscription_id,
-        stripe_customer_id, current_period_start, current_period_end)
-       VALUES ($1, $2, 'active', $3, $4, $5, $6, $7)`,
+       SET plan_id = $2, status = 'active', billing_cycle = $3,
+           stripe_subscription_id = $4, stripe_customer_id = $5,
+           current_period_start = $6, current_period_end = $7,
+           cancel_at_period_end = FALSE, updated_at = NOW()
+       WHERE business_id = $1`,
       [bizId, plan.id, billingCycle, session.subscription,
        session.customer, periodStart, periodEnd]
     );
@@ -251,11 +323,11 @@ async function handleSubscriptionCancelled(subscription) {
   try {
     await client.query('BEGIN');
 
+    // Find the subscription row by stripe_subscription_id
     const result = await client.query(
-      `UPDATE business_subscriptions
-       SET status = 'cancelled', updated_at = NOW()
+      `SELECT id, business_id, plan_id FROM business_subscriptions
        WHERE stripe_subscription_id = $1 AND status IN ('active', 'past_due')
-       RETURNING id, business_id, plan_id`,
+       LIMIT 1`,
       [stripeSubId]
     );
 
@@ -272,20 +344,15 @@ async function handleSubscriptionCancelled(subscription) {
     );
     if (!freePlan.rows[0]) throw new Error('Free plan missing from subscription_plans');
 
-    // Check if an active sub already exists (race condition with cron)
-    const existingActive = await client.query(
-      `SELECT id FROM business_subscriptions
-       WHERE business_id = $1 AND status IN ('active', 'trial')`,
-      [business_id]
+    // Downgrade to free plan (UPDATE existing row — UNIQUE constraint on business_id)
+    await client.query(
+      `UPDATE business_subscriptions
+       SET plan_id = $2, status = 'active', billing_cycle = 'none',
+           stripe_subscription_id = NULL, stripe_customer_id = NULL,
+           current_period_end = NULL, cancel_at_period_end = FALSE, updated_at = NOW()
+       WHERE business_id = $1`,
+      [business_id, freePlan.rows[0].id]
     );
-    if (existingActive.rows.length === 0) {
-      await client.query(
-        `INSERT INTO business_subscriptions
-         (business_id, plan_id, status, billing_cycle)
-         VALUES ($1, $2, 'active', 'none')`,
-        [business_id, freePlan.rows[0].id]
-      );
-    }
 
     await client.query(
       `INSERT INTO subscription_history

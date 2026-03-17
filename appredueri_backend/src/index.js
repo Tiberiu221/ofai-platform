@@ -157,8 +157,15 @@ app.use(writeLimiter);
 // ============================================
 // MIDDLEWARE-URI GLOBALE
 // ============================================
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use((req, res, next) => {
+  // Stripe webhook needs raw body for signature verification
+  if (req.originalUrl === '/billing/webhook') return next();
+  express.json({ limit: "10mb" })(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.originalUrl === '/billing/webhook') return next();
+  express.urlencoded({ extended: true, limit: "10mb" })(req, res, next);
+});
 app.use(cookieParser());
 
 // Anonymous CSRF session cookie — per-session nonce for unauthenticated users

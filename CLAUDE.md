@@ -93,7 +93,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **Portal tab partials:** Catalog tab is in `_tab-catalog.ejs`, Info tab in `_tab-info.ejs`
 - **Column collisions:** `SELECT bs.*, sp.*` in tiers.js causes id/created_at collisions - use explicit aliases
 - **CSRF:** Web portal routes require X-CSRF-Token; webhook routes must skip CSRF
-- **Stripe webhooks:** Need raw body (express.raw), not parsed JSON
+- **Stripe webhooks:** Need raw body — index.js skips `express.json()` for `/billing/webhook` path
 - **Prices in bani:** 4900 = 49.00 RON (integer cents, avoid floating point)
 - **Badge sync:** Always call `syncBadgeType()` after subscription changes
 - **Flutter hook:** PostToolUse hook runs `flutter analyze` on Edit/Write in ofai_flutter/
@@ -114,7 +114,7 @@ psql $DATABASE_URL                              # Connect to DB
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (13 March 2026)
+## Current State (17 March 2026)
 - Subscription system (Plans 00-16) fully planned with docs
 - Audit #8+#9+#10 fixes: ALL applied (v0.9.0+ — 110+ fixes total)
 - Migrations up to **061** (flash_deals, notification_preferences, saved_searches, collections)
@@ -141,8 +141,8 @@ psql $DATABASE_URL                              # Connect to DB
 - **Pull-to-Refresh:** On both offer and business detail screens
 - **Responsive Quick Wins:** Categories grid adapts to tablet width
 - **OG Tags:** Backend has full Open Graph meta tags (head.ejs) for rich share previews
-- **Billing:** Expanded Stripe integration with webhook lifecycle, subscription management
-- Stripe integration expanded but not yet production-ready
+- **Billing/Stripe:** TESTED LOCALLY — webhooks receiving 200, raw body fix applied in index.js
+- **Category Feed:** Cron + API + Flutter home (web home version not implemented)
 - Express pinned to ~5.1.0
 - 23 route files, 18 providers, 61 migrations
 

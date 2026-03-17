@@ -191,12 +191,14 @@ function initCronJobs() {
           const bizIds = trialResult.rows.map(r => r.business_id);
           const fromPlanIds = trialResult.rows.map(r => r.plan_id);
           const toPlanIds = trialResult.rows.map(() => freePlanId);
-          // Batch insert free subscriptions
+          // Update existing rows to free plan (UNIQUE on business_id — one row per business)
           await client.query(`
-            INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-            SELECT unnest($1::int[]), unnest($2::int[]), 'active', 'none'
-            ON CONFLICT (business_id) DO NOTHING
-          `, [bizIds, toPlanIds]);
+            UPDATE business_subscriptions
+            SET plan_id = $2, status = 'active', billing_cycle = 'none',
+                stripe_subscription_id = NULL, stripe_customer_id = NULL,
+                current_period_end = NULL, cancel_at_period_end = FALSE, updated_at = NOW()
+            WHERE business_id = ANY($1::int[])
+          `, [bizIds, freePlanId]);
           // Batch insert subscription history
           await client.query(`
             INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)
@@ -235,12 +237,14 @@ function initCronJobs() {
           const bizIds = paidResult.rows.map(r => r.business_id);
           const fromPlanIds = paidResult.rows.map(r => r.plan_id);
           const toPlanIds = paidResult.rows.map(() => freePlanId);
-          // Batch insert free subscriptions
+          // Update existing rows to free plan (UNIQUE on business_id — one row per business)
           await client.query(`
-            INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle)
-            SELECT unnest($1::int[]), unnest($2::int[]), 'active', 'none'
-            ON CONFLICT (business_id) DO NOTHING
-          `, [bizIds, toPlanIds]);
+            UPDATE business_subscriptions
+            SET plan_id = $2, status = 'active', billing_cycle = 'none',
+                stripe_subscription_id = NULL, stripe_customer_id = NULL,
+                current_period_end = NULL, cancel_at_period_end = FALSE, updated_at = NOW()
+            WHERE business_id = ANY($1::int[])
+          `, [bizIds, freePlanId]);
           // Batch insert subscription history
           await client.query(`
             INSERT INTO subscription_history (business_id, from_plan_id, to_plan_id, action, reason)

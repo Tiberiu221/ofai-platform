@@ -1362,27 +1362,32 @@
     });
     html += '</div>';
 
-    // Action buttons
+    // Action buttons — primary row
     html += '<div style="display: flex; gap: 12px; flex-wrap: wrap;">';
 
     if (tier === 'free') {
-      html += '<button onclick="handleUpgrade(\'standard\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Standard</button>';
-      html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Premium</button>';
+      html += '<button onclick="handleUpgrade(\'standard\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Standard (49 RON/luna)</button>';
+      html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Premium (199 RON/luna)</button>';
     } else if (tier === 'standard') {
       html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Upgrade la Premium</button>';
-      if (!cancelAtEnd && !isTrial) {
-        html += '<button onclick="handleCancelSubscription()" style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); color: var(--text-tertiary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Anuleaza abonament</button>';
-      }
     } else if (tier === 'premium') {
-      html += '<div style="background: rgba(167, 139, 250, 0.06); border: 1px solid rgba(167, 139, 250, 0.12); border-radius: var(--radius-md); padding: 14px 16px; flex: 1; text-align: center;">';
-      html += '<p style="color: #a78bfa; font-size: 0.875rem; margin: 0;">Ai planul maxim! Bucura-te de toate beneficiile.</p>';
-      html += '</div>';
-      if (!cancelAtEnd) {
-        html += '<button onclick="handleCancelSubscription()" style="padding: 12px 24px; background: transparent; border: 1px solid var(--border); color: var(--text-tertiary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Anuleaza</button>';
-      }
+      html += '<button onclick="handleChangePlan(\'standard\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Downgrade la Standard</button>';
     }
 
     html += '</div>';
+
+    // Secondary row — billing portal + cancel (only for paid tiers)
+    if (tier !== 'free') {
+      html += '<div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">';
+      html += '<button onclick="handleBillingPortal()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">';
+      html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>';
+      html += 'Gestioneaza facturarea</button>';
+      if (!cancelAtEnd && !isTrial) {
+        html += '<button onclick="handleCancelSubscription()" style="padding: 10px 20px; background: transparent; border: 1px solid var(--border); color: var(--text-tertiary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Anuleaza abonament</button>';
+      }
+      html += '</div>';
+    }
+
     html += '</div>';  // end glass-card
 
     // ── Detailed Comparison Table ──
@@ -1586,6 +1591,69 @@
     });
   };
 
+  // Stripe plan change handler (downgrade/upgrade via subscription update)
+  window.handleChangePlan = function(planSlug) {
+    var planName = planSlug === 'standard' ? 'Standard' : 'Premium';
+    if (!confirm('Vrei sa treci pe planul ' + planName + '? Schimbarea se aplica la sfarsitul perioadei curente.')) return;
+
+    showToast('Se proceseaza schimbarea planului...', 'info');
+
+    apiFetch('/billing/' + businessId + '/change-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planSlug: planSlug }),
+    })
+    .then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(data) {
+          throw new Error(data.error || 'Eroare la schimbarea planului');
+        });
+      }
+      return r.json();
+    })
+    .then(function(data) {
+      if (data.success) {
+        showToast(data.message || 'Planul a fost schimbat', 'success');
+        loadSubscription();  // Refresh the section
+      } else {
+        showToast(data.message || 'Eroare', 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Change plan error:', err);
+      showToast(err.message || 'Eroare la schimbarea planului', 'error');
+    });
+  };
+
+  // Stripe billing portal handler (invoices, payment method, etc.)
+  window.handleBillingPortal = function() {
+    showToast('Se deschide portalul de facturare...', 'info');
+
+    apiFetch('/billing/' + businessId + '/portal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    .then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(data) {
+          throw new Error(data.error || 'Eroare la deschiderea portalului');
+        });
+      }
+      return r.json();
+    })
+    .then(function(data) {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast('Eroare: nu s-a putut genera link-ul', 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Billing portal error:', err);
+      showToast(err.message || 'Eroare la portalul de facturare', 'error');
+    });
+  };
+
   // Stripe checkout handler
   window.handleUpgrade = function(planSlug, billingCycle) {
     showToast('Se pregateste pagina de plata...', 'info');
@@ -1679,6 +1747,9 @@
     var q = window.location.search;
     var msg = null;
     var type = 'success';
+    if (q.indexOf('tab=subscription') !== -1) {
+      switchTab('subscription');
+    }
     if (q.indexOf('subscription=success') !== -1) {
       msg = 'Abonamentul a fost activat cu succes!';
       switchTab('subscription');
