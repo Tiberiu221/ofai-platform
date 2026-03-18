@@ -168,22 +168,25 @@ class OfferDetailScreen extends ConsumerWidget {
                                   Positioned(
                                     top: 80,
                                     right: 16,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.accent,
-                                        borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.accent.withValues(alpha: 0.4),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        offer.discountLabel,
-                                        style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+                                    child: Semantics(
+                                      label: 'Reducere ${offer.discountLabel}',
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accent,
+                                          borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.accent.withValues(alpha: 0.4),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          offer.discountLabel,
+                                          style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -236,7 +239,11 @@ class OfferDetailScreen extends ConsumerWidget {
                           ],
 
                           // Title
-                          Text(offer.title, style: AppTypography.headlineLarge),
+                          Semantics(
+                            label: 'Titlu oferta: ${offer.title}',
+                            header: true,
+                            child: Text(offer.title, style: AppTypography.headlineLarge),
+                          ),
 
                           const SizedBox(height: AppSpacing.md),
 
@@ -658,7 +665,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Oferte similare', style: AppTypography.headlineSmall),
+                                      Semantics(label: 'Oferte similare', header: true, child: Text('Oferte similare', style: AppTypography.headlineSmall)),
                                       const SizedBox(height: AppSpacing.sm),
                                       SizedBox(
                                         height: 288,

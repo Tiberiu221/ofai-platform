@@ -10,6 +10,7 @@ import 'core/theme/page_transitions.dart';
 import 'core/storage/preferences.dart';
 import 'providers/auth_provider.dart';
 import 'services/push_notification_service.dart';
+import 'widgets/offline_banner.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/explore/explore_screen.dart';
 import 'screens/collection/collection_screen.dart';
@@ -64,7 +65,17 @@ class _ShellScreenState extends State<_ShellScreen> {
 
     return Scaffold(
       extendBody: true,
-      body: widget.child,
+      body: Stack(
+        children: [
+          widget.child,
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: OfflineBanner(),
+          ),
+        ],
+      ),
       bottomNavigationBar: RepaintBoundary(
         child: ClipRRect(
           child: BackdropFilter(

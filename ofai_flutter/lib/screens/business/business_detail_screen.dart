@@ -215,7 +215,11 @@ class BusinessDetailScreen extends ConsumerWidget {
                           Row(
                             children: [
                               Expanded(
-                                child: Text(business.name, style: AppTypography.headlineLarge),
+                                child: Semantics(
+                                  label: 'Business: ${business.name}',
+                                  header: true,
+                                  child: Text(business.name, style: AppTypography.headlineLarge),
+                                ),
                               ),
                               if (business.hasBadge)
                                 Padding(
@@ -228,11 +232,14 @@ class BusinessDetailScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            [business.categoryName, business.cityName]
-                                .where((s) => s.isNotEmpty)
-                                .join(' \u2022 '),
-                            style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                          Semantics(
+                            label: '${business.categoryName}, ${business.cityName}',
+                            child: Text(
+                              [business.categoryName, business.cityName]
+                                  .where((s) => s.isNotEmpty)
+                                  .join(' \u2022 '),
+                              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                            ),
                           ),
 
                           // Follower count
@@ -254,7 +261,9 @@ class BusinessDetailScreen extends ConsumerWidget {
 
                           // Rating row
                           if (business.rating != null && business.rating! > 0) ...[
-                            Row(
+                            Semantics(
+                              label: 'Nota ${business.rating!.toStringAsFixed(1)} din 5, ${business.ratingCount ?? 0} recenzii',
+                              child: Row(
                               children: [
                                 ...List.generate(5, (i) => Icon(
                                   i < business.rating!.round() ? Icons.star : Icons.star_border,
@@ -288,7 +297,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                     ),
                                   ),
                               ],
-                            ),
+                            )),
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
@@ -631,7 +640,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                         children: [
                           if (business.images != null && business.images!.isNotEmpty)
                             const SizedBox(height: 40),
-                          Text('Recenzii', style: AppTypography.headlineSmall),
+                          Semantics(label: 'Recenzii', header: true, child: Text('Recenzii', style: AppTypography.headlineSmall)),
                           if (business.ratingDistribution != null && (business.ratingCount ?? 0) >= 3) ...[
                             const SizedBox(height: AppSpacing.sm),
                             _RatingBreakdown(distribution: business.ratingDistribution!, total: business.ratingCount ?? 0),
@@ -1368,7 +1377,7 @@ class _OpeningHoursSection extends StatelessWidget {
             children: [
               Icon(Icons.schedule, size: 20, color: AppColors.textTertiary),
               const SizedBox(width: AppSpacing.sm),
-              Text('Program de lucru', style: AppTypography.headlineSmall),
+              Semantics(label: 'Program de lucru', header: true, child: Text('Program de lucru', style: AppTypography.headlineSmall)),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -1527,7 +1536,7 @@ class _CatalogSectionState extends State<_CatalogSection> {
               Icon(Icons.menu_book_outlined, size: 20, color: AppColors.textTertiary),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text('Servicii & Produse', style: AppTypography.headlineSmall),
+                child: Semantics(label: 'Servicii si Produse', header: true, child: Text('Servicii & Produse', style: AppTypography.headlineSmall)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
