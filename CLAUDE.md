@@ -114,11 +114,11 @@ psql $DATABASE_URL                              # Connect to DB
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (17 March 2026)
+## Current State (18 March 2026)
 - Subscription system (Plans 00-16) fully planned with docs
 - Audit #8+#9+#10 fixes: ALL applied (v0.9.0+ — 110+ fixes total)
-- Migrations up to **061** (flash_deals, notification_preferences, saved_searches, collections)
-- Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
+- Migrations up to **062** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids)
+- Business portal (manage.ejs ~2400 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
@@ -141,10 +141,20 @@ psql $DATABASE_URL                              # Connect to DB
 - **Pull-to-Refresh:** On both offer and business detail screens
 - **Responsive Quick Wins:** Categories grid adapts to tablet width
 - **OG Tags:** Backend has full Open Graph meta tags (head.ejs) for rich share previews
-- **Billing/Stripe:** TESTED LOCALLY — webhooks receiving 200, raw body fix applied in index.js
+- **Billing/Stripe:** PRODUCTION READY — webhooks on Railway, full subscription lifecycle
+  - Checkout (Free → Standard/Premium), upgrade, downgrade, cancel, reactivate
+  - Monthly + yearly billing toggle in portal
+  - Prorated upgrades, cycle switch (monthly ↔ yearly)
+  - Webhook idempotency (dedup on all 4 handlers)
+  - Price ID lookup (stripe_price_monthly_id + stripe_price_yearly_id)
+  - current_period_end synced from Stripe after every plan change
+  - Reactivate endpoint (undo pending cancellation)
+  - Business selector modal on /preturi for multi-business owners
+  - Tier badges (Premium/Standard) on portal dashboard cards + pricing modal
+  - CTA action row in subscription comparison table
 - **Category Feed:** Cron + API + Flutter home (web home version not implemented)
 - Express pinned to ~5.1.0
-- 23 route files, 18 providers, 61 migrations
+- 23 route files, 18 providers, 62 migrations
 
 ### Remaining Gaps (from Flutter plans)
 - `similarOffers()` dead code still in api_endpoints.dart
@@ -158,3 +168,4 @@ psql $DATABASE_URL                              # Connect to DB
 - Post-redemption review cron job not implemented
 - Offline voucher storage not implemented
 - Light mode / theme toggle not implemented
+- Stripe Customer Portal not yet configured in Dashboard (for customer self-service)
