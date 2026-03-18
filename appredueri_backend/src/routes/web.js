@@ -1626,21 +1626,27 @@ router.get("/portal", requireWebAuth, async (req, res) => {
       businesses = await pool.query(`
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                c.name as city_name, cat.name as category_name,
+               sp.slug as plan_slug, sp.name as plan_name,
                (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_offers
         FROM businesses b
         LEFT JOIN cities c ON b.city_id = c.id
         LEFT JOIN categories cat ON b.category_id = cat.id
+        LEFT JOIN business_subscriptions bs ON bs.business_id = b.id
+        LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
         ORDER BY b.name
       `);
     } else {
       businesses = await pool.query(`
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                c.name as city_name, cat.name as category_name,
+               sp.slug as plan_slug, sp.name as plan_name,
                (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_offers
         FROM businesses b
         JOIN user_businesses ub ON ub.business_id = b.id AND ub.user_id = $1
         LEFT JOIN cities c ON b.city_id = c.id
         LEFT JOIN categories cat ON b.category_id = cat.id
+        LEFT JOIN business_subscriptions bs ON bs.business_id = b.id
+        LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
         ORDER BY b.name
       `, [req.webUser.id]);
     }
