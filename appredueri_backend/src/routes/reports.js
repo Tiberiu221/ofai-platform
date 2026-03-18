@@ -92,15 +92,45 @@ router.post("/", authenticateToken, async (req, res) => {
       [userId, target_type, tid, reason, trimmedDetails]
     );
 
-    // Check auto-flag threshold: if target has >= 5 pending reports, deactivate offer
-    if (target_type === "offer") {
-      const { rows: flagRows } = await pool.query(
-        "SELECT COUNT(*) FROM reports WHERE target_type = 'offer' AND target_id = $1 AND status = 'pending'",
-        [tid]
-      );
-      if (parseInt(flagRows[0].count) >= 5) {
-        await pool.query("UPDATE offers SET is_active = false WHERE id = $1", [tid]);
-        console.log(`[Reports] Auto-deactivated offer ${tid} (>= 5 reports)`);
+    // Auto-flag thresholds
+    const { rows: flagRows } = await pool.query(
+      "SELECT COUNT(*) FROM reports WHERE target_type = $1 AND target_id = $2 AND status = 'pending'",
+      [target_type, tid]
+    );
+    const reportCount = parseInt(flagRows[0].count);
+
+    if (target_type === "offer" && reportCount >= 10) {
+      await pool.query("UPDATE offers SET is_active = false WHERE id = $1", [tid]);
+      console.log(`[Reports] Auto-deactivated offer ${tid} (>= 10 reports)`);
+    } else if (target_type === "business") {
+      if (reportCount >= 3 && reportCount < 10) {
+        // Notify admin via email (fire-and-forget)
+        const { sendEmail } = require("../services/email");
+        const { rows: adminRows } = await pool.query("SELECT email FROM users WHERE role = 'admin' LIMIT 1");
+        if (adminRows.length > 0) {
+          const { rows: bizRows } = await pool.query("SELECT name FROM businesses WHERE id = $1", [tid]);
+          const bizName = bizRows[0]?.name || `#${tid}`;
+          sendEmail({
+            to: adminRows[0].email,
+            subject: `[OFAI] Alerta: Business "${bizName}" are ${reportCount} rapoarte`,
+            html: `<p>Business-ul <strong>${bizName}</strong> (ID: ${tid}) are <strong>${reportCount}</strong> rapoarte pending.</p><p>Verifica in <a href="https://ofai.ro/admin/reports">panoul admin</a>.</p>`,
+          }).catch(err => console.error("[Reports] Admin notify failed:", err.message));
+          console.log(`[Reports] Admin notified: business ${tid} has ${reportCount} reports`);
+        }
+      }
+      if (reportCount >= 10) {
+        await pool.query("UPDATE businesses SET is_active = false WHERE id = $1", [tid]);
+        console.log(`[Reports] Auto-deactivated business ${tid} (>= 10 reports)`);
+        const { sendEmail } = require("../services/email");
+        const { rows: adminRows } = await pool.query("SELECT email FROM users WHERE role = 'admin' LIMIT 1");
+        if (adminRows.length > 0) {
+          const { rows: bizRows } = await pool.query("SELECT name FROM businesses WHERE id = $1", [tid]);
+          sendEmail({
+            to: adminRows[0].email,
+            subject: `[OFAI] Business "${bizRows[0]?.name}" DEZACTIVAT automat (${reportCount} rapoarte)`,
+            html: `<p>Business-ul a fost dezactivat automat deoarece are ${reportCount} rapoarte.</p>`,
+          }).catch(() => {});
+        }
       }
     }
 

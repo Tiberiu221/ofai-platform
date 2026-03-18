@@ -6,13 +6,13 @@ class Launchers {
   Launchers._();
 
   static Future<void> shareOffer(String title, int offerId) async {
-    final url = '${ApiEndpoints.baseUrl}/oferta/$offerId';
-    await Share.share('$title\n$url', subject: title);
+    final url = Uri.parse('https://ofai.ro/oferta/$offerId');
+    await Share.shareUri(url);
   }
 
   static Future<void> shareBusiness(String name, int businessId) async {
-    final url = '${ApiEndpoints.baseUrl}/business/$businessId';
-    await Share.share('$name\n$url', subject: name);
+    final url = Uri.parse('https://ofai.ro/business/$businessId');
+    await Share.shareUri(url);
   }
 
   static Future<void> call(String phone) async {

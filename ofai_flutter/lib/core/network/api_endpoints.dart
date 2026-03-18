@@ -33,7 +33,6 @@ class ApiEndpoints {
   static String revealCode(int id) => '/offers/$id/reveal-code';
   static const String dealOfDay = '/offers/deal-of-day';
   static const String flashOffers = '/offers/flash';
-  static String similarOffers(int id) => '/offers/$id/similar';
   static const String categoryFeed = '/offers/category-feed';
 
   // Businesses

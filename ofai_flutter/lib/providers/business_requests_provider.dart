@@ -93,6 +93,19 @@ class BusinessRequestsNotifier extends StateNotifier<BusinessRequestsState> {
       return false;
     }
   }
+
+  /// Delete (withdraw) a pending or rejected business request.
+  Future<bool> deleteRequest(int requestId) async {
+    try {
+      await _api.dio.delete('${ApiEndpoints.businessRequests}/$requestId');
+      state = state.copyWith(
+        requests: state.requests.where((r) => r.id != requestId).toList(),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 // Provider

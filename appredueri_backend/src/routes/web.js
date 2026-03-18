@@ -901,6 +901,10 @@ router.get("/oferta/:id", async (req, res) => {
       userFavoriteIds,
       activePage: null,
       webUser: req.webUser,
+      ogTitle: offer.title,
+      ogDesc: (offer.description || 'Oferta pe OFAI').substring(0, 160),
+      ogImage: offer.image_url || null,
+      ogUrl: `https://ofai.ro/oferta/${offer.id}`,
       structuredData: [
         {
           "@context": "https://schema.org",
@@ -1301,6 +1305,10 @@ router.get("/business/:id", async (req, res) => {
       userFavoriteIds,
       activePage: null,
       webUser: req.webUser,
+      ogTitle: business.name,
+      ogDesc: (business.description || `${business.name} pe OFAI`).substring(0, 160),
+      ogImage: business.cover_image || business.logo_url || null,
+      ogUrl: `https://ofai.ro/business/${business.id}`,
       structuredData: [
         {
           "@context": "https://schema.org",
