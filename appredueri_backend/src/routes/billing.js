@@ -40,7 +40,7 @@ router.post('/:businessId/checkout', requireBusinessOwner, async (req, res) => {
 // POST /billing/:businessId/change-plan — Downgrade/upgrade via Stripe subscription update
 router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) => {
   try {
-    const { planSlug } = req.body;
+    const { planSlug, billingCycle: requestedCycle } = req.body;
     const bizId = parseInt(req.params.businessId, 10);
 
     const stripe = stripeService.getStripe();
@@ -48,24 +48,23 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       return res.status(501).json({ error: 'Stripe not configured' });
     }
 
-    // Validate target plan + get stripe_price_monthly_id
+    // Validate target plan
     if (!['standard', 'premium'].includes(planSlug)) {
       return res.status(400).json({ error: 'Plan invalid' });
     }
 
     const targetPlan = await pool.query(
-      'SELECT id, slug, stripe_price_monthly_id, sort_order FROM subscription_plans WHERE slug = $1',
+      'SELECT id, slug, stripe_price_monthly_id, stripe_price_yearly_id, sort_order FROM subscription_plans WHERE slug = $1',
       [planSlug]
     );
-    if (!targetPlan.rows[0] || !targetPlan.rows[0].stripe_price_monthly_id) {
-      return res.status(400).json({ error: 'Planul nu are un Price ID Stripe configurat' });
+    if (!targetPlan.rows[0]) {
+      return res.status(400).json({ error: 'Planul nu exista' });
     }
-    const newPriceId = targetPlan.rows[0].stripe_price_monthly_id;
     const newSortOrder = targetPlan.rows[0].sort_order;
 
     // Get current subscription (must have stripe_subscription_id)
     const currentSub = await pool.query(
-      `SELECT bs.stripe_subscription_id, sp.sort_order AS current_sort_order, sp.slug AS current_slug
+      `SELECT bs.stripe_subscription_id, bs.billing_cycle, sp.sort_order AS current_sort_order, sp.slug AS current_slug
        FROM business_subscriptions bs
        JOIN subscription_plans sp ON sp.id = bs.plan_id
        WHERE bs.business_id = $1 AND bs.status = 'active' AND bs.stripe_subscription_id IS NOT NULL
@@ -77,11 +76,22 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       return res.status(400).json({ error: 'Nu exista un abonament Stripe activ' });
     }
 
-    const { stripe_subscription_id: stripeSubId, current_sort_order: currentSortOrder, current_slug: currentSlug } = currentSub.rows[0];
+    const { stripe_subscription_id: stripeSubId, current_sort_order: currentSortOrder, current_slug: currentSlug, billing_cycle: currentCycle } = currentSub.rows[0];
 
-    // Don't allow changing to same plan
-    if (currentSlug === planSlug) {
-      return res.status(400).json({ error: 'Esti deja pe acest plan' });
+    // Determine target billing cycle (use requested, or keep current)
+    const targetCycle = (requestedCycle === 'monthly' || requestedCycle === 'yearly') ? requestedCycle : currentCycle;
+
+    // Don't allow no-op (same plan + same cycle)
+    if (currentSlug === planSlug && currentCycle === targetCycle) {
+      return res.status(400).json({ error: 'Esti deja pe acest plan si ciclu de facturare' });
+    }
+
+    // Select the correct Stripe Price ID based on target cycle
+    const newPriceId = targetCycle === 'yearly'
+      ? targetPlan.rows[0].stripe_price_yearly_id
+      : targetPlan.rows[0].stripe_price_monthly_id;
+    if (!newPriceId) {
+      return res.status(400).json({ error: 'Planul nu are un Price ID Stripe configurat pentru acest ciclu' });
     }
 
     // Retrieve Stripe subscription to get the item ID
@@ -91,18 +101,45 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       return res.status(500).json({ error: 'Subscriptia Stripe nu are items' });
     }
 
-    const isDowngrade = newSortOrder < currentSortOrder;
+    const isPlanDowngrade = newSortOrder < currentSortOrder;
+    const isCycleOnlyChange = currentSlug === planSlug && currentCycle !== targetCycle;
+
+    // Proration logic:
+    // - Upgrade (higher plan or monthly→yearly): prorate immediately
+    // - Downgrade (lower plan): no proration
+    // - Cycle change to yearly (same plan): prorate (user pays difference now, saves long-term)
+    // - Cycle change to monthly (same plan): no proration (takes effect at renewal)
+    const shouldProrate = isCycleOnlyChange
+      ? targetCycle === 'yearly'  // monthly→yearly: prorate; yearly→monthly: no proration
+      : !isPlanDowngrade;         // upgrade: prorate; downgrade: no proration
 
     // Update Stripe subscription
     // Also clear any pending cancellation — if user is changing plan, they want to keep it
     await stripe.subscriptions.update(stripeSubId, {
       items: [{ id: itemId, price: newPriceId }],
-      proration_behavior: isDowngrade ? 'none' : 'create_prorations',
+      proration_behavior: shouldProrate ? 'create_prorations' : 'none',
       cancel_at_period_end: false,
     });
 
+    // Determine action for history
+    let action, message;
+    const planName = planSlug === 'standard' ? 'Standard' : 'Premium';
+    const cycleName = targetCycle === 'yearly' ? 'anual' : 'lunar';
+
+    if (isCycleOnlyChange) {
+      action = targetCycle === 'yearly' ? 'upgraded' : 'downgraded';
+      message = targetCycle === 'yearly'
+        ? `Ai trecut pe facturare anuala. Economisesti 17%!`
+        : `Ai trecut pe facturare lunara. Schimbarea se aplica imediat.`;
+    } else if (isPlanDowngrade) {
+      action = 'downgraded';
+      message = `Planul a fost schimbat la ${planName} (${cycleName}). Noul plan este activ imediat.`;
+    } else {
+      action = 'upgraded';
+      message = `Upgrade-ul la ${planName} (${cycleName}) a fost aplicat.`;
+    }
+
     // Update local DB immediately (don't rely solely on webhook — race condition)
-    const action = isDowngrade ? 'downgrade' : 'upgrade';
     const newPlanId = targetPlan.rows[0].id;
 
     const client = await pool.connect();
@@ -111,17 +148,17 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
 
       await client.query(
         `UPDATE business_subscriptions
-         SET plan_id = $1, cancel_at_period_end = FALSE, updated_at = NOW()
-         WHERE business_id = $2`,
-        [newPlanId, bizId]
+         SET plan_id = $1, billing_cycle = $2, cancel_at_period_end = FALSE, updated_at = NOW()
+         WHERE business_id = $3`,
+        [newPlanId, targetCycle, bizId]
       );
 
       await client.query(
         `INSERT INTO subscription_history
          (business_id, from_plan_id, to_plan_id, action, reason)
          VALUES ($1, (SELECT id FROM subscription_plans WHERE slug = $2), $3, $4, $5)`,
-        [bizId, currentSlug, newPlanId, action === 'downgrade' ? 'downgraded' : 'upgraded',
-         `Plan changed via portal (${currentSlug} -> ${planSlug})`]
+        [bizId, currentSlug, newPlanId, action,
+         `Plan changed via portal (${currentSlug} ${currentCycle} -> ${planSlug} ${targetCycle})`]
       );
 
       // Sync badge type
@@ -136,20 +173,13 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
     } catch (dbErr) {
       await client.query('ROLLBACK').catch(() => {});
       console.error('[Billing] DB update after plan change failed:', dbErr);
-      // Don't fail the response — Stripe was already updated, webhook will retry
     } finally {
       client.release();
     }
 
-    console.log(`[Billing] Plan change (${action}): business ${bizId}, ${currentSlug} -> ${planSlug}`);
+    console.log(`[Billing] Plan change (${action}): business ${bizId}, ${currentSlug}/${currentCycle} -> ${planSlug}/${targetCycle}`);
 
-    res.json({
-      success: true,
-      message: isDowngrade
-        ? `Planul a fost schimbat la ${planSlug === 'standard' ? 'Standard' : 'Premium'}. Noul plan este activ imediat.`
-        : `Upgrade-ul la ${planSlug === 'standard' ? 'Standard' : 'Premium'} a fost aplicat.`,
-      action,
-    });
+    res.json({ success: true, message, action });
   } catch (err) {
     console.error('[Billing] Change plan error:', err);
     res.status(500).json({ error: 'Eroare la schimbarea planului' });

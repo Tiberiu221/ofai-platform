@@ -1209,6 +1209,8 @@
      ════════════════════════════════ */
   var _subscriptionLoaded = false;
   var _currentCancelAtEnd = false;
+  var _currentBillingCycle = 'none';
+  var _selectedBillingToggle = 'monthly';
 
   function loadSubscription() {
     apiFetch('/api/web/portal/' + businessId + '/subscription')
@@ -1304,7 +1306,10 @@
     var trialEnd = subscription ? subscription.trialEnd : null;
     var periodEnd = subscription ? subscription.periodEnd : null;
     var cancelAtEnd = subscription ? subscription.cancelAtPeriodEnd : false;
+    var billingCycle = subscription ? (subscription.billingCycle || 'none') : 'none';
     _currentCancelAtEnd = cancelAtEnd;
+    _currentBillingCycle = billingCycle;
+    _selectedBillingToggle = 'monthly';
 
     // Calculate trial days remaining
     var trialDaysLeft = 0;
@@ -1340,7 +1345,9 @@
     // Plan header
     html += '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">';
     html += '<div>';
-    html += '<h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0;">Planul tau: <span style="color: ' + tierColor + ';">' + escapeHtml(plan.name) + '</span></h3>';
+    var cycleLabelMap = { monthly: 'lunar', yearly: 'anual', none: '' };
+    var cycleLabel = billingCycle !== 'none' ? ' — ' + cycleLabelMap[billingCycle] : '';
+    html += '<h3 style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin: 0;">Planul tau: <span style="color: ' + tierColor + ';">' + escapeHtml(plan.name) + '</span><span style="color: var(--text-tertiary); font-weight: 400; font-size: 0.9rem;">' + cycleLabel + '</span></h3>';
     if (cancelAtEnd && periodEnd) {
       html += '<p style="color: #ef4444; font-size: 0.8125rem; margin: 4px 0 0;">Se anuleaza la ' + new Date(periodEnd).toLocaleDateString('ro-RO') + '</p>';
     }
@@ -1364,12 +1371,23 @@
     });
     html += '</div>';
 
+    // Billing toggle (for free tier — choose monthly/yearly before upgrading)
+    if (tier === 'free') {
+      html += '<div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px;">';
+      html += '<span id="sub-toggle-monthly" style="font-size: 0.875rem; font-weight: 500; color: var(--text-primary); transition: color 0.2s;">Lunar</span>';
+      html += '<button onclick="window._toggleSubBilling()" id="sub-billing-switch" style="position: relative; width: 48px; height: 26px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 13px; cursor: pointer; padding: 0; transition: background 0.2s;">';
+      html += '<span id="sub-billing-thumb" style="position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: var(--accent); border-radius: 50%; transition: transform 0.2s;"></span>';
+      html += '</button>';
+      html += '<span id="sub-toggle-yearly" style="font-size: 0.875rem; font-weight: 500; color: var(--text-tertiary); transition: color 0.2s;">Anual <span style="background: rgba(34,197,94,0.15); color: #22c55e; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">-17%</span></span>';
+      html += '</div>';
+    }
+
     // Action buttons — primary row
     html += '<div style="display: flex; gap: 12px; flex-wrap: wrap;">';
 
     if (tier === 'free') {
-      html += '<button onclick="handleUpgrade(\'standard\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Standard (49 RON/luna)</button>';
-      html += '<button onclick="handleUpgrade(\'premium\', \'monthly\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Premium (199 RON/luna)</button>';
+      html += '<button id="sub-btn-standard" onclick="handleUpgrade(\'standard\', _selectedBillingToggle)" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Standard (49 RON/luna)</button>';
+      html += '<button id="sub-btn-premium" onclick="handleUpgrade(\'premium\', _selectedBillingToggle)" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Alege Premium (199 RON/luna)</button>';
     } else if (tier === 'standard') {
       html += '<button onclick="handleChangePlan(\'premium\')" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">Upgrade la Premium</button>';
     } else if (tier === 'premium') {
@@ -1377,6 +1395,21 @@
     }
 
     html += '</div>';
+
+    // Billing cycle switch button (for paid tiers — switch monthly↔yearly)
+    if (tier !== 'free' && billingCycle !== 'none') {
+      var switchCycle = billingCycle === 'monthly' ? 'yearly' : 'monthly';
+      var switchLabel = billingCycle === 'monthly'
+        ? 'Treci pe anual (economisesti 17%)'
+        : 'Treci pe lunar';
+      html += '<div style="margin-top: 8px;">';
+      html += '<button onclick="handleChangePlan(\'' + tier + '\', \'' + switchCycle + '\')" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; background: transparent; border: 1px dashed var(--border); color: var(--text-secondary); border-radius: var(--radius-full); font-size: 0.8125rem; cursor: pointer; transition: all 0.2s;">';
+      if (billingCycle === 'monthly') {
+        html += '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M12 2v20M17 7l-5-5-5 5"/></svg>';
+      }
+      html += switchLabel + '</button>';
+      html += '</div>';
+    }
 
     // Secondary row — billing portal + cancel (only for paid tiers)
     if (tier !== 'free') {
@@ -1599,6 +1632,26 @@
     return h;
   }
 
+  // Billing toggle (monthly ↔ yearly) for Free tier upgrade buttons
+  window._toggleSubBilling = function() {
+    var isYearly = _selectedBillingToggle === 'yearly';
+    _selectedBillingToggle = isYearly ? 'monthly' : 'yearly';
+    isYearly = !isYearly;
+
+    var thumb = document.getElementById('sub-billing-thumb');
+    var mLabel = document.getElementById('sub-toggle-monthly');
+    var yLabel = document.getElementById('sub-toggle-yearly');
+    var btnStd = document.getElementById('sub-btn-standard');
+    var btnPrem = document.getElementById('sub-btn-premium');
+
+    if (thumb) thumb.style.transform = isYearly ? 'translateX(22px)' : 'translateX(0)';
+    if (mLabel) mLabel.style.color = isYearly ? 'var(--text-tertiary)' : 'var(--text-primary)';
+    if (yLabel) yLabel.style.color = isYearly ? 'var(--text-primary)' : 'var(--text-tertiary)';
+
+    if (btnStd) btnStd.textContent = isYearly ? 'Alege Standard (490 RON/an)' : 'Alege Standard (49 RON/luna)';
+    if (btnPrem) btnPrem.textContent = isYearly ? 'Alege Premium (1990 RON/an)' : 'Alege Premium (199 RON/luna)';
+  };
+
   // Cancel subscription handler
   window.handleCancelSubscription = function() {
     if (!confirm('Esti sigur ca vrei sa anulezi abonamentul? Vei pastra beneficiile pana la sfarsitul perioadei platite.')) return;
@@ -1654,24 +1707,40 @@
     });
   };
 
-  // Stripe plan change handler (downgrade/upgrade via subscription update)
-  window.handleChangePlan = function(planSlug) {
+  // Stripe plan change handler (downgrade/upgrade/cycle switch via subscription update)
+  window.handleChangePlan = function(planSlug, newBillingCycle) {
     var planName = planSlug === 'standard' ? 'Standard' : 'Premium';
-    var isUpgrade = planSlug === 'premium';
-    var msg = isUpgrade
-      ? 'Vrei sa faci upgrade la ' + planName + '? Vei plati doar diferenta pro-rata pentru zilele ramase din luna curenta.'
-      : 'Vrei sa treci pe planul ' + planName + '? Planul se schimba imediat. Nu vei fi taxat suplimentar — urmatoarea factura va fi la pretul noului plan.';
+    var isCycleSwitch = planSlug === _currentBillingCycle.replace('monthly','').replace('yearly','') ? false : false;
+    // Detect cycle-only switch (same plan, different cycle)
+    var currentTierSlug = document.querySelector('#subscription-content h3 span')?.textContent?.toLowerCase() || '';
+    var isSamePlan = (planSlug === 'standard' && currentTierSlug === 'standard') || (planSlug === 'premium' && currentTierSlug === 'premium');
+    var isUpgrade = planSlug === 'premium' && !isSamePlan;
+
+    var msg;
+    if (isSamePlan && newBillingCycle) {
+      // Cycle-only switch
+      msg = newBillingCycle === 'yearly'
+        ? 'Vrei sa treci pe facturare anuala? Economisesti 17%! Vei plati diferenta pro-rata acum.'
+        : 'Vrei sa treci pe facturare lunara? Schimbarea se aplica imediat.';
+    } else if (isUpgrade) {
+      msg = 'Vrei sa faci upgrade la ' + planName + '? Vei plati doar diferenta pro-rata pentru zilele ramase din luna curenta.';
+    } else {
+      msg = 'Vrei sa treci pe planul ' + planName + '? Planul se schimba imediat. Nu vei fi taxat suplimentar — urmatoarea factura va fi la pretul noului plan.';
+    }
     if (_currentCancelAtEnd) {
       msg += '\n\nAtentie: Ai o anulare programata care va fi revocata daca schimbi planul.';
     }
     if (!confirm(msg)) return;
 
-    showToast('Se proceseaza schimbarea planului...', 'info');
+    showToast('Se proceseaza schimbarea...', 'info');
+
+    var body = { planSlug: planSlug };
+    if (newBillingCycle) body.billingCycle = newBillingCycle;
 
     apiFetch('/billing/' + businessId + '/change-plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planSlug: planSlug }),
+      body: JSON.stringify(body),
     })
     .then(function(r) {
       if (!r.ok) {

@@ -2037,6 +2037,7 @@ router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, asy
       trialEnd: subscription?.trial_end || null,
       periodEnd: subscription?.current_period_end || null,
       cancelAtPeriodEnd: subscription?.cancel_at_period_end || false,
+      billingCycle: subscription?.billing_cycle || 'none',
     });
   } catch (err) {
     console.error('[Web API] Subscription info error:', err);
