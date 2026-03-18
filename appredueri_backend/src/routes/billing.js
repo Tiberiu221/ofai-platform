@@ -139,6 +139,10 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       message = `Upgrade-ul la ${planName} (${cycleName}) a fost aplicat.`;
     }
 
+    // Re-fetch Stripe subscription to get updated current_period_end
+    const updatedSub = await stripe.subscriptions.retrieve(stripeSubId);
+    const newPeriodEnd = new Date(updatedSub.current_period_end * 1000);
+
     // Update local DB immediately (don't rely solely on webhook — race condition)
     const newPlanId = targetPlan.rows[0].id;
 
@@ -148,9 +152,10 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
 
       await client.query(
         `UPDATE business_subscriptions
-         SET plan_id = $1, billing_cycle = $2, cancel_at_period_end = FALSE, updated_at = NOW()
-         WHERE business_id = $3`,
-        [newPlanId, targetCycle, bizId]
+         SET plan_id = $1, billing_cycle = $2, cancel_at_period_end = FALSE,
+             current_period_end = $3, updated_at = NOW()
+         WHERE business_id = $4`,
+        [newPlanId, targetCycle, newPeriodEnd, bizId]
       );
 
       await client.query(
