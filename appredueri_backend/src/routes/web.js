@@ -2045,6 +2045,13 @@ router.get("/pentru-business", async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════
+// REFERRAL REDIRECT
+// ═══════════════════════════════════════════════════════
+router.get("/r/:code", (req, res) => {
+  res.redirect(302, `/register?ref=${encodeURIComponent(req.params.code)}`);
+});
+
+// ═══════════════════════════════════════════════════════
 // ACCOUNT API (extracted to web-account-api.js)
 // ═══════════════════════════════════════════════════════
 router.use(require("./web-account-api"));

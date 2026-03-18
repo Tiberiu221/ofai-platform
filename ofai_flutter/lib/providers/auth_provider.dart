@@ -118,6 +118,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String firstName,
     required String lastName,
     String? phone,
+    String? referralCode,
     required bool acceptTerms,
     required bool acceptPrivacy,
   }) async {
@@ -129,6 +130,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'first_name': firstName,
         'last_name': lastName,
         if (phone != null) 'phone': phone,
+        if (referralCode != null) 'referral_code': referralCode,
         'accept_terms': acceptTerms,
         'accept_privacy': acceptPrivacy,
       });

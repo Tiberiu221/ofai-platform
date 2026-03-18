@@ -52,7 +52,7 @@ async function createRefreshToken(userId) {
 // POST /auth/register
 router.post("/register", async (req, res) => {
   try {
-    const { email: rawEmail, password, first_name, last_name, accept_terms, accept_privacy } = req.body || {};
+    const { email: rawEmail, password, first_name, last_name, accept_terms, accept_privacy, referral_code } = req.body || {};
 
     if (!rawEmail || !password) {
       return res.status(400).json({ message: "Email și parola sunt obligatorii" });
@@ -96,6 +96,43 @@ router.post("/register", async (req, res) => {
       `INSERT INTO user_points (user_id, total_points) VALUES ($1, 0) ON CONFLICT DO NOTHING`,
       [user.id]
     );
+
+    // Generate referral code for the new user (separate UPDATE — doesn't affect INSERT)
+    try {
+      const newRefCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+      await pool.query(
+        "UPDATE users SET referral_code = $1 WHERE id = $2",
+        [newRefCode, user.id]
+      );
+    } catch (refCodeErr) {
+      console.error("[Auth] Referral code generation failed:", refCodeErr.message);
+      // Non-fatal — user still created successfully
+    }
+
+    // Process referral if referral_code was provided
+    if (referral_code && typeof referral_code === 'string' && referral_code.trim().length > 0) {
+      try {
+        const { rows: referrerRows } = await pool.query(
+          "SELECT id FROM users WHERE referral_code = $1 AND id != $2",
+          [referral_code.trim().toUpperCase(), user.id]
+        );
+        if (referrerRows.length > 0) {
+          const referrerId = referrerRows[0].id;
+          await pool.query("UPDATE users SET referred_by = $1 WHERE id = $2", [referrerId, user.id]);
+          await pool.query(
+            `INSERT INTO referral_rewards (referrer_id, referee_id, reward_type, points_awarded)
+             VALUES ($1, $2, 'signup_bonus', 50) ON CONFLICT DO NOTHING`,
+            [referrerId, user.id]
+          );
+          const { awardPoints } = require("../services/gamification");
+          awardPoints(referrerId, 'referral').catch(() => {});
+          awardPoints(user.id, 'referral').catch(() => {});
+          console.log(`[Auth] Referral: user ${user.id} referred by ${referrerId} (code: ${referral_code})`);
+        }
+      } catch (refErr) {
+        console.error("[Auth] Referral processing error:", refErr.message);
+      }
+    }
 
     // Badge check + fetch
     const { checkAndAwardBadges, getUserBadges } = require("../services/badgeService");

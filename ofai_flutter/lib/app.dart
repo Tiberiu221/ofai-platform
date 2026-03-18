@@ -432,10 +432,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/register',
-        pageBuilder: (context, state) => fadeTransition(
-          state: state,
-          child: const RegisterScreen(),
-        ),
+        pageBuilder: (context, state) {
+          final refCode = state.uri.queryParameters['ref'];
+          return fadeTransition(
+            state: state,
+            child: RegisterScreen(referralCode: refCode),
+          );
+        },
       ),
 
       // Forgot/Reset password routes — full screen, NO bottom nav

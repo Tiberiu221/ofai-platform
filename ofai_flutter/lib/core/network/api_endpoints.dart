@@ -60,6 +60,7 @@ class ApiEndpoints {
   static const String userDelete = '/users/me';
   static const String userProfilePicture = '/users/me/profile-picture';
   static const String notificationPreferences = '/users/me/notification-preferences';
+  static const String referralCode = '/users/me/referral-code';
 
   // Push
   static const String pushTokens = '/push-tokens';

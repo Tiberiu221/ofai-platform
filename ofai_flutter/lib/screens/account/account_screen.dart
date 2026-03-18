@@ -13,6 +13,9 @@ import '../../providers/favorites_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
 import '../../providers/gamification_provider.dart';
 import '../../widgets/initial_avatar.dart';
+import '../../core/network/api_client.dart';
+import '../../core/network/api_endpoints.dart';
+import '../../core/utils/launchers.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../core/network/api_exceptions.dart';
 
@@ -28,6 +31,88 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
   bool get wantKeepAlive => true;
 
   bool _didFetch = false;
+
+  Future<void> _showReferralSheet(BuildContext context) async {
+    String? code;
+    try {
+      final response = await ApiClient().dio.get(ApiEndpoints.referralCode);
+      code = response.data['referral_code'] as String?;
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Eroare la incarcarea codului de referral')),
+        );
+      }
+      return;
+    }
+    if (code == null || !context.mounted) return;
+
+    final shareText = 'Descopera ofertele din orasul tau pe OFAI! Foloseste link-ul meu: https://ofai.ro/r/$code';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSecondary,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.pagePadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 32, height: 4, decoration: BoxDecoration(color: AppColors.textTertiary, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: AppSpacing.xxl),
+              const Icon(Icons.card_giftcard, color: AppColors.accent, size: 48),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Invita prieteni', style: AppTypography.headlineSmall),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Trimite link-ul tau si primesti 50 puncte cand un prieten se inregistreaza!',
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      code,
+                      style: AppTypography.labelLarge.copyWith(
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Launchers.shareText(shareText);
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.share, size: 20),
+                  label: const Text('Trimite invitatia'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _tryFetch() {
     final auth = ref.read(authProvider);
@@ -392,6 +477,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   label: 'Schimba parola',
                   onTap: () => context.push('/account/change-password'),
                 ),
+              _MenuItem(
+                icon: Icons.card_giftcard,
+                label: 'Invita prieteni',
+                onTap: () => _showReferralSheet(context),
+              ),
               _MenuItem(
                 icon: Icons.help_outline,
                 label: 'Ajutor',

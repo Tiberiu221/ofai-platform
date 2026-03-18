@@ -16,6 +16,7 @@ const POINTS_MAP = {
   follow: 2,
   code_reveal: 3,
   daily_login: 1,
+  referral: 50,
 };
 
 /**

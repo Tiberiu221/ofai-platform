@@ -326,6 +326,31 @@ router.get("/me/gamification", auth, async (req, res) => {
   }
 });
 
+// GET /users/me/referral-code — Get or generate referral code
+router.get("/me/referral-code", auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT referral_code FROM users WHERE id = $1",
+      [req.user.id]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: "Utilizator negasit" });
+
+    let code = rows[0].referral_code;
+
+    // Generate if missing (legacy users before migration)
+    if (!code) {
+      const crypto = require('crypto');
+      code = crypto.randomBytes(4).toString('hex').toUpperCase();
+      await pool.query("UPDATE users SET referral_code = $1 WHERE id = $2", [code, req.user.id]);
+    }
+
+    res.json({ referral_code: code });
+  } catch (err) {
+    console.error("[Users] Referral code error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
 // ============================================
 // PROFILE PICTURE (Mobile upload / delete)
 // ============================================

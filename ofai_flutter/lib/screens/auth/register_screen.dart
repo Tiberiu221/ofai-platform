@@ -11,7 +11,8 @@ import '../../widgets/orange_glow_wave.dart';
 import '../../widgets/glass_card.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({super.key});
+  final String? referralCode;
+  const RegisterScreen({super.key, this.referralCode});
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -56,6 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         password: _passwordController.text,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
+        referralCode: widget.referralCode,
         acceptTerms: _acceptAll,
         acceptPrivacy: _acceptAll,
       );
