@@ -195,7 +195,7 @@ router.get("/", optionalAuth, async (req, res) => {
 // =======================================
 // GET /businesses/:id - detalii complete
 // =======================================
-router.get("/:id", async (req, res) => {
+router.get("/:id", optionalAuth, async (req, res) => {
   const { id } = req.params;
   const baseUrl = `${req.protocol}://${req.get("host")}`;
 
@@ -449,6 +449,16 @@ router.get("/:id", async (req, res) => {
       }
     }
 
+    // Check if authenticated user owns this business
+    let isOwner = false;
+    if (req.user) {
+      const { rows: ownerRows } = await pool.query(
+        "SELECT 1 FROM user_businesses WHERE user_id = $1 AND business_id = $2",
+        [req.user.id, parseInt(id)]
+      );
+      isOwner = ownerRows.length > 0;
+    }
+
     return res.json({
       id: b.id,
       name: b.name,
@@ -493,6 +503,8 @@ router.get("/:id", async (req, res) => {
       badge_type: b.subscription_badge_type || (b.is_verified ? 'verified' : null),
       // Show pinch button flag
       showPinch,
+      // Business ownership (for "Manage on Web" banner in Flutter)
+      is_owner: isOwner,
       // Catalog (services, products, menu items)
       catalog: catalog.length > 0 ? catalog : undefined,
     });

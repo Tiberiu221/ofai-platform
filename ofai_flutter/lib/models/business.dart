@@ -33,6 +33,7 @@ class Business {
   // Platform polish fields
   final int? followerCount;
   final Map<int, int>? ratingDistribution; // {1: count, 2: count, ...5: count}
+  final bool isOwner;
 
   Business({
     required this.id,
@@ -62,6 +63,7 @@ class Business {
     this.catalog,
     this.followerCount,
     this.ratingDistribution,
+    this.isOwner = false,
   });
 
   /// Whether this business has any badge
@@ -124,6 +126,7 @@ class Business {
           ?.map((e) => CatalogCategory.fromJson(e as Map<String, dynamic>))
           .toList(),
       followerCount: json['follower_count'] as int?,
+      isOwner: json['is_owner'] as bool? ?? false,
       ratingDistribution: _parseRatingDistribution(json['rating_distribution']),
     );
   }

@@ -172,6 +172,45 @@ class BusinessDetailScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // "Manage on Web" banner for business owners
+                          if (business.isOwner) ...[
+                            GestureDetector(
+                              onTap: () => Launchers.website('https://ofai.ro/portal/${business.id}'),
+                              child: Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.25)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Acesta este business-ul tau',
+                                            style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Gestioneaza pe Web',
+                                            style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Icon(Icons.open_in_new, size: 18, color: AppColors.accent),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                           // Name
                           Row(
                             children: [
