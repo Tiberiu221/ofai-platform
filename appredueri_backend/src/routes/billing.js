@@ -101,8 +101,46 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       cancel_at_period_end: false,
     });
 
-    // Webhook `customer.subscription.updated` will handle DB update automatically
+    // Update local DB immediately (don't rely solely on webhook — race condition)
     const action = isDowngrade ? 'downgrade' : 'upgrade';
+    const newPlanId = targetPlan.rows[0].id;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        `UPDATE business_subscriptions
+         SET plan_id = $1, cancel_at_period_end = FALSE, updated_at = NOW()
+         WHERE business_id = $2`,
+        [newPlanId, bizId]
+      );
+
+      await client.query(
+        `INSERT INTO subscription_history
+         (business_id, from_plan_id, to_plan_id, action, reason)
+         VALUES ($1, (SELECT id FROM subscription_plans WHERE slug = $2), $3, $4, $5)`,
+        [bizId, currentSlug, newPlanId, action === 'downgrade' ? 'downgraded' : 'upgraded',
+         `Plan changed via portal (${currentSlug} -> ${planSlug})`]
+      );
+
+      // Sync badge type
+      const newPlanFull = await client.query(
+        'SELECT badge_type FROM subscription_plans WHERE id = $1', [newPlanId]
+      );
+      if (newPlanFull.rows[0]) {
+        await syncBadgeType(client, bizId, newPlanFull.rows[0].badge_type);
+      }
+
+      await client.query('COMMIT');
+    } catch (dbErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('[Billing] DB update after plan change failed:', dbErr);
+      // Don't fail the response — Stripe was already updated, webhook will retry
+    } finally {
+      client.release();
+    }
+
     console.log(`[Billing] Plan change (${action}): business ${bizId}, ${currentSlug} -> ${planSlug}`);
 
     res.json({
