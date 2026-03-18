@@ -144,11 +144,11 @@
             <% if (plan.slug === 'free') { %>
               <a href="/pentru-business" class="pricing-cta pricing-cta--free">Incepe gratuit</a>
             <% } else if (plan.slug === 'standard') { %>
-              <a href="<%= userBusinessId ? '/portal/' + userBusinessId + '?tab=subscription' : (webUser ? '/pentru-business' : '/register?returnTo=/preturi') %>" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
+              <a href="#" onclick="choosePlan('standard'); return false;" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
                 Alege Standard
               </a>
             <% } else { %>
-              <a href="<%= userBusinessId ? '/portal/' + userBusinessId + '?tab=subscription' : (webUser ? '/pentru-business' : '/register?returnTo=/preturi') %>" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
+              <a href="#" onclick="choosePlan('premium'); return false;" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
                 Alege Premium
               </a>
             <% } %>
@@ -358,11 +358,27 @@
     </div>
 
   </div>
+
+  <!-- Business Selector Modal -->
+  <div id="biz-select-modal" style="display: none; position: fixed; inset: 0; z-index: 1000;">
+    <div onclick="closeBizModal()" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
+    <div style="position: relative; margin: auto; top: 50%; transform: translateY(-50%); max-width: 420px; width: calc(100% - 32px); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border);">
+        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">Alege business-ul</h3>
+        <button onclick="closeBizModal()" style="background: none; border: none; color: var(--text-tertiary); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
+      </div>
+      <div id="biz-select-list" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;">
+        <!-- Business items injected by JS -->
+      </div>
+    </div>
+  </div>
 </main>
 
 <script>
 (function() {
   var isYearly = false;
+  var _userBusinesses = <%- JSON.stringify(userBusinesses || []) %>;
+  var _isLoggedIn = <%= webUser ? 'true' : 'false' %>;
 
   window.toggleBilling = function() {
     isYearly = !isYearly;
@@ -390,6 +406,50 @@
       el.style.display = isYearly ? 'block' : 'none';
     });
   };
+
+  // Business selector for pricing CTAs
+  window.choosePlan = function(planSlug) {
+    if (!_isLoggedIn) {
+      window.location.href = '/register?returnTo=/preturi';
+      return;
+    }
+    if (_userBusinesses.length === 0) {
+      window.location.href = '/pentru-business';
+      return;
+    }
+    if (_userBusinesses.length === 1) {
+      window.location.href = '/portal/' + _userBusinesses[0].id + '?tab=subscription';
+      return;
+    }
+    // Multiple businesses — show modal
+    var list = document.getElementById('biz-select-list');
+    var html = '';
+    _userBusinesses.forEach(function(biz) {
+      var initial = (biz.name || '?')[0].toUpperCase();
+      var logoHtml = biz.logo_url
+        ? '<img src="' + biz.logo_url + '" alt="" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover;">'
+        : '<div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #f97316, #fb923c); display: flex; align-items: center; justify-content: center; color: #06060a; font-weight: 700; font-size: 0.9rem;">' + initial + '</div>';
+      html += '<button onclick="selectBusiness(' + biz.id + ')" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; text-align: left;" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
+      html += logoHtml;
+      html += '<span style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary);">' + biz.name + '</span>';
+      html += '</button>';
+    });
+    list.innerHTML = html;
+    document.getElementById('biz-select-modal').style.display = 'block';
+  };
+
+  window.selectBusiness = function(bizId) {
+    window.location.href = '/portal/' + bizId + '?tab=subscription';
+  };
+
+  window.closeBizModal = function() {
+    document.getElementById('biz-select-modal').style.display = 'none';
+  };
+
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeBizModal();
+  });
 })();
 </script>
 

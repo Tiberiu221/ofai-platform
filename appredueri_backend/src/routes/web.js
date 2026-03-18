@@ -2044,15 +2044,21 @@ router.get('/preturi', async (req, res) => {
       'SELECT * FROM subscription_plans ORDER BY sort_order ASC'
     );
 
-    // If logged in, find user's first business for portal redirect
+    // If logged in, find all user's businesses for portal redirect / modal
     let userBusinessId = null;
+    let userBusinesses = [];
     if (req.webUser) {
       const bizResult = await pool.query(
-        'SELECT business_id FROM user_businesses WHERE user_id = $1 LIMIT 1',
+        `SELECT b.id, b.name, b.logo_url
+         FROM businesses b
+         JOIN user_businesses ub ON ub.business_id = b.id
+         WHERE ub.user_id = $1
+         ORDER BY b.name`,
         [req.webUser.id]
       );
+      userBusinesses = bizResult.rows;
       if (bizResult.rows[0]) {
-        userBusinessId = bizResult.rows[0].business_id;
+        userBusinessId = bizResult.rows[0].id;
       }
     }
 
@@ -2062,6 +2068,7 @@ router.get('/preturi', async (req, res) => {
       plans,
       webUser: req.webUser || null,
       userBusinessId,
+      userBusinesses,
     });
   } catch (err) {
     console.error('[Web] Pricing page error:', err);
