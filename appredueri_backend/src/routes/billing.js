@@ -146,13 +146,51 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
     res.json({
       success: true,
       message: isDowngrade
-        ? `Planul se va schimba la ${planSlug === 'standard' ? 'Standard' : 'Premium'} la sfarsitul perioadei curente.`
+        ? `Planul a fost schimbat la ${planSlug === 'standard' ? 'Standard' : 'Premium'}. Noul plan este activ imediat.`
         : `Upgrade-ul la ${planSlug === 'standard' ? 'Standard' : 'Premium'} a fost aplicat.`,
       action,
     });
   } catch (err) {
     console.error('[Billing] Change plan error:', err);
     res.status(500).json({ error: 'Eroare la schimbarea planului' });
+  }
+});
+
+// POST /billing/:businessId/reactivate — Undo pending cancellation
+router.post('/:businessId/reactivate', requireBusinessOwner, async (req, res) => {
+  try {
+    const bizId = parseInt(req.params.businessId, 10);
+    const stripe = stripeService.getStripe();
+    if (!stripe) {
+      return res.status(501).json({ error: 'Stripe not configured' });
+    }
+
+    const sub = await pool.query(
+      `SELECT stripe_subscription_id FROM business_subscriptions
+       WHERE business_id = $1 AND status = 'active' AND cancel_at_period_end = TRUE
+       LIMIT 1`,
+      [bizId]
+    );
+    if (!sub.rows[0]?.stripe_subscription_id) {
+      return res.status(400).json({ error: 'Nu exista o anulare in asteptare' });
+    }
+
+    await stripe.subscriptions.update(sub.rows[0].stripe_subscription_id, {
+      cancel_at_period_end: false,
+    });
+
+    await pool.query(
+      `UPDATE business_subscriptions
+       SET cancel_at_period_end = FALSE, updated_at = NOW()
+       WHERE business_id = $1`,
+      [bizId]
+    );
+
+    console.log(`[Billing] Subscription reactivated: business ${bizId}`);
+    res.json({ success: true, message: 'Abonamentul a fost reactivat.' });
+  } catch (err) {
+    console.error('[Billing] Reactivate error:', err);
+    res.status(500).json({ error: 'Eroare la reactivarea abonamentului' });
   }
 });
 
@@ -267,13 +305,16 @@ async function handleCheckoutCompleted(session) {
        session.customer, periodStart, periodEnd]
     );
 
-    // Log to subscription_history
+    // Log to subscription_history (idempotent — skip if already processed)
+    const checkoutReason = `Stripe checkout completed (session ${session.id})`;
     await client.query(
       `INSERT INTO subscription_history
        (business_id, from_plan_id, to_plan_id, action, reason)
-       VALUES ($1, $2, $3, 'upgraded', $4)`,
-      [bizId, fromPlanId, plan.id,
-       `Stripe checkout completed (session ${session.id})`]
+       SELECT $1, $2, $3, 'upgraded', $4
+       WHERE NOT EXISTS (
+         SELECT 1 FROM subscription_history WHERE business_id = $1 AND reason = $4
+       )`,
+      [bizId, fromPlanId, plan.id, checkoutReason]
     );
 
     // Sync badge type
@@ -324,11 +365,15 @@ async function handleInvoicePaid(invoice) {
 
   const { business_id, plan_id } = result.rows[0];
 
+  const invoiceReason = `Stripe invoice paid (${invoice.id})`;
   await pool.query(
     `INSERT INTO subscription_history
      (business_id, from_plan_id, to_plan_id, action, reason)
-     VALUES ($1, $2, $2, 'renewed', $3)`,
-    [business_id, plan_id, `Stripe invoice paid (${invoice.id})`]
+     SELECT $1, $2, $2, 'renewed', $3
+     WHERE NOT EXISTS (
+       SELECT 1 FROM subscription_history WHERE business_id = $1 AND reason = $3
+     )`,
+    [business_id, plan_id, invoiceReason]
   );
 
   console.log(`[Billing] Invoice paid (renewal): business ${business_id}, extended to ${periodEnd.toISOString()}`);
@@ -341,7 +386,7 @@ async function handlePaymentFailed(invoice) {
   const result = await pool.query(
     `UPDATE business_subscriptions
      SET status = 'past_due', updated_at = NOW()
-     WHERE stripe_subscription_id = $1 AND status = 'active'
+     WHERE stripe_subscription_id = $1 AND status IN ('active', 'past_due')
      RETURNING id, business_id`,
     [stripeSubId]
   );
@@ -394,12 +439,15 @@ async function handleSubscriptionCancelled(subscription) {
       [business_id, freePlan.rows[0].id]
     );
 
+    const cancelReason = `Stripe subscription cancelled (${stripeSubId})`;
     await client.query(
       `INSERT INTO subscription_history
        (business_id, from_plan_id, to_plan_id, action, reason)
-       VALUES ($1, $2, $3, 'cancelled', $4)`,
-      [business_id, fromPlanId, freePlan.rows[0].id,
-       `Stripe subscription cancelled (${stripeSubId})`]
+       SELECT $1, $2, $3, 'cancelled', $4
+       WHERE NOT EXISTS (
+         SELECT 1 FROM subscription_history WHERE business_id = $1 AND reason = $4
+       )`,
+      [business_id, fromPlanId, freePlan.rows[0].id, cancelReason]
     );
 
     await syncBadgeType(client, business_id, freePlan.rows[0].badge_type);
@@ -442,13 +490,14 @@ async function handleSubscriptionUpdated(subscription) {
   const item = subscription.items?.data?.[0];
   if (!item) return;
 
+  const priceId = item.price?.id;
   const unitAmount = item.price?.unit_amount;
   const interval = item.price?.recurring?.interval;
-  if (!unitAmount || !interval) return;
+  if (!interval) return;
 
-  const mapped = await stripeService.mapStripePriceToPlan(pool, unitAmount, interval);
+  const mapped = await stripeService.mapStripePriceIdToPlan(pool, priceId, unitAmount, interval);
   if (!mapped) {
-    console.warn(`[Billing] Could not map Stripe price ${unitAmount}/${interval} to a local plan`);
+    console.warn(`[Billing] Could not map Stripe price ${priceId || unitAmount}/${interval} to a local plan`);
     return;
   }
 
@@ -486,13 +535,23 @@ async function handleSubscriptionUpdated(subscription) {
       [newPlan.id, billingCycle, periodEnd, cancelAtEnd, local.id]
     );
 
-    await client.query(
-      `INSERT INTO subscription_history
-       (business_id, from_plan_id, to_plan_id, action, reason)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [local.business_id, local.plan_id, newPlan.id, action,
-       `Plan changed via Stripe portal (${stripeSubId})`]
+    // Skip history if a recent record exists for this plan change (avoids duplicate from change-plan endpoint)
+    const recentChange = await client.query(
+      `SELECT 1 FROM subscription_history
+       WHERE business_id = $1 AND to_plan_id = $2
+         AND created_at > NOW() - INTERVAL '30 seconds'
+       LIMIT 1`,
+      [local.business_id, newPlan.id]
     );
+    if (recentChange.rows.length === 0) {
+      await client.query(
+        `INSERT INTO subscription_history
+         (business_id, from_plan_id, to_plan_id, action, reason)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [local.business_id, local.plan_id, newPlan.id, action,
+         `Plan changed via Stripe webhook (${stripeSubId})`]
+      );
+    }
 
     await syncBadgeType(client, local.business_id, newPlan.badge_type);
 

@@ -161,6 +161,29 @@ async function mapStripePriceToPlan(pool, unitAmount, interval) {
   return { plan: rows[0], billingCycle };
 }
 
+/**
+ * Map a Stripe Price ID to a local plan (reliable).
+ * Falls back to amount-based matching if Price ID not found.
+ */
+async function mapStripePriceIdToPlan(pool, priceId, unitAmount, interval) {
+  const billingCycle = interval === 'year' ? 'yearly' : 'monthly';
+  const priceIdColumn = interval === 'year' ? 'stripe_price_yearly_id' : 'stripe_price_monthly_id';
+
+  // Try by Price ID first (most reliable)
+  if (priceId) {
+    const { rows } = await pool.query(
+      `SELECT * FROM subscription_plans WHERE ${priceIdColumn} = $1`,
+      [priceId]
+    );
+    if (rows.length > 0) {
+      return { plan: rows[0], billingCycle };
+    }
+  }
+
+  // Fallback to amount matching
+  return mapStripePriceToPlan(pool, unitAmount, interval);
+}
+
 module.exports = {
   getStripe,
   getOrCreateCustomer,
@@ -168,4 +191,5 @@ module.exports = {
   createPortalSession,
   getPlanBySlug,
   mapStripePriceToPlan,
+  mapStripePriceIdToPlan,
 };

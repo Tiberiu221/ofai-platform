@@ -1208,6 +1208,7 @@
      SUBSCRIPTION MANAGEMENT
      ════════════════════════════════ */
   var _subscriptionLoaded = false;
+  var _currentCancelAtEnd = false;
 
   function loadSubscription() {
     apiFetch('/api/web/portal/' + businessId + '/subscription')
@@ -1303,6 +1304,7 @@
     var trialEnd = subscription ? subscription.trialEnd : null;
     var periodEnd = subscription ? subscription.periodEnd : null;
     var cancelAtEnd = subscription ? subscription.cancelAtPeriodEnd : false;
+    _currentCancelAtEnd = cancelAtEnd;
 
     // Calculate trial days remaining
     var trialDaysLeft = 0;
@@ -1382,7 +1384,9 @@
       html += '<button onclick="handleBillingPortal()" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">';
       html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>';
       html += 'Gestioneaza facturarea</button>';
-      if (!cancelAtEnd && !isTrial) {
+      if (cancelAtEnd) {
+        html += '<button onclick="handleReactivateSubscription()" style="padding: 10px 20px; background: transparent; border: 1px solid #22c55e; color: #22c55e; border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Reactiveaza abonamentul</button>';
+      } else if (!isTrial) {
         html += '<button onclick="handleCancelSubscription()" style="padding: 10px 20px; background: transparent; border: 1px solid var(--border); color: var(--text-tertiary); border-radius: var(--radius-full); font-size: 0.875rem; cursor: pointer; transition: all 0.2s;">Anuleaza abonament</button>';
       }
       html += '</div>';
@@ -1556,6 +1560,33 @@
     h += '<td' + highlightClass('standard') + '>' + yn(std.hasPrioritySupport, true) + '</td>';
     h += '<td' + highlightClass('premium') + '>' + yn(prem.hasPrioritySupport, true) + '</td></tr>';
 
+    // CTA row
+    h += '<tr class="pricing-comparison-category"><td colspan="4" style="font-size: 0.75rem;">ACTIUNE</td></tr>';
+    h += '<tr><td></td>';
+    // Free column
+    if (currentTier === 'free') {
+      h += '<td' + highlightClass('free') + '><span style="color: var(--text-tertiary); font-size: 0.8125rem;">Planul actual</span></td>';
+    } else {
+      h += '<td><span style="color: var(--text-tertiary); font-size: 0.8125rem;">&mdash;</span></td>';
+    }
+    // Standard column
+    if (currentTier === 'standard') {
+      h += '<td' + highlightClass('standard') + '><span style="color: var(--text-tertiary); font-size: 0.8125rem;">Planul actual</span></td>';
+    } else if (currentTier === 'free') {
+      h += '<td><button onclick="handleUpgrade(\'standard\', \'monthly\')" style="padding: 6px 16px; font-size: 0.8125rem; background: linear-gradient(135deg, #f97316, #fb923c); color: #06060a; border: none; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;">Alege Standard</button></td>';
+    } else {
+      h += '<td><button onclick="handleChangePlan(\'standard\')" style="padding: 6px 16px; font-size: 0.8125rem; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); border-radius: var(--radius-full); cursor: pointer;">Downgrade</button></td>';
+    }
+    // Premium column
+    if (currentTier === 'premium') {
+      h += '<td' + highlightClass('premium') + '><span style="color: var(--text-tertiary); font-size: 0.8125rem;">Planul actual</span></td>';
+    } else if (currentTier === 'free') {
+      h += '<td><button onclick="handleUpgrade(\'premium\', \'monthly\')" style="padding: 6px 16px; font-size: 0.8125rem; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;">Alege Premium</button></td>';
+    } else {
+      h += '<td><button onclick="handleChangePlan(\'premium\')" style="padding: 6px 16px; font-size: 0.8125rem; background: linear-gradient(135deg, #a78bfa, #8b5cf6); color: #fff; border: none; border-radius: var(--radius-full); cursor: pointer; font-weight: 600;">Upgrade</button></td>';
+    }
+    h += '</tr>';
+
     h += '</tbody></table></div>';
 
     // Link to full pricing page
@@ -1591,13 +1622,48 @@
     });
   };
 
+  // Reactivate subscription (undo pending cancellation)
+  window.handleReactivateSubscription = function() {
+    if (!confirm('Vrei sa reactivezi abonamentul? Anularea programata va fi revocata si vei fi facturat normal la sfarsitul perioadei.')) return;
+
+    showToast('Se proceseaza reactivarea...', 'info');
+
+    apiFetch('/billing/' + businessId + '/reactivate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    .then(function(r) {
+      if (!r.ok) {
+        return r.json().then(function(data) {
+          throw new Error(data.error || 'Eroare la reactivare');
+        });
+      }
+      return r.json();
+    })
+    .then(function(data) {
+      if (data.success) {
+        showToast(data.message || 'Abonamentul a fost reactivat', 'success');
+        loadSubscription();
+      } else {
+        showToast(data.message || 'Eroare', 'error');
+      }
+    })
+    .catch(function(err) {
+      console.error('Reactivate error:', err);
+      showToast(err.message || 'Eroare la reactivare', 'error');
+    });
+  };
+
   // Stripe plan change handler (downgrade/upgrade via subscription update)
   window.handleChangePlan = function(planSlug) {
     var planName = planSlug === 'standard' ? 'Standard' : 'Premium';
     var isUpgrade = planSlug === 'premium';
     var msg = isUpgrade
       ? 'Vrei sa faci upgrade la ' + planName + '? Vei plati doar diferenta pro-rata pentru zilele ramase din luna curenta.'
-      : 'Vrei sa treci pe planul ' + planName + '? Schimbarea se aplica la sfarsitul perioadei curente.';
+      : 'Vrei sa treci pe planul ' + planName + '? Planul se schimba imediat. Nu vei fi taxat suplimentar — urmatoarea factura va fi la pretul noului plan.';
+    if (_currentCancelAtEnd) {
+      msg += '\n\nAtentie: Ai o anulare programata care va fi revocata daca schimbi planul.';
+    }
     if (!confirm(msg)) return;
 
     showToast('Se proceseaza schimbarea planului...', 'info');
