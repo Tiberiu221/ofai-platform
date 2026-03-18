@@ -117,7 +117,7 @@ psql $DATABASE_URL                              # Connect to DB
 ## Current State (18 March 2026)
 - Subscription system (Plans 00-16) fully planned with docs
 - Audit #8+#9+#10 fixes: ALL applied (v0.9.0+ — 110+ fixes total)
-- Migrations up to **062** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids)
+- Migrations up to **063** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids, referral_system)
 - Business portal (manage.ejs ~2400 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
@@ -134,7 +134,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **Social Proof Badges:** "Nou", "Se termina curand", trending badges on offer cards
 - **Recently Viewed:** Local storage of last viewed offers/businesses, Home section
 - **Search History:** Persistent local search history on Explore
-- **Gamification UI:** Points, level, streak, badges visible on Account screen
+- **Gamification:** Backend active (points, levels, streak tracked in DB), UI hidden — only badges visible on Account screen
 - **Pinch Social Pressure:** Request count with fire icon on business detail
 - **Weekly Digest:** Sunday 19:00 push with personalized offer count per city
 - **Deep Links:** apple-app-site-association + assetlinks.json served, AndroidManifest intent filters, iOS entitlements
@@ -153,18 +153,15 @@ psql $DATABASE_URL                              # Connect to DB
   - Tier badges (Premium/Standard) on portal dashboard cards + pricing modal
   - CTA action row in subscription comparison table
 - **Category Feed:** Cron + API + Flutter home (web home version not implemented)
+- **Referral System:** referral_code on users, /r/:code web redirect, Flutter "Invită prieteni" on Account, deep links, 50 points per referral (backend only, not shown in UI)
+- **Rich Share:** OG tags passed in offer + business detail renders, Flutter uses Share.shareUri()
+- **Report Auto-Flag:** ≥3 reports → email admin, ≥10 → auto-deactivate business
+- **Offline Indicator:** connectivity_plus StreamProvider + red banner "Ești offline" in app shell
+- **"Gestionează pe Web" Banner:** Shows on business_detail_screen for owners, links to portal
 - Express pinned to ~5.1.0
-- 23 route files, 18 providers, 62 migrations
+- 23 route files, 18 providers, 63 migrations
 
 ### Remaining Gaps
-- `similarOffers()` dead code still in api_endpoints.dart
-- `deleteRequest()` missing from business_requests_provider.dart
-- Offline connectivity indicator not implemented
-- Semantics labels only on explore_screen (missing on detail screens)
-- Reset filters button missing from Explore empty state
-- Referral system not implemented (no backend migration or Flutter UI)
-- Rich Share in Flutter missing (backend OG tags ready, Flutter share not wired via share_plus)
-- "Gestioneaza pe Web" banner missing from business_detail_screen (show for business owners)
-- Post-redemption review cron job not implemented (push 24-48h after voucher use)
-- Report auto-flag logic (≥3 reports → notify admin, ≥10 → auto-deactivate business)
-- Stripe Customer Portal not yet configured in Dashboard (for customer self-service)
+- Gamification UI hidden — backend tracks points/levels but not shown to users (can re-enable later)
+- Stripe: go-live with real keys (switch from test to live mode)
+- Post-redemption review cron: implemented but not tested in production
