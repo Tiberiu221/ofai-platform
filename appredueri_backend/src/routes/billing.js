@@ -94,9 +94,11 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
     const isDowngrade = newSortOrder < currentSortOrder;
 
     // Update Stripe subscription
+    // Also clear any pending cancellation — if user is changing plan, they want to keep it
     await stripe.subscriptions.update(stripeSubId, {
       items: [{ id: itemId, price: newPriceId }],
       proration_behavior: isDowngrade ? 'none' : 'create_prorations',
+      cancel_at_period_end: false,
     });
 
     // Webhook `customer.subscription.updated` will handle DB update automatically
@@ -415,13 +417,17 @@ async function handleSubscriptionUpdated(subscription) {
   const { plan: newPlan, billingCycle } = mapped;
   const periodEnd = new Date(subscription.current_period_end * 1000);
 
+  // Sync cancel_at_period_end from Stripe (may have been cleared by plan change)
+  const cancelAtEnd = subscription.cancel_at_period_end || false;
+
   // Same plan — just update period/cycle
   if (newPlan.id === local.plan_id) {
     await pool.query(
       `UPDATE business_subscriptions
-       SET current_period_end = $1, billing_cycle = $2, status = 'active', updated_at = NOW()
-       WHERE id = $3`,
-      [periodEnd, billingCycle, local.id]
+       SET current_period_end = $1, billing_cycle = $2, cancel_at_period_end = $3,
+           status = 'active', updated_at = NOW()
+       WHERE id = $4`,
+      [periodEnd, billingCycle, cancelAtEnd, local.id]
     );
     console.log(`[Billing] Subscription updated (period/cycle change): business ${local.business_id}`);
     return;
@@ -437,9 +443,9 @@ async function handleSubscriptionUpdated(subscription) {
     await client.query(
       `UPDATE business_subscriptions
        SET plan_id = $1, billing_cycle = $2, current_period_end = $3,
-           status = 'active', updated_at = NOW()
-       WHERE id = $4`,
-      [newPlan.id, billingCycle, periodEnd, local.id]
+           cancel_at_period_end = $4, status = 'active', updated_at = NOW()
+       WHERE id = $5`,
+      [newPlan.id, billingCycle, periodEnd, cancelAtEnd, local.id]
     );
 
     await client.query(
