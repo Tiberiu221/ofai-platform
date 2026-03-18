@@ -362,12 +362,15 @@
   <!-- Business Selector Modal -->
   <div id="biz-select-modal" style="display: none; position: fixed; inset: 0; z-index: 1000;">
     <div onclick="closeBizModal()" style="position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);"></div>
-    <div style="position: relative; margin: auto; top: 50%; transform: translateY(-50%); max-width: 420px; width: calc(100% - 32px); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border);">
-        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">Alege business-ul</h3>
+    <div style="position: relative; margin: auto; top: 50%; transform: translateY(-50%); max-width: 520px; width: calc(100% - 32px); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid var(--border);">
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text-primary);">Alege business-ul</h3>
+          <p style="margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-tertiary);">Pentru care business vrei sa gestionezi abonamentul?</p>
+        </div>
         <button onclick="closeBizModal()" style="background: none; border: none; color: var(--text-tertiary); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
       </div>
-      <div id="biz-select-list" style="padding: 16px; display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto;">
+      <div id="biz-select-list" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
         <!-- Business items injected by JS -->
       </div>
     </div>
@@ -427,11 +430,16 @@
     _userBusinesses.forEach(function(biz) {
       var initial = (biz.name || '?')[0].toUpperCase();
       var logoHtml = biz.logo_url
-        ? '<img src="' + biz.logo_url + '" alt="" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover;">'
-        : '<div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #f97316, #fb923c); display: flex; align-items: center; justify-content: center; color: #06060a; font-weight: 700; font-size: 0.9rem;">' + initial + '</div>';
-      html += '<button onclick="selectBusiness(' + biz.id + ')" style="display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; text-align: left;" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
+        ? '<img src="' + biz.logo_url + '" alt="" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover;">'
+        : '<div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, #f97316, #fb923c); display: flex; align-items: center; justify-content: center; color: #06060a; font-weight: 700; font-size: 1rem;">' + initial + '</div>';
+      html += '<button onclick="selectBusiness(' + biz.id + ')" style="display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 18px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; text-align: left;" onmouseover="this.style.borderColor=\'var(--accent)\'" onmouseout="this.style.borderColor=\'var(--border)\'">';
       html += logoHtml;
-      html += '<span style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary);">' + biz.name + '</span>';
+      html += '<span style="flex: 1; font-size: 0.9rem; font-weight: 500; color: var(--text-primary);">' + biz.name + '</span>';
+      if (biz.plan_slug === 'premium') {
+        html += '<span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; font-size: 0.625rem; font-weight: 600; color: #a78bfa; background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.25); border-radius: 9999px; white-space: nowrap;"><svg width="8" height="8" viewBox="0 0 24 24" fill="#a78bfa" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>Premium</span>';
+      } else if (biz.plan_slug === 'standard') {
+        html += '<span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; font-size: 0.625rem; font-weight: 600; color: #fb923c; background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.25); border-radius: 9999px; white-space: nowrap;"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Standard</span>';
+      }
       html += '</button>';
     });
     list.innerHTML = html;

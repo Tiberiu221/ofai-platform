@@ -2055,9 +2055,11 @@ router.get('/preturi', async (req, res) => {
     let userBusinesses = [];
     if (req.webUser) {
       const bizResult = await pool.query(
-        `SELECT b.id, b.name, b.logo_url
+        `SELECT b.id, b.name, b.logo_url, sp.slug AS plan_slug
          FROM businesses b
          JOIN user_businesses ub ON ub.business_id = b.id
+         LEFT JOIN business_subscriptions bs ON bs.business_id = b.id
+         LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
          WHERE ub.user_id = $1
          ORDER BY b.name`,
         [req.webUser.id]
