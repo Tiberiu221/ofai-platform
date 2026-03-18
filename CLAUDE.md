@@ -156,16 +156,15 @@ psql $DATABASE_URL                              # Connect to DB
 - Express pinned to ~5.1.0
 - 23 route files, 18 providers, 62 migrations
 
-### Remaining Gaps (from Flutter plans)
+### Remaining Gaps
 - `similarOffers()` dead code still in api_endpoints.dart
 - `deleteRequest()` missing from business_requests_provider.dart
 - Offline connectivity indicator not implemented
 - Semantics labels only on explore_screen (missing on detail screens)
 - Reset filters button missing from Explore empty state
 - Referral system not implemented (no backend migration or Flutter UI)
-- Rich Share in Flutter missing (backend OG tags ready, Flutter share not wired)
-- "Gestioneaza pe Web" banner missing from business_detail_screen
-- Post-redemption review cron job not implemented
-- Offline voucher storage not implemented
-- Light mode / theme toggle not implemented
+- Rich Share in Flutter missing (backend OG tags ready, Flutter share not wired via share_plus)
+- "Gestioneaza pe Web" banner missing from business_detail_screen (show for business owners)
+- Post-redemption review cron job not implemented (push 24-48h after voucher use)
+- Report auto-flag logic (≥3 reports → notify admin, ≥10 → auto-deactivate business)
 - Stripe Customer Portal not yet configured in Dashboard (for customer self-service)
