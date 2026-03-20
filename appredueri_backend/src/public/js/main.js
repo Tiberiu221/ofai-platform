@@ -747,6 +747,13 @@ function highlightMatch(text, query) {
   return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
 }
 
+function tierBadgeSvg(badgeType, isVerified) {
+  const bt = badgeType || (isVerified ? 'verified' : null);
+  if (bt === 'premium') return ' <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>';
+  if (bt === 'standard' || bt === 'verified') return ' <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>';
+  return '';
+}
+
 async function fetchSuggestions(q, dropdown, setController) {
   try {
     const controller = new AbortController();
@@ -780,16 +787,11 @@ async function fetchSuggestions(q, dropdown, setController) {
         const oLogo = o.business_logo
           ? `<img src="${o.business_logo}" class="search-suggest-item-logo" alt="">`
           : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml((o.business_name || '?').charAt(0))}</div>`;
-        const oTierBadge = o.subscription_badge_type === 'premium'
-          ? '<span class="search-suggest-tier search-suggest-tier--premium" title="Premium">&#9733;</span>'
-          : o.subscription_badge_type === 'standard'
-          ? '<span class="search-suggest-tier search-suggest-tier--standard" title="Standard+">&#10003;</span>'
-          : '';
         html += `<a href="/oferta/${o.id}" class="search-suggest-item" role="option" id="suggest-item-${itemIdx++}">
           ${oLogo}
           <div class="search-suggest-item-text">
             <div class="search-suggest-item-title">${highlightMatch(o.title, q)}</div>
-            <div class="search-suggest-item-sub">${oTierBadge}${highlightMatch(o.business_name, q)}</div>
+            <div class="search-suggest-item-sub">${highlightMatch(o.business_name, q)}${tierBadgeSvg(o.subscription_badge_type, o.business_verified)}</div>
           </div>
           <span class="search-suggest-item-badge">${discount}</span>
         </a>`;
@@ -803,15 +805,10 @@ async function fetchSuggestions(q, dropdown, setController) {
         const logo = b.logo_url
           ? `<img src="${b.logo_url}" class="search-suggest-item-logo" alt="">`
           : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml(b.name.charAt(0))}</div>`;
-        const tierBadge = b.subscription_badge_type === 'premium'
-          ? '<span class="search-suggest-tier search-suggest-tier--premium" title="Premium">&#9733;</span>'
-          : b.subscription_badge_type === 'standard'
-          ? '<span class="search-suggest-tier search-suggest-tier--standard" title="Standard+">&#10003;</span>'
-          : '';
         html += `<a href="/business/${b.id}" class="search-suggest-item" role="option" id="suggest-item-${itemIdx++}">
           ${logo}
           <div class="search-suggest-item-text">
-            <div class="search-suggest-item-title">${tierBadge}${highlightMatch(b.name, q)}</div>
+            <div class="search-suggest-item-title">${highlightMatch(b.name, q)}${tierBadgeSvg(b.subscription_badge_type, b.is_verified)}</div>
             <div class="search-suggest-item-sub">${highlightMatch(b.category_name || '', q)}</div>
           </div>
         </a>`;

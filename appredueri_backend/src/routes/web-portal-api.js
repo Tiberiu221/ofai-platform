@@ -2083,7 +2083,7 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
       pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value,
                b.name as business_name, b.logo_url as business_logo,
-               b.subscription_badge_type
+               b.subscription_badge_type, b.is_verified as business_verified
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
@@ -2092,7 +2092,7 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         LIMIT 5
       `, [searchTerm]),
       pool.query(`
-        SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, cat.name as category_name
+        SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, b.is_verified, cat.name as category_name
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
         WHERE (b.name ILIKE $1 OR cat.name ILIKE $1)

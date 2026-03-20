@@ -439,28 +439,12 @@
   pointer-events: none;
 }
 
-.search-suggest-tier {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  font-size: 0.5625rem;
-  line-height: 1;
-  margin-right: 4px;
+.search-suggest-item-sub .premium-badge-icon,
+.search-suggest-item-sub .verified-badge,
+.search-suggest-item-title .premium-badge-icon,
+.search-suggest-item-title .verified-badge {
   vertical-align: middle;
-  flex-shrink: 0;
-}
-
-.search-suggest-tier--premium {
-  background: rgba(139, 92, 246, 0.2);
-  color: #a78bfa;
-}
-
-.search-suggest-tier--standard {
-  background: rgba(251, 146, 60, 0.2);
-  color: var(--accent);
+  margin-left: 4px;
 }
 
 .search-suggest-item--active,
