@@ -248,7 +248,7 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
   position: absolute;
-  top: 10px;
+  bottom: 10px;
   left: 10px;
   z-index: 2;
   backdrop-filter: blur(8px);
