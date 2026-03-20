@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="oGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDBA74"/>
+      <stop offset="100%" stop-color="#EA780C"/>
+    </linearGradient>
+    <!-- Background: dark top → deep burnt orange bottom -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F0F0F"/>
+      <stop offset="60%" stop-color="#0F0F0F"/>
+      <stop offset="100%" stop-color="#150900"/>
+    </linearGradient>
+    <!-- Radial ambient glow from bottom center -->
+    <radialGradient id="bgGlow" cx="50%" cy="85%" r="60%" fx="50%" fy="85%">
+      <stop offset="0%" stop-color="#FB923C" stop-opacity="0.08"/>
+      <stop offset="50%" stop-color="#FB923C" stop-opacity="0.02"/>
+      <stop offset="100%" stop-color="#FB923C" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Text gradient: orange left → off-white right -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="35%" stop-color="#FB923C"/>
+      <stop offset="55%" stop-color="#FDBA74"/>
+      <stop offset="80%" stop-color="#E8E4E0"/>
+      <stop offset="100%" stop-color="#E0DEDA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background gradient -->
+  <rect width="512" height="512" rx="64" fill="url(#bgGrad)"/>
+  <!-- Ambient orange glow -->
+  <rect width="512" height="512" rx="64" fill="url(#bgGlow)"/>
+
+  <!-- OFA text -->
+  <text x="46" y="310"
+        font-family="'Inter', 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="170" font-weight="900" letter-spacing="-3" fill="url(#textGrad)">
+    OFA</text>
+
+  <!-- i — manual with price tag dot -->
+  <g transform="translate(392, 142)">
+    <!-- i stem -->
+    <rect x="2" y="54" width="34" height="114" rx="5" fill="#E0DEDA"/>
+
+    <!-- Price tag dot — gap above stem -->
+    <g transform="translate(19, 18) rotate(-90)">
+      <path d="
+        M -26,0
+        L -10,-16
+        Q -7,-20 -2,-20
+        L 16,-20
+        Q 22,-20 22,-14
+        L 22,14
+        Q 22,20 16,20
+        L -2,20
+        Q -7,20 -10,16
+        Z
+      " fill="#E0DEDA"/>
+      <!-- Tag hole -->
+      <circle cx="-14" cy="0" r="4" fill="#0F0F0F"/>
+    </g>
+  </g>
+</svg>

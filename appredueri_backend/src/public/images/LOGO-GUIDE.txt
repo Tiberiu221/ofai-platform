@@ -1,0 +1,67 @@
+OFAI Logo Guide
+================
+
+Files
+-----
+- ofai-wordmark.svg      — Primary logo (current, 512x512)
+- ofai-wordmark-v1.svg   — V1 backup (thinner letters, before bold pass)
+- ofai-o-pricetag.svg    — Standalone "O" price tag icon (512x512)
+- ofai-o-target.svg      — Standalone "O" target variant (200x200)
+- ofai-logo.svg          — First draft (wide format, deprecated)
+
+Primary Logo: ofai-wordmark.svg
+-------------------------------
+Format: 512x512 SVG (square, scalable)
+Structure:
+  - "OFA" = <text> element, Inter Black 180px, stroke-width 8, letter-spacing -10
+  - "i"   = manual SVG (rect stem + price tag path as dot)
+  - Price tag dot is rotated -90deg (pointing up)
+
+Colors
+------
+Background:
+  - Base: #0F0F0F (dark)
+  - Bottom gradient: #150900 (deep burnt orange, very subtle)
+  - Radial glow: #FB923C at 8% opacity, centered bottom (cy=85%)
+
+Text gradient (left → right, horizontal):
+  - 0%:   #F97316  (deep orange)
+  - 35%:  #FB923C  (orange accent)
+  - 55%:  #FDBA74  (light orange)
+  - 80%:  #E8E4E0  (off-white warm)
+  - 100%: #E0DEDA  (off-white, used for "i")
+
+"i" stem + price tag: #E0DEDA (off-white, solid — end of text gradient)
+Tag hole: #0F0F0F (background color)
+
+Brand colors reference:
+  - Primary accent: #FB923C
+  - Dark background: #0F0F0F
+  - Deep orange: #F97316
+  - Light orange: #FDBA74
+  - Dark orange: #EA780C
+
+Typography
+----------
+Font: Inter (fallback: Segoe UI, Helvetica, Arial, sans-serif)
+Weight: 900 (Black)
+The "i" is drawn manually (not a font glyph) to allow the price tag dot.
+
+Key Design Decisions
+--------------------
+1. "i" dot = price tag (rotated 90° left, pointing up) — connects logo to deals/offers concept
+2. Text gradient flows left→right: orange (O) → off-white (i) — inspired by eMAG gradient style
+3. Background has ultra-subtle radial orange glow from bottom center
+4. "OFA" uses stroke trick (paint-order: stroke) for extra boldness
+5. "i" is a separate SVG group — adjust via translate(x, y) on the <g> element
+6. Price tag width matches "i" stem width for visual consistency
+
+How to Modify
+-------------
+- Move "i" position: change translate(401, 147) on line 42
+- "i" stem size: change width/height on line 44
+- Price tag size: scale the path values proportionally (M, L, Q coordinates)
+- Text boldness: adjust stroke-width on line 38
+- Letter tightness: adjust letter-spacing on line 37
+- Background glow intensity: adjust stop-opacity values in bgGlow gradient
+- Text color balance: adjust stop offsets in textGrad gradient
