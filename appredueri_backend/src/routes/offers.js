@@ -713,7 +713,8 @@ router.get("/deal-of-day", async (req, res) => {
 // GET /offers/:id - Detalii ofertă cu booking
 // =======================================
 router.get("/:id", async (req, res) => {
-  const { id } = req.params;
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "ID invalid" });
 
   try {
     // 1. Fetch Offer + Business info + BOOKING info de la ambele

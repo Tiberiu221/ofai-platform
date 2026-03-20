@@ -694,7 +694,8 @@ router.get("/business-uri", async (req, res) => {
 // ═══════════════════════════════════════════════════════
 router.get("/oferta/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null, pageTitle: "Oferta negăsită" });
 
     const result = await pool.query(`
       SELECT
@@ -1013,7 +1014,8 @@ router.post("/api/web/offers/:id/reveal-code", revealLimiter, requireWebAuth, as
 // ═══════════════════════════════════════════════════════
 router.get("/business/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null, pageTitle: "Business negăsit" });
 
     const businessRes = await pool.query(`
       SELECT b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,

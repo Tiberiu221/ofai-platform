@@ -74,10 +74,13 @@ async function updateStreak(userId) {
   const lastCheck = _streakCache.get(userId);
   if (lastCheck && (now - lastCheck) < STREAK_DEBOUNCE_MS) return;
   _streakCache.set(userId, now);
-  // Prevent memory leak: cap cache size
+  // Prevent memory leak: batch evict oldest 1000 entries at threshold
   if (_streakCache.size > 10000) {
-    const oldest = _streakCache.keys().next().value;
-    _streakCache.delete(oldest);
+    const iter = _streakCache.keys();
+    for (let i = 0; i < 1000; i++) {
+      const key = iter.next().value;
+      if (key !== undefined) _streakCache.delete(key);
+    }
   }
   try {
     const res = await pool.query(

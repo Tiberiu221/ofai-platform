@@ -107,6 +107,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **CSS split:** `main.css` is now just an import loader; actual styles in `css/sections/` (7 files). Portal/admin/onboarding have separate CSS files
 - **web.js split:** Split into 4 sub-routers: `web.js`, `web-auth.js`, `web-account-api.js`, `web-portal-api.js` + `web-shared.js` utility
 - **LLM services:** AI validation/moderation in `services/llm/` (5 files). Uses Anthropic Claude API via `anthropicClient.js`
+- **LLM prompt injection:** All user-supplied text in LLM prompts must be wrapped in `[USER_INPUT]...[/USER_INPUT]` fencing tags to prevent prompt injection
 - **Route count:** 23 route files total — don't forget to update both web and mobile routes when changing shared logic
 - **Lenis smooth scroll:** `window.lenis` is global. Use `lenis.scrollTo(target, { offset: -80 })` instead of `scrollIntoView`. Use `lenis.stop()`/`lenis.start()` for modals. Horizontal scroll containers are NOT affected (Lenis is vertical only). If CDN fails, all code falls back to native via `if (window.lenis)` guards
 
@@ -115,9 +116,9 @@ psql $DATABASE_URL                              # Connect to DB
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (18 March 2026)
+## Current State (20 March 2026)
 - Subscription system (Plans 00-16) fully planned with docs
-- Audit #8+#9+#10 fixes: ALL applied (v0.9.0+ — 110+ fixes total)
+- Audit #8+#9+#10+#11 fixes: ALL applied (v0.9.0+ — 135+ fixes total)
 - Migrations up to **063** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids, referral_system)
 - Business portal (manage.ejs ~2400 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -160,6 +161,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **Offline Indicator:** connectivity_plus StreamProvider + red banner "Ești offline" in app shell
 - **"Gestionează pe Web" Banner:** Shows on business_detail_screen for owners, links to portal
 - **Lenis Smooth Scroll:** CDN-loaded (jsDelivr), duration 1.2s ease-out-quint, navbar/anchors/modals migrated, graceful fallback if CDN fails
+- **Audit #11 (20 Mar):** 92 findings (16 CRIT, 20 HIGH, 26 MED, 30 LOW), 25 fixes applied (commit `7a040ac`) — attachTier on web-portal-api, stripe_customer_id preserved on cancel, past_due in tier filter, stored XSS maps_url, HTML escape in emails, LLM prompt injection fencing, checkout/payment idempotency, change-plan DB-first ordering, Flutter autoDispose fix
 - Express pinned to ~5.1.0
 - 23 route files, 18 providers, 63 migrations
 

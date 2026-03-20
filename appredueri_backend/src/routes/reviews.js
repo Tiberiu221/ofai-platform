@@ -11,7 +11,8 @@ const { reversePoints } = require("../services/gamification");
 // GET /reviews/business/:id - Vezi recenziile unui business
 // ==========================================
 router.get("/business/:id", optionalAuth, async (req, res) => {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "ID invalid" });
     const { page, limit, offset } = parsePagination(req.query);
     const currentUserId = req.user ? req.user.id : null;
     try {
@@ -200,7 +201,8 @@ router.post("/", authenticateToken, async (req, res) => {
 // DELETE /reviews/:id - Sterge propria recenzie (Necesita Autentificare)
 // ==========================================
 router.delete("/:id", authenticateToken, async (req, res) => {
-    const { id } = req.params;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: "ID invalid" });
     const user_id = req.user.id;
 
     try {

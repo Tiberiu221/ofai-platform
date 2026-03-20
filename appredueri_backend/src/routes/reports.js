@@ -110,7 +110,7 @@ router.post("/", authenticateToken, async (req, res) => {
         if (adminRows.length > 0) {
           const { rows: bizRows } = await pool.query("SELECT name FROM businesses WHERE id = $1", [tid]);
           const bizName = bizRows[0]?.name || `#${tid}`;
-          const safeBizName = String(bizName).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          const safeBizName = String(bizName).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           sendEmail({
             to: adminRows[0].email,
             subject: `[OFAI] Alerta: Business "${bizName}" are ${reportCount} rapoarte`,

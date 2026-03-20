@@ -133,7 +133,7 @@ async function getBusinessTier(pool, businessId) {
     JOIN subscription_plans sp ON sp.id = bs.plan_id
     WHERE bs.business_id = $1
       AND bs.status IN ('active', 'trial', 'past_due')
-    ORDER BY CASE bs.status WHEN 'active' THEN 0 WHEN 'trial' THEN 1 END,
+    ORDER BY CASE bs.status WHEN 'active' THEN 0 WHEN 'past_due' THEN 1 WHEN 'trial' THEN 2 END,
              sp.sort_order DESC
     LIMIT 1
   `, [businessId]);

@@ -196,7 +196,8 @@ router.get("/", optionalAuth, async (req, res) => {
 // GET /businesses/:id - detalii complete
 // =======================================
 router.get("/:id", optionalAuth, async (req, res) => {
-  const { id } = req.params;
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "ID invalid" });
   const baseUrl = `${req.protocol}://${req.get("host")}`;
 
   try {

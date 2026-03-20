@@ -174,6 +174,7 @@ router.post("/login", async (req, res) => {
     }
 
     const email = rawEmail.trim().toLowerCase();
+    if (!email) return res.status(400).json({ message: "Email și parolă sunt obligatorii" });
     const { getUserBadges } = require("../services/badgeService");
 
     const result = await pool.query(
