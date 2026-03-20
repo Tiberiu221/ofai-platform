@@ -2082,19 +2082,20 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
     const [offersRes, businessesRes] = await Promise.all([
       pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value,
-               b.name as business_name
+               b.name as business_name, b.logo_url as business_logo,
+               b.subscription_badge_type
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          AND (o.title ILIKE $1 OR b.name ILIKE $1)
+          AND (o.title ILIKE $1 OR o.description ILIKE $1 OR b.name ILIKE $1)
         ORDER BY o.discount_value DESC
         LIMIT 5
       `, [searchTerm]),
       pool.query(`
-        SELECT b.id, b.name, b.logo_url, cat.name as category_name
+        SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, cat.name as category_name
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
-        WHERE b.name ILIKE $1
+        WHERE (b.name ILIKE $1 OR cat.name ILIKE $1)
         ORDER BY b.name
         LIMIT 3
       `, [searchTerm]),

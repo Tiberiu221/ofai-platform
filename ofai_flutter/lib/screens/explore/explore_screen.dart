@@ -237,6 +237,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                   if (_showSuggest)
                     SearchSuggestDropdown(
                       onDismiss: _dismissSuggest,
+                      query: _searchController.text.trim(),
                     )
                   else if (_searchFocusNode.hasFocus && _searchController.text.isEmpty)
                     _SearchHistoryDropdown(

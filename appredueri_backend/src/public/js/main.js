@@ -648,35 +648,83 @@ function initSearchAutosuggest() {
     const form = input.closest('form');
     if (!form) return;
 
-    // Wrap in relative container
-    const wrapper = document.createElement('div');
-    wrapper.className = 'search-suggest-wrapper';
+    // A11y attributes
+    input.setAttribute('aria-label', 'Caută oferte și business-uri');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+
     form.style.position = 'relative';
 
     // Create dropdown
     const dropdown = document.createElement('div');
     dropdown.className = 'search-suggest-dropdown';
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.id = 'search-suggest-' + Math.random().toString(36).slice(2, 8);
+    input.setAttribute('aria-controls', dropdown.id);
     form.appendChild(dropdown);
 
     let debounceTimer = null;
     let searchAbortController = null;
+    let activeIdx = -1;
+
+    function setActiveItem(idx) {
+      const items = dropdown.querySelectorAll('.search-suggest-item');
+      items.forEach((el, i) => {
+        el.classList.toggle('search-suggest-item--active', i === idx);
+        if (i === idx) {
+          el.setAttribute('aria-selected', 'true');
+          el.scrollIntoView({ block: 'nearest' });
+          input.setAttribute('aria-activedescendant', el.id || '');
+        } else {
+          el.removeAttribute('aria-selected');
+        }
+      });
+      activeIdx = idx;
+    }
 
     input.addEventListener('input', () => {
       clearTimeout(debounceTimer);
+      activeIdx = -1;
       const q = input.value.trim();
       if (q.length < 2) {
         dropdown.classList.remove('open');
+        input.setAttribute('aria-expanded', 'false');
         if (searchAbortController) searchAbortController.abort();
         return;
       }
       dropdown.innerHTML = buildSkeletonHTML();
       dropdown.classList.add('open');
+      input.setAttribute('aria-expanded', 'true');
       debounceTimer = setTimeout(() => fetchSuggestions(q, dropdown, (ctrl) => { searchAbortController = ctrl; }), 300);
     });
 
     input.addEventListener('focus', () => {
       if (input.value.trim().length >= 2 && dropdown.innerHTML) {
         dropdown.classList.add('open');
+        input.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+      if (!dropdown.classList.contains('open')) return;
+      const items = dropdown.querySelectorAll('.search-suggest-item');
+      if (!items.length) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveItem(activeIdx < items.length - 1 ? activeIdx + 1 : 0);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveItem(activeIdx > 0 ? activeIdx - 1 : items.length - 1);
+      } else if (e.key === 'Enter' && activeIdx >= 0) {
+        e.preventDefault();
+        const activeEl = items[activeIdx];
+        if (activeEl && activeEl.href) window.location.href = activeEl.href;
+      } else if (e.key === 'Escape') {
+        dropdown.classList.remove('open');
+        input.setAttribute('aria-expanded', 'false');
+        activeIdx = -1;
       }
     });
 
@@ -684,9 +732,19 @@ function initSearchAutosuggest() {
     document.addEventListener('click', (e) => {
       if (!form.contains(e.target)) {
         dropdown.classList.remove('open');
+        input.setAttribute('aria-expanded', 'false');
+        activeIdx = -1;
       }
     });
   });
+}
+
+function highlightMatch(text, query) {
+  if (!query || !text) return escapeHtml(text || '');
+  const escaped = escapeHtml(text);
+  const escapedQuery = escapeHtml(query);
+  const regex = new RegExp('(' + escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
 }
 
 async function fetchSuggestions(q, dropdown, setController) {
@@ -701,25 +759,39 @@ async function fetchSuggestions(q, dropdown, setController) {
     const data = await resp.json();
 
     if (data.offers.length === 0 && data.businesses.length === 0) {
-      dropdown.innerHTML = '<div class="search-suggest-empty" style="padding: 16px 20px; color: var(--text-muted); font-size: 0.875rem;">Niciun rezultat pentru \u201E' + escapeHtml(q) + '\u201D</div>';
+      dropdown.innerHTML = `<div class="search-suggest-empty">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;opacity:0.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        <div>Niciun rezultat pentru \u201E${escapeHtml(q)}\u201D</div>
+        <div style="margin-top:4px">Încearcă alt termen sau <a href="/oferte">explorează toate ofertele</a></div>
+      </div>`;
       dropdown.classList.add('open');
       return;
     }
 
     let html = '';
+    let itemIdx = 0;
 
     if (data.offers.length > 0) {
       html += '<div class="search-suggest-section"><div class="search-suggest-label">Oferte</div>';
       data.offers.forEach((o) => {
-        const badge = o.discount_type === 'percent' || o.discount_type === 'percentage'
+        const discount = o.discount_type === 'percent' || o.discount_type === 'percentage'
           ? `-${o.discount_value}%`
           : `${o.discount_value} lei`;
-        html += `<a href="/oferta/${o.id}" class="search-suggest-item">
+        const oLogo = o.business_logo
+          ? `<img src="${o.business_logo}" class="search-suggest-item-logo" alt="">`
+          : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml((o.business_name || '?').charAt(0))}</div>`;
+        const oTierBadge = o.subscription_badge_type === 'premium'
+          ? '<span class="search-suggest-tier search-suggest-tier--premium" title="Premium">&#9733;</span>'
+          : o.subscription_badge_type === 'standard'
+          ? '<span class="search-suggest-tier search-suggest-tier--standard" title="Standard+">&#10003;</span>'
+          : '';
+        html += `<a href="/oferta/${o.id}" class="search-suggest-item" role="option" id="suggest-item-${itemIdx++}">
+          ${oLogo}
           <div class="search-suggest-item-text">
-            <div class="search-suggest-item-title">${escapeHtml(o.title)}</div>
-            <div class="search-suggest-item-sub">${escapeHtml(o.business_name)}</div>
+            <div class="search-suggest-item-title">${highlightMatch(o.title, q)}</div>
+            <div class="search-suggest-item-sub">${oTierBadge}${highlightMatch(o.business_name, q)}</div>
           </div>
-          <span class="search-suggest-item-badge">${badge}</span>
+          <span class="search-suggest-item-badge">${discount}</span>
         </a>`;
       });
       html += '</div>';
@@ -730,22 +802,33 @@ async function fetchSuggestions(q, dropdown, setController) {
       data.businesses.forEach((b) => {
         const logo = b.logo_url
           ? `<img src="${b.logo_url}" class="search-suggest-item-logo" alt="">`
-          : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${b.name.charAt(0)}</div>`;
-        html += `<a href="/business/${b.id}" class="search-suggest-item">
+          : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml(b.name.charAt(0))}</div>`;
+        const tierBadge = b.subscription_badge_type === 'premium'
+          ? '<span class="search-suggest-tier search-suggest-tier--premium" title="Premium">&#9733;</span>'
+          : b.subscription_badge_type === 'standard'
+          ? '<span class="search-suggest-tier search-suggest-tier--standard" title="Standard+">&#10003;</span>'
+          : '';
+        html += `<a href="/business/${b.id}" class="search-suggest-item" role="option" id="suggest-item-${itemIdx++}">
           ${logo}
           <div class="search-suggest-item-text">
-            <div class="search-suggest-item-title">${escapeHtml(b.name)}</div>
-            <div class="search-suggest-item-sub">${escapeHtml(b.category_name || '')}</div>
+            <div class="search-suggest-item-title">${tierBadge}${highlightMatch(b.name, q)}</div>
+            <div class="search-suggest-item-sub">${highlightMatch(b.category_name || '', q)}</div>
           </div>
         </a>`;
       });
       html += '</div>';
     }
 
+    // "View all results" link
+    html += `<a href="/oferte?q=${encodeURIComponent(q)}" class="search-suggest-viewall">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Vezi toate rezultatele pentru \u201E${escapeHtml(q)}\u201D
+    </a>`;
+
     dropdown.innerHTML = html;
     dropdown.classList.add('open');
   } catch (e) {
-    if (e.name === 'AbortError') return; // Ignore aborted requests
+    if (e.name === 'AbortError') return;
     console.error(e);
     if (showToast) showToast('Eroare la căutare. Încearcă din nou.', 'error');
     dropdown.classList.remove('open');

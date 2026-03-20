@@ -345,7 +345,7 @@ router.get("/oferte", async (req, res) => {
     let paramIdx = 1;
 
     if (query) {
-      conditions.push(`(o.title ILIKE $${paramIdx} OR b.name ILIKE $${paramIdx})`);
+      conditions.push(`(o.title ILIKE $${paramIdx} OR o.description ILIKE $${paramIdx} OR b.name ILIKE $${paramIdx})`);
       params.push(`%${query}%`);
       paramIdx++;
     }
@@ -611,7 +611,7 @@ router.get("/business-uri", async (req, res) => {
     const totalPages = Math.ceil(totalBusinesses / limit);
 
     const sortOptions = {
-      popular: `(COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC`,
+      popular: `(COUNT(DISTINCT o.id) + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC`,
       rating: "COALESCE(AVG(r.rating), 0) DESC, COUNT(DISTINCT r.id) DESC",
       newest: "b.id DESC",
       offers: "COUNT(DISTINCT o.id) DESC, b.id DESC",

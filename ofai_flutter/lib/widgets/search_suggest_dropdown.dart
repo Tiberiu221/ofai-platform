@@ -9,8 +9,13 @@ import '../providers/search_suggest_provider.dart';
 
 class SearchSuggestDropdown extends ConsumerWidget {
   final VoidCallback onDismiss;
+  final String query;
 
-  const SearchSuggestDropdown({super.key, required this.onDismiss});
+  const SearchSuggestDropdown({
+    super.key,
+    required this.onDismiss,
+    required this.query,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,14 +44,35 @@ class SearchSuggestDropdown extends ConsumerWidget {
     if (!state.hasResults && !state.isLoading) {
       return _DropdownContainer(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
-          child: Center(
-            child: Text(
-              'Niciun rezultat',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xxl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off_rounded,
+                size: 28,
+                color: AppColors.textTertiary,
               ),
-            ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Niciun rezultat pentru \u201E$query\u201D',
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Incearca alt termen de cautare',
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.textTertiary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       );
@@ -77,6 +103,7 @@ class SearchSuggestDropdown extends ConsumerWidget {
                 ...state.offers.map(
                   (offer) => _OfferSuggestItem(
                     offer: offer,
+                    query: query,
                     onTap: () {
                       ref.read(searchSuggestProvider.notifier).clear();
                       onDismiss();
@@ -105,6 +132,7 @@ class SearchSuggestDropdown extends ConsumerWidget {
                 ...state.businesses.map(
                   (biz) => _BusinessSuggestItem(
                     business: biz,
+                    query: query,
                     onTap: () {
                       ref.read(searchSuggestProvider.notifier).clear();
                       onDismiss();
@@ -113,6 +141,34 @@ class SearchSuggestDropdown extends ConsumerWidget {
                   ),
                 ),
               ],
+
+              // "View all results" link
+              const Divider(height: 1, color: AppColors.border),
+              InkWell(
+                onTap: onDismiss,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, size: 16, color: AppColors.accent),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Vezi toate rezultatele',
+                          style: AppTypography.bodyMedium.copyWith(
+                            color: AppColors.accent,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward, size: 14, color: AppColors.accent),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -151,11 +207,68 @@ class _DropdownContainer extends StatelessWidget {
   }
 }
 
+/// Builds a RichText with matched substrings highlighted in accent/bold.
+class _HighlightText extends StatelessWidget {
+  final String text;
+  final String query;
+  final TextStyle baseStyle;
+  final int maxLines;
+
+  const _HighlightText({
+    required this.text,
+    required this.query,
+    required this.baseStyle,
+    this.maxLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (query.isEmpty) {
+      return Text(text, style: baseStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis);
+    }
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final spans = <TextSpan>[];
+    int start = 0;
+
+    while (start < text.length) {
+      final idx = lowerText.indexOf(lowerQuery, start);
+      if (idx == -1) {
+        spans.add(TextSpan(text: text.substring(start)));
+        break;
+      }
+      if (idx > start) {
+        spans.add(TextSpan(text: text.substring(start, idx)));
+      }
+      spans.add(TextSpan(
+        text: text.substring(idx, idx + query.length),
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: AppColors.accent,
+        ),
+      ));
+      start = idx + query.length;
+    }
+
+    return RichText(
+      text: TextSpan(style: baseStyle, children: spans),
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+}
+
 class _OfferSuggestItem extends StatelessWidget {
   final SuggestOffer offer;
+  final String query;
   final VoidCallback onTap;
 
-  const _OfferSuggestItem({required this.offer, required this.onTap});
+  const _OfferSuggestItem({
+    required this.offer,
+    required this.query,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -174,20 +287,18 @@ class _OfferSuggestItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    offer.title,
-                    style: AppTypography.bodyMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  _HighlightText(
+                    text: offer.title,
+                    query: query,
+                    baseStyle: AppTypography.bodyMedium,
                   ),
                   if (offer.businessName != null)
-                    Text(
-                      offer.businessName!,
-                      style: AppTypography.labelSmall.copyWith(
+                    _HighlightText(
+                      text: offer.businessName!,
+                      query: query,
+                      baseStyle: AppTypography.labelSmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                 ],
               ),
@@ -217,9 +328,14 @@ class _OfferSuggestItem extends StatelessWidget {
 
 class _BusinessSuggestItem extends StatelessWidget {
   final SuggestBusiness business;
+  final String query;
   final VoidCallback onTap;
 
-  const _BusinessSuggestItem({required this.business, required this.onTap});
+  const _BusinessSuggestItem({
+    required this.business,
+    required this.query,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,20 +378,18 @@ class _BusinessSuggestItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    business.name,
-                    style: AppTypography.bodyMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  _HighlightText(
+                    text: business.name,
+                    query: query,
+                    baseStyle: AppTypography.bodyMedium,
                   ),
                   if (business.categoryName != null)
-                    Text(
-                      business.categoryName!,
-                      style: AppTypography.labelSmall.copyWith(
+                    _HighlightText(
+                      text: business.categoryName!,
+                      query: query,
+                      baseStyle: AppTypography.labelSmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                 ],
               ),
