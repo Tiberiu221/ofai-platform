@@ -9,7 +9,32 @@ function getCsrfToken() {
   return meta ? meta.getAttribute('content') : '';
 }
 
+/* ─── LENIS SMOOTH SCROLL ────────────────────────────────── */
+var lenis = null;
+
+function initLenis() {
+  if (typeof Lenis === 'undefined') return;
+
+  lenis = new Lenis({
+    duration: 1.2,
+    easing: function(t) { return 1 - Math.pow(1 - t, 5); },
+    orientation: 'vertical',
+    gestureOrientation: 'vertical',
+    smoothWheel: true,
+    touchMultiplier: 1.5,
+  });
+
+  window.lenis = lenis;
+
+  function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initLenis();
   initNavbar();
   initScrollReveal();
   initCounters();
@@ -84,37 +109,43 @@ function initNavbar() {
   if (!wrapper) return;
 
   let lastScroll = 0;
-  let ticking = false;
 
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(() => {
-        const currentScroll = window.scrollY;
-
-        // Add/remove scrolled class
-        if (currentScroll > 20) {
-          wrapper.classList.add('scrolled');
-        } else {
-          wrapper.classList.remove('scrolled');
-        }
-
-        // Hide/show on scroll direction (only after 300px)
-        if (currentScroll > 300) {
-          if (currentScroll > lastScroll + 5) {
-            wrapper.classList.add('hidden');
-          } else if (currentScroll < lastScroll - 5) {
-            wrapper.classList.remove('hidden');
-          }
-        } else {
-          wrapper.classList.remove('hidden');
-        }
-
-        lastScroll = currentScroll;
-        ticking = false;
-      });
-      ticking = true;
+  function onScroll(currentScroll) {
+    if (currentScroll > 20) {
+      wrapper.classList.add('scrolled');
+    } else {
+      wrapper.classList.remove('scrolled');
     }
-  });
+
+    if (currentScroll > 300) {
+      if (currentScroll > lastScroll + 5) {
+        wrapper.classList.add('hidden');
+      } else if (currentScroll < lastScroll - 5) {
+        wrapper.classList.remove('hidden');
+      }
+    } else {
+      wrapper.classList.remove('hidden');
+    }
+
+    lastScroll = currentScroll;
+  }
+
+  if (window.lenis) {
+    window.lenis.on('scroll', function(e) {
+      onScroll(e.scroll);
+    });
+  } else {
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          onScroll(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  }
 }
 
 /* ─── SCROLL REVEAL ──────────────────────────────────────── */
@@ -200,7 +231,9 @@ function initMobileMenu() {
   toggle.addEventListener('click', () => {
     toggle.classList.toggle('active');
     overlay.classList.toggle('open');
-    document.body.style.overflow = overlay.classList.contains('open') ? 'hidden' : '';
+    const isOpen = overlay.classList.contains('open');
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+    if (window.lenis) { isOpen ? window.lenis.stop() : window.lenis.start(); }
   });
 
   // Close on link click
@@ -209,6 +242,7 @@ function initMobileMenu() {
       toggle.classList.remove('active');
       overlay.classList.remove('open');
       document.body.style.overflow = '';
+      if (window.lenis) window.lenis.start();
     });
   });
 }
@@ -220,7 +254,11 @@ function initSmoothScroll() {
       const target = document.querySelector(link.getAttribute('href'));
       if (target) {
         e.preventDefault();
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (window.lenis) {
+          window.lenis.scrollTo(target, { offset: -80 });
+        } else {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     });
   });
@@ -932,6 +970,7 @@ function initScrollArrows() {
 
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
+    if (window.lenis) window.lenis.stop();
   };
 
   window.closeGallery = function() {
@@ -939,6 +978,7 @@ function initScrollArrows() {
     if (!modal) return;
     modal.classList.remove('open');
     document.body.style.overflow = '';
+    if (window.lenis) window.lenis.start();
   };
 
   window.galleryNext = function() {

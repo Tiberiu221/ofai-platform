@@ -611,7 +611,9 @@ function prefillFromRejected() {
   window._retryingRejectedId = r.id;
 
   // Smooth scroll to section header (above the form)
-  document.getElementById('adauga-business').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  var _scrollTarget = document.getElementById('adauga-business');
+  if (window.lenis) { window.lenis.scrollTo(_scrollTarget, { offset: -80 }); }
+  else { _scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
 }
 
 async function abandonRequest(requestId) {

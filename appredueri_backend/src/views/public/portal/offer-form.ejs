@@ -1182,7 +1182,8 @@
     msgEl.textContent = text;
     msgEl.className = 'of-message of-message-' + type;
     msgEl.style.display = 'block';
-    msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (window.lenis) { window.lenis.scrollTo(msgEl, { offset: -(window.innerHeight / 2) + (msgEl.offsetHeight / 2) }); }
+    else { msgEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   }
 
   function hideMessage() {
