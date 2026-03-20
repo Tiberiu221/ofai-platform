@@ -195,7 +195,7 @@ function initCronJobs() {
           await client.query(`
             UPDATE business_subscriptions
             SET plan_id = $2, status = 'active', billing_cycle = 'none',
-                stripe_subscription_id = NULL, stripe_customer_id = NULL,
+                stripe_subscription_id = NULL,
                 current_period_end = NULL, cancel_at_period_end = FALSE, updated_at = NOW()
             WHERE business_id = ANY($1::int[])
           `, [bizIds, freePlanId]);
@@ -241,7 +241,7 @@ function initCronJobs() {
           await client.query(`
             UPDATE business_subscriptions
             SET plan_id = $2, status = 'active', billing_cycle = 'none',
-                stripe_subscription_id = NULL, stripe_customer_id = NULL,
+                stripe_subscription_id = NULL,
                 current_period_end = NULL, cancel_at_period_end = FALSE, updated_at = NOW()
             WHERE business_id = ANY($1::int[])
           `, [bizIds, freePlanId]);
@@ -263,9 +263,30 @@ function initCronJobs() {
         }
       }
 
-      const total = trialResult.rows.length + paidResult.rows.length;
+      // ── Safety net: Stripe-managed subs past period_end with cancel_at_period_end ──
+      // Catches missed customer.subscription.deleted webhooks
+      const staleStripeResult = await pool.query(`
+        UPDATE business_subscriptions
+        SET plan_id = $1, status = 'active', billing_cycle = 'none',
+            stripe_subscription_id = NULL, current_period_end = NULL,
+            cancel_at_period_end = FALSE, updated_at = NOW()
+        WHERE status = 'active'
+          AND cancel_at_period_end = TRUE
+          AND current_period_end < NOW() - INTERVAL '1 day'
+          AND stripe_subscription_id IS NOT NULL
+        RETURNING business_id, plan_id
+      `, [freePlanId]);
+
+      if (staleStripeResult.rows.length > 0) {
+        for (const row of staleStripeResult.rows) {
+          await syncBadgeType(pool, row.business_id, freeBadgeType);
+        }
+        console.log(`[Cron] Safety net: ${staleStripeResult.rows.length} stale Stripe subs downgraded (missed webhooks)`);
+      }
+
+      const total = trialResult.rows.length + paidResult.rows.length + staleStripeResult.rows.length;
       if (total > 0) {
-        console.log(`[Cron] Subscription check: ${trialResult.rows.length} trials + ${paidResult.rows.length} paid expired, downgraded to free`);
+        console.log(`[Cron] Subscription check: ${trialResult.rows.length} trials + ${paidResult.rows.length} paid + ${staleStripeResult.rows.length} stale Stripe expired, downgraded to free`);
       }
     } catch (err) {
       console.error('[Cron] Subscription expiry check error:', err.message);

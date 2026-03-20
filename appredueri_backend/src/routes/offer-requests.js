@@ -7,24 +7,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
-const { authenticateToken } = require("../middleware/auth");
-const { verifyToken } = require("../helpers/jwt");
-
-/**
- * Optional auth middleware — attaches req.user if token present, doesn't block if missing
- */
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return next();
-
-  try {
-    const decoded = verifyToken(authHeader.split(" ")[1]);
-    req.user = { id: decoded.id };
-  } catch (_) {
-    // Token invalid — proceed without user
-  }
-  next();
-}
+const { authenticateToken, optionalAuth } = require("../middleware/auth");
 
 /**
  * POST /offer-requests
@@ -34,9 +17,9 @@ function optionalAuth(req, res, next) {
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { business_id } = req.body;
+    const business_id = parseInt(req.body.business_id, 10);
 
-    if (!business_id) {
+    if (!business_id || isNaN(business_id)) {
       return res.status(400).json({ message: "business_id este obligatoriu" });
     }
 
@@ -115,7 +98,8 @@ router.post("/", authenticateToken, async (req, res) => {
  */
 router.get("/:businessId/count", optionalAuth, async (req, res) => {
   try {
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: "ID invalid" });
 
     const { rows: stats } = await pool.query(
       `SELECT
@@ -166,7 +150,8 @@ router.get("/:businessId/count", optionalAuth, async (req, res) => {
 router.delete("/:businessId", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { businessId } = req.params;
+    const businessId = parseInt(req.params.businessId, 10);
+    if (isNaN(businessId)) return res.status(400).json({ message: "ID invalid" });
 
     const { rowCount } = await pool.query(
       `DELETE FROM offer_requests

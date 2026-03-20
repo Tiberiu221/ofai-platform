@@ -21,6 +21,9 @@ const { cancelSubscription } = require("../services/subscriptionService");
 const { generateReviewSuggestions } = require("../services/llm/reviewSuggestions");
 const { formatError } = require("../services/llm/anthropicClient");
 
+// Attach tier info to all portal routes (required by requireFeature/requireLimit)
+router.use("/api/web/portal/:businessId", attachTier());
+
 // Upload logo
 router.post("/api/web/portal/:businessId/logo", requireBusinessOwner, requireFeature('can_upload_logo'), portalUpload.single("logo"), async (req, res) => {
   try {
@@ -1378,7 +1381,8 @@ router.delete("/api/web/reviews/:id", requireWebAuth, async (req, res) => {
 router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+    const tierMaxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), tierMaxDays);
 
     const result = await pool.query(
       `SELECT DATE(viewed_at) as date, COUNT(*) as views
@@ -1410,7 +1414,8 @@ router.get("/api/web/portal/:businessId/analytics/views", requireBusinessOwner, 
 router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+    const tierMaxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), tierMaxDays);
     const offerId = parseInt(req.query.offer_id);
 
     if (!offerId || isNaN(offerId)) {
@@ -1455,7 +1460,8 @@ router.get("/api/web/portal/:businessId/analytics/offer-views", requireBusinessO
 router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+    const tierMaxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), tierMaxDays);
 
     const [trendRes, totalRes] = await Promise.all([
       pool.query(
@@ -1483,7 +1489,8 @@ router.get("/api/web/portal/:businessId/analytics/subscribers", requireBusinessO
 router.get("/api/web/portal/:businessId/analytics/clicks", requireBusinessOwner, requireFeature('has_analytics_charts'), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+    const tierMaxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), tierMaxDays);
 
     const validActionTypes = ['phone', 'whatsapp', 'navigate', 'booking_url'];
     const actionType = validActionTypes.includes(req.query.action_type) ? req.query.action_type : null;
@@ -1545,7 +1552,8 @@ router.get("/api/web/portal/:businessId/analytics/export",
   try {
     const businessId = req.businessId;
     const type = req.query.type || 'views';
-    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 90);
+    const tierMaxDays = req.tier ? req.tier.plan.analytics_days : 7;
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), tierMaxDays);
 
     const validTypes = ['views', 'subscribers', 'clicks', 'offer-views', 'code-reveals'];
     if (!validTypes.includes(type)) {

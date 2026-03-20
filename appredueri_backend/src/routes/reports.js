@@ -94,7 +94,7 @@ router.post("/", authenticateToken, async (req, res) => {
 
     // Auto-flag thresholds
     const { rows: flagRows } = await pool.query(
-      "SELECT COUNT(*) FROM reports WHERE target_type = $1 AND target_id = $2 AND status = 'pending'",
+      "SELECT COUNT(DISTINCT reporter_id) FROM reports WHERE target_type = $1 AND target_id = $2 AND status = 'pending'",
       [target_type, tid]
     );
     const reportCount = parseInt(flagRows[0].count);
@@ -110,10 +110,11 @@ router.post("/", authenticateToken, async (req, res) => {
         if (adminRows.length > 0) {
           const { rows: bizRows } = await pool.query("SELECT name FROM businesses WHERE id = $1", [tid]);
           const bizName = bizRows[0]?.name || `#${tid}`;
+          const safeBizName = String(bizName).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
           sendEmail({
             to: adminRows[0].email,
             subject: `[OFAI] Alerta: Business "${bizName}" are ${reportCount} rapoarte`,
-            html: `<p>Business-ul <strong>${bizName}</strong> (ID: ${tid}) are <strong>${reportCount}</strong> rapoarte pending.</p><p>Verifica in <a href="https://ofai.ro/admin/reports">panoul admin</a>.</p>`,
+            html: `<p>Business-ul <strong>${safeBizName}</strong> (ID: ${tid}) are <strong>${reportCount}</strong> rapoarte pending.</p><p>Verifica in <a href="https://ofai.ro/admin/reports">panoul admin</a>.</p>`,
           }).catch(err => console.error("[Reports] Admin notify failed:", err.message));
           console.log(`[Reports] Admin notified: business ${tid} has ${reportCount} reports`);
         }

@@ -5,7 +5,8 @@ import '../core/storage/preferences.dart';
 import '../models/offer.dart';
 
 // Bump this counter to re-fetch recently viewed offers
-final _recentlyViewedRefresh = StateProvider.autoDispose<int>((ref) => 0);
+// NOT autoDispose — must outlive any screen since recordRecentlyViewed() increments it globally
+final _recentlyViewedRefresh = StateProvider<int>((ref) => 0);
 
 final recentlyViewedOffersProvider =
     FutureProvider.autoDispose<List<Offer>>((ref) async {

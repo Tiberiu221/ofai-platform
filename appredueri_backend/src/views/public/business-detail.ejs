@@ -150,7 +150,8 @@
       var hasMultiLocations = business.locations && business.locations.length > 1;
       if (!hasMultiLocations) {
         if (business.locations && business.locations.length === 1 && business.locations[0].maps_url) {
-          navUrl = business.locations[0].maps_url;
+          var rawMapsUrl = business.locations[0].maps_url;
+          navUrl = (rawMapsUrl && /^https?:\/\//i.test(rawMapsUrl)) ? rawMapsUrl : null;
         } else if (business.locations && business.locations.length === 1 && business.locations[0].lat && business.locations[0].lng) {
           navUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + business.locations[0].lat + ',' + business.locations[0].lng;
         } else if (business.lat && business.lng) {
@@ -427,7 +428,7 @@
           <% } %>
 
           <div class="bc-actions-row">
-            <% var locNavUrl = loc.maps_url || (loc.lat && loc.lng ? 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng : null); %>
+            <% var rawLocUrl = loc.maps_url; var locNavUrl = (rawLocUrl && /^https?:\/\//i.test(rawLocUrl)) ? rawLocUrl : (loc.lat && loc.lng ? 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng : null); %>
             <% if (locNavUrl) { %>
               <a href="<%= locNavUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary bc-action-btn" onclick="trackClick(<%= business.id %>,'navigate')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>

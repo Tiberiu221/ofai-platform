@@ -151,6 +151,10 @@ async function getPlanBySlug(pool, slug) {
  * Used by handleSubscriptionUpdated when plan changes via Stripe Portal.
  */
 async function mapStripePriceToPlan(pool, unitAmount, interval) {
+  if (interval !== 'year' && interval !== 'month') {
+    console.error('[Stripe] Unexpected interval in mapStripePriceToPlan:', interval);
+    return null;
+  }
   const priceColumn = interval === 'year' ? 'price_yearly' : 'price_monthly';
   const billingCycle = interval === 'year' ? 'yearly' : 'monthly';
   const { rows } = await pool.query(
@@ -166,6 +170,10 @@ async function mapStripePriceToPlan(pool, unitAmount, interval) {
  * Falls back to amount-based matching if Price ID not found.
  */
 async function mapStripePriceIdToPlan(pool, priceId, unitAmount, interval) {
+  if (interval !== 'year' && interval !== 'month') {
+    console.error('[Stripe] Unexpected interval in mapStripePriceIdToPlan:', interval);
+    return null;
+  }
   const billingCycle = interval === 'year' ? 'yearly' : 'monthly';
   const priceIdColumn = interval === 'year' ? 'stripe_price_yearly_id' : 'stripe_price_monthly_id';
 

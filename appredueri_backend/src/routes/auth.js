@@ -167,12 +167,13 @@ router.post("/register", async (req, res) => {
 // POST /auth/login
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body || {};
+    const { email: rawEmail, password } = req.body || {};
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return res.status(400).json({ message: "Email și parolă sunt obligatorii" });
     }
 
+    const email = rawEmail.trim().toLowerCase();
     const { getUserBadges } = require("../services/badgeService");
 
     const result = await pool.query(

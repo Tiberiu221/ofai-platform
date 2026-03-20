@@ -108,6 +108,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **web.js split:** Split into 4 sub-routers: `web.js`, `web-auth.js`, `web-account-api.js`, `web-portal-api.js` + `web-shared.js` utility
 - **LLM services:** AI validation/moderation in `services/llm/` (5 files). Uses Anthropic Claude API via `anthropicClient.js`
 - **Route count:** 23 route files total — don't forget to update both web and mobile routes when changing shared logic
+- **Lenis smooth scroll:** `window.lenis` is global. Use `lenis.scrollTo(target, { offset: -80 })` instead of `scrollIntoView`. Use `lenis.stop()`/`lenis.start()` for modals. Horizontal scroll containers are NOT affected (Lenis is vertical only). If CDN fails, all code falls back to native via `if (window.lenis)` guards
 
 ## Language
 - UI text and user-facing strings: Romanian
@@ -158,6 +159,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **Report Auto-Flag:** ≥3 reports → email admin, ≥10 → auto-deactivate business
 - **Offline Indicator:** connectivity_plus StreamProvider + red banner "Ești offline" in app shell
 - **"Gestionează pe Web" Banner:** Shows on business_detail_screen for owners, links to portal
+- **Lenis Smooth Scroll:** CDN-loaded (jsDelivr), duration 1.2s ease-out-quint, navbar/anchors/modals migrated, graceful fallback if CDN fails
 - Express pinned to ~5.1.0
 - 23 route files, 18 providers, 63 migrations
 

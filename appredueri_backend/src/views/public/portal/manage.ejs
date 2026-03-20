@@ -2191,7 +2191,7 @@
       container.innerHTML = '<div class="ai-suggestions-label">Alege o sugestie:</div>' +
         suggestions.map(function(s, i) {
           return '<button class="ai-suggestion-pill" onclick="pickSuggestion(' + reviewId + ',' + i + ')" data-text="' +
-            s.replace(/"/g, '&quot;') + '">' +
+            escapeHtml(s) + '">' +
             '<span class="ai-pill-tone">' + labels[i] + '</span>' +
             '<span class="ai-pill-text">' + escapeHtml(s) + '</span>' +
             '</button>';

@@ -64,8 +64,21 @@ async function awardPoints(userId, action) {
  * Increments if last activity was yesterday, resets to 1 if gap > 1 day.
  * @param {number} userId
  */
+// In-memory debounce: skip DB call if user already checked within the hour
+const _streakCache = new Map();
+const STREAK_DEBOUNCE_MS = 60 * 60 * 1000; // 1 hour
+
 async function updateStreak(userId) {
   if (!userId) return;
+  const now = Date.now();
+  const lastCheck = _streakCache.get(userId);
+  if (lastCheck && (now - lastCheck) < STREAK_DEBOUNCE_MS) return;
+  _streakCache.set(userId, now);
+  // Prevent memory leak: cap cache size
+  if (_streakCache.size > 10000) {
+    const oldest = _streakCache.keys().next().value;
+    _streakCache.delete(oldest);
+  }
   try {
     const res = await pool.query(
       "SELECT current_streak, last_activity_date FROM user_streaks WHERE user_id = $1",

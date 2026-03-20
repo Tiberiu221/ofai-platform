@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/network/api_client.dart';
 import '../core/network/api_endpoints.dart';
@@ -115,7 +114,7 @@ class ReviewsNotifier extends StateNotifier<ReviewsState> {
       );
       return true;
     } catch (e) {
-      debugPrint('deleteReview error: $e');
+      print('deleteReview error: $e');
       return false;
     }
   }

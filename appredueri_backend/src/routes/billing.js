@@ -113,14 +113,6 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       ? targetCycle === 'yearly'  // monthly→yearly: prorate; yearly→monthly: no proration
       : !isPlanDowngrade;         // upgrade: prorate; downgrade: no proration
 
-    // Update Stripe subscription
-    // Also clear any pending cancellation — if user is changing plan, they want to keep it
-    await stripe.subscriptions.update(stripeSubId, {
-      items: [{ id: itemId, price: newPriceId }],
-      proration_behavior: shouldProrate ? 'create_prorations' : 'none',
-      cancel_at_period_end: false,
-    });
-
     // Determine action for history
     let action, message;
     const planName = planSlug === 'standard' ? 'Standard' : 'Premium';
@@ -139,23 +131,17 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
       message = `Upgrade-ul la ${planName} (${cycleName}) a fost aplicat.`;
     }
 
-    // Re-fetch Stripe subscription to get updated current_period_end
-    const updatedSub = await stripe.subscriptions.retrieve(stripeSubId);
-    const newPeriodEnd = new Date(updatedSub.current_period_end * 1000);
-
-    // Update local DB immediately (don't rely solely on webhook — race condition)
+    // DB first, then Stripe — if Stripe fails, rollback DB
     const newPlanId = targetPlan.rows[0].id;
-
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
       await client.query(
         `UPDATE business_subscriptions
-         SET plan_id = $1, billing_cycle = $2, cancel_at_period_end = FALSE,
-             current_period_end = $3, updated_at = NOW()
-         WHERE business_id = $4`,
-        [newPlanId, targetCycle, newPeriodEnd, bizId]
+         SET plan_id = $1, billing_cycle = $2, cancel_at_period_end = FALSE, updated_at = NOW()
+         WHERE business_id = $3`,
+        [newPlanId, targetCycle, bizId]
       );
 
       await client.query(
@@ -174,10 +160,25 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
         await syncBadgeType(client, bizId, newPlanFull.rows[0].badge_type);
       }
 
+      // Update Stripe subscription — if this fails, DB transaction is rolled back
+      await stripe.subscriptions.update(stripeSubId, {
+        items: [{ id: itemId, price: newPriceId }],
+        proration_behavior: shouldProrate ? 'create_prorations' : 'none',
+        cancel_at_period_end: false,
+      });
+
+      // Fetch updated period end from Stripe and save it
+      const updatedSub = await stripe.subscriptions.retrieve(stripeSubId);
+      const newPeriodEnd = new Date(updatedSub.current_period_end * 1000);
+      await client.query(
+        `UPDATE business_subscriptions SET current_period_end = $1 WHERE business_id = $2`,
+        [newPeriodEnd, bizId]
+      );
+
       await client.query('COMMIT');
-    } catch (dbErr) {
+    } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
-      console.error('[Billing] DB update after plan change failed:', dbErr);
+      throw err;
     } finally {
       client.release();
     }
@@ -304,6 +305,18 @@ async function handleCheckoutCompleted(session) {
   }
 
   const bizId = parseInt(businessId, 10);
+
+  // Idempotency: skip if this session was already processed
+  const checkoutReason = `Stripe checkout completed (session ${session.id})`;
+  const alreadyProcessed = await pool.query(
+    'SELECT 1 FROM subscription_history WHERE business_id = $1 AND reason = $2',
+    [bizId, checkoutReason]
+  );
+  if (alreadyProcessed.rows.length > 0) {
+    console.log(`[Billing] Checkout already processed for session ${session.id}, skipping`);
+    return;
+  }
+
   const plan = await stripeService.getPlanBySlug(pool, planSlug);
   if (!plan) {
     console.error(`[Billing] Plan not found for slug: ${planSlug}`);
@@ -341,7 +354,6 @@ async function handleCheckoutCompleted(session) {
     );
 
     // Log to subscription_history (idempotent — skip if already processed)
-    const checkoutReason = `Stripe checkout completed (session ${session.id})`;
     await client.query(
       `INSERT INTO subscription_history
        (business_id, from_plan_id, to_plan_id, action, reason)
@@ -418,14 +430,16 @@ async function handlePaymentFailed(invoice) {
   const stripeSubId = invoice.subscription;
   if (!stripeSubId) return;
 
+  // Idempotency: only update if status is 'active' (not already 'past_due')
   const result = await pool.query(
     `UPDATE business_subscriptions
      SET status = 'past_due', updated_at = NOW()
-     WHERE stripe_subscription_id = $1 AND status IN ('active', 'past_due')
+     WHERE stripe_subscription_id = $1 AND status = 'active'
      RETURNING id, business_id`,
     [stripeSubId]
   );
 
+  // If no rows updated, subscription was already past_due or doesn't exist — skip email
   if (result.rows.length === 0) return;
 
   const { business_id } = result.rows[0];
@@ -468,7 +482,7 @@ async function handleSubscriptionCancelled(subscription) {
     await client.query(
       `UPDATE business_subscriptions
        SET plan_id = $2, status = 'active', billing_cycle = 'none',
-           stripe_subscription_id = NULL, stripe_customer_id = NULL,
+           stripe_subscription_id = NULL,
            current_period_end = NULL, cancel_at_period_end = FALSE, updated_at = NOW()
        WHERE business_id = $1`,
       [business_id, freePlan.rows[0].id]
@@ -650,14 +664,22 @@ async function sendPaymentFailedEmail(businessId) {
   }
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function buildSubscriptionEmail(firstName, businessName, planName, type) {
+  const safeFirst = escapeHtml(firstName);
+  const safeBiz = escapeHtml(businessName);
+  const safePlan = escapeHtml(planName);
   const isFailure = type === 'payment_failed';
-  const title = isFailure ? 'Plata abonamentului a esuat' : `Abonament ${planName} activat!`;
+  const title = isFailure ? 'Plata abonamentului a esuat' : `Abonament ${safePlan} activat!`;
   const color = isFailure ? '#dc2626' : '#16a34a';
   const body = isFailure
-    ? `<p>Plata pentru abonamentul business-ului <strong>${businessName}</strong> nu a putut fi procesata.</p>
+    ? `<p>Plata pentru abonamentul business-ului <strong>${safeBiz}</strong> nu a putut fi procesata.</p>
        <p>Te rugam sa verifici metoda de plata in portalul de facturare.</p>`
-    : `<p>Abonamentul <strong>${planName}</strong> pentru business-ul <strong>${businessName}</strong> a fost <span style="color: ${color}; font-weight: bold;">activat cu succes</span>!</p>
+    : `<p>Abonamentul <strong>${safePlan}</strong> pentru business-ul <strong>${safeBiz}</strong> a fost <span style="color: ${color}; font-weight: bold;">activat cu succes</span>!</p>
        <p>Poti gestiona abonamentul din Business Portal.</p>`;
   const ctaText = isFailure ? 'Actualizeaza metoda de plata' : 'Mergi la portal';
 
@@ -667,7 +689,7 @@ function buildSubscriptionEmail(firstName, businessName, planName, type) {
   <div style="text-align: center; margin-bottom: 30px;">
     <h1 style="color: ${color}; margin: 0;">${title}</h1>
   </div>
-  <p>Salut${firstName ? ` ${firstName}` : ''},</p>
+  <p>Salut${safeFirst ? ` ${safeFirst}` : ''},</p>
   ${body}
   <div style="text-align: center; margin: 30px 0;">
     <a href="https://ofai.ro/cont" style="background: ${color}; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">${ctaText}</a>

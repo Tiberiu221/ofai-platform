@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../core/network/api_client.dart';
@@ -65,7 +64,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Re-register push on app restart
       PushNotificationService().initialize().catchError((e) {
-        debugPrint('[Push] Init failed: $e');
+        print('[Push] Init failed: $e');
       });
     } on DioException catch (e) {
       // Only log out on auth errors (401/403). Network errors keep current state.
@@ -76,7 +75,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Network error, timeout etc. — don't log out (user may be offline)
     } catch (e) {
       // Non-network error (JSON parsing, etc.) — don't log out
-      debugPrint('[Auth] _checkAuth unexpected error: $e');
+      print('[Auth] _checkAuth unexpected error: $e');
     }
   }
 
@@ -103,7 +102,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
-        debugPrint('[Push] Init failed: $e');
+        print('[Push] Init failed: $e');
       });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la autentificare';
@@ -150,7 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       // Register for push notifications
       PushNotificationService().initialize().catchError((e) {
-        debugPrint('[Push] Init failed: $e');
+        print('[Push] Init failed: $e');
       });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la înregistrare';
@@ -199,7 +198,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _ref.invalidate(followedBusinessesProvider);
 
       PushNotificationService().initialize().catchError((e) {
-        debugPrint('[Push] Init failed: $e');
+        print('[Push] Init failed: $e');
       });
     } catch (e) {
       final msg = e is ApiException ? e.message : 'Eroare la autentificarea cu Google';
