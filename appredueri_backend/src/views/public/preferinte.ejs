@@ -63,7 +63,7 @@
   </div>
 </section>
 
-<script>
+<script nonce="<%= cspNonce %>">
   let selectedCityIds = [<%= Array.isArray(preferredCityIds) ? preferredCityIds.join(',') : '' %>];
   let selectedCategoryIds = [<%= Array.isArray(preferredCategoryIds) ? preferredCategoryIds.join(',') : '' %>];
 

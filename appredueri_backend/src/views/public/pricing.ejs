@@ -381,7 +381,7 @@
   </div>
 </main>
 
-<script>
+<script nonce="<%= cspNonce %>">
 (function() {
   var isYearly = false;
   var _userBusinesses = <%- JSON.stringify(userBusinesses || []) %>;

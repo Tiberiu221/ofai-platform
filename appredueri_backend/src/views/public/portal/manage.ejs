@@ -146,7 +146,7 @@
 
 <%- include('../partials/footer') %>
 
-<script>
+<script nonce="<%= cspNonce %>">
 (function() {
   var businessId = '<%= business.id %>';
   var currentPeriod = 30;

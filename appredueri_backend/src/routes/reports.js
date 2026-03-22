@@ -56,8 +56,10 @@ router.post("/", authenticateToken, async (req, res) => {
       return res.status(429).json({ message: "Ai atins limita de rapoarte pentru astăzi. Încearcă mâine." });
     }
 
-    // Check target exists
-    const targetTable = target_type === "offer" ? "offers" : "businesses";
+    // Check target exists — explicit lookup map to prevent SQL injection
+    const TABLE_MAP = { offer: 'offers', business: 'businesses' };
+    const targetTable = TABLE_MAP[target_type];
+    if (!targetTable) return res.status(400).json({ message: "Tip invalid." });
     const { rows: targetRows } = await pool.query(
       `SELECT id, business_id FROM ${targetTable} WHERE id = $1`,
       [tid]

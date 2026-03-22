@@ -84,7 +84,7 @@
 <% if (typeof googleClientId !== 'undefined' && googleClientId) { %>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <% } %>
-<script>
+<script nonce="<%= cspNonce %>">
 // Read returnTo from URL once on page load
 // returnTo is validated server-side (web.js) — must start with / and not //
 const _qs = new URLSearchParams(window.location.search);

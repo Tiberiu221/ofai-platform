@@ -63,7 +63,7 @@
         </div>
       </div>
     </div>
-    <script>
+    <script nonce="<%= cspNonce %>">
     (function() {
       var strip = document.getElementById('badges-strip');
       var wrapper = document.getElementById('badges-strip-wrapper');
@@ -239,7 +239,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   async function changePassword(e) {
     e.preventDefault();
     const form = e.target;
@@ -314,7 +314,7 @@
   }
 </script>
 
-<script>
+<script nonce="<%= cspNonce %>">
 async function togglePictureVisibility(show) {
   try {
     const csrfToken = typeof getCsrfToken === 'function' ? getCsrfToken() : '';

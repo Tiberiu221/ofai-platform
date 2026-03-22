@@ -39,6 +39,18 @@ async function deleteUserAccount(userId, client, ip, source) {
   await client.query("DELETE FROM points_history WHERE user_id = $1", [userId]);
   // 12. Delete code reveals
   await client.query("DELETE FROM code_reveals WHERE user_id = $1", [userId]);
+  // 12a. Delete notification preferences (GDPR)
+  await client.query("DELETE FROM notification_preferences WHERE user_id = $1", [userId]);
+  // 12b. Delete saved searches (GDPR — contains user search queries)
+  await client.query("DELETE FROM saved_searches WHERE user_id = $1", [userId]);
+  // 12c. Anonymize offer requests (pinch)
+  await client.query("UPDATE offer_requests SET user_id = NULL WHERE user_id = $1", [userId]);
+  // 12d. Anonymize reports (keep for admin review but remove reporter link)
+  await client.query("UPDATE reports SET reporter_id = NULL WHERE reporter_id = $1", [userId]);
+  // 12e. Delete referral rewards
+  await client.query("DELETE FROM referral_rewards WHERE referrer_id = $1 OR referee_id = $1", [userId]);
+  // 12f. Delete user badges (in case cascade doesn't cover it)
+  await client.query("DELETE FROM user_badges WHERE user_id = $1", [userId]);
   // 13. Log deletion in audit log
   try {
     await client.query(

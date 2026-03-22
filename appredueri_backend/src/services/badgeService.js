@@ -89,6 +89,13 @@ async function conditionMet(userId, slug) {
 
   // --- Simple table count ----------------------------------------------------
   if (condition.table) {
+    // Whitelist allowed table names to prevent SQL injection (even though
+    // BADGE_CONDITIONS is currently hardcoded, this guards against future changes)
+    const ALLOWED_BADGE_TABLES = ['reviews', 'favorite_offers', 'followed_businesses', 'code_reveals'];
+    if (!ALLOWED_BADGE_TABLES.includes(condition.table)) {
+      console.error(`[Badge] Invalid badge table: ${condition.table}`);
+      return false;
+    }
     const result = await pool.query(
       `SELECT COUNT(*) AS cnt FROM ${condition.table} WHERE user_id = $1`,
       [userId]

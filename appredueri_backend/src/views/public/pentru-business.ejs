@@ -468,7 +468,7 @@
 </style>
 
 <% if (webUser) { %>
-<script>
+<script nonce="<%= cspNonce %>">
 // Load existing requests and show tracker
 async function loadMyRequests() {
   try {

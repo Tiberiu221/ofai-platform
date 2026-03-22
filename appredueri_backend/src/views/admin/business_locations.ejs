@@ -134,7 +134,7 @@
   </table>
 <% } %>
 
-<script>
+<script nonce="<%= cspNonce %>">
 function adminDetectCoords(locIdOrAdd) {
   var mapsInput, latInput, lngInput;
   if (locIdOrAdd === 'add') {

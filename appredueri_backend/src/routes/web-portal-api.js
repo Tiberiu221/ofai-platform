@@ -1008,11 +1008,19 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
 
     // Sync offer_locations (empty array = valid everywhere, non-empty = specific locations)
     if (Array.isArray(locationIds) && locationIds.length > 0) {
+      // Validate that all location IDs belong to this business (prevent IDOR)
+      const validLocs = await pool.query(
+        'SELECT id FROM business_locations WHERE business_id = $1 AND id = ANY($2)',
+        [businessId, locationIds.map(id => parseInt(id))]
+      );
+      const validIds = new Set(validLocs.rows.map(r => r.id));
       for (const locId of locationIds) {
-        await pool.query(
-          'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [result.offerId, parseInt(locId)]
-        );
+        if (validIds.has(parseInt(locId))) {
+          await pool.query(
+            'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [result.offerId, parseInt(locId)]
+          );
+        }
       }
     }
 
@@ -1114,22 +1122,25 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
 
     // Handle promo codes update if provided
     if (promoCodesArr !== undefined) {
-      // Delete existing codes and re-insert
-      await pool.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
-
       if (Array.isArray(promoCodesArr)) {
         const validCodes = promoCodesArr.filter(pc => pc.code && pc.code.trim());
-        // Enforce promo code limit per tier
+        // Enforce promo code limit per tier BEFORE deleting existing codes
+        // (prevents data loss if limit check fails)
         const promoLimit = req.tier && req.tier.plan ? req.tier.plan.max_promo_codes_per_offer : null;
         if (promoLimit !== null && validCodes.length > promoLimit) {
           return res.status(403).json({ error: 'limit_reached', message: `Maximum ${promoLimit} coduri promoționale per ofertă.` });
         }
+        // Safe to delete now that limit check passed
+        await pool.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
         for (const pc of validCodes) {
           await pool.query(
             "INSERT INTO promo_codes (offer_id, code, is_active) VALUES ($1, $2, $3)",
             [offerId, sanitizeString(pc.code.trim(), 100), pc.is_active !== false]
           );
         }
+      } else {
+        // Non-array value (e.g. null) — clear all codes
+        await pool.query("DELETE FROM promo_codes WHERE offer_id = $1", [offerId]);
       }
     }
 
@@ -1138,11 +1149,19 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     if (Array.isArray(locationIds)) {
       await pool.query('DELETE FROM offer_locations WHERE offer_id = $1', [offerId]);
       if (locationIds.length > 0) {
+        // Validate that all location IDs belong to this business (prevent IDOR)
+        const validLocs = await pool.query(
+          'SELECT id FROM business_locations WHERE business_id = $1 AND id = ANY($2)',
+          [businessId, locationIds.map(id => parseInt(id))]
+        );
+        const validIds = new Set(validLocs.rows.map(r => r.id));
         for (const locId of locationIds) {
-          await pool.query(
-            'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-            [offerId, parseInt(locId)]
-          );
+          if (validIds.has(parseInt(locId))) {
+            await pool.query(
+              'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+              [offerId, parseInt(locId)]
+            );
+          }
         }
       }
     }
@@ -1150,7 +1169,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     res.json({ success: true, moderation_status: 'pending_review' });
   } catch (err) {
     console.error("[Web API] Portal update offer error:", err.message, err.stack);
-    res.status(500).json({ message: "Eroare server", detail: process.env.NODE_ENV !== 'production' ? err.message : undefined });
+    res.status(500).json({ message: "Eroare server" });
   }
 });
 
@@ -2077,7 +2096,9 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
     const q = (req.query.q || "").trim();
     if (q.length < 2) return res.json({ offers: [], businesses: [] });
 
-    const searchTerm = `%${q}%`;
+    // Escape LIKE special characters to prevent wildcard injection
+    const escaped = q.replace(/[%_\\]/g, '\\$&');
+    const searchTerm = `%${escaped}%`;
 
     const [offersRes, businessesRes] = await Promise.all([
       pool.query(`
@@ -2087,15 +2108,17 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          AND o.moderation_status IN ('approved', 'auto_approved')
           AND (o.title ILIKE $1 OR o.description ILIKE $1 OR b.name ILIKE $1)
-        ORDER BY o.discount_value DESC
+        ORDER BY CASE WHEN o.title ILIKE $1 THEN 0 ELSE 1 END, o.discount_value DESC
         LIMIT 5
       `, [searchTerm]),
       pool.query(`
         SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, b.is_verified, cat.name as category_name
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
-        WHERE (b.name ILIKE $1 OR cat.name ILIKE $1)
+        WHERE b.is_active = true
+          AND (b.name ILIKE $1 OR cat.name ILIKE $1)
         ORDER BY b.name
         LIMIT 3
       `, [searchTerm]),

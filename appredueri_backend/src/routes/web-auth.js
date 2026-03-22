@@ -202,7 +202,7 @@ router.post("/auth/google", async (req, res, next) => {
 
     // Check if user exists
     const existingUser = await pool.query(
-      "SELECT id, email, google_id, profile_picture_url FROM users WHERE email = $1",
+      "SELECT id, email, google_id, profile_picture_url, banned_at FROM users WHERE email = $1",
       [email]
     );
 
@@ -210,6 +210,10 @@ router.post("/auth/google", async (req, res, next) => {
     let isNewUser = false;
 
     if (existingUser.rowCount > 0) {
+      // Check if user is banned (matches mobile auth.js pattern)
+      if (existingUser.rows[0].banned_at) {
+        return res.status(403).json({ message: "Contul tău a fost suspendat." });
+      }
       // Existing user - update google_id and profile_picture_url if not set
       user = existingUser.rows[0];
       await pool.query(

@@ -401,7 +401,7 @@
   }
 </style>
 
-<script>
+<script nonce="<%= cspNonce %>">
   function switchCollectionTab(tab) {
     document.querySelectorAll('.collection-tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelector('[data-tab="' + tab + '"]').classList.add('active');

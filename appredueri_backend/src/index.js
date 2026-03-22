@@ -116,26 +116,36 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ============================================
-// SECURITY HEADERS (Helmet)
+// CSP NONCE (generated per request, used by Helmet + EJS templates)
 // ============================================
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://cdn.jsdelivr.net"],
-      scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      connectSrc: ["'self'", "https://accounts.google.com"],
-      frameSrc: ["https://accounts.google.com"],
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
+// ============================================
+// SECURITY HEADERS (Helmet) — nonce-based CSP
+// ============================================
+app.use((req, res, next) => {
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", `'nonce-${res.locals.cspNonce}'`, "https://accounts.google.com", "https://cdn.jsdelivr.net"],
+        scriptSrcAttr: ["'unsafe-inline'"], // Phase 2: will remove after migrating 54+ inline handlers
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        connectSrc: ["'self'", "https://accounts.google.com"],
+        frameSrc: ["https://accounts.google.com"],
+      },
     },
-  },
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Required for Google Identity Services popup to postMessage back
-  crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
-  crossOriginResourcePolicy: false, // Allow browsers to load images from external domains (Cloudinary, Picsum, DiceBear)
-  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-}));
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Required for Google Identity Services popup to postMessage back
+    crossOriginEmbedderPolicy: false, // Allow loading external images (Cloudinary, DiceBear, etc.)
+    crossOriginResourcePolicy: false, // Allow browsers to load images from external domains (Cloudinary, Picsum, DiceBear)
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  })(req, res, next);
+});
 
 // Additional security headers not covered by Helmet
 app.use((req, res, next) => {
@@ -410,7 +420,7 @@ app.use((err, req, res, next) => {
     if (req.path.startsWith('/admin')) {
       return res.status(403).send(
         '<h1>Eroare CSRF</h1><p>Sesiunea a expirat sau tokenul CSRF lipsește.</p>' +
-        '<a href="javascript:location.reload()">Reîncarcă pagina</a>'
+        `<a href="${req.path}">Reîncarcă pagina</a>`
       );
     }
     return res.status(403).render('public/404', {

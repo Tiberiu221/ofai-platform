@@ -799,7 +799,7 @@
 <!-- ═══════════════════════════════════════════════════════
      PAGE SCRIPTS
      ═══════════════════════════════════════════════════════ -->
-<script>
+<script nonce="<%= cspNonce %>">
 document.addEventListener('DOMContentLoaded', function() {
   /* ─── Share button (safe — uses dataset instead of inline JS) ── */
   var shareBtn = document.querySelector('.bd-share-btn[data-share-name]');
@@ -1242,7 +1242,7 @@ function switchOfferTab(btn) {
 </style>
 
 <!-- Catalog tab switching JS -->
-<script>
+<script nonce="<%= cspNonce %>">
 function bdCatalogTab(idx) {
   document.querySelectorAll('.bd-catalog-tab').forEach(function(t) { t.classList.remove('bd-catalog-tab-active'); });
   document.querySelectorAll('.bd-catalog-panel').forEach(function(p) {

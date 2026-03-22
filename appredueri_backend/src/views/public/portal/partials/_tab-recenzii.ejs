@@ -86,7 +86,7 @@
                         maxlength="500"
                         placeholder="Scrie un răspuns..."
                         oninput="updateCharCount(<%= review.id %>)"></textarea>
-              <script>document.getElementById('response-text-<%= review.id %>').value = <%- JSON.stringify(review.response_id ? (review.response_text || '') : '').replace(/<\//g, '<\\/') %>;</script>
+              <script nonce="<%= cspNonce %>">document.getElementById('response-text-<%= review.id %>').value = <%- JSON.stringify(review.response_id ? (review.response_text || '') : '').replace(/<\//g, '<\\/') %>;</script>
               <div class="response-char-count" id="char-count-<%= review.id %>">0 / 500</div>
               <!-- AI Suggestions (Premium only) -->
               <div class="ai-suggestions-container" id="ai-suggestions-<%= review.id %>" style="display: none;"></div>

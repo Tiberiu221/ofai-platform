@@ -1033,7 +1033,7 @@
 
 <%- include('../partials/footer') %>
 
-<script>
+<script nonce="<%= cspNonce %>">
 (function() {
   const businessId = '<%= business.id %>';
   const offerId = '<%= offer ? offer.id : '' %>';

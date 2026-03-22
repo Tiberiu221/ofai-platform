@@ -55,7 +55,7 @@
     <button onclick="acceptCookies()" style="padding:8px 20px; background:#fb923c; color:#09090b; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">Accept</button>
   </div>
 </div>
-<script>
+<script nonce="<%= cspNonce %>">
 (function() {
   if (!localStorage.getItem('cookie_consent')) {
     var b = document.getElementById('cookie-banner');

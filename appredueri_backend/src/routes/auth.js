@@ -119,15 +119,18 @@ router.post("/register", async (req, res) => {
         if (referrerRows.length > 0) {
           const referrerId = referrerRows[0].id;
           await pool.query("UPDATE users SET referred_by = $1 WHERE id = $2", [referrerId, user.id]);
-          await pool.query(
+          const rewardResult = await pool.query(
             `INSERT INTO referral_rewards (referrer_id, referee_id, reward_type, points_awarded)
-             VALUES ($1, $2, 'signup_bonus', 50) ON CONFLICT DO NOTHING`,
+             VALUES ($1, $2, 'signup_bonus', 50) ON CONFLICT DO NOTHING RETURNING id`,
             [referrerId, user.id]
           );
-          const { awardPoints } = require("../services/gamification");
-          awardPoints(referrerId, 'referral').catch(() => {});
-          awardPoints(user.id, 'referral').catch(() => {});
-          console.log(`[Auth] Referral: user ${user.id} referred by ${referrerId} (code: ${referral_code})`);
+          // Only award points if referral_rewards INSERT succeeded (prevents duplicate awards)
+          if (rewardResult.rowCount > 0) {
+            const { awardPoints } = require("../services/gamification");
+            awardPoints(referrerId, 'referral').catch(() => {});
+            // Note: only referrer gets points (reward is for bringing a new user)
+            console.log(`[Auth] Referral: user ${user.id} referred by ${referrerId} (code: ${referral_code})`);
+          }
         }
       } catch (refErr) {
         console.error("[Auth] Referral processing error:", refErr.message);
@@ -501,7 +504,12 @@ router.post("/verify-reset-code", async (req, res) => {
 
     const token = result.rows[0];
 
-    if (token.token !== code) {
+    // Timing-safe comparison to prevent timing attacks on reset codes
+    const codeMatch = crypto.timingSafeEqual(
+      Buffer.from(String(token.token).padEnd(10)),
+      Buffer.from(String(code).padEnd(10))
+    );
+    if (!codeMatch) {
       // Increment failed attempts
       await pool.query("UPDATE password_reset_tokens SET attempts = attempts + 1 WHERE id = $1", [token.id]);
       return res.status(400).json({ message: "Cod invalid sau expirat" });

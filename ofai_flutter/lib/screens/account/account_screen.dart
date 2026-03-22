@@ -46,8 +46,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       return;
     }
     if (code == null || !context.mounted) return;
+    final referralCode = code; // promote to non-null for builder
 
-    final shareText = 'Descopera ofertele din orasul tau pe OFAI! Foloseste link-ul meu: https://ofai.ro/r/$code';
+    final shareText = 'Descopera ofertele din orasul tau pe OFAI! Foloseste link-ul meu: https://ofai.ro/r/$referralCode';
 
     showModalBottomSheet(
       context: context,
@@ -84,7 +85,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      code,
+                      referralCode,
                       style: AppTypography.labelLarge.copyWith(
                         fontFamily: 'monospace',
                         letterSpacing: 2,

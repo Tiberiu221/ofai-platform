@@ -211,16 +211,26 @@ router.post('/:businessId/reactivate', requireBusinessOwner, async (req, res) =>
       return res.status(400).json({ error: 'Nu exista o anulare in asteptare' });
     }
 
-    await stripe.subscriptions.update(sub.rows[0].stripe_subscription_id, {
-      cancel_at_period_end: false,
-    });
-
-    await pool.query(
-      `UPDATE business_subscriptions
-       SET cancel_at_period_end = FALSE, updated_at = NOW()
-       WHERE business_id = $1`,
-      [bizId]
-    );
+    // DB-first pattern (matches change-plan): update DB, then Stripe, rollback on failure
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `UPDATE business_subscriptions
+         SET cancel_at_period_end = FALSE, updated_at = NOW()
+         WHERE business_id = $1`,
+        [bizId]
+      );
+      await stripe.subscriptions.update(sub.rows[0].stripe_subscription_id, {
+        cancel_at_period_end: false,
+      });
+      await client.query('COMMIT');
+    } catch (stripeErr) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw stripeErr;
+    } finally {
+      client.release();
+    }
 
     console.log(`[Billing] Subscription reactivated: business ${bizId}`);
     res.json({ success: true, message: 'Abonamentul a fost reactivat.' });

@@ -1101,7 +1101,7 @@
 </div>
 
 <% if (offer.has_promo_code && webUser) { %>
-<script>
+<script nonce="<%= cspNonce %>">
   // Share button (safe — uses dataset instead of inline JS)
   (function() {
     var btn = document.querySelector('.share-btn[data-share-title]');

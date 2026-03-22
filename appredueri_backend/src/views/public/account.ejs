@@ -139,7 +139,7 @@
   </div>
 </section>
 
-<script>
+<script nonce="<%= cspNonce %>">
   function showProfileEditForm() {
     document.getElementById('profile-view').style.display = 'none';
     document.getElementById('profile-edit-form').style.display = 'block';
@@ -194,7 +194,7 @@
   });
 </script>
 
-<script>
+<script nonce="<%= cspNonce %>">
 async function uploadProfilePicture(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];

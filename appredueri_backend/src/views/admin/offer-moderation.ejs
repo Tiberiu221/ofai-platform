@@ -140,7 +140,7 @@
   </div>
 </div>
 
-<script>
+<script nonce="<%= cspNonce %>">
   function toggleDetails(idx) {
     var row = document.getElementById('details-' + idx);
     row.style.display = row.style.display === 'table-row' ? 'none' : 'table-row';
