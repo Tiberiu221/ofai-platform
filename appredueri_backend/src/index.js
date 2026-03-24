@@ -240,10 +240,6 @@ function csrfMiddleware(req, res, next) {
        '/auth/forgot-password', '/auth/verify-reset-code', '/auth/reset-password'].includes(req.path)) {
     return next();
   }
-  // Skip for anonymous click tracking endpoint
-  if (req.path === '/api/web/clicks' && req.method === 'POST') {
-    return next();
-  }
   // Skip for Stripe webhook (signed by Stripe, not a browser request)
   if (req.path === '/billing/webhook' && req.method === 'POST') {
     return next();

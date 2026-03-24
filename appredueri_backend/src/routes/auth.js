@@ -231,53 +231,72 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// POST /auth/refresh — Refresh token rotation
+// POST /auth/refresh — Refresh token rotation (transaction + row lock)
 router.post("/refresh", async (req, res) => {
+  const { refreshToken } = req.body || {};
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token este obligatoriu" });
+  }
+
+  const client = await pool.connect();
   try {
-    const { refreshToken } = req.body || {};
+    await client.query('BEGIN');
 
-    if (!refreshToken) {
-      return res.status(400).json({ message: "Refresh token este obligatoriu" });
-    }
-
-    // Find the refresh token
-    const tokenRes = await pool.query(
+    // SELECT ... FOR UPDATE OF rt locks the refresh_tokens row,
+    // preventing concurrent refresh requests from duplicating tokens
+    const tokenRes = await client.query(
       `SELECT rt.*, u.id as uid, u.banned_at
        FROM refresh_tokens rt
        JOIN users u ON u.id = rt.user_id
-       WHERE rt.token = $1 AND rt.revoked_at IS NULL AND rt.expires_at > NOW()`,
+       WHERE rt.token = $1 AND rt.revoked_at IS NULL AND rt.expires_at > NOW()
+       FOR UPDATE OF rt`,
       [refreshToken]
     );
 
     if (tokenRes.rowCount === 0) {
+      await client.query('ROLLBACK');
       return res.status(401).json({ message: "Refresh token invalid sau expirat" });
     }
 
     const tokenData = tokenRes.rows[0];
 
-    // Check if user is banned
+    // Check if user is banned — revoke token and commit (persist revocation)
     if (tokenData.banned_at) {
-      await pool.query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1", [tokenData.id]);
+      await client.query("UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1", [tokenData.id]);
+      await client.query('COMMIT');
       return res.status(403).json({ message: "Contul tău a fost suspendat" });
     }
 
     // Revoke old refresh token (rotation)
-    await pool.query(
+    await client.query(
       "UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1",
       [tokenData.id]
     );
 
-    // Issue new tokens
+    // Create new refresh token (inline — can't use createRefreshToken which uses pool.query)
+    const newRefreshTokenValue = generateRefreshToken();
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000);
+    await client.query(
+      `INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+      [tokenData.user_id, newRefreshTokenValue, expiresAt]
+    );
+
+    await client.query('COMMIT');
+
+    // Issue new access token (JWT generation, no DB needed)
     const newAccessToken = signToken({ id: tokenData.user_id });
-    const newRefreshToken = await createRefreshToken(tokenData.user_id);
 
     return res.json({
       token: newAccessToken,
-      refreshToken: newRefreshToken,
+      refreshToken: newRefreshTokenValue,
     });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error("Eroare la /auth/refresh:", err);
     return res.status(500).json({ message: "Eroare server" });
+  } finally {
+    client.release();
   }
 });
 
