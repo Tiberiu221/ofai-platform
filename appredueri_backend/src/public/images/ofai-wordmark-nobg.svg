@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 110 440 220" width="440" height="220">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 120 440 210" width="440" height="210">
   <defs>
     <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#F97316"/>
@@ -9,20 +9,17 @@
     </linearGradient>
   </defs>
 
-  <!-- OFA text (baseline y=316, cap height ~y=148) -->
+  <!-- OFA text -->
   <text x="46" y="316"
         font-family="'Inter', 'Segoe UI', Helvetica, Arial, sans-serif"
         font-size="180" font-weight="900" letter-spacing="-10" fill="url(#textGrad)"
         stroke="url(#textGrad)" stroke-width="8" paint-order="stroke">OFA</text>
 
-  <!-- i — full height stem matching OFA letter height -->
-  <g transform="translate(401, 0)">
-    <!-- stem: from cap height (148) to baseline (316) = full letter height -->
-    <rect x="0" y="148" width="50" height="168" rx="5" fill="#E0DEDA"/>
-
-    <!-- Price tag dot — sits just above stem -->
-    <g transform="translate(25, 120) rotate(-90)">
-      <path d="M-24,0 L-9,-15 Q-6,-18 -2,-18 L14,-18 Q18,-18 18,-12 L18,12 Q18,18 14,18 L-2,18 Q-6,18 -9,15 Z" fill="#E0DEDA"/>
+  <!-- i with price tag -->
+  <g transform="translate(401, 147)">
+    <rect x="0" y="48" width="50" height="126" rx="5" fill="#E0DEDA"/>
+    <g transform="translate(25, 12) rotate(-90)">
+      <path d="M-34,0 L-14,-21 Q-10,-25 -4,-25 L20,-25 Q27,-25 27,-18 L27,18 Q27,25 20,25 L-4,25 Q-10,25 -14,21 Z" fill="#E0DEDA"/>
     </g>
   </g>
 </svg>
