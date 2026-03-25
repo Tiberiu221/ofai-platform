@@ -508,6 +508,7 @@ router.get("/oferte", async (req, res) => {
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
+    const hasOfferFilters = query || selectedCategory || selectedCity || (sort && sort !== 'popular');
     res.render("public/oferte", {
       offers: interleaved,
       categories: categoriesResult.rows,
@@ -528,6 +529,32 @@ router.get("/oferte", async (req, res) => {
       userFavoriteIds,
       activePage: "oferte",
       webUser: req.webUser,
+      pageTitle: page > 1 ? `Oferte — Pagina ${page}` : 'Oferte',
+      pageDesc: 'Toate ofertele și reducerile active din România. Găsește cele mai bune deal-uri de la restaurante, beauty, fitness și altele pe OFAI.',
+      canonicalUrl: hasOfferFilters ? null : `https://ofai.ro/oferte${page > 1 ? '?page=' + page : ''}`,
+      noIndex: !!hasOfferFilters,
+      seoPage: page,
+      seoTotalPages: totalPages,
+      seoBaseUrl: 'https://ofai.ro/oferte',
+      structuredData: [{
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Oferte pe OFAI",
+        "numberOfItems": totalOffers,
+        "itemListElement": interleaved.slice(0, 10).map((o, i) => ({
+          "@type": "ListItem",
+          "position": (page - 1) * 48 + i + 1,
+          "url": `https://ofai.ro/oferta/${o.id}`,
+          "name": o.title
+        }))
+      }, {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
+          { "@type": "ListItem", "position": 2, "name": "Oferte" }
+        ]
+      }],
     });
   } catch (err) {
     console.error("[Web] Offers page error:", err);
@@ -675,6 +702,7 @@ router.get("/business-uri", async (req, res) => {
       userFollowedIds = followRes.rows.map(r => r.business_id);
     }
 
+    const hasFilters = query || selectedCategory || selectedCity || (sort && sort !== 'popular');
     res.render("public/business-uri", {
       businesses: businessesResult.rows,
       categories: categoriesResult.rows,
@@ -694,6 +722,32 @@ router.get("/business-uri", async (req, res) => {
       userFollowedIds,
       activePage: "business-uri",
       webUser: req.webUser,
+      pageTitle: page > 1 ? `Business-uri — Pagina ${page}` : 'Business-uri',
+      pageDesc: 'Descoperă business-urile verificate din România. Restaurante, saloane, fitness și multe altele cu oferte exclusive pe OFAI.',
+      canonicalUrl: hasFilters ? null : `https://ofai.ro/business-uri${page > 1 ? '?page=' + page : ''}`,
+      noIndex: !!hasFilters,
+      seoPage: page,
+      seoTotalPages: totalPages,
+      seoBaseUrl: 'https://ofai.ro/business-uri',
+      structuredData: [{
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Business-uri pe OFAI",
+        "numberOfItems": totalBusinesses,
+        "itemListElement": businessesResult.rows.slice(0, 10).map((biz, i) => ({
+          "@type": "ListItem",
+          "position": (page - 1) * 24 + i + 1,
+          "url": `https://ofai.ro/business/${biz.id}`,
+          "name": biz.name
+        }))
+      }, {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
+          { "@type": "ListItem", "position": 2, "name": "Business-uri" }
+        ]
+      }],
     });
   } catch (err) {
     console.error("[Web] Businesses page error:", err);
@@ -1385,6 +1439,17 @@ router.get("/categorii", async (req, res) => {
       categories: categories.rows,
       activePage: "categorii",
       webUser: req.webUser,
+      pageTitle: 'Categorii',
+      pageDesc: 'Explorează oferte pe categorii: restaurante, beauty, fitness, fashion, electronice și multe altele pe OFAI.',
+      canonicalUrl: 'https://ofai.ro/categorii',
+      structuredData: {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
+          { "@type": "ListItem", "position": 2, "name": "Categorii" }
+        ]
+      },
     });
   } catch (err) {
     console.error("[Web] Categories error:", err);
@@ -1409,6 +1474,17 @@ router.get("/orase", async (req, res) => {
       cities: cities.rows,
       activePage: "orase",
       webUser: req.webUser,
+      pageTitle: 'Orașe',
+      pageDesc: 'Oferte și reduceri în toate orașele din România. Alege orașul tău și descoperă cele mai bune deal-uri locale pe OFAI.',
+      canonicalUrl: 'https://ofai.ro/orase',
+      structuredData: {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
+          { "@type": "ListItem", "position": 2, "name": "Orașe" }
+        ]
+      },
     });
   } catch (err) {
     console.error("[Web] Cities error:", err);
@@ -2028,15 +2104,15 @@ router.use(require("./web-portal-api"));
 // STATIC / LEGAL PAGES
 // ═══════════════════════════════════════════════════════
 router.get("/termeni", (req, res) => {
-  res.render("public/termeni", { activePage: null, webUser: req.webUser });
+  res.render("public/termeni", { activePage: null, webUser: req.webUser, pageTitle: 'Termeni și Condiții', pageDesc: 'Termenii și condițiile de utilizare ale platformei OFAI.', canonicalUrl: 'https://ofai.ro/termeni' });
 });
 
 router.get("/confidentialitate", (req, res) => {
-  res.render("public/confidentialitate", { activePage: null, webUser: req.webUser });
+  res.render("public/confidentialitate", { activePage: null, webUser: req.webUser, pageTitle: 'Politica de Confidențialitate', pageDesc: 'Politica de confidențialitate și protecția datelor personale pe OFAI.', canonicalUrl: 'https://ofai.ro/confidentialitate' });
 });
 
 router.get("/ajutor", (req, res) => {
-  res.render("public/ajutor", { activePage: null, webUser: req.webUser });
+  res.render("public/ajutor", { activePage: null, webUser: req.webUser, pageTitle: 'Ajutor', pageDesc: 'Întrebări frecvente și ghiduri de utilizare pentru platforma OFAI.', canonicalUrl: 'https://ofai.ro/ajutor' });
 });
 
 router.get("/pentru-business", async (req, res) => {
@@ -2050,6 +2126,9 @@ router.get("/pentru-business", async (req, res) => {
       webUser: req.webUser,
       cities: citiesResult.rows,
       categories: categoriesResult.rows,
+      pageTitle: 'Pentru Business',
+      pageDesc: 'Înscrie-ți business-ul pe OFAI și ajunge la mii de clienți noi. Publică oferte, gestionează recenzii și crește-ți vizibilitatea.',
+      canonicalUrl: 'https://ofai.ro/pentru-business',
     });
   } catch (err) {
     console.error("[Web] Pentru-business error:", err.message);
@@ -2058,6 +2137,9 @@ router.get("/pentru-business", async (req, res) => {
       webUser: req.webUser,
       cities: [],
       categories: [],
+      pageTitle: 'Pentru Business',
+      pageDesc: 'Înscrie-ți business-ul pe OFAI și ajunge la mii de clienți noi.',
+      canonicalUrl: 'https://ofai.ro/pentru-business',
     });
   }
 });
@@ -2104,12 +2186,27 @@ router.get('/preturi', async (req, res) => {
     }
 
     res.render('public/pricing', {
-      pageTitle: 'Preturi - OFAI',
+      pageTitle: 'Prețuri',
+      pageDesc: 'Planuri de abonament pentru business-uri pe OFAI: Free, Standard (49 RON/lună) și Premium (199 RON/lună). Alege planul potrivit.',
+      canonicalUrl: 'https://ofai.ro/preturi',
       activePage: 'preturi',
       plans,
       webUser: req.webUser || null,
       userBusinessId,
       userBusinesses,
+      structuredData: (plans || []).filter(p => p.price_monthly > 0).map(p => ({
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": `OFAI ${p.name}`,
+        "description": p.description || `Plan ${p.name} pentru business-uri pe OFAI`,
+        "offers": {
+          "@type": "Offer",
+          "price": (p.price_monthly / 100).toFixed(2),
+          "priceCurrency": "RON",
+          "availability": "https://schema.org/InStock",
+          "priceValidUntil": new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0]
+        }
+      })),
     });
   } catch (err) {
     console.error('[Web] Pricing page error:', err);

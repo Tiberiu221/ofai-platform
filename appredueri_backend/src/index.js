@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const compression = require("compression");
 const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
@@ -114,6 +115,11 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// ============================================
+// GZIP COMPRESSION (before static files & routes)
+// ============================================
+app.use(compression());
 
 // ============================================
 // CSP NONCE (generated per request, used by Helmet + EJS templates)
@@ -308,9 +314,13 @@ Disallow: /colectia-mea
 Disallow: /setari
 Disallow: /preferinte
 Disallow: /my-businesses
+Disallow: /portal
+Disallow: /onboarding
 Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-code
 Disallow: /api/
 
 Sitemap: https://ofai.ro/sitemap.xml`);
@@ -319,6 +329,7 @@ Sitemap: https://ofai.ro/sitemap.xml`);
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const BASE = 'https://ofai.ro';
+    const today = new Date().toISOString().split('T')[0];
 
     const staticPages = [
       { loc: '/', priority: '1.0', changefreq: 'daily' },
@@ -326,28 +337,32 @@ app.get('/sitemap.xml', async (req, res) => {
       { loc: '/business-uri', priority: '0.8', changefreq: 'daily' },
       { loc: '/categorii', priority: '0.7', changefreq: 'weekly' },
       { loc: '/orase', priority: '0.7', changefreq: 'weekly' },
+      { loc: '/preturi', priority: '0.6', changefreq: 'monthly' },
       { loc: '/pentru-business', priority: '0.6', changefreq: 'monthly' },
+      { loc: '/ajutor', priority: '0.4', changefreq: 'monthly' },
       { loc: '/termeni', priority: '0.3', changefreq: 'yearly' },
       { loc: '/confidentialitate', priority: '0.3', changefreq: 'yearly' },
     ];
 
-    const offers = await pool.query(
-      "SELECT id FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
-    );
-    const businesses = await pool.query(
-      "SELECT id FROM businesses ORDER BY id DESC LIMIT 5000"
-    );
+    const [offers, businesses] = await Promise.all([
+      pool.query(
+        "SELECT id, COALESCE(start_date, created_at)::date as lastmod FROM offers WHERE is_active = true AND moderation_status IN ('approved', 'auto_approved') AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
+      ),
+      pool.query(
+        "SELECT id, created_at::date as lastmod FROM businesses ORDER BY id DESC LIMIT 5000"
+      ),
+    ]);
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
     for (const page of staticPages) {
-      xml += `\n  <url>\n    <loc>${BASE}${page.loc}</loc>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`;
+      xml += `\n  <url>\n    <loc>${BASE}${page.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`;
     }
     for (const row of offers.rows) {
-      xml += `\n  <url>\n    <loc>${BASE}/oferta/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
+      xml += `\n  <url>\n    <loc>${BASE}/oferta/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
     }
     for (const row of businesses.rows) {
-      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
     }
 
     xml += '\n</urlset>';

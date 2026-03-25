@@ -9,6 +9,10 @@
   <!-- Favicon (OFAI wordmark on dark background) -->
   <link rel="icon" type="image/svg+xml" href="/images/ofai-wordmark.svg">
 
+  <!-- Font preloading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <!-- CSRF Token -->
   <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
@@ -31,6 +35,17 @@
   <!-- Canonical URL -->
   <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
   <link rel="canonical" href="<%= canonicalUrl %>">
+  <% } %>
+
+  <!-- Pagination SEO -->
+  <% if (typeof seoPage !== 'undefined' && typeof seoTotalPages !== 'undefined' && typeof seoBaseUrl !== 'undefined') { %>
+    <% if (seoPage > 1) { %><link rel="prev" href="<%= seoBaseUrl %><%= seoPage === 2 ? '' : '?page=' + (seoPage - 1) %>"><% } %>
+    <% if (seoPage < seoTotalPages) { %><link rel="next" href="<%= seoBaseUrl %>?page=<%= seoPage + 1 %>"><% } %>
+  <% } %>
+
+  <!-- Noindex for filtered/auth pages -->
+  <% if (typeof noIndex !== 'undefined' && noIndex) { %>
+  <meta name="robots" content="noindex, follow">
   <% } %>
 
   <!-- Twitter Card -->

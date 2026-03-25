@@ -121,12 +121,30 @@ psql $DATABASE_URL                              # Connect to DB
 - Docs/plans: Romanian
 
 ## Current State (25 March 2026)
-- Subscription system (Plans 00-16) fully planned with docs
+
+### Architecture & Codebase
+- Express pinned to ~5.1.0
+- 23 route files, ~256 endpoints, 20 providers, 64 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
-- Migrations up to **064** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids, referral_system, audit12_indexes)
 - Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
+
+### Consumer Web Pages (22 pages)
+- Home, Oferte, Business-uri, Ofertă detail, Business detail, Categorii, Orașe
+- Colecția mea, Account, Setări, Preferințe notificări
+- Auth: Login, Register, Forgot Password, Reset Password, Verify Code
+- Legal: Termeni, Confidențialitate, Ajutor
+- Business: Pentru Business (landing), Prețuri, Onboarding
+- 404 error page
+- All pages responsive, dark theme, OG meta tags
+
+### Admin Panel
+- Dashboard, Users, Businesses, Offers, Reviews, Categories, Cities
+- Business requests queue (concierge), Offer moderation queue, Reports queue
+- AI review summaries, location management
+
+### Features — Implemented
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
 - **Unified Catalog:** Categories + items CRUD, CSV import, consumer display with category tabs
 - **Concierge Onboarding:** Standard+ tier, request form + file upload, admin queue
@@ -140,13 +158,13 @@ psql $DATABASE_URL                              # Connect to DB
 - **Social Proof Badges:** "Nou", "Se termina curand", trending badges on offer cards
 - **Recently Viewed:** Local storage of last viewed offers/businesses, Home section
 - **Search History:** Persistent local search history on Explore
-- **Gamification:** Backend active (points, levels, streak tracked in DB), UI hidden — only badges visible on Account screen
 - **Pinch Social Pressure:** Request count with fire icon on business detail
 - **Weekly Digest:** Sunday 19:00 push with personalized offer count per city
 - **Deep Links:** apple-app-site-association + assetlinks.json served, AndroidManifest intent filters, iOS entitlements
 - **Pull-to-Refresh:** On both offer and business detail screens
 - **Responsive Quick Wins:** Categories grid adapts to tablet width
 - **OG Tags:** Backend has full Open Graph meta tags (head.ejs) for rich share previews
+- **Tier Badges:** Premium/Standard/Verified badges on ALL web pages (offer cards, business cards, offer detail hero + sidebar + similar, home page sections)
 - **Billing/Stripe:** PRODUCTION READY — webhooks on Railway, full subscription lifecycle
   - Checkout (Free → Standard/Premium), upgrade, downgrade, cancel, reactivate
   - Monthly + yearly billing toggle in portal
@@ -156,7 +174,7 @@ psql $DATABASE_URL                              # Connect to DB
   - current_period_end synced from Stripe after every plan change
   - Reactivate endpoint (undo pending cancellation)
   - Business selector modal on /preturi for multi-business owners
-  - Tier badges (Premium/Standard) on portal dashboard cards + pricing modal
+  - Tier badges on portal dashboard cards + pricing modal
   - CTA action row in subscription comparison table
 - **Category Feed:** Cron + API + Flutter home (web home version not implemented)
 - **Referral System:** referral_code on users, /r/:code web redirect, Flutter "Invită prieteni" on Account, deep links, 50 points per referral (backend only, not shown in UI)
@@ -167,15 +185,44 @@ psql $DATABASE_URL                              # Connect to DB
 - **Lenis Smooth Scroll:** CDN-loaded (jsDelivr), duration 1.2s ease-out-quint, navbar/anchors/modals migrated, graceful fallback if CDN fails
 - **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y
 - **CSP Nonce Migration:** Helmet CSP with per-request nonce for inline scripts
-- **Audit #11 (20 Mar):** 92 findings, 25 fixes applied (commit `7a040ac`) — attachTier on web-portal-api, stripe_customer_id preserved on cancel, past_due in tier filter, stored XSS maps_url, HTML escape in emails, LLM prompt injection fencing, checkout/payment idempotency, change-plan DB-first ordering, Flutter autoDispose fix
-- **Audit #12 (24 Mar):** 19 security/bug fixes + CSP nonce migration (commit `47fcf7b`) + performance indexes (migration 064)
-- **CSRF + Refresh Token (24 Mar):** CSRF re-enabled on click tracking, refresh token race condition fixed with `SELECT ... FOR UPDATE` transaction (commit `e9a7b54`)
-- Express pinned to ~5.1.0
-- 23 route files, 20 providers, 64 migrations, 26 screens, 13 models, 24 widgets
+- **CSRF + Refresh Token:** CSRF re-enabled on click tracking, refresh token race condition fixed with `SELECT ... FOR UPDATE` transaction
+
+### Features — Intentionally Hidden
+- **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
+
+### Email System (9 types)
+- Welcome, password reset, business approved/rejected, offer approved/rejected
+- Premium support welcome, admin onboarding notification, generic
+- Service: Resend API with graceful fallback
+- **Missing:** weekly digest email (push exists, email not), trial expiration warning, re-engagement emails
+
+### Cron Jobs
+- Token cleanup (daily 03:00), push log cleanup (daily 03:15)
+- Category rankings (daily), weekly digest (Sunday 19:00)
+- Flash deal expiration, review summary batch, business deletion (soft delete)
+
+### Monitoring & Error Handling
+- Sentry error tracking (production)
+- Click/offer/reveal tracking (internal analytics)
+- 404 error page exists
+- **Missing:** 500 error page, Google Analytics/GTM, conversion funnel tracking
+
+### Security Audit History
+- **Audit #11 (20 Mar):** 92 findings, 25 fixes (commit `7a040ac`)
+- **Audit #12 (24 Mar):** 19 fixes + CSP nonce migration (commit `47fcf7b`) + performance indexes (migration 064)
 
 ### Remaining Gaps
-- Gamification UI hidden — backend tracks points/levels but not shown to users (can re-enable later)
-- Stripe: go-live with real keys (switch from test to live mode)
-- Post-redemption review cron: implemented but not tested in production
-- Redis cache layer: planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
-- Rate limiter persistence: in-memory, resets on deploy (Redis cache plan will address this)
+- **SEO critical:** No `sitemap.xml`, no `robots.txt`, JSON-LD structured data framework exists but not populated on most pages
+- **Analytics:** No Google Analytics / GTM — zero consumer behavior data
+- **500 error page:** Missing — server errors show blank page
+- **Search:** Basic keyword matching only — no full-text (pg_trgm), no fuzzy/typo tolerance, no distance-based filtering
+- **Email engagement:** No weekly digest email (push only), no trial expiration warning, no re-engagement emails
+- **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
+- **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
+- **Stripe:** Still on test keys — go-live with real keys pending
+- **Testing:** Zero automated tests (no unit, integration, or e2e) — risk for regressions
+- **Blog/content:** No editorial content pages for organic SEO
+- **Referral dashboard:** Backend tracks referrals but user can't see their invite stats
+- **Post-redemption review cron:** Implemented but not tested in production
+- **Offline/PWA:** Connectivity indicator exists but no service worker or local caching
+- **i18n:** All strings hardcoded in Romanian — no multi-language support
