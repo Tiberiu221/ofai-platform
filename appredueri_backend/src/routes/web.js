@@ -28,6 +28,8 @@ async function _getDealOfDay() {
              b.name as business_name, b.logo_url as business_logo,
              COALESCE(b.cover_image_url, o.logo_url) as image_url,
              ci2.name as city_name,
+             b.subscription_badge_type as business_badge_type,
+             b.is_verified as business_verified,
              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
@@ -42,6 +44,8 @@ async function _getDealOfDay() {
                b.name as business_name, b.logo_url as business_logo,
                COALESCE(b.cover_image_url, o.logo_url) as image_url,
                ci2.name as city_name,
+               b.subscription_badge_type as business_badge_type,
+               b.is_verified as business_verified,
                COALESCE(fav_agg.cnt, 0) as save_count
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
@@ -78,6 +82,8 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
            b.name as business_name, b.logo_url as business_logo,
            b.cover_image_url as business_cover,
            b.lat as business_lat, b.lng as business_lng,
+           b.subscription_badge_type as business_badge_type,
+           b.is_verified as business_verified,
            ci.name as city_name, cat.name as category_name,
            COALESCE(b.cover_image_url, o.logo_url) as image_url,
            COALESCE(AVG(r.rating), 0) as rating_avg,
@@ -102,6 +108,7 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
     WHERE ${where.join(" AND ")}
     GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
+             b.subscription_badge_type, b.is_verified,
              ci.name, cat.name, o.logo_url, splan.slug,
              fav_agg.favorite_count, fav_agg.recent_favs
     ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC
@@ -123,6 +130,8 @@ async function _getPromotedOffers(dealOfDay) {
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
              b.lat as business_lat, b.lng as business_lng,
+             b.subscription_badge_type as business_badge_type,
+             b.is_verified as business_verified,
              ci.name as city_name, cat.name as category_name,
              COALESCE(b.cover_image_url, o.logo_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
@@ -141,6 +150,7 @@ async function _getPromotedOffers(dealOfDay) {
         ${exclude}
       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
+               b.subscription_badge_type, b.is_verified,
                ci.name, cat.name, o.logo_url
       ORDER BY RANDOM()
       LIMIT 3
@@ -236,7 +246,9 @@ router.get("/", async (req, res) => {
         ? pool.query(`
             SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
-                   COALESCE(b.cover_image_url, o.logo_url) as image_url
+                   COALESCE(b.cover_image_url, o.logo_url) as image_url,
+                   b.subscription_badge_type as business_badge_type,
+                   b.is_verified as business_verified
             FROM offers o
             JOIN businesses b ON o.business_id = b.id
             JOIN followed_businesses fb ON fb.business_id = b.id AND fb.user_id = $1
@@ -713,6 +725,7 @@ router.get("/oferta/:id", async (req, res) => {
         b.phone as business_phone, b.website as business_website,
         b.lat as business_lat, b.lng as business_lng,
         b.logo_url as business_logo, b.cover_image_url as business_cover,
+        b.subscription_badge_type, b.is_verified as business_verified,
         b.booking_type as biz_booking_type,
         b.booking_phone as biz_booking_phone,
         b.booking_whatsapp as biz_booking_whatsapp,
@@ -812,6 +825,7 @@ router.get("/oferta/:id", async (req, res) => {
         category: { id: row.cat_id, name: row.cat_name },
         rating: parseFloat(avg.toFixed(1)),
         rating_count: count,
+        badge_type: row.subscription_badge_type || (row.business_verified ? 'verified' : null),
       },
       locations: locations.map(l => ({
         id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, cityName: l.city_name,
@@ -853,7 +867,8 @@ router.get("/oferta/:id", async (req, res) => {
             SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
                    COALESCE(o.logo_url, b.cover_image_url) as image_url,
-                   c2.name as city_name
+                   c2.name as city_name,
+                   b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
             FROM offers o
             JOIN businesses b ON o.business_id = b.id
             LEFT JOIN cities c2 ON b.city_id = c2.id
@@ -870,7 +885,8 @@ router.get("/oferta/:id", async (req, res) => {
             SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
                    COALESCE(o.logo_url, b.cover_image_url) as image_url,
-                   c2.name as city_name
+                   c2.name as city_name,
+                   b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
             FROM offers o
             JOIN businesses b ON o.business_id = b.id
             LEFT JOIN cities c2 ON b.city_id = c2.id

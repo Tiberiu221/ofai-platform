@@ -189,7 +189,7 @@
         <div class="offer-content">
           <div class="offer-content-text">
             <div class="offer-title"><%= dealOfDay.title %></div>
-            <div class="offer-business"><%= dealOfDay.business_name %></div>
+            <div class="offer-business"><%= dealOfDay.business_name %><% const _dbt = dealOfDay.business_badge_type || (dealOfDay.business_verified ? 'verified' : null); if (_dbt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_dbt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
             <div class="offer-meta">
               <% if (dealOfDay.city_name) { %>
                 <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> <%= dealOfDay.city_name %></span>
@@ -254,7 +254,7 @@
               <div class="offer-content-text">
             <% } %>
             <div class="offer-title"><%= offer.title %></div>
-            <div class="offer-business"><%= offer.business_name %></div>
+            <div class="offer-business"><%= offer.business_name %><% const _fbt = offer.business_badge_type || (offer.business_verified ? 'verified' : null); if (_fbt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_fbt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
             <% if (parseFloat(offer.rating_avg) > 0) { %>
               <div class="offer-rating">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -343,7 +343,7 @@
           </div>
           <div class="offer-content">
             <div class="offer-title"><%= offer.title %></div>
-            <div class="offer-business"><%= offer.business_name %></div>
+            <div class="offer-business"><%= offer.business_name %><% const _pbt = offer.business_badge_type || (offer.business_verified ? 'verified' : null); if (_pbt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_pbt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
             <% if (parseFloat(offer.rating_avg) > 0) { %>
               <div class="offer-rating">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -398,7 +398,7 @@
             <% } %>
           </div>
           <div class="biz-card-body">
-            <div class="biz-card-name"><%= biz.name %></div>
+            <div class="biz-card-name"><%= biz.name %><% const _bbt = biz.subscription_badge_type || (biz.is_verified ? 'verified' : null); if (_bbt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_bbt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
             <% if (parseFloat(biz.rating_avg) > 0) { %>
               <div class="biz-card-rating">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="#fb923c" stroke="#fb923c" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -506,7 +506,7 @@
           </div>
           <div class="offer-content">
             <div class="offer-title"><%= fo.title %></div>
-            <div class="offer-business"><%= fo.business_name %></div>
+            <div class="offer-business"><%= fo.business_name %><% const _fobt = fo.business_badge_type || (fo.business_verified ? 'verified' : null); if (_fobt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_fobt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
           </div>
         </a>
       <% }); %>
