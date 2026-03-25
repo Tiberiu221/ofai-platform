@@ -1,5 +1,59 @@
 # Changelog
 
+## [v0.12.0] — 2026-03-25
+
+### Securitate
+- Audit #12: 19 security/bug fixes + CSP nonce migration (47fcf7b)
+- CSRF re-enabled on click tracking — was accidentally skipped (e9a7b54)
+- Refresh token race condition fixed with SELECT ... FOR UPDATE transaction (e9a7b54)
+- Performance indexes added (migration 064)
+
+### Reparat
+- Search suggest badges — use site-wide SVG shield icons (533fda5)
+- Promoted badge moved from top-left to bottom-left on offer cards (2f5a5d9)
+- Bottom spacing between grid cards and footer (64a4a66)
+
+## [v0.11.0] — 2026-03-20
+
+### Securitate
+- Audit #11: 25 fixes — attachTier on web-portal-api, stripe_customer_id preserved on cancel, past_due in tier filter (7a040ac)
+- Stored XSS maps_url fix, HTML escape in emails, LLM prompt injection [USER_INPUT] fencing
+- Checkout/payment idempotency, change-plan DB-first ordering
+- Flutter autoDispose fix
+
+### Adaugat
+- OFAI wordmark logo + Play Store build config (b1427ab)
+- Search bar overhaul — better results, highlights, keyboard nav, a11y (605207b)
+- Lenis smooth scroll — CDN-loaded, graceful fallback (5364559)
+- Referral system — full implementation backend + Flutter (1d9e073)
+- Semantics labels + offline connectivity indicator (289b40d)
+- "Gestioneaza pe Web" banner for business owners in Flutter (18f25db)
+
+### Modificat
+- Gamification UI hidden (backend active, UI disabled) (53f18eb)
+- FAQ updated across 3 pages (4c01628)
+
+## [v0.10.0] — 2026-03-09
+
+### Securitate
+- Sprint 3 fixes: parseInt guards, code review findings, QA portal bugfixes (e8c818c)
+- Audit #10 schema fixes (migration 057)
+
+### Adaugat
+- Flash deals with countdown badge widget (migration 058)
+- Notification preferences — granular per-category toggles (migration 059)
+- Saved searches with alerts (migration 060)
+- Collections — curated editorial lists (migration 061)
+- Stripe price IDs (migration 062)
+- Referral system schema (migration 063)
+- Category feed — cron + API + Flutter home
+- Social proof badges, recently viewed, search history
+- Report auto-flag (>=3 reports email admin, >=10 auto-deactivate)
+- Rich share with OG tags
+- Pull-to-refresh on offer + business detail
+- Weekly digest push (Sunday 19:00)
+- Deep links (apple-app-site-association + assetlinks.json)
+
 ## [v0.9.0] — 2026-03-06
 
 ### Securitate

@@ -7,10 +7,10 @@ OFAI is a Romanian local deals/offers platform connecting consumers with verifie
 - **Scraping:** Google Maps data pipeline (`scripts/scraping/`)
 
 ## Tech Stack
-- **Backend:** Node.js, Express, PostgreSQL, EJS templates, Google Cloud Storage, Firebase (push notifications)
+- **Backend:** Node.js, Express, PostgreSQL, EJS templates, Cloudinary (images), Firebase (push notifications), Stripe (billing), Anthropic Claude (AI)
 - **Mobile:** Flutter/Dart
 - **DB:** PostgreSQL on Railway
-- **Hosting:** Railway (backend), planned for production
+- **Hosting:** Railway (backend, production), Cloudflare (DNS/CDN)
 
 ## Project Structure
 ```
@@ -34,13 +34,13 @@ appredueri_backend/
       saved-searches.js       # Saved searches with alerts
       categories.js, cities.js  # Static data
     middleware/     # Auth, CSRF, tierAuth.js (7 files)
-    helpers/        # tiers.js (subscription tier logic), notificationPrefs.js
+    helpers/        # tiers.js, notificationPrefs.js, mapsParser.js, validate.js, jwt.js, gallery.js (6 files)
     services/       # Core services + LLM sub-directory
       cronJobs.js, email.js, offerService.js, stripe.js, cloudinary.js
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
-      llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, prompts)
-    migrations/     # SQL migration files (006-061)
+      llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, reviewSuggestions, prompts)
+    migrations/     # SQL migration files (006-064)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
       public/portal/partials/           # 7 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support)
@@ -54,13 +54,15 @@ appredueri_backend/
     public/.well-known/       # Deep link config (apple-app-site-association, assetlinks.json)
 ofai_flutter/
   lib/
-    screens/        # 18 screen directories (added collection_detail, saved_searches, my_reports, preferences)
-    models/         # 12 data models (+collection, report, saved_search)
-    providers/      # 18 state providers (+collections, saved_searches, search_history, notification_preferences, reports, recently_viewed)
+    screens/        # 26 screens in 16 directories (account, auth, business, home, explore, offer, collection, etc.)
+    models/         # 13 data models (offer, business, user, review, category, city, catalog, collection, report, saved_search, business_request, category_feed, pagination)
+    providers/      # 20 Riverpod providers (auth, offers, businesses, favorites, followed, reviews, collections, saved_searches, search_history, search_suggest, notification_preferences, reports, recently_viewed, category_feed, offer_requests, business_requests, gamification, location, connectivity, static_data)
     core/network/   # API client (ApiClient, ApiEndpoints, ApiExceptions)
     core/storage/   # SharedPreferences, SecureStorage
-    services/       # Push notifications, etc.
-    widgets/        # Reusable widgets (+flash_countdown_badge)
+    core/theme/     # AppColors, AppTypography, AppSpacing, AppTheme, PageTransitions
+    core/utils/     # Distance, Formatters, Interleave, Launchers
+    services/       # Push notifications, analytics, error handler (3 files)
+    widgets/        # 24 reusable widgets (cards, badges, forms, states, galleries, effects)
 docs/plans/         # Implementation plans
   subscriptions/    # 17 subscription plan docs (00-16)
   flutter/          # 5 Flutter plan docs (gaps, scorcard, tier1-3)
@@ -92,7 +94,8 @@ psql $DATABASE_URL                              # Connect to DB
 - **manage.ejs is HUGE** (~2250 lines) - be careful with edits, check closing divs
 - **Portal tab partials:** Catalog tab is in `_tab-catalog.ejs`, Info tab in `_tab-info.ejs`
 - **Column collisions:** `SELECT bs.*, sp.*` in tiers.js causes id/created_at collisions - use explicit aliases
-- **CSRF:** Web portal routes require X-CSRF-Token; webhook routes must skip CSRF
+- **CSRF:** Web portal routes require X-CSRF-Token; webhook routes must skip CSRF; click tracking (`/api/web/clicks`) also requires CSRF (anonymous users get session cookie)
+- **CSP nonce:** Helmet generates `res.locals.cspNonce` per request; all inline `<script>` tags MUST use `nonce="<%= cspNonce %>"` attribute
 - **Stripe webhooks:** Need raw body — index.js skips `express.json()` for `/billing/webhook` path
 - **Prices in bani:** 4900 = 49.00 RON (integer cents, avoid floating point)
 - **Badge sync:** Always call `syncBadgeType()` after subscription changes
@@ -108,7 +111,8 @@ psql $DATABASE_URL                              # Connect to DB
 - **web.js split:** Split into 4 sub-routers: `web.js`, `web-auth.js`, `web-account-api.js`, `web-portal-api.js` + `web-shared.js` utility
 - **LLM services:** AI validation/moderation in `services/llm/` (5 files). Uses Anthropic Claude API via `anthropicClient.js`
 - **LLM prompt injection:** All user-supplied text in LLM prompts must be wrapped in `[USER_INPUT]...[/USER_INPUT]` fencing tags to prevent prompt injection
-- **Route count:** 23 route files total — don't forget to update both web and mobile routes when changing shared logic
+- **Route count:** 23 route files total, ~256 endpoints — don't forget to update both web and mobile routes when changing shared logic
+- **Refresh token rotation:** Uses `SELECT ... FOR UPDATE` in a transaction to prevent race conditions from concurrent requests
 - **Lenis smooth scroll:** `window.lenis` is global. Use `lenis.scrollTo(target, { offset: -80 })` instead of `scrollIntoView`. Use `lenis.stop()`/`lenis.start()` for modals. Horizontal scroll containers are NOT affected (Lenis is vertical only). If CDN fails, all code falls back to native via `if (window.lenis)` guards
 
 ## Language
@@ -116,18 +120,18 @@ psql $DATABASE_URL                              # Connect to DB
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (20 March 2026)
+## Current State (25 March 2026)
 - Subscription system (Plans 00-16) fully planned with docs
-- Audit #8+#9+#10+#11 fixes: ALL applied (v0.9.0+ — 135+ fixes total)
-- Migrations up to **063** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids, referral_system)
-- Business portal (manage.ejs ~2400 lines) — 7 tabs split into partials
+- Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
+- Migrations up to **064** (flash_deals, notification_preferences, saved_searches, collections, stripe_price_ids, referral_system, audit12_indexes)
+- Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
 - **Unified Catalog:** Categories + items CRUD, CSV import, consumer display with category tabs
 - **Concierge Onboarding:** Standard+ tier, request form + file upload, admin queue
 - **Report System:** User reports with categories, admin review queue, Flutter "My Reports" screen
-- **AI Validation:** Business validation (two-pass), offer moderation, review summarization via Claude API
+- **AI Validation:** Business validation (two-pass), offer moderation, review summarization, review suggestions via Claude API
 - **Location Management:** Multi-location support, Google Maps URL parsing
 - **Flash Deals:** flash_expires_at on offers, countdown badge widget, Home section
 - **Notification Preferences:** Granular per-category toggles (daily, flash, weekly, marketing)
@@ -161,11 +165,17 @@ psql $DATABASE_URL                              # Connect to DB
 - **Offline Indicator:** connectivity_plus StreamProvider + red banner "Ești offline" in app shell
 - **"Gestionează pe Web" Banner:** Shows on business_detail_screen for owners, links to portal
 - **Lenis Smooth Scroll:** CDN-loaded (jsDelivr), duration 1.2s ease-out-quint, navbar/anchors/modals migrated, graceful fallback if CDN fails
-- **Audit #11 (20 Mar):** 92 findings (16 CRIT, 20 HIGH, 26 MED, 30 LOW), 25 fixes applied (commit `7a040ac`) — attachTier on web-portal-api, stripe_customer_id preserved on cancel, past_due in tier filter, stored XSS maps_url, HTML escape in emails, LLM prompt injection fencing, checkout/payment idempotency, change-plan DB-first ordering, Flutter autoDispose fix
+- **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y
+- **CSP Nonce Migration:** Helmet CSP with per-request nonce for inline scripts
+- **Audit #11 (20 Mar):** 92 findings, 25 fixes applied (commit `7a040ac`) — attachTier on web-portal-api, stripe_customer_id preserved on cancel, past_due in tier filter, stored XSS maps_url, HTML escape in emails, LLM prompt injection fencing, checkout/payment idempotency, change-plan DB-first ordering, Flutter autoDispose fix
+- **Audit #12 (24 Mar):** 19 security/bug fixes + CSP nonce migration (commit `47fcf7b`) + performance indexes (migration 064)
+- **CSRF + Refresh Token (24 Mar):** CSRF re-enabled on click tracking, refresh token race condition fixed with `SELECT ... FOR UPDATE` transaction (commit `e9a7b54`)
 - Express pinned to ~5.1.0
-- 23 route files, 18 providers, 63 migrations
+- 23 route files, 20 providers, 64 migrations, 26 screens, 13 models, 24 widgets
 
 ### Remaining Gaps
 - Gamification UI hidden — backend tracks points/levels but not shown to users (can re-enable later)
 - Stripe: go-live with real keys (switch from test to live mode)
 - Post-redemption review cron: implemented but not tested in production
+- Redis cache layer: planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
+- Rate limiter persistence: in-memory, resets on deploy (Redis cache plan will address this)

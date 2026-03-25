@@ -1,5 +1,5 @@
 # OFAI — Project Context Document
-## Ultima actualizare: 9 Martie 2026 (v0.9.0 — Audit #9 Complete)
+## Ultima actualizare: 25 Martie 2026 (v0.12.0 — Audit #12 Complete)
 
 > **Scop:** Document complet de context pentru sesiuni noi. Conține toată arhitectura, schema DB, API-uri, patterns și gotchas.
 > Changelog detaliat per sesiune → vezi `HANDOFF_DOCUMENT.md` (v16, 1785 linii).
@@ -44,7 +44,7 @@ OFAI/
 │   ├── src/
 │   │   ├── index.js              # Entry point (port 4000, middleware stack)
 │   │   ├── db.js                 # PostgreSQL pool (max 20, SSL in prod)
-│   │   ├── routes/               # 21 route files total
+│   │   ├── routes/               # 23 route files total
 │   │   │   ├── web.js            # Main web routes (~2050 lines, split from original ~2900)
 │   │   │   ├── web-auth.js       # Web auth endpoints (split from web.js)
 │   │   │   ├── web-account-api.js # Web account/profile API (split from web.js)
@@ -64,6 +64,8 @@ OFAI/
 │   │   │   ├── offer-requests.js # "Pinch" — request offers from businesses
 │   │   │   ├── reports.js        # User report system
 │   │   │   ├── billing.js        # Stripe billing
+│   │   │   ├── collections.js    # Curated collections API
+│   │   │   ├── saved-searches.js # Saved searches with alerts
 │   │   │   ├── cities.js         # Cities list
 │   │   │   └── categories.js     # Categories with business count
 │   │   ├── middleware/
@@ -92,10 +94,15 @@ OFAI/
 │   │   │       ├── businessValidation.js # Two-pass AI business validation
 │   │   │       ├── offerValidation.js  # AI offer moderation
 │   │   │       ├── summarizationService.js # Review summarization
+│   │   │       ├── reviewSuggestions.js   # Review response suggestions
 │   │   │       └── prompts.js          # LLM prompt definitions
 │   │   ├── helpers/
+│   │   │   ├── tiers.js          # Subscription tier logic (getBusinessTier, hasFeature, checkLimit)
 │   │   │   ├── validate.js       # Input validation, pagination, password rules
-│   │   │   └── jwt.js            # Token generation (24h access, 30d refresh)
+│   │   │   ├── jwt.js            # Token generation (24h access, 30d refresh)
+│   │   │   ├── mapsParser.js     # Google Maps URL parsing
+│   │   │   ├── notificationPrefs.js # Notification preference logic
+│   │   │   └── gallery.js        # Gallery image validation, tier-based limits
 │   │   ├── views/
 │   │   │   ├── public/           # 20+ EJS pages (home, oferte, login, account, etc.)
 │   │   │   │   ├── portal/       # Business portal
@@ -117,7 +124,7 @@ OFAI/
 │   │   │   │   └── onboarding.css # Onboarding page styles
 │   │   │   ├── js/main.js        # Client JS (~660 lines)
 │   │   │   └── images/           # OG fallback SVG
-│   │   └── migrations/           # SQL migrations 006-054
+│   │   └── migrations/           # SQL migrations 006-064
 │   ├── scripts/
 │   │   ├── scraping/             # 5-phase pipeline (01-scrape → 05-assign-images)
 │   │   ├── seed-businesses.js    # Test data seeder
@@ -133,9 +140,9 @@ OFAI/
 │   │   │   ├── storage/          # SecureStorage (tokens), Preferences (onboarding)
 │   │   │   ├── theme/            # AppColors, AppTypography, AppSpacing, AppTheme
 │   │   │   └── utils/            # Distance, Formatters, Launchers
-│   │   ├── models/               # 9 models (Offer, Business, Catalog, User, Review, City, Category, BusinessRequest, Pagination)
-│   │   ├── providers/            # 12 Riverpod providers (auth, offers, businesses, favorites, followed, gamification, reviews, offer_requests, business_requests, location, static_data, search_suggest)
-│   │   ├── screens/              # 15 screen directories organized by feature
+│   │   ├── models/               # 13 models (Offer, Business, Catalog, User, Review, City, Category, BusinessRequest, Pagination, Collection, Report, SavedSearch, CategoryFeed)
+│   │   ├── providers/            # 20 Riverpod providers (auth, offers, businesses, favorites, followed, gamification, reviews, offer_requests, business_requests, location, static_data, search_suggest, collections, saved_searches, search_history, notification_preferences, reports, recently_viewed, category_feed, connectivity)
+│   │   ├── screens/              # 26 screens in 16 directories organized by feature
 │   │   ├── services/             # PushNotifications, Analytics, ErrorHandler
 │   │   └── widgets/              # OfferCard, BusinessCard, ReviewCard, etc.
 │   ├── android/                  # Manifest, build.gradle, signing config
@@ -222,12 +229,15 @@ OFAI/
 - **cities** — id, name
 - **categories** — id, name, icon
 
-### Migrations (006-054)
-Latest: `054_onboarding_requests.sql`. Gap at 030 (skipped). All run on production.
+### Migrations (006-064)
+Latest: `064_audit12_indexes.sql`. Gap at 030 (skipped). All run on production.
 Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (preferred_city_ids[]), 025 (Google OAuth), 026 (verified badge), 027 (badges), 028 (analytics tables), 029 (FK CASCADE), 032 (missing_schema), 033 (subscription_plans), 034 (business_subscriptions), 035 (subscription_history), 036 (subscription_badge_type), 037 (business_push_log), 038 (competitor_blocking), 039 (subscription_indexes), 040 (deal_nominations).
 
-**New migrations (041-054):**
-041 (missing_tables: user_points, favorite_offers, followed_businesses, offer_locations), 042 (update_tier_values), 043 (badge_definitions_and_user_badges), 044 (business_locations_maps_url), 045 (premium_gallery_64), 046 (schema_from_legacy), 047 (missing_indexes), 048 (reports), 049 (offer_moderation), 050 (offer_rejection_reason), 051 (free_plan_booking), 052 (business_hours), 053 (business_catalog), 054 (onboarding_requests).
+**Migrations 041-054:**
+041 (missing_tables), 042 (update_tier_values), 043 (badge_definitions_and_user_badges), 044 (business_locations_maps_url), 045 (premium_gallery_64), 046 (schema_from_legacy), 047 (missing_indexes), 048 (reports), 049 (offer_moderation), 050 (offer_rejection_reason), 051 (free_plan_booking), 052 (business_hours), 053 (business_catalog), 054 (onboarding_requests).
+
+**Migrations 055-064:**
+055 (premium_gallery_unlimited), 056 (ai_suggested_responses), 057 (audit10_schema_fixes), 058 (category_rankings + flash_deals), 059 (notification_preferences), 060 (saved_searches), 061 (collections), 062 (stripe_price_ids), 063 (referral_system), 064 (audit12_indexes).
 
 ### New Tables (since migration 041)
 - **reports** — user_id, entity_type (offer/business/review), entity_id, reason, details, status, admin_notes, created_at
@@ -235,6 +245,12 @@ Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (prefer
 - **business_catalog_categories** — business_id, name, sort_order
 - **business_catalog_items** — category_id, name, description, price, sort_order
 - **onboarding_requests** — business_id, user_id, status, notes, file_urls (JSONB), admin_notes
+- **flash_deals** — offer flash_expires_at column (on offers table)
+- **notification_preferences** — user_id, category, daily/flash/weekly/marketing toggles
+- **saved_searches** — user_id, query, filters (JSONB), alert_enabled
+- **collections** — id, name, description, image_url, curated editorial lists
+- **collection_offers** — collection_id, offer_id junction
+- **referral_codes** — referral_code on users table, referral tracking
 
 **WARNING:** Two migration directories exist — `appredueri_backend/migrations/` (legacy, orphaned) and `appredueri_backend/src/migrations/` (current). Only use `src/migrations/`.
 
@@ -279,8 +295,9 @@ Key migrations: 016 (GDPR), 021 (promo_codes), 022 (click_tracking), 024 (prefer
 - **Meta tag:** `<meta name="csrf-token">` in head.ejs
 - **Forms:** Hidden `_csrf` field
 - **AJAX:** `X-CSRF-Token` header via `getCsrfToken()` helper in main.js
-- **Skipped:** Mobile API (Bearer auth), `X-Client: mobile` header, `/api/web/clicks`, `/auth/google`, safe methods
-- **IMPORTANT:** Mobile app sends `X-Client: mobile` on ALL requests (incl. login/register which lack Bearer token). Without this skip, CSRF blocks mobile auth endpoints with 403
+- **Skipped:** Mobile API (Bearer auth + `X-Client: mobile` header), `/auth/google`, safe methods
+- **IMPORTANT:** Mobile app sends `X-Client: mobile` on ALL requests (incl. login/register which lack Bearer token). Auth endpoints are explicitly exempted. `/api/web/clicks` now requires CSRF (anonymous users get `_csrf_session` cookie on first page load)
+- **Click tracking:** CSRF re-enabled on `/api/web/clicks` — frontend sends X-CSRF-Token header (footer.ejs)
 
 ---
 
@@ -399,7 +416,9 @@ Standalone routes:
 ├── /reset-password      ResetPasswordScreen
 ├── /onboarding          OnboardingScreen
 ├── /account/edit-profile, /preferences, /change-password, /data-export, /delete-account
+├── /account/saved-searches, /account/my-reports
 ├── /categories, /cities, /business-request
+├── /collection/:id        CollectionDetailScreen
 └── /terms, /privacy, /help
 ```
 
@@ -420,6 +439,14 @@ Standalone routes:
 | popularOffersProvider | FutureProvider | Popular offers (no auth) |
 | offerRequestProvider(id) | StateNotifier.autoDispose.family | Pinch request count + submit per business |
 | offersCountProvider | FutureProvider.autoDispose | Total active offers count (reads pagination.total) |
+| collectionsProvider | FutureProvider | Curated collections list |
+| savedSearchesProvider | StateNotifier | Saved searches with alerts |
+| searchHistoryProvider | StateNotifier | Persistent local search history |
+| notificationPreferencesProvider | StateNotifier | Per-category notification toggles |
+| reportsProvider | StateNotifier | User reports list + create |
+| recentlyViewedProvider | StateNotifier | Recently viewed offers (SharedPreferences) |
+| categoryFeedProvider | FutureProvider | Category-based trending offers feed |
+| connectivityProvider | StreamProvider | Online/offline status (connectivity_plus) |
 
 ### Models
 - **User** — id, email, firstName, lastName, role, preferredCityIds[], badges[], points, profilePictureUrl, hasPassword
@@ -427,6 +454,11 @@ Standalone routes:
 - **Business** — id, name, address, lat, lng, logoUrl, coverImage, city, category, rating, ratingCount, isVerified, followerCount, reviewSummary, ratingDistribution
 - **Review** — id, rating, comment, firstName, lastName, response, profilePictureUrl, userId (for own-review detection + delete)
 - **PaginatedResponse<T>** — data[], pagination (page, limit, total, totalPages, hasMore)
+- **Collection** — id, name, description, imageUrl, offers list
+- **Report** — id, offerId/businessId, category, description, status, createdAt
+- **SavedSearch** — id, query, filters, alertEnabled, createdAt
+- **CategoryFeed** — categoryId, categoryName, trendingOffers list
+- **Catalog** — id, businessId, categories list, items with prices
 
 ### Services
 - **PushNotificationService** — Singleton, FCM init, token registration, deep link handling
@@ -651,27 +683,46 @@ TIER_GATING_ENABLED=true          # Enable/disable subscription tier gating
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge (migration 052)
 - **Unified Catalog:** Categories + items CRUD, CSV import (2-step: upload→preview→confirm), consumer display with category tabs (migration 053)
 - **Concierge Onboarding:** Standard+ tier only, request form + file upload, admin queue at /admin/onboarding (migration 054)
-- **Report System:** User reports with categories (offer/business/review), admin review queue (migration 048)
+- **Report System:** User reports with categories (offer/business/review), admin review queue, auto-flag (≥3→email admin, ≥10→deactivate) (migration 048)
 - **AI Offer Moderation:** Automatic offer validation via Claude API, rejection reasons (migrations 049-050)
 - **AI Business Validation:** Two-pass pipeline for business signup requests (services/llm/)
-- **Review Summarization:** AI-powered review summary generation
+- **Review Summarization:** AI-powered review summary generation + suggested replies
+- **Flash Deals:** flash_expires_at on offers, countdown badge widget, Home section (migration 058)
+- **Notification Preferences:** Granular per-category toggles (migration 059)
+- **Saved Searches:** Save query+filters, alert on new matches, Flutter screen + provider (migration 060)
+- **Collections:** Curated editorial lists, admin CRUD, Flutter detail screen (migration 061)
+- **Billing/Stripe:** PRODUCTION READY — full subscription lifecycle with webhooks (migration 062)
+- **Referral System:** referral_code on users, /r/:code web redirect, Flutter "Invită prieteni" (migration 063)
+- **Category Feed:** Cron + API + Flutter home section
+- **Social Proof Badges:** "Nou", "Se termina curand", trending badges on offer cards
+- **Recently Viewed:** Local storage of last viewed offers/businesses
+- **Search History:** Persistent local search history on Explore
+- **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y
+- **Lenis Smooth Scroll:** CDN-loaded, graceful fallback
+- **Offline Indicator:** connectivity_plus StreamProvider + red banner
+- **Rich Share:** OG tags + Flutter Share.shareUri()
+- **Deep Links:** apple-app-site-association + assetlinks.json, AndroidManifest intent filters
+- **CSP Nonce Migration:** Helmet CSP with per-request nonce for inline scripts
+- **OFAI Wordmark Logo:** + Play Store build config
 - **web.js Split:** Refactored into 4 sub-routers for maintainability
 - **main.css Split:** Refactored into 7 section files + import loader
 - **manage.ejs Split:** 7 tab partials extracted from monolithic file
-- **Audit #9:** 120 findings, 60+ fixes applied (v0.9.0)
+- **Audits #9-#12:** 155+ total fixes applied (v0.9.0 → v0.12.0)
 - **Premium Gallery:** Increased limit from 32→64 images for premium tier (migration 045)
+- **Refresh Token Security:** Race condition fixed with `SELECT ... FOR UPDATE` transaction
 
 ### ❌ TODO
 - **Scraping Phase 3-5:** Verify, cleanup, image assignment
 - **iOS build:** Requires macOS (not tested on Windows dev machine)
 - **Play Store publication:** Signing done, store listing not submitted
-- **Monetization:** Stripe integration partially built (checkout, portal, tiers.js, tierAuth.js, billing.js, pricing.ejs) but **webhook handlers are empty stubs** — subscriptions not created on payment. Needs: implement webhook logic, badge sync, cron expiry, test end-to-end
+- **Stripe go-live:** Switch from test keys to live Stripe keys
+- **Redis cache layer:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not yet implemented
+- **Rate limiter persistence:** Currently in-memory, resets on deploy (Redis plan will address this)
 - **n8n WF3-6:** Daily digest, review reminder, welcome series, admin alerts
-- **Rate limiter persistence:** Currently in-memory, resets on deploy (needs Redis/PG store)
 - **Migrations 001-005:** Missing from repo (need pg_dump from production)
 - **Exact GPS coordinates:** Business locations use estimated coords
 - **Drop `preferred_city_id` column** after full verification
-- **Flutter force-unwrap fix:** 12+ `offer.business!` occurrences in offer_detail_screen.dart
+- **Gamification UI:** Backend tracks points/levels/streaks but UI is hidden (badges only visible)
 
 ### ⚠️ Known Issues
 
@@ -688,14 +739,12 @@ TIER_GATING_ENABLED=true          # Enable/disable subscription tier gating
 - ~~Tier fail-open~~ → FIXED: fails closed (503) when TIER_GATING_ENABLED=true (tierAuth.js)
 
 **STILL OPEN:**
-- **[CRITICAL]** Stripe webhook stubs — payments collected but no DB subscription created
-- **[CRITICAL]** Flutter `offer.business!` force-unwrap crash (12+ occurrences in offer_detail_screen.dart)
-- Two conflicting migration directories (old `migrations/` orphaned but not deleted)
+- Rate limiter persistence (in-memory, resets on deploy — Redis cache plan will address this)
 - Firebase API keys in git history (keys rotated, history not cleaned)
 - Review delete doesn't reverse gamification points
 - Streak timezone (UTC vs Romania UTC+2/3)
-- Rate limiter persistence (in-memory, resets on deploy — needs Redis/PG store)
 - Migrations 001-005 missing from repo
+- Gamification UI hidden (backend active, UI disabled)
 
 ---
 
@@ -786,23 +835,15 @@ All in-memory (reset on deploy). Persistence needs Redis/PG store.
 | #8 (full) | 3 Mar | 171 issues (27C/44H/57M/43L) | Most critical fixed |
 | #9 (full) | 6 Mar | 120 findings | 60+ fixed (v0.9.0) |
 
-**Session 24 Feb fixes:** CSRF mobile skip, exact offers count, countdown ≤7d gate, Clip.hardEdge cards, horizontal card overflow (home + offer detail)
-**Session 24 Feb v2:** Review delete (full stack), pinch on expired offers, animated counters, interleaving, geo banner, distance sort (explore+collection), per-location booking
-
-**Audit #8 (3 Mar) — Full Project Audit (6 parallel agents):**
-- **Scope:** Backend + Flutter + Web Frontend + Database + Config & Infra + Subscription & Billing
-- **27 CRITICAL:** Stripe webhook stubs (payments collected, no subscription created), X-Client CSRF bypass, 3x XSS (showToast innerHTML, onclick injection, competitive insights), open redirect, banned user mobile bypass, tier fail-open, 4 missing CREATE TABLE migrations, hardcoded credentials (n8n URL, Google Client ID), Flutter force-unwrap crash, gallery/offer limit bypass
-- **44 HIGH:** In-memory rate limiters, duplicate offer logic drift, Flutter StateNotifier races (fetch in constructor), GPS battery drain (autoDispose + keepAlive), auth check logs out offline users, Chart.js memory leak, missing DB indexes, Stripe IDOR, webhook gaps
-- **57 MEDIUM:** Flutter raw e.toString() in UI, provider not cleared on logout, router loading state, badge type fallthrough, CSS dead rules, responsive gaps, migration naming, missing .env.example
-- **43 LOW:** Hardcoded theme colors, missing diacritics, BackdropFilter artifacts, inconsistent API path prefixes
+**Audit #10 (9 Mar):** Schema fixes, migration 057 (audit10_schema_fixes)
+**Audit #11 (20 Mar):** 92 findings (16C/20H/26M/30L), 25 fixes — tier gating, Stripe fixes, XSS, LLM injection fencing
+**Audit #12 (24 Mar):** 19 fixes — CSP nonce migration, performance indexes (migration 064)
+**Post-audit (24 Mar):** CSRF re-enabled on click tracking, refresh token race condition fixed with FOR UPDATE
 
 **Still unfixed from all audits:**
-- **[CRITICAL] Stripe webhook handlers are empty stubs** (revenue loss — payments collected, no subscription created)
-- **[CRITICAL] Flutter `offer.business!` force-unwrap crash** (12+ occurrences in offer_detail_screen.dart)
-- Rate limiter persistence (needs Redis/PG store)
+- Rate limiter persistence (needs Redis/PG store — planned in Redis cache layer)
 - Firebase API keys in git history (keys rotated, history not cleaned)
 - Migrations 001-005 missing (need pg_dump)
-- Two conflicting migration directories (old `migrations/` orphaned)
 - Review delete doesn't reverse gamification points
 - Streak timezone edge case (UTC vs Romania UTC+2/3)
 

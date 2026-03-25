@@ -1,5 +1,42 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <rect width="1200" height="630" fill="#06060a"/>
-  <text x="600" y="280" font-family="sans-serif" font-size="120" font-weight="bold" fill="#fb923c" text-anchor="middle">OFAI</text>
-  <text x="600" y="380" font-family="sans-serif" font-size="36" fill="#a1a1aa" text-anchor="middle">Reduceri &amp; Oferte din România</text>
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F0F0F"/>
+      <stop offset="60%" stop-color="#0F0F0F"/>
+      <stop offset="100%" stop-color="#150900"/>
+    </linearGradient>
+    <radialGradient id="bgGlow" cx="50%" cy="70%" r="50%" fx="50%" fy="70%">
+      <stop offset="0%" stop-color="#FB923C" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#FB923C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="35%" stop-color="#FB923C"/>
+      <stop offset="55%" stop-color="#FDBA74"/>
+      <stop offset="80%" stop-color="#E8E4E0"/>
+      <stop offset="100%" stop-color="#E0DEDA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  <rect width="1200" height="630" fill="url(#bgGlow)"/>
+
+  <!-- OFA text -->
+  <text x="370" y="350"
+        font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="200" font-weight="900" letter-spacing="-10" fill="url(#textGrad)"
+        stroke="url(#textGrad)" stroke-width="8" paint-order="stroke">OFA</text>
+
+  <!-- i with price tag dot -->
+  <g transform="translate(765, 168)">
+    <rect x="0" y="48" width="52" height="140" rx="5" fill="#E0DEDA"/>
+    <g transform="translate(26, 12) rotate(-90)">
+      <path d="M -34,0 L -14,-21 Q -10,-25 -4,-25 L 20,-25 Q 27,-25 27,-18 L 27,18 Q 27,25 20,25 L -4,25 Q -10,25 -14,21 Z" fill="#E0DEDA"/>
+      <circle cx="-18" cy="0" r="5" fill="#0F0F0F"/>
+    </g>
+  </g>
+
+  <!-- Subtitle -->
+  <text x="600" y="430" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="32" fill="#a1a1aa" text-anchor="middle">Reduceri &amp; Oferte din Rom&#226;nia</text>
 </svg>

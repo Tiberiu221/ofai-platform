@@ -66,6 +66,13 @@
   color: var(--bg-primary);
 }
 
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
 /* Nav links */
 .nav-links {
   display: flex;
