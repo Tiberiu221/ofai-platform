@@ -2117,8 +2117,7 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, b.is_verified, cat.name as category_name
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
-        WHERE b.is_active = true
-          AND (b.name ILIKE $1 OR cat.name ILIKE $1)
+        WHERE (b.name ILIKE $1 OR cat.name ILIKE $1)
         ORDER BY b.name
         LIMIT 3
       `, [searchTerm]),
