@@ -124,7 +124,7 @@ psql $DATABASE_URL                              # Connect to DB
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~256 endpoints, 20 providers, 64 migrations, 26 screens, 13 models, 24 widgets
+- 23 route files, ~256 endpoints, 20 providers, 66 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -143,6 +143,7 @@ psql $DATABASE_URL                              # Connect to DB
 - Dashboard, Users, Businesses, Offers, Reviews, Categories, Cities
 - Business requests queue (concierge), Offer moderation queue, Reports queue
 - AI review summaries, location management
+- **Email Logs** — `/admin/emails` with filters per type/status, stats, env toggle visibility
 
 ### Features — Implemented
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
@@ -164,7 +165,7 @@ psql $DATABASE_URL                              # Connect to DB
 - **Pull-to-Refresh:** On both offer and business detail screens
 - **Responsive Quick Wins:** Categories grid adapts to tablet width
 - **OG Tags:** Backend has full Open Graph meta tags (head.ejs) for rich share previews
-- **Tier Badges:** Premium/Standard/Verified badges on ALL web pages (offer cards, business cards, offer detail hero + sidebar + similar, home page sections)
+- **Tier Badges:** Premium/Standard/Verified badges on ALL web pages (offer cards, business cards, offer detail hero + sidebar + similar, home page sections, deal of day, promoted, followed offers, top businesses)
 - **Billing/Stripe:** PRODUCTION READY — webhooks on Railway, full subscription lifecycle
   - Checkout (Free → Standard/Premium), upgrade, downgrade, cancel, reactivate
   - Monthly + yearly billing toggle in portal
@@ -183,26 +184,35 @@ psql $DATABASE_URL                              # Connect to DB
 - **Offline Indicator:** connectivity_plus StreamProvider + red banner "Ești offline" in app shell
 - **"Gestionează pe Web" Banner:** Shows on business_detail_screen for owners, links to portal
 - **Lenis Smooth Scroll:** CDN-loaded (jsDelivr), duration 1.2s ease-out-quint, navbar/anchors/modals migrated, graceful fallback if CDN fails
-- **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y
+- **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y, clickable search icon submits form
 - **CSP Nonce Migration:** Helmet CSP with per-request nonce for inline scripts
 - **CSRF + Refresh Token:** CSRF re-enabled on click tracking, refresh token race condition fixed with `SELECT ... FOR UPDATE` transaction
 - **SEO:** robots.txt, dynamic sitemap.xml (offers+businesses+lastmod), canonical URLs on all pages, pagination rel=next/prev, JSON-LD (Organization, Offer, LocalBusiness, ItemList, BreadcrumbList, Product), gzip compression, font preloading, duplicate content prevention (noindex on filtered/auth pages)
 - **Google Analytics 4:** `GA_MEASUREMENT_ID` env var, custom events (favorite, follow, promo_code_reveal, business_action), CSP whitelisted
-- **Logo:** OFAI wordmark SVG (`ofai-wordmark.svg` with bg, `ofai-wordmark-nobg.svg` without), used in navbar, auth cards, footer, favicon
+- **Logo:** OFAI wordmark SVG (`ofai-wordmark.svg` with bg for favicon/OG, `ofai-wordmark-nobg.svg` without bg for navbar/auth/footer)
+- **User Activity Tracking:** `last_active_at` column updated on every authenticated request (throttled max 1x/hour) via web + mobile auth middleware
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
 
-### Email System (9 types)
-- Welcome, password reset, business approved/rejected, offer approved/rejected
-- Premium support welcome, admin onboarding notification, generic
+### Email System (12 types)
+- **Transactional (9):** Welcome, password reset, business approved/rejected, offer approved/rejected, premium support welcome, admin onboarding notification, generic, payment failed
+- **Engagement (3):** Weekly digest email, trial expiration warning (3 days before), re-engagement (14+ days inactive)
 - Service: Resend API with graceful fallback
-- **Missing:** weekly digest email (push exists, email not), trial expiration warning, re-engagement emails
+- `email_logs` table tracks ALL sent emails (admin visible at `/admin/emails`)
+- `logEmail()` helper for audit trail on new engagement emails
+- Rate limiting: 150ms delay between batch sends in cron jobs
+- ENV toggles: `ENABLE_WEEKLY_DIGEST`, `ENABLE_TRIAL_WARNING`, `ENABLE_REENGAGEMENT` (set `=false` to disable)
 
-### Cron Jobs
+### Cron Jobs (17 total)
 - Token cleanup (daily 03:00), push log cleanup (daily 03:15)
-- Category rankings (daily), weekly digest (Sunday 19:00)
-- Flash deal expiration, review summary batch, business deletion (soft delete)
+- Category rankings (every 2 days), weekly digest push+email (Sunday 19:00 RO)
+- Flash deal expiration (every 5min), review summary batch (daily 08:00 UTC), business deletion (soft delete)
+- Subscription expiration check (daily 04:00 UTC)
+- Deal of day push (daily 09:00 UTC), post-redemption review prompt (daily 10:00 UTC)
+- Saved search alerts (daily 11:00 UTC)
+- **Trial expiration warning email** (daily 09:00 UTC — 3 days before trial ends)
+- **Re-engagement email** (Tuesday 10:00 UTC — users inactive 14-90 days, max 1/30 days)
 
 ### Monitoring & Error Handling
 - Sentry error tracking (production)
@@ -218,7 +228,7 @@ psql $DATABASE_URL                              # Connect to DB
 ### Remaining Gaps
 - **500 error page:** Missing — server errors show blank page
 - **Search:** Basic keyword matching only — no full-text (pg_trgm), no fuzzy/typo tolerance, no distance-based filtering
-- **Email engagement:** No weekly digest email (push only), no trial expiration warning, no re-engagement emails
+- **Email engagement logging:** `logEmail()` only on 3 new engagement emails — existing 9 transactional emails not yet logged to `email_logs` table
 - **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
 - **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
 - **Stripe:** Still on test keys — go-live with real keys pending
