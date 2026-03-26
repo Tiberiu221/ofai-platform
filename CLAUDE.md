@@ -40,16 +40,21 @@ appredueri_backend/
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
       llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, reviewSuggestions, prompts)
-    migrations/     # SQL migration files (006-064)
+    migrations/     # SQL migration files (006-067)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
       public/portal/partials/           # 7 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support)
       public/business-detail.ejs        # Consumer business page (hours + catalog display)
+      public/blog.ejs                   # Blog listing page
+      public/blog-post.ejs              # Blog article detail page
+      admin/blog.ejs                    # Admin blog list
+      admin/blog-edit.ejs               # Admin blog create/edit form
     public/css/
       main.css                # Import loader (7 @imports)
       sections/               # 7 CSS sections (base, layout, home, listings, detail-pages, account, enhancements)
       portal.css              # Business portal styles
       admin.css               # Admin panel styles
+      blog.css                # Blog listing + article styles
       onboarding.css          # Onboarding page styles
     public/.well-known/       # Deep link config (apple-app-site-association, assetlinks.json)
 ofai_flutter/
@@ -124,19 +129,20 @@ psql $DATABASE_URL                              # Connect to DB
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~256 endpoints, 20 providers, 66 migrations, 26 screens, 13 models, 24 widgets
+- 23 route files, ~256 endpoints, 20 providers, 67 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
 - web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
 
-### Consumer Web Pages (22 pages)
+### Consumer Web Pages (25 pages)
 - Home, Oferte, Business-uri, Ofertă detail, Business detail, Categorii, Orașe
 - Colecția mea, Account, Setări, Preferințe notificări
 - Auth: Login, Register, Forgot Password, Reset Password, Verify Code
 - Legal: Termeni, Confidențialitate, Ajutor
 - Business: Pentru Business (landing), Prețuri, Onboarding
-- 404 error page
+- Blog: /blog listing + /blog/:slug article detail
+- Error: 404, 500
 - All pages responsive, dark theme, OG meta tags
 
 ### Admin Panel
@@ -144,6 +150,7 @@ psql $DATABASE_URL                              # Connect to DB
 - Business requests queue (concierge), Offer moderation queue, Reports queue
 - AI review summaries, location management
 - **Email Logs** — `/admin/emails` with filters per type/status, stats, env toggle visibility
+- **Blog CMS** — `/admin/blog` list/create/edit/delete/toggle-publish, Cloudinary images, SEO fields
 
 ### Features — Implemented
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
@@ -187,10 +194,12 @@ psql $DATABASE_URL                              # Connect to DB
 - **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y, clickable search icon submits form
 - **CSP Nonce Migration:** Helmet CSP with per-request nonce for inline scripts
 - **CSRF + Refresh Token:** CSRF re-enabled on click tracking, refresh token race condition fixed with `SELECT ... FOR UPDATE` transaction
-- **SEO:** robots.txt, dynamic sitemap.xml (offers+businesses+lastmod), canonical URLs on all pages, pagination rel=next/prev, JSON-LD (Organization, Offer, LocalBusiness, ItemList, BreadcrumbList, Product), gzip compression, font preloading, duplicate content prevention (noindex on filtered/auth pages)
+- **SEO:** robots.txt, dynamic sitemap.xml (offers+businesses+blog posts+lastmod), canonical URLs on all pages, pagination rel=next/prev, JSON-LD (Organization, Offer, LocalBusiness, ItemList, BreadcrumbList, Product, Article), gzip compression, font preloading, duplicate content prevention (noindex on filtered/auth pages)
 - **Google Analytics 4:** `GA_MEASUREMENT_ID` env var, custom events (favorite, follow, promo_code_reveal, business_action), CSP whitelisted
 - **Logo:** OFAI wordmark SVG (`ofai-wordmark.svg` with bg for favicon/OG, `ofai-wordmark-nobg.svg` without bg for navbar/auth/footer)
 - **User Activity Tracking:** `last_active_at` column updated on every authenticated request (throttled max 1x/hour) via web + mobile auth middleware
+- **Blog/Content System:** Full CMS with blog_posts + blog_categories tables, admin CRUD, public /blog listing + /blog/:slug detail, featured first card, breadcrumbs, reading time, CTA, related posts, SEO (canonical, OG article, JSON-LD Article), sitemap integration, in-memory cache (15min list, 30min post), Unsplash images, 8 initial SEO posts across 5 categories
+- **500 Error Page:** Custom 500.ejs with try/catch fallback, dev stack trace, matches 404 design
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
@@ -218,22 +227,20 @@ psql $DATABASE_URL                              # Connect to DB
 - Sentry error tracking (production)
 - Click/offer/reveal tracking (internal analytics)
 - Google Analytics 4 — controlled by `GA_MEASUREMENT_ID` env var, custom events on favorites/follows/promo reveals/booking actions
-- 404 error page exists
-- **Missing:** 500 error page, conversion funnel tracking in GA4
+- 404 + 500 error pages
+- **Missing:** conversion funnel tracking in GA4
 
 ### Security Audit History
 - **Audit #11 (20 Mar):** 92 findings, 25 fixes (commit `7a040ac`)
 - **Audit #12 (24 Mar):** 19 fixes + CSP nonce migration (commit `47fcf7b`) + performance indexes (migration 064)
 
 ### Remaining Gaps
-- **500 error page:** Missing — server errors show blank page
 - **Search:** Basic keyword matching only — no full-text (pg_trgm), no fuzzy/typo tolerance, no distance-based filtering
 - **Email engagement logging:** `logEmail()` only on 3 new engagement emails — existing 9 transactional emails not yet logged to `email_logs` table
 - **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
 - **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
 - **Stripe:** Still on test keys — go-live with real keys pending
 - **Testing:** Zero automated tests (no unit, integration, or e2e) — risk for regressions
-- **Blog/content:** No editorial content pages for organic SEO
 - **Referral dashboard:** Backend tracks referrals but user can't see their invite stats
 - **Post-redemption review cron:** Implemented but not tested in production
 - **Offline/PWA:** Connectivity indicator exists but no service worker or local caching
