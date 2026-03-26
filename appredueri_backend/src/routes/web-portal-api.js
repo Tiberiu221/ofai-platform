@@ -2093,12 +2093,12 @@ router.post("/api/web/portal/:businessId/subscription/cancel", requireBusinessOw
 // ═══════════════════════════════════════════════════════
 router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
   try {
-    const q = (req.query.q || "").trim();
-    if (q.length < 2) return res.json({ offers: [], businesses: [] });
+    const { escapeSearchQuery, getMatchType } = require("../helpers/search");
+    const q = escapeSearchQuery(req.query.q);
+    if (!q || q.length < 2) return res.json({ offers: [], businesses: [] });
 
-    // Escape LIKE special characters to prevent wildcard injection
-    const escaped = q.replace(/[%_\\]/g, '\\$&');
-    const searchTerm = `%${escaped}%`;
+    const norm = (col) => `f_unaccent(lower(${col}))`;
+    const param = `f_unaccent(lower($1))`;
 
     const [offersRes, businessesRes] = await Promise.all([
       pool.query(`
@@ -2109,22 +2109,51 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         JOIN businesses b ON o.business_id = b.id
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND o.moderation_status IN ('approved', 'auto_approved')
-          AND (o.title ILIKE $1 OR o.description ILIKE $1 OR b.name ILIKE $1)
-        ORDER BY CASE WHEN o.title ILIKE $1 THEN 0 ELSE 1 END, o.discount_value DESC
+          AND (
+            ${norm('o.title')} LIKE ${param} || '%'
+            OR ${norm('b.name')} LIKE ${param} || '%'
+            OR similarity(${norm('o.title')}, ${param}) > 0.2
+            OR similarity(${norm('b.name')}, ${param}) > 0.2
+          )
+        ORDER BY (
+          CASE WHEN ${norm('b.name')} = ${param} THEN 100 ELSE 0 END
+          + CASE WHEN ${norm('b.name')} LIKE ${param} || '%' THEN 50 ELSE 0 END
+          + CASE WHEN ${norm('o.title')} LIKE ${param} || '%' THEN 40 ELSE 0 END
+          + similarity(${norm('b.name')}, ${param}) * 30
+          + similarity(${norm('o.title')}, ${param}) * 25
+        ) DESC, o.discount_value DESC
         LIMIT 5
-      `, [searchTerm]),
+      `, [q]),
       pool.query(`
         SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, b.is_verified, cat.name as category_name
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
         WHERE b.is_active = true
-          AND (b.name ILIKE $1 OR cat.name ILIKE $1)
-        ORDER BY b.name
+          AND (
+            ${norm('b.name')} LIKE ${param} || '%'
+            OR similarity(${norm('b.name')}, ${param}) > 0.2
+            OR ${norm('cat.name')} LIKE ${param} || '%'
+          )
+        ORDER BY (
+          CASE WHEN ${norm('b.name')} = ${param} THEN 100 ELSE 0 END
+          + CASE WHEN ${norm('b.name')} LIKE ${param} || '%' THEN 50 ELSE 0 END
+          + similarity(${norm('b.name')}, ${param}) * 30
+        ) DESC
         LIMIT 3
-      `, [searchTerm]),
+      `, [q]),
     ]);
 
-    res.json({ offers: offersRes.rows, businesses: businessesRes.rows });
+    // Add match_type for UI hints
+    const offers = offersRes.rows.map(o => ({
+      ...o,
+      match_type: getMatchType(o.title, q) === 'fuzzy' ? getMatchType(o.business_name, q) : getMatchType(o.title, q),
+    }));
+    const businesses = businessesRes.rows.map(b => ({
+      ...b,
+      match_type: getMatchType(b.name, q),
+    }));
+
+    res.json({ offers, businesses });
   } catch (err) {
     console.error("[Web API] Search suggest error:", err);
     res.json({ offers: [], businesses: [] });
