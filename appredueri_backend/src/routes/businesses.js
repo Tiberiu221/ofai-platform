@@ -72,13 +72,11 @@ router.get("/", optionalAuth, async (req, res) => {
     }
 
     if (q && q.trim()) {
-      const { buildSearchConditions } = require("../helpers/search");
-      const sr = buildSearchConditions(q.trim(), { paramIdx: idx, mode: 'businesses', aliases: { business: 'b', category: 'cat', city: 'c' } });
-      if (sr.conditions.length) {
-        filters.push(...sr.conditions);
-        values.push(...sr.params);
-        idx = sr.nextIdx;
-      }
+      filters.push(
+        `(b.name ILIKE $${idx} OR c.name ILIKE $${idx} OR cat.name ILIKE $${idx})`
+      );
+      values.push(`%${q.trim()}%`);
+      idx++;
     }
 
     const whereClause = filters.length

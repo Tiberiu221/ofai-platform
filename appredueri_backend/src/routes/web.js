@@ -357,13 +357,9 @@ router.get("/oferte", async (req, res) => {
     let paramIdx = 1;
 
     if (query) {
-      const { buildSearchConditions } = require("../helpers/search");
-      const sr = buildSearchConditions(query, { paramIdx, mode: 'offers', aliases: { offer: 'o', business: 'b', category: 'cat' } });
-      if (sr.conditions.length) {
-        conditions.push(...sr.conditions);
-        params.push(...sr.params);
-        paramIdx = sr.nextIdx;
-      }
+      conditions.push(`(o.title ILIKE $${paramIdx} OR o.description ILIKE $${paramIdx} OR b.name ILIKE $${paramIdx})`);
+      params.push(`%${query}%`);
+      paramIdx++;
     }
 
     if (selectedCategory) {
@@ -430,46 +426,14 @@ router.get("/oferte", async (req, res) => {
     const totalOffers = parseInt(countResult.rows[0].total);
     const totalPages = Math.ceil(totalOffers / limit);
 
-    // Distance filter (optional)
-    let distanceSelect = '';
-    let distanceOrderBy = null;
-    const userLat = parseFloat(req.query.lat);
-    const userLng = parseFloat(req.query.lng);
-    const userRadius = req.query.radius ? parseFloat(req.query.radius) : null;
-    if (!isNaN(userLat) && !isNaN(userLng)) {
-      const { buildDistanceFilter } = require("../helpers/search");
-      const df = buildDistanceFilter(userLat, userLng, userRadius, { paramIdx, latCol: 'b.lat', lngCol: 'b.lng' });
-      if (df.conditions.length) {
-        conditions.push(...df.conditions);
-        params.push(...df.params);
-        paramIdx = df.nextIdx;
-      }
-      if (df.distanceExpr) {
-        distanceSelect = `, ${df.distanceExpr} as distance_km`;
-        distanceOrderBy = `${df.distanceExpr} ASC`;
-      }
-    }
-
-    // Relevance sort (when searching)
-    let relevanceOrderBy = null;
-    if (query) {
-      const { buildRelevanceScore } = require("../helpers/search");
-      // paramIdx for relevance reuses the search query param ($1 if it was first)
-      relevanceOrderBy = `${buildRelevanceScore(query, { paramIdx: 1, mode: 'offers', aliases: { offer: 'o', business: 'b' } })} DESC`;
-    }
-
     const sortOptions = {
       newest: "o.id DESC",
       popular: `(COALESCE(AVG(r.rating), 0) + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC, COUNT(DISTINCT r.id) DESC`,
       discount: "CASE WHEN o.discount_type IN ('percent','percentage') THEN o.discount_value ELSE 0 END DESC, o.discount_value DESC",
       ending_soon: "o.end_date ASC NULLS LAST, o.id DESC",
-      relevance: relevanceOrderBy || "o.id DESC",
-      distance: distanceOrderBy || "o.id DESC",
     };
-    const validSorts = ["newest", "popular", "discount", "ending_soon", "relevance", "distance"];
-    // Default to relevance when searching, otherwise newest
-    const defaultSort = query ? "relevance" : "newest";
-    const sortKey = validSorts.includes(sort) ? sort : defaultSort;
+    const validSorts = ["newest", "popular", "discount", "ending_soon"];
+    const sortKey = validSorts.includes(sort) ? sort : "newest";
     const orderBy = sortOptions[sortKey];
 
     const offersResult = await pool.query(
@@ -485,7 +449,7 @@ router.get("/oferte", async (req, res) => {
               COALESCE(AVG(r.rating), 0) as rating_avg,
               COUNT(DISTINCT r.id) as rating_count,
               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count,
-              COALESCE(splan.has_promoted_placement, FALSE) as is_promoted${distanceSelect}
+              COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
        FROM offers o
        JOIN businesses b ON o.business_id = b.id
        LEFT JOIN cities ci ON b.city_id = ci.id
@@ -616,13 +580,9 @@ router.get("/business-uri", async (req, res) => {
     let paramIdx = 1;
 
     if (query) {
-      const { buildSearchConditions } = require("../helpers/search");
-      const sr = buildSearchConditions(query, { paramIdx, mode: 'businesses', aliases: { business: 'b', category: 'cat' } });
-      if (sr.conditions.length) {
-        conditions.push(...sr.conditions);
-        params.push(...sr.params);
-        paramIdx = sr.nextIdx;
-      }
+      conditions.push(`b.name ILIKE $${paramIdx}`);
+      params.push(`%${query}%`);
+      paramIdx++;
     }
 
     if (selectedCategory) {
@@ -683,48 +643,19 @@ router.get("/business-uri", async (req, res) => {
     const whereClause = conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) as total FROM businesses b LEFT JOIN categories cat ON b.category_id = cat.id ${whereClause}`,
+      `SELECT COUNT(*) as total FROM businesses b ${whereClause}`,
       params
     );
     const totalBusinesses = parseInt(countResult.rows[0].total);
     const totalPages = Math.ceil(totalBusinesses / limit);
-
-    // Distance + relevance for businesses
-    let bizDistanceSelect = '';
-    let bizDistanceOrderBy = null;
-    const bizLat = parseFloat(req.query.lat);
-    const bizLng = parseFloat(req.query.lng);
-    const bizRadius = req.query.radius ? parseFloat(req.query.radius) : null;
-    if (!isNaN(bizLat) && !isNaN(bizLng)) {
-      const { buildDistanceFilter } = require("../helpers/search");
-      const df = buildDistanceFilter(bizLat, bizLng, bizRadius, { paramIdx, latCol: 'b.lat', lngCol: 'b.lng' });
-      if (df.conditions.length) {
-        conditions.push(...df.conditions);
-        params.push(...df.params);
-        paramIdx = df.nextIdx;
-      }
-      if (df.distanceExpr) {
-        bizDistanceSelect = `, ${df.distanceExpr} as distance_km`;
-        bizDistanceOrderBy = `${df.distanceExpr} ASC`;
-      }
-    }
-
-    let bizRelevanceOrderBy = null;
-    if (query) {
-      const { buildRelevanceScore } = require("../helpers/search");
-      bizRelevanceOrderBy = `${buildRelevanceScore(query, { paramIdx: 1, mode: 'businesses', aliases: { business: 'b' } })} DESC`;
-    }
 
     const sortOptions = {
       popular: `(COUNT(DISTINCT o.id) + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC`,
       rating: "COALESCE(AVG(r.rating), 0) DESC, COUNT(DISTINCT r.id) DESC",
       newest: "b.id DESC",
       offers: "COUNT(DISTINCT o.id) DESC, b.id DESC",
-      relevance: bizRelevanceOrderBy || "b.id DESC",
-      distance: bizDistanceOrderBy || "b.id DESC",
     };
-    const bizDefaultSort = query ? "relevance" : "popular";
-    const orderBy = sortOptions[sort] || sortOptions[bizDefaultSort];
+    const orderBy = sortOptions[sort] || sortOptions.popular;
 
     const businessesResult = await pool.query(
       `SELECT b.id, b.name, b.logo_url, b.cover_image_url,

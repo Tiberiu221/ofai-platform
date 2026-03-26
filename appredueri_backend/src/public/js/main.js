@@ -798,11 +798,10 @@ async function fetchSuggestions(q, dropdown, setController) {
         const oLogo = o.business_logo
           ? `<img src="${o.business_logo}" class="search-suggest-item-logo" alt="">`
           : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml((o.business_name || '?').charAt(0))}</div>`;
-        const oFuzzy = o.match_type === 'fuzzy' ? ' <span class="search-suggest-fuzzy">~aproximativ</span>' : '';
         html += `<a href="/oferta/${o.id}" class="search-suggest-item" role="option" id="suggest-item-${itemIdx++}">
           ${oLogo}
           <div class="search-suggest-item-text">
-            <div class="search-suggest-item-title">${highlightMatch(o.title, q)}${oFuzzy}</div>
+            <div class="search-suggest-item-title">${highlightMatch(o.title, q)}</div>
             <div class="search-suggest-item-sub">${highlightMatch(o.business_name, q)}${tierBadgeSvg(o.subscription_badge_type, o.business_verified)}</div>
           </div>
           <span class="search-suggest-item-badge">${discount}</span>
@@ -817,11 +816,10 @@ async function fetchSuggestions(q, dropdown, setController) {
         const logo = b.logo_url
           ? `<img src="${b.logo_url}" class="search-suggest-item-logo" alt="">`
           : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml(b.name.charAt(0))}</div>`;
-        const bFuzzy = b.match_type === 'fuzzy' ? ' <span class="search-suggest-fuzzy">~aproximativ</span>' : '';
         html += `<a href="/business/${b.id}" class="search-suggest-item" role="option" id="suggest-item-${itemIdx++}">
           ${logo}
           <div class="search-suggest-item-text">
-            <div class="search-suggest-item-title">${highlightMatch(b.name, q)}${tierBadgeSvg(b.subscription_badge_type, b.is_verified)}${bFuzzy}</div>
+            <div class="search-suggest-item-title">${highlightMatch(b.name, q)}${tierBadgeSvg(b.subscription_badge_type, b.is_verified)}</div>
             <div class="search-suggest-item-sub">${highlightMatch(b.category_name || '', q)}</div>
           </div>
         </a>`;

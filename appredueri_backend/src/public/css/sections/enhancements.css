@@ -477,13 +477,6 @@
   background: var(--bg-card-hover);
 }
 
-.search-suggest-fuzzy {
-  font-size: 0.7rem;
-  font-style: italic;
-  opacity: 0.5;
-  margin-left: 4px;
-}
-
 .search-suggest-empty {
   padding: 24px 20px;
   text-align: center;

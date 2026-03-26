@@ -103,13 +103,9 @@ router.get("/", optionalAuth, async (req, res) => {
     }
 
     if (q && q.trim()) {
-      const { buildSearchConditions } = require("../helpers/search");
-      const sr = buildSearchConditions(q.trim(), { paramIdx: idx, mode: 'offers', aliases: { offer: 'o', business: 'b', category: 'cat' } });
-      if (sr.conditions.length) {
-        filters.push(...sr.conditions);
-        values.push(...sr.params);
-        idx = sr.nextIdx;
-      }
+      filters.push(`(o.title ILIKE $${idx} OR o.description ILIKE $${idx} OR b.name ILIKE $${idx})`);
+      values.push(`%${q.trim()}%`);
+      idx++;
     }
 
     // Filter to promoted offers only (for Premium businesses)
