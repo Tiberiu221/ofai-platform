@@ -2122,6 +2122,9 @@ router.get("/blog", async (req, res) => {
       const categoryFilter = categorySlug
         ? `AND bc.slug = $3`
         : '';
+      const countCategoryFilter = categorySlug
+        ? `AND bc.slug = $1`
+        : '';
       const params = categorySlug
         ? [limit, offset, categorySlug]
         : [limit, offset];
@@ -2139,7 +2142,7 @@ router.get("/blog", async (req, res) => {
           SELECT COUNT(*)::int AS cnt
           FROM blog_posts bp
           LEFT JOIN blog_categories bc ON bc.id = bp.category_id
-          WHERE bp.is_published = TRUE ${categoryFilter}
+          WHERE bp.is_published = TRUE ${countCategoryFilter}
         `, categorySlug ? [categorySlug] : []),
         pool.query('SELECT id, name, slug FROM blog_categories ORDER BY sort_order'),
       ]);
