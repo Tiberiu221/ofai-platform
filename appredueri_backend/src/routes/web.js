@@ -9,6 +9,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const cache = require("../services/cache");
 const { optionalWebAuth, requireWebAuth } = require("../middleware/webAuth");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier } = require('../middleware/tierAuth');
@@ -175,46 +176,51 @@ router.get("/", async (req, res) => {
       followedResult,
       favFollowResult,
     ] = await Promise.all([
-      // 1. Stats counts
-      Promise.all([
-        pool.query("SELECT COUNT(*) as total FROM businesses"),
-        pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
-        pool.query("SELECT COUNT(*) as total FROM cities"),
-        pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
-      ]),
-      // 2. Categories with offer counts
-      pool.query(`
-        SELECT c.id, c.name, COUNT(DISTINCT o.id) as offer_count
-        FROM categories c
-        LEFT JOIN businesses b ON b.category_id = c.id
-        LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-        GROUP BY c.id, c.name
-        ORDER BY offer_count DESC
-      `),
+      // 1. Stats counts (cached 1h)
+      cache.cached('home:stats', 60 * 60 * 1000, async () => {
+        const [biz, off, cit, rec] = await Promise.all([
+          pool.query("SELECT COUNT(*) as total FROM businesses"),
+          pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
+          pool.query("SELECT COUNT(*) as total FROM cities"),
+          pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
+        ]);
+        return [biz, off, cit, rec];
+      }, { groups: ['homepage'] }),
+      // 2. Categories with offer counts (cached 2h)
+      cache.cached('home:categories', 2 * 60 * 60 * 1000, async () => {
+        return pool.query(`
+          SELECT c.id, c.name, COUNT(DISTINCT o.id) as offer_count
+          FROM categories c
+          LEFT JOIN businesses b ON b.category_id = c.id
+          LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          GROUP BY c.id, c.name
+          ORDER BY offer_count DESC
+        `);
+      }, { groups: ['homepage'] }),
       // 3. User preferences (null if not logged in)
       isLoggedIn
         ? pool.query("SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1", [req.webUser.id])
         : Promise.resolve(null),
-      // 4. Deal of the Day (with internal fallback)
-      _getDealOfDay(),
-      // 5. Cities list
-      pool.query(`
-        SELECT c.id, c.name, COUNT(b.id) as business_count
-        FROM cities c
-        LEFT JOIN businesses b ON b.city_id = c.id
-        GROUP BY c.id, c.name
-        ORDER BY business_count DESC
-        LIMIT 15
-      `),
-      // 6. Featured businesses (logo strip) — cached pool, shuffled in-process
+      // 4. Deal of the Day (cached 30min)
+      cache.cached('home:dealOfDay', 30 * 60 * 1000, () => _getDealOfDay(), { groups: ['homepage', 'offers'] }),
+      // 5. Cities list (cached 2h)
+      cache.cached('home:cities', 2 * 60 * 60 * 1000, async () => {
+        return pool.query(`
+          SELECT c.id, c.name, COUNT(b.id) as business_count
+          FROM cities c
+          LEFT JOIN businesses b ON b.city_id = c.id
+          GROUP BY c.id, c.name
+          ORDER BY business_count DESC
+          LIMIT 15
+        `);
+      }, { groups: ['homepage', 'static'] }),
+      // 6. Featured businesses (logo strip) — cached pool, shuffled per-request
       (async () => {
-        const CACHE_TTL = 10 * 60 * 1000; // 10 min
-        if (!req.app.locals._featBizPool || Date.now() - (req.app.locals._featBizPoolTs || 0) > CACHE_TTL) {
+        const bizPool = await cache.cached('home:featBizPool', 10 * 60 * 1000, async () => {
           const { rows } = await pool.query("SELECT id, name, logo_url FROM businesses WHERE logo_url IS NOT NULL LIMIT 100");
-          req.app.locals._featBizPool = rows;
-          req.app.locals._featBizPoolTs = Date.now();
-        }
-        const pool_ = [...req.app.locals._featBizPool];
+          return rows;
+        }, { groups: ['homepage', 'businesses'] });
+        const pool_ = [...bizPool];
         for (let i = pool_.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool_[i], pool_[j]] = [pool_[j], pool_[i]]; }
         return { rows: pool_.slice(0, 20) };
       })(),

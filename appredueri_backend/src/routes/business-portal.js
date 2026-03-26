@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const cache = require("../services/cache");
 const multer = require("multer");
 const { businessAuth, businessUserAuth } = require("../middleware/businessAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
@@ -272,6 +273,7 @@ router.put("/:businessId", businessAuth, async (req, res) => {
       ]);
     }
 
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage');
     res.json({ success: true, message: "Business actualizat" });
   } catch (err) {
     console.error("[BusinessPortal] Eroare la PUT /my-businesses/:id:", err);
@@ -640,6 +642,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
 
     console.log("[BusinessPortal] Offer created with ID:", result.offerId, "moderation:", result.moderationStatus);
 
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({
       success: true,
       offer_id: result.offerId,
@@ -885,6 +888,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     }
 
     console.log("[BusinessPortal] Offer updated successfully — reset to pending_review");
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({ success: true, moderation_status: 'pending_review' });
   } catch (err) {
     console.error("[BusinessPortal] Error updating offer:", err);
@@ -917,6 +921,7 @@ router.delete("/:businessId/offers/:offerId", businessAuth, async (req, res) => 
       }
     }
 
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({ success: true });
   } catch (err) {
     console.error("[BusinessPortal] Eroare ștergere ofertă:", err);
@@ -988,6 +993,7 @@ router.patch("/:businessId/offers/:offerId/toggle", businessAuth, async (req, re
       `, [offerId, businessId]);
 
       await client.query("COMMIT");
+      cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
       res.json({ success: true, is_active: result.rows[0].is_active });
     } catch (txErr) {
       await client.query("ROLLBACK").catch(() => {});

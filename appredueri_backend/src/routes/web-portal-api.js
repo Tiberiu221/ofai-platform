@@ -5,6 +5,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const cache = require("../services/cache");
 const { requireWebAuth } = require("../middleware/webAuth");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier, requireFeature, requireLimit } = require('../middleware/tierAuth');
@@ -949,6 +950,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
           booking_type, booking_phone || null, booking_whatsapp || null, booking_url || null, booking_instructions || null, businessId]);
     }
 
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage');
     res.json({ success: true, message: "Business actualizat!" });
   } catch (err) {
     console.error("[Web API] Portal update business error:", err);
@@ -1024,6 +1026,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       }
     }
 
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({
       success: true,
       offer_id: result.offerId,
@@ -1166,6 +1169,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       }
     }
 
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({ success: true, moderation_status: 'pending_review' });
   } catch (err) {
     console.error("[Web API] Portal update offer error:", err.message, err.stack);
@@ -1180,6 +1184,7 @@ router.delete("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwne
     const offerId = parseInt(req.params.offerId, 10);
     if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
     await pool.query("DELETE FROM offers WHERE id = $1 AND business_id = $2", [offerId, businessId]);
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({ success: true });
   } catch (err) {
     console.error("[Web API] Portal delete offer error:", err);
@@ -1247,6 +1252,7 @@ router.patch("/api/web/portal/:businessId/offers/:offerId/toggle", requireBusine
     );
 
     await client.query("COMMIT");
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({ success: true, is_active: result.rows[0].is_active });
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});

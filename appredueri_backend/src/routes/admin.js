@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const cache = require("../services/cache");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
@@ -154,23 +155,35 @@ router.get("/", (req, res) => {
 
 router.get("/dashboard", async (req, res) => {
   try {
-    // Core stats (these tables definitely exist)
-    const [
-      businessCount,
-      activeOfferCount,
-      userCount,
-      pendingRequestCount,
-      recentReviewCount,
-      newUsers7d,
-      recentRequests,
-      recentReviews
-    ] = await Promise.all([
-      pool.query("SELECT COUNT(*) FROM businesses"),
-      pool.query("SELECT COUNT(*) FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
-      pool.query("SELECT COUNT(*) FROM users"),
-      pool.query("SELECT COUNT(*) FROM business_requests WHERE status = 'pending'"),
-      pool.query("SELECT COUNT(*) FROM reviews WHERE created_at >= NOW() - INTERVAL '30 days'"),
-      pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
+    // Stats (cached 1h) + recent items (always fresh)
+    const [stats, recentRequests, recentReviews] = await Promise.all([
+      cache.cached('admin:dashStats', 60 * 60 * 1000, async () => {
+        const [businessCount, activeOfferCount, userCount, pendingRequestCount, recentReviewCount, newUsers7d] = await Promise.all([
+          pool.query("SELECT COUNT(*) FROM businesses"),
+          pool.query("SELECT COUNT(*) FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
+          pool.query("SELECT COUNT(*) FROM users"),
+          pool.query("SELECT COUNT(*) FROM business_requests WHERE status = 'pending'"),
+          pool.query("SELECT COUNT(*) FROM reviews WHERE created_at >= NOW() - INTERVAL '30 days'"),
+          pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
+        ]);
+        let views7d = 0, views30d = 0;
+        try {
+          const v7 = await pool.query("SELECT COUNT(*) FROM business_views WHERE viewed_at >= NOW() - INTERVAL '7 days'");
+          const v30 = await pool.query("SELECT COUNT(*) FROM business_views WHERE viewed_at >= NOW() - INTERVAL '30 days'");
+          views7d = parseInt(v7.rows[0].count);
+          views30d = parseInt(v30.rows[0].count);
+        } catch (e) { /* business_views table might not exist */ }
+        return {
+          businesses: parseInt(businessCount.rows[0].count),
+          activeOffers: parseInt(activeOfferCount.rows[0].count),
+          users: parseInt(userCount.rows[0].count),
+          pendingRequests: parseInt(pendingRequestCount.rows[0].count),
+          recentReviews: parseInt(recentReviewCount.rows[0].count),
+          views7d,
+          views30d,
+          newUsers7d: parseInt(newUsers7d.rows[0].count),
+        };
+      }, { groups: ['admin'] }),
       pool.query(`
         SELECT br.id, br.name, br.status, br.created_at,
                u.email AS user_email
@@ -189,28 +202,8 @@ router.get("/dashboard", async (req, res) => {
       `),
     ]);
 
-    // Views stats (table might not exist)
-    let views7d = 0, views30d = 0;
-    try {
-      const v7 = await pool.query("SELECT COUNT(*) FROM business_views WHERE viewed_at >= NOW() - INTERVAL '7 days'");
-      const v30 = await pool.query("SELECT COUNT(*) FROM business_views WHERE viewed_at >= NOW() - INTERVAL '30 days'");
-      views7d = parseInt(v7.rows[0].count);
-      views30d = parseInt(v30.rows[0].count);
-    } catch (e) {
-      // business_views table might not exist
-    }
-
     res.render("admin/dashboard", {
-      stats: {
-        businesses: parseInt(businessCount.rows[0].count),
-        activeOffers: parseInt(activeOfferCount.rows[0].count),
-        users: parseInt(userCount.rows[0].count),
-        pendingRequests: parseInt(pendingRequestCount.rows[0].count),
-        recentReviews: parseInt(recentReviewCount.rows[0].count),
-        views7d,
-        views30d,
-        newUsers7d: parseInt(newUsers7d.rows[0].count),
-      },
+      stats,
       recentRequests: recentRequests.rows,
       recentReviews: recentReviews.rows,
     });
@@ -447,6 +440,7 @@ router.post("/businesses/new", async (req, res) => {
     await syncBadgeType(client, rows[0].id, null);
 
     await client.query("COMMIT");
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect("/admin/businesses");
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
@@ -658,6 +652,7 @@ router.post("/businesses/:id/edit", async (req, res) => {
       }
     }
 
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect("/admin/businesses");
   } catch (err) {
     console.error("Eroare la POST /admin/businesses/:id/edit:", err);
@@ -786,6 +781,7 @@ router.post("/businesses/:id/delete", async (req, res) => {
       if (urlToDelete) await deleteImage(urlToDelete);
     }
 
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect("/admin/businesses");
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
@@ -1348,6 +1344,7 @@ router.post("/offers/:id/delete", async (req, res) => {
       await deleteImage(logoRes.rows[0].logo_url);
     }
     await pool.query("DELETE FROM offers WHERE id = $1", [id]);
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect("/admin/offers");
   } catch (err) {
     console.error(err);
@@ -1628,6 +1625,7 @@ router.post("/business-requests/:id/approve", async (req, res) => {
         .catch(err => console.error("[Admin] Failed to send approved email:", err));
     }
 
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect("/admin/business-requests?success=approved");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1858,6 +1856,7 @@ router.post("/cities", async (req, res) => {
       return res.redirect("/admin/cities?err=Numele este obligatoriu");
     }
     await pool.query("INSERT INTO cities (name) VALUES ($1)", [name]);
+    cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/cities?message=${encodeURIComponent("Oraș adăugat: " + name)}`);
   } catch (err) {
     console.error("[Admin] Add city error:", err);
@@ -1875,6 +1874,7 @@ router.post("/cities/:id", async (req, res) => {
       return res.redirect("/admin/cities?err=Numele este obligatoriu");
     }
     await pool.query("UPDATE cities SET name = $1 WHERE id = $2", [name, id]);
+    cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/cities?message=${encodeURIComponent("Oraș actualizat")}`);
   } catch (err) {
     console.error("[Admin] Update city error:", err);
@@ -1896,6 +1896,7 @@ router.post("/cities/:id/delete", async (req, res) => {
       return res.redirect(`/admin/cities?err=${encodeURIComponent("Nu poți șterge acest oraș — are " + countRes.rows[0].cnt + " business-uri asociate")}`);
     }
     await pool.query("DELETE FROM cities WHERE id = $1", [id]);
+    cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/cities?message=${encodeURIComponent("Oraș șters")}`);
   } catch (err) {
     console.error("[Admin] Delete city error:", err);
@@ -1934,6 +1935,7 @@ router.post("/categories", async (req, res) => {
       return res.redirect("/admin/categories?err=Numele este obligatoriu");
     }
     await pool.query("INSERT INTO categories (name) VALUES ($1)", [name]);
+    cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie adăugată: " + name)}`);
   } catch (err) {
     console.error("[Admin] Add category error:", err);
@@ -1951,6 +1953,7 @@ router.post("/categories/:id", async (req, res) => {
       return res.redirect("/admin/categories?err=Numele este obligatoriu");
     }
     await pool.query("UPDATE categories SET name = $1 WHERE id = $2", [name, id]);
+    cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie actualizată")}`);
   } catch (err) {
     console.error("[Admin] Update category error:", err);
@@ -1971,6 +1974,7 @@ router.post("/categories/:id/delete", async (req, res) => {
       return res.redirect(`/admin/categories?err=${encodeURIComponent("Nu poți șterge această categorie — are " + countRes.rows[0].cnt + " business-uri asociate")}`);
     }
     await pool.query("DELETE FROM categories WHERE id = $1", [id]);
+    cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie ștearsă")}`);
   } catch (err) {
     console.error("[Admin] Delete category error:", err);
@@ -2260,6 +2264,7 @@ router.post("/offer-moderation/:id/approve", async (req, res) => {
         .catch(err => console.error("[Admin] Failed to send offer approved email:", err));
     }
 
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă aprobată și activată")}`);
   } catch (err) {
     console.error("[Admin] Approve offer error:", err);
@@ -2297,6 +2302,7 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
         .catch(err => console.error("[Admin] Failed to send offer rejected email:", err));
     }
 
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă respinsă")}`);
   } catch (err) {
     console.error("[Admin] Reject offer error:", err);
@@ -2449,6 +2455,7 @@ router.post("/collections", async (req, res) => {
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [title, description || null, image_url || null, sort_order || 0]
     );
+    cache.invalidateGroup('collections');
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error("[Admin] Create collection error:", err);
@@ -2469,6 +2476,7 @@ router.put("/collections/:id", async (req, res) => {
       [id, title, description ?? null, image_url ?? null, is_active, sort_order]
     );
     if (rows.length === 0) return res.status(404).json({ message: "Colecție negăsită" });
+    cache.invalidateGroup('collections');
     res.json(rows[0]);
   } catch (err) {
     console.error("[Admin] Update collection error:", err);
@@ -2482,6 +2490,7 @@ router.delete("/collections/:id", async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const result = await pool.query("DELETE FROM collections WHERE id = $1", [id]);
     if (result.rowCount === 0) return res.status(404).json({ message: "Colecție negăsită" });
+    cache.invalidateGroup('collections');
     res.json({ message: "Colecție ștearsă" });
   } catch (err) {
     console.error("[Admin] Delete collection error:", err);

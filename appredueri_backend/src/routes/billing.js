@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const cache = require('../services/cache');
 const stripeService = require('../services/stripe');
 const { requireBusinessOwner } = require('../middleware/businessWebAuth');
 const { syncBadgeType } = require('../helpers/tiers');
@@ -184,6 +185,7 @@ router.post('/:businessId/change-plan', requireBusinessOwner, async (req, res) =
     }
 
     console.log(`[Billing] Plan change (${action}): business ${bizId}, ${currentSlug}/${currentCycle} -> ${planSlug}/${targetCycle}`);
+    cache.del(`tier:biz:${bizId}`);
 
     res.json({ success: true, message, action });
   } catch (err) {
@@ -233,6 +235,7 @@ router.post('/:businessId/reactivate', requireBusinessOwner, async (req, res) =>
     }
 
     console.log(`[Billing] Subscription reactivated: business ${bizId}`);
+    cache.del(`tier:biz:${bizId}`);
     res.json({ success: true, message: 'Abonamentul a fost reactivat.' });
   } catch (err) {
     console.error('[Billing] Reactivate error:', err);
@@ -378,6 +381,7 @@ async function handleCheckoutCompleted(session) {
     await syncBadgeType(client, bizId, plan.badge_type);
 
     await client.query('COMMIT');
+    cache.del(`tier:biz:${bizId}`);
     console.log(`[Billing] Checkout completed: business ${bizId} -> ${planSlug} (${billingCycle})`);
 
     // Send emails (non-blocking, after commit)
@@ -433,6 +437,7 @@ async function handleInvoicePaid(invoice) {
     [business_id, plan_id, invoiceReason]
   );
 
+  cache.del(`tier:biz:${business_id}`);
   console.log(`[Billing] Invoice paid (renewal): business ${business_id}, extended to ${periodEnd.toISOString()}`);
 }
 
@@ -453,6 +458,7 @@ async function handlePaymentFailed(invoice) {
   if (result.rows.length === 0) return;
 
   const { business_id } = result.rows[0];
+  cache.del(`tier:biz:${business_id}`);
   console.log(`[Billing] Payment failed: business ${business_id} marked as past_due`);
 
   sendPaymentFailedEmail(business_id).catch(err =>
@@ -512,6 +518,7 @@ async function handleSubscriptionCancelled(subscription) {
     await syncBadgeType(client, business_id, freePlan.rows[0].badge_type);
 
     await client.query('COMMIT');
+    cache.del(`tier:biz:${business_id}`);
     console.log(`[Billing] Subscription cancelled: business ${business_id} downgraded to free`);
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -615,6 +622,7 @@ async function handleSubscriptionUpdated(subscription) {
     await syncBadgeType(client, local.business_id, newPlan.badge_type);
 
     await client.query('COMMIT');
+    cache.del(`tier:biz:${local.business_id}`);
     console.log(`[Billing] Subscription ${action}: business ${local.business_id}, ${local.current_slug} -> ${newPlan.slug}`);
 
     if (newPlan.slug === 'premium') {

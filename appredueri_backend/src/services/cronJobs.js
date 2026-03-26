@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const pool = require('../db');
+const cache = require('./cache');
 
 /**
  * Compute and upsert category rankings based on review scores + tier boost.
@@ -152,7 +153,11 @@ function initCronJobs() {
         `UPDATE offers SET is_active = FALSE
          WHERE is_active = TRUE AND end_date IS NOT NULL AND end_date < CURRENT_DATE`
       );
-      if (result.rowCount > 0) console.log(`[Cron] Deactivated ${result.rowCount} expired offers`);
+      if (result.rowCount > 0) {
+        console.log(`[Cron] Deactivated ${result.rowCount} expired offers`);
+        cache.invalidateGroup('offers');
+        cache.invalidateGroup('homepage');
+      }
     } catch (err) {
       console.error('[Cron] offers deactivation failed:', err.message);
     }
@@ -286,6 +291,7 @@ function initCronJobs() {
 
       const total = trialResult.rows.length + paidResult.rows.length + staleStripeResult.rows.length;
       if (total > 0) {
+        cache.invalidateGroup('tiers');
         console.log(`[Cron] Subscription check: ${trialResult.rows.length} trials + ${paidResult.rows.length} paid + ${staleStripeResult.rows.length} stale Stripe expired, downgraded to free`);
       }
     } catch (err) {
@@ -384,6 +390,7 @@ function initCronJobs() {
         client.release();
       }
 
+      cache.del('home:dealOfDay');
       console.log(`[Cron] Selected offer ${offer_id} (nomination ${nomination_id}) as Deal of the Day for ${tomorrowStr}`);
     } catch (err) {
       console.error('[Cron] Deal of the Day selection error:', err.message);
@@ -452,7 +459,11 @@ function initCronJobs() {
         `UPDATE offers SET flash_expires_at = NULL
          WHERE flash_expires_at IS NOT NULL AND flash_expires_at < NOW()`
       );
-      if (result.rowCount > 0) console.log(`[Cron] Cleared ${result.rowCount} expired flash deals`);
+      if (result.rowCount > 0) {
+        console.log(`[Cron] Cleared ${result.rowCount} expired flash deals`);
+        cache.invalidateGroup('offers');
+        cache.invalidateGroup('homepage');
+      }
     } catch (err) {
       console.error('[Cron] flash deals cleanup failed:', err.message);
     }

@@ -1,21 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db');
+const cache = require('../services/cache');
 
 // GET /collections — public list of active collections with offer count
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await pool.query(`
-      SELECT c.id, c.title, c.description, c.image_url,
-             COUNT(co.offer_id) AS offer_count
-      FROM collections c
-      LEFT JOIN collection_offers co ON co.collection_id = c.id
-      LEFT JOIN offers o ON o.id = co.offer_id AND o.is_active = TRUE
-      WHERE c.is_active = TRUE
-      GROUP BY c.id
-      HAVING COUNT(co.offer_id) > 0
-      ORDER BY c.sort_order ASC, c.created_at DESC
-    `);
+    const rows = await cache.cached('collections:list', 2 * 60 * 60 * 1000, async () => {
+      const result = await pool.query(`
+        SELECT c.id, c.title, c.description, c.image_url,
+               COUNT(co.offer_id) AS offer_count
+        FROM collections c
+        LEFT JOIN collection_offers co ON co.collection_id = c.id
+        LEFT JOIN offers o ON o.id = co.offer_id AND o.is_active = TRUE
+        WHERE c.is_active = TRUE
+        GROUP BY c.id
+        HAVING COUNT(co.offer_id) > 0
+        ORDER BY c.sort_order ASC, c.created_at DESC
+      `);
+      return result.rows;
+    }, { groups: ['collections', 'offers'] });
 
     res.json({ data: rows });
   } catch (err) {

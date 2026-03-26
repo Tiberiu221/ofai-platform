@@ -1,3 +1,5 @@
+const cache = require('../services/cache');
+
 // Tier slug constants
 const TIERS = {
   FREE: 'free',
@@ -83,6 +85,11 @@ function normalisePlan(row) {
  * Returns { subscription, plan, tier, isTrial }
  */
 async function getBusinessTier(pool, businessId) {
+  // Check cache first (5min TTL, invalidated on subscription changes)
+  const cacheKey = `tier:biz:${businessId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
   const { rows } = await pool.query(`
     SELECT
       bs.id              AS sub_id,
@@ -140,7 +147,7 @@ async function getBusinessTier(pool, businessId) {
 
   if (rows.length > 0) {
     const row = rows[0];
-    return {
+    const result = {
       subscription: {
         id: row.sub_id,
         business_id: row.business_id,
@@ -161,6 +168,8 @@ async function getBusinessTier(pool, businessId) {
       tier: row.slug,
       isTrial: row.sub_status === 'trial',
     };
+    cache.set(cacheKey, result, 5 * 60 * 1000, ['tiers']);
+    return result;
   }
 
   // Fallback: free tier
@@ -169,12 +178,14 @@ async function getBusinessTier(pool, businessId) {
     console.error('[Tiers] CRITICAL: free plan not found in subscription_plans');
     throw new Error('Free plan missing from subscription_plans');
   }
-  return {
+  const result = {
     subscription: null,
     plan: normalisePlan(plans.free),
     tier: TIERS.FREE,
     isTrial: false,
   };
+  cache.set(cacheKey, result, 5 * 60 * 1000, ['tiers']);
+  return result;
 }
 
 /**
