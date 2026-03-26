@@ -1,5 +1,5 @@
 # OFAI — Project Context Document
-## Ultima actualizare: 25 Martie 2026 (v0.12.0 — Audit #12 Complete)
+## Ultima actualizare: 26 Martie 2026 (v0.13.0 — GA4 + SEO + Tier Badges Everywhere)
 
 > **Scop:** Document complet de context pentru sesiuni noi. Conține toată arhitectura, schema DB, API-uri, patterns și gotchas.
 > Changelog detaliat per sesiune → vezi `HANDOFF_DOCUMENT.md` (v16, 1785 linii).
@@ -23,6 +23,7 @@
 | Email | Resend (welcome, password reset, business notifications) |
 | Push | Firebase Cloud Messaging (FCM) + Expo (legacy) |
 | AI/LLM | Anthropic Claude Haiku (review summarization, business validation) |
+| Analytics | Google Analytics 4 (`GA_MEASUREMENT_ID` env var) |
 | Error Tracking | Sentry |
 | Automation | n8n (on Railway) |
 | Scraping | Playwright + OpenRouter (DeepSeek LLM enrichment) |

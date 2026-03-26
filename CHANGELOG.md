@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.13.0] — 2026-03-26
+
+### Adaugat
+- Google Analytics 4 integration — `GA_MEASUREMENT_ID` env var, custom events on favorites/follows/promo reveals/booking actions (58be3da)
+- SEO comprehensive: gzip compression, font preloading, canonical URLs on all 22 pages, pagination rel=next/prev, JSON-LD (ItemList, BreadcrumbList, Product) on oferte/business-uri/preturi, sitemap improvements with lastmod + moderation filter, duplicate content prevention (a335531)
+- Tier badges on ALL web pages — offer detail hero + sidebar + similar offers, home page deal of day + featured + promoted + followed + top businesses (3bc12dc)
+- OFAI wordmark logo — `ofai-wordmark-nobg.svg` variant for navbar and auth cards (e2845d3)
+- `/seo` skill for SEO auditing
+
+### Modificat
+- CSP updated to allow Google Analytics domains (googletagmanager.com, google-analytics.com)
+- Register button text color fixed to black for readability (c10cb5c)
+
 ## [v0.12.0] — 2026-03-25
 
 ### Securitate

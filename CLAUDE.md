@@ -120,7 +120,7 @@ psql $DATABASE_URL                              # Connect to DB
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (25 March 2026)
+## Current State (26 March 2026)
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
@@ -186,6 +186,9 @@ psql $DATABASE_URL                              # Connect to DB
 - **Search Bar Overhaul:** Better results, highlights, keyboard nav, a11y
 - **CSP Nonce Migration:** Helmet CSP with per-request nonce for inline scripts
 - **CSRF + Refresh Token:** CSRF re-enabled on click tracking, refresh token race condition fixed with `SELECT ... FOR UPDATE` transaction
+- **SEO:** robots.txt, dynamic sitemap.xml (offers+businesses+lastmod), canonical URLs on all pages, pagination rel=next/prev, JSON-LD (Organization, Offer, LocalBusiness, ItemList, BreadcrumbList, Product), gzip compression, font preloading, duplicate content prevention (noindex on filtered/auth pages)
+- **Google Analytics 4:** `GA_MEASUREMENT_ID` env var, custom events (favorite, follow, promo_code_reveal, business_action), CSP whitelisted
+- **Logo:** OFAI wordmark SVG (`ofai-wordmark.svg` with bg, `ofai-wordmark-nobg.svg` without), used in navbar, auth cards, footer, favicon
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
@@ -204,16 +207,15 @@ psql $DATABASE_URL                              # Connect to DB
 ### Monitoring & Error Handling
 - Sentry error tracking (production)
 - Click/offer/reveal tracking (internal analytics)
+- Google Analytics 4 — controlled by `GA_MEASUREMENT_ID` env var, custom events on favorites/follows/promo reveals/booking actions
 - 404 error page exists
-- **Missing:** 500 error page, Google Analytics/GTM, conversion funnel tracking
+- **Missing:** 500 error page, conversion funnel tracking in GA4
 
 ### Security Audit History
 - **Audit #11 (20 Mar):** 92 findings, 25 fixes (commit `7a040ac`)
 - **Audit #12 (24 Mar):** 19 fixes + CSP nonce migration (commit `47fcf7b`) + performance indexes (migration 064)
 
 ### Remaining Gaps
-- **SEO critical:** No `sitemap.xml`, no `robots.txt`, JSON-LD structured data framework exists but not populated on most pages
-- **Analytics:** No Google Analytics / GTM — zero consumer behavior data
 - **500 error page:** Missing — server errors show blank page
 - **Search:** Basic keyword matching only — no full-text (pg_trgm), no fuzzy/typo tolerance, no distance-based filtering
 - **Email engagement:** No weekly digest email (push only), no trial expiration warning, no re-engagement emails
