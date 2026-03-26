@@ -46,6 +46,11 @@ function buildSearchConditions(query, opts = {}) {
     // Fuzzy match (similarity with trigram index)
     parts.push(`similarity(${norm(`${a.offer}.title`)}, ${param}) > ${threshold}`);
     parts.push(`similarity(${norm(`${a.business}.name`)}, ${param}) > ${threshold}`);
+    // Category name search (important: "frizerie", "restaurant" etc. are common queries)
+    if (a.category) {
+      parts.push(`${norm(`${a.category}.name`)} LIKE ${param} || '%'`);
+      parts.push(`similarity(${norm(`${a.category}.name`)}, ${param}) > ${threshold}`);
+    }
     // Description — only for full search, not suggest (too slow)
     if (mode === 'offers') {
       parts.push(`similarity(${norm(`${a.offer}.description`)}, ${param}) > ${SIMILARITY_THRESHOLD_DESC}`);

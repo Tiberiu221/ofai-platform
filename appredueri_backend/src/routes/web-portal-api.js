@@ -2104,21 +2104,26 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
       pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value,
                b.name as business_name, b.logo_url as business_logo,
-               b.subscription_badge_type, b.is_verified as business_verified
+               b.subscription_badge_type, b.is_verified as business_verified,
+               cat.name as category_name
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
+        LEFT JOIN categories cat ON b.category_id = cat.id
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND o.moderation_status IN ('approved', 'auto_approved')
           AND (
             ${norm('o.title')} LIKE ${param} || '%'
             OR ${norm('b.name')} LIKE ${param} || '%'
+            OR ${norm('cat.name')} LIKE ${param} || '%'
             OR similarity(${norm('o.title')}, ${param}) > 0.2
             OR similarity(${norm('b.name')}, ${param}) > 0.2
+            OR similarity(${norm('cat.name')}, ${param}) > 0.2
           )
         ORDER BY (
           CASE WHEN ${norm('b.name')} = ${param} THEN 100 ELSE 0 END
           + CASE WHEN ${norm('b.name')} LIKE ${param} || '%' THEN 50 ELSE 0 END
           + CASE WHEN ${norm('o.title')} LIKE ${param} || '%' THEN 40 ELSE 0 END
+          + CASE WHEN ${norm('cat.name')} = ${param} THEN 35 ELSE 0 END
           + similarity(${norm('b.name')}, ${param}) * 30
           + similarity(${norm('o.title')}, ${param}) * 25
         ) DESC, o.discount_value DESC
