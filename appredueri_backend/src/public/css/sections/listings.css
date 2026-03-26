@@ -725,6 +725,12 @@
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.search-icon:hover {
+  color: var(--accent);
 }
 
 /* ═══════════════════════════════════════════════════════════

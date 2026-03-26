@@ -654,6 +654,14 @@ window.shareOffer = async function(title, businessName) {
 
 /* ─── SEARCH AUTOSUGGEST ───────────────────────────────── */
 function initSearchAutosuggest() {
+  // Search icon click → submit form
+  document.querySelectorAll('.search-icon').forEach(icon => {
+    icon.addEventListener('click', () => {
+      const form = icon.closest('form');
+      if (form) form.submit();
+    });
+  });
+
   const searchInputs = document.querySelectorAll('input[name="q"]');
   searchInputs.forEach((input) => {
     const form = input.closest('form');
