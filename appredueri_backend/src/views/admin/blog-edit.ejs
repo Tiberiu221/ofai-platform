@@ -1,0 +1,89 @@
+<%- include('partials/layout-top', { pageTitle: post && post.id ? 'Editează articol' : 'Articol nou', activePage: 'blog' }) %>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <h1><%= post && post.id ? 'Editează articol' : 'Articol nou' %></h1>
+  <a href="/admin/blog" class="a-btn a-btn-outline">&larr; Înapoi</a>
+</div>
+
+<% if (error) { %>
+  <div class="a-alert a-alert-danger" style="margin-bottom: 16px;"><%= error %></div>
+<% } %>
+
+<form method="POST" action="/admin/blog/<%= post && post.id ? post.id + '/edit' : 'new' %>" enctype="multipart/form-data">
+  <div class="a-card" style="padding: 24px; display: grid; gap: 20px;">
+
+    <div>
+      <label class="a-label">Titlu *</label>
+      <input type="text" name="title" class="a-input" value="<%= post ? (post.title || '') : '' %>" required>
+    </div>
+
+    <div>
+      <label class="a-label">Slug (auto-generat din titlu dacă gol)</label>
+      <input type="text" name="slug" class="a-input" value="<%= post ? (post.slug || '') : '' %>" placeholder="exemplu-articol-blog">
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <div>
+        <label class="a-label">Categorie</label>
+        <select name="category_id" class="a-input">
+          <option value="">— Fără categorie —</option>
+          <% categories.forEach(cat => { %>
+            <option value="<%= cat.id %>" <%= post && post.category_id == cat.id ? 'selected' : '' %>><%= cat.name %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div>
+        <label class="a-label">Autor</label>
+        <input type="text" name="author_name" class="a-input" value="<%= post ? (post.author_name || 'Echipa OFAI') : 'Echipa OFAI' %>">
+      </div>
+    </div>
+
+    <div>
+      <label class="a-label">Excerpt (rezumat scurt pt listing + meta)</label>
+      <textarea name="excerpt" class="a-input" rows="3" placeholder="Rezumat scurt al articolului (1-2 propoziții)"><%= post ? (post.excerpt || '') : '' %></textarea>
+    </div>
+
+    <div>
+      <label class="a-label">Conținut HTML *</label>
+      <textarea name="content" class="a-input" rows="20" style="font-family: monospace; font-size: 13px;" required><%= post ? (post.content || '') : '' %></textarea>
+    </div>
+
+    <div>
+      <label class="a-label">Imagine header</label>
+      <input type="file" name="image" accept="image/*" class="a-input">
+      <% if (post && post.image_url) { %>
+        <div style="margin-top: 8px;">
+          <img src="<%= post.image_url %>" alt="Current image" style="max-width: 300px; border-radius: 8px;">
+        </div>
+      <% } %>
+    </div>
+
+    <details style="border: 1px solid var(--a-border); border-radius: 8px; padding: 16px;">
+      <summary style="cursor: pointer; font-weight: 600;">SEO (opțional)</summary>
+      <div style="display: grid; gap: 16px; margin-top: 16px;">
+        <div>
+          <label class="a-label">Meta Title (max 200 caractere)</label>
+          <input type="text" name="meta_title" class="a-input" maxlength="200" value="<%= post ? (post.meta_title || '') : '' %>">
+        </div>
+        <div>
+          <label class="a-label">Meta Description (max 320 caractere)</label>
+          <textarea name="meta_description" class="a-input" rows="2" maxlength="320"><%= post ? (post.meta_description || '') : '' %></textarea>
+        </div>
+      </div>
+    </details>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="is_published" <%= post && post.is_published ? 'checked' : '' %>>
+        <span>Publică articolul</span>
+      </label>
+    </div>
+
+    <div style="display: flex; gap: 12px;">
+      <button type="submit" class="a-btn a-btn-primary"><%= post && post.id ? 'Salvează modificările' : 'Creează articol' %></button>
+      <a href="/admin/blog" class="a-btn a-btn-outline">Anulează</a>
+    </div>
+  </div>
+</form>
+
+<%- include('partials/layout-bottom') %>

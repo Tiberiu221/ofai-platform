@@ -345,14 +345,18 @@ app.get('/sitemap.xml', async (req, res) => {
       { loc: '/ajutor', priority: '0.4', changefreq: 'monthly' },
       { loc: '/termeni', priority: '0.3', changefreq: 'yearly' },
       { loc: '/confidentialitate', priority: '0.3', changefreq: 'yearly' },
+      { loc: '/blog', priority: '0.7', changefreq: 'daily' },
     ];
 
-    const [offers, businesses] = await Promise.all([
+    const [offers, businesses, blogPosts] = await Promise.all([
       pool.query(
-        "SELECT id, COALESCE(start_date, created_at)::date as lastmod FROM offers WHERE is_active = true AND moderation_status IN ('approved', 'auto_approved') AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
+        "SELECT id, start_date::date as lastmod FROM offers WHERE is_active = true AND moderation_status IN ('approved', 'auto_approved') AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
       ),
       pool.query(
-        "SELECT id, created_at::date as lastmod FROM businesses ORDER BY id DESC LIMIT 5000"
+        "SELECT id FROM businesses ORDER BY id DESC LIMIT 5000"
+      ),
+      pool.query(
+        "SELECT slug, COALESCE(updated_at, published_at)::date as lastmod FROM blog_posts WHERE is_published = true ORDER BY published_at DESC LIMIT 1000"
       ),
     ]);
 
@@ -366,6 +370,9 @@ app.get('/sitemap.xml', async (req, res) => {
     }
     for (const row of businesses.rows) {
       xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+    }
+    for (const row of blogPosts.rows) {
+      xml += `\n  <url>\n    <loc>${BASE}/blog/${row.slug}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
     }
 
     xml += '\n</urlset>';
@@ -465,10 +472,31 @@ app.use((err, req, res, next) => {
     );
   }
 
-  res.status(err.status || 500).json({
-    message: isProduction ? "Eroare internă server" : err.message,
-    ...(isProduction ? {} : { stack: err.stack })
-  });
+  // API routes return JSON
+  if (req.path.startsWith('/api/') || req.path.startsWith('/auth') || req.path.startsWith('/users') ||
+      req.path.startsWith('/offers') || req.path.startsWith('/businesses') || req.path.startsWith('/favorites') ||
+      req.path.startsWith('/subscriptions') || req.path.startsWith('/reviews') || req.path.startsWith('/cities') ||
+      req.path.startsWith('/categories') || req.path.startsWith('/push-tokens') || req.path.startsWith('/billing') ||
+      req.path.startsWith('/reports') || req.path.startsWith('/saved-searches') || req.path.startsWith('/collections')) {
+    return res.status(err.status || 500).json({
+      message: isProduction ? "Eroare internă server" : err.message,
+      ...(isProduction ? {} : { stack: err.stack })
+    });
+  }
+
+  // Web routes render 500.ejs
+  try {
+    res.status(err.status || 500).render('public/500', {
+      pageTitle: 'Eroare Server',
+      activePage: null,
+      webUser: req.webUser || null,
+      errorMessage: isProduction ? null : err.message,
+      errorStack: isProduction ? null : err.stack,
+    });
+  } catch (renderErr) {
+    // Fallback if EJS template itself fails
+    res.status(500).send('<h1>Eroare Server</h1><p>Ne pare rău, a apărut o eroare. Revino mai târziu.</p><a href="/">Acasă</a>');
+  }
 });
 
 // 404 Handler

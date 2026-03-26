@@ -1,0 +1,67 @@
+<%- include('partials/head', { pageTitle, pageDesc, canonicalUrl, activePage, seoPage, seoTotalPages, seoBaseUrl, loadBlogCss: true }) %>
+<%- include('partials/navbar', { activePage, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<section class="blog-header">
+  <h1>Blog OFAI</h1>
+  <p>Articole, ghiduri și noutăți despre reduceri, oferte și business-uri locale din România.</p>
+
+  <div class="blog-categories-nav">
+    <a href="/blog" class="blog-cat-link<%= !currentCategory ? ' active' : '' %>">Toate</a>
+    <% categories.forEach(cat => { %>
+      <a href="/blog?categorie=<%= cat.slug %>" class="blog-cat-link<%= currentCategory === cat.slug ? ' active' : '' %>"><%= cat.name %></a>
+    <% }); %>
+  </div>
+</section>
+
+<% if (posts.length === 0) { %>
+  <section class="blog-empty">
+    <p>Niciun articol încă. Revino curând!</p>
+  </section>
+<% } else { %>
+  <div class="blog-grid">
+    <% posts.forEach(post => { %>
+      <a href="/blog/<%= post.slug %>" class="blog-card">
+        <% if (post.image_url) { %>
+          <img src="<%= post.image_url %>" alt="<%= post.title %>" class="blog-card-img" loading="lazy">
+        <% } else { %>
+          <div class="blog-card-img-placeholder">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          </div>
+        <% } %>
+        <div class="blog-card-body">
+          <div class="blog-card-meta">
+            <% if (post.category_name) { %>
+              <span class="blog-card-category"><%= post.category_name %></span>
+              <span>&middot;</span>
+            <% } %>
+            <span><%= post.published_at ? new Date(post.published_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
+          </div>
+          <h2 class="blog-card-title"><%= post.title %></h2>
+          <% if (post.excerpt) { %>
+            <p class="blog-card-excerpt"><%= post.excerpt %></p>
+          <% } %>
+        </div>
+      </a>
+    <% }); %>
+  </div>
+
+  <% if (pagination.totalPages > 1) { %>
+    <div class="blog-pagination">
+      <% if (pagination.page > 1) { %>
+        <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= pagination.page - 1 %>">&laquo; Anterior</a>
+      <% } %>
+      <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+        <% if (i === pagination.page) { %>
+          <span class="active"><%= i %></span>
+        <% } else { %>
+          <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= i %>"><%= i %></a>
+        <% } %>
+      <% } %>
+      <% if (pagination.page < pagination.totalPages) { %>
+        <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= pagination.page + 1 %>">Următor &raquo;</a>
+      <% } %>
+    </div>
+  <% } %>
+<% } %>
+
+<%- include('partials/footer') %>

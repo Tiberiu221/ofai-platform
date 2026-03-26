@@ -1,0 +1,60 @@
+<%- include('partials/layout-top', { pageTitle: 'Blog', activePage: 'blog' }) %>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+  <h1>Blog — Articole (<%= posts.length %>)</h1>
+  <a href="/admin/blog/new" class="a-btn a-btn-primary">+ Articol nou</a>
+</div>
+
+<% if (posts.length === 0) { %>
+  <div class="a-card" style="text-align: center; padding: 48px;">
+    <p class="a-text-muted">Niciun articol. Creează primul articol!</p>
+  </div>
+<% } else { %>
+  <div class="a-card" style="overflow-x: auto;">
+    <table class="a-table">
+      <thead>
+        <tr>
+          <th>Titlu</th>
+          <th>Categorie</th>
+          <th>Status</th>
+          <th>Vizualizări</th>
+          <th>Publicat</th>
+          <th>Acțiuni</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% posts.forEach(post => { %>
+          <tr>
+            <td>
+              <strong><%= post.title %></strong>
+              <div class="a-text-muted" style="font-size: 12px;">/blog/<%= post.slug %></div>
+            </td>
+            <td><%= post.category_name || '—' %></td>
+            <td>
+              <% if (post.is_published) { %>
+                <span class="a-badge a-badge-success">Publicat</span>
+              <% } else { %>
+                <span class="a-badge a-badge-warning">Draft</span>
+              <% } %>
+            </td>
+            <td><%= post.view_count || 0 %></td>
+            <td><%= post.published_at ? new Date(post.published_at).toLocaleDateString('ro-RO') : '—' %></td>
+            <td>
+              <div style="display: flex; gap: 8px;">
+                <a href="/admin/blog/<%= post.id %>/edit" class="a-btn a-btn-sm">Editează</a>
+                <form method="POST" action="/admin/blog/<%= post.id %>/toggle-publish" style="display: inline;">
+                  <button type="submit" class="a-btn a-btn-sm a-btn-outline"><%= post.is_published ? 'Unpublish' : 'Publish' %></button>
+                </form>
+                <form method="POST" action="/admin/blog/<%= post.id %>/delete" style="display: inline;" onsubmit="return confirm('Ești sigur că vrei să ștergi acest articol?');">
+                  <button type="submit" class="a-btn a-btn-sm a-btn-danger">Șterge</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

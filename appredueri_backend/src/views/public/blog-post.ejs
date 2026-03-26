@@ -1,0 +1,58 @@
+<%- include('partials/head', { pageTitle, pageDesc, canonicalUrl, activePage, ogTitle, ogDesc, ogImage, ogType, structuredData, loadBlogCss: true }) %>
+<%- include('partials/navbar', { activePage, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
+
+<% if (post.image_url) { %>
+  <img src="<%= post.image_url %>" alt="<%= post.title %>" class="blog-article-hero">
+<% } %>
+
+<article class="blog-article">
+  <header class="blog-article-header">
+    <% if (post.category_name) { %>
+      <a href="/blog?categorie=<%= post.category_slug %>" class="blog-article-category"><%= post.category_name %></a>
+    <% } %>
+    <h1 class="blog-article-title"><%= post.title %></h1>
+    <div class="blog-article-meta">
+      <span><%= post.author_name || 'Echipa OFAI' %></span>
+      <span>&middot;</span>
+      <span><%= post.published_at ? new Date(post.published_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
+    </div>
+  </header>
+
+  <div class="blog-content">
+    <%- post.content %>
+  </div>
+
+  <% if (related && related.length > 0) { %>
+    <section class="blog-related">
+      <h2>Articole similare</h2>
+      <div class="blog-related-grid">
+        <% related.forEach(r => { %>
+          <a href="/blog/<%= r.slug %>" class="blog-card">
+            <% if (r.image_url) { %>
+              <img src="<%= r.image_url %>" alt="<%= r.title %>" class="blog-card-img" loading="lazy">
+            <% } else { %>
+              <div class="blog-card-img-placeholder">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              </div>
+            <% } %>
+            <div class="blog-card-body">
+              <div class="blog-card-meta">
+                <% if (r.category_name) { %>
+                  <span class="blog-card-category"><%= r.category_name %></span>
+                  <span>&middot;</span>
+                <% } %>
+                <span><%= r.published_at ? new Date(r.published_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
+              </div>
+              <h3 class="blog-card-title"><%= r.title %></h3>
+              <% if (r.excerpt) { %>
+                <p class="blog-card-excerpt"><%= r.excerpt %></p>
+              <% } %>
+            </div>
+          </a>
+        <% }); %>
+      </div>
+    </section>
+  <% } %>
+</article>
+
+<%- include('partials/footer') %>

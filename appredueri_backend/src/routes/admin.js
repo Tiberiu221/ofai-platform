@@ -2601,4 +2601,184 @@ router.get("/emails", async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════
+// BLOG
+// ═══════════════════════════════════════════════════════
+
+// Helper: generate slug from title
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 200);
+}
+
+// List all blog posts
+router.get("/blog", async (req, res) => {
+  try {
+    const { rows: posts } = await pool.query(`
+      SELECT bp.*, bc.name AS category_name
+      FROM blog_posts bp
+      LEFT JOIN blog_categories bc ON bc.id = bp.category_id
+      ORDER BY bp.created_at DESC
+    `);
+    res.render("admin/blog", { posts });
+  } catch (err) {
+    console.error("[Admin] Blog list error:", err);
+    res.status(500).send("Eroare la încărcarea articolelor.");
+  }
+});
+
+// New blog post form
+router.get("/blog/new", async (req, res) => {
+  try {
+    const { rows: categories } = await pool.query('SELECT id, name FROM blog_categories ORDER BY sort_order');
+    res.render("admin/blog-edit", { post: null, categories, error: null });
+  } catch (err) {
+    console.error("[Admin] Blog new form error:", err);
+    res.status(500).send("Eroare la încărcarea formularului.");
+  }
+});
+
+// Create blog post
+router.post("/blog/new", upload.single("image"), async (req, res) => {
+  try {
+    const { title, slug: customSlug, excerpt, content, category_id, author_name, meta_title, meta_description, is_published } = req.body;
+    if (!title || !content) {
+      const { rows: categories } = await pool.query('SELECT id, name FROM blog_categories ORDER BY sort_order');
+      return res.render("admin/blog-edit", { post: req.body, categories, error: 'Titlul și conținutul sunt obligatorii.' });
+    }
+
+    let slug = customSlug ? slugify(customSlug) : slugify(title);
+    // Dedup slug
+    const { rows: existing } = await pool.query('SELECT id FROM blog_posts WHERE slug = $1', [slug]);
+    if (existing.length > 0) slug = `${slug}-${Date.now()}`;
+
+    let image_url = null;
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, "blog");
+      image_url = result.secure_url;
+    }
+
+    const published = is_published === 'on' || is_published === 'true';
+
+    await pool.query(`
+      INSERT INTO blog_posts (slug, title, excerpt, content, image_url, category_id, author_name, meta_title, meta_description, is_published, published_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `, [slug, title, excerpt || null, content, image_url, category_id || null, author_name || 'Echipa OFAI',
+        meta_title || null, meta_description || null, published, published ? new Date() : null]);
+
+    cache.invalidateGroup('blog');
+    cache.invalidateGroup('admin');
+    res.redirect("/admin/blog");
+  } catch (err) {
+    console.error("[Admin] Blog create error:", err);
+    res.status(500).send("Eroare la crearea articolului.");
+  }
+});
+
+// Edit blog post form
+router.get("/blog/:id/edit", async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM blog_posts WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return res.status(404).send("Articol negăsit.");
+    const { rows: categories } = await pool.query('SELECT id, name FROM blog_categories ORDER BY sort_order');
+    res.render("admin/blog-edit", { post: rows[0], categories, error: null });
+  } catch (err) {
+    console.error("[Admin] Blog edit form error:", err);
+    res.status(500).send("Eroare la încărcarea articolului.");
+  }
+});
+
+// Update blog post
+router.post("/blog/:id/edit", upload.single("image"), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { title, slug: customSlug, excerpt, content, category_id, author_name, meta_title, meta_description, is_published } = req.body;
+    if (!title || !content) {
+      const { rows: categories } = await pool.query('SELECT id, name FROM blog_categories ORDER BY sort_order');
+      return res.render("admin/blog-edit", { post: { ...req.body, id }, categories, error: 'Titlul și conținutul sunt obligatorii.' });
+    }
+
+    const { rows: currentRows } = await pool.query('SELECT * FROM blog_posts WHERE id = $1', [id]);
+    if (!currentRows[0]) return res.status(404).send("Articol negăsit.");
+    const current = currentRows[0];
+
+    let slug = customSlug ? slugify(customSlug) : current.slug;
+    // Dedup slug (exclude current post)
+    const { rows: existing } = await pool.query('SELECT id FROM blog_posts WHERE slug = $1 AND id != $2', [slug, id]);
+    if (existing.length > 0) slug = `${slug}-${Date.now()}`;
+
+    let image_url = current.image_url;
+    if (req.file) {
+      // Delete old image if exists
+      if (current.image_url) {
+        const publicId = getPublicIdFromUrl(current.image_url);
+        if (publicId) await deleteFromCloudinary(publicId).catch(() => {});
+      }
+      const result = await uploadToCloudinary(req.file.buffer, "blog");
+      image_url = result.secure_url;
+    }
+
+    const published = is_published === 'on' || is_published === 'true';
+    const publishedAt = published && !current.published_at ? new Date() : current.published_at;
+
+    await pool.query(`
+      UPDATE blog_posts SET slug=$1, title=$2, excerpt=$3, content=$4, image_url=$5, category_id=$6,
+        author_name=$7, meta_title=$8, meta_description=$9, is_published=$10, published_at=$11, updated_at=NOW()
+      WHERE id=$12
+    `, [slug, title, excerpt || null, content, image_url, category_id || null, author_name || 'Echipa OFAI',
+        meta_title || null, meta_description || null, published, publishedAt, id]);
+
+    cache.invalidateGroup('blog');
+    cache.invalidateGroup('admin');
+    res.redirect("/admin/blog");
+  } catch (err) {
+    console.error("[Admin] Blog update error:", err);
+    res.status(500).send("Eroare la actualizarea articolului.");
+  }
+});
+
+// Toggle publish/draft
+router.post("/blog/:id/toggle-publish", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { rows } = await pool.query('SELECT is_published, published_at FROM blog_posts WHERE id = $1', [id]);
+    if (!rows[0]) return res.status(404).send("Articol negăsit.");
+
+    const newPublished = !rows[0].is_published;
+    const publishedAt = newPublished && !rows[0].published_at ? new Date() : rows[0].published_at;
+
+    await pool.query('UPDATE blog_posts SET is_published = $1, published_at = $2, updated_at = NOW() WHERE id = $3',
+      [newPublished, publishedAt, id]);
+
+    cache.invalidateGroup('blog');
+    res.redirect("/admin/blog");
+  } catch (err) {
+    console.error("[Admin] Blog toggle error:", err);
+    res.status(500).send("Eroare la schimbarea statusului.");
+  }
+});
+
+// Delete blog post
+router.post("/blog/:id/delete", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { rows } = await pool.query('SELECT image_url FROM blog_posts WHERE id = $1', [id]);
+    if (rows[0]?.image_url) {
+      const publicId = getPublicIdFromUrl(rows[0].image_url);
+      if (publicId) await deleteFromCloudinary(publicId).catch(() => {});
+    }
+    await pool.query('DELETE FROM blog_posts WHERE id = $1', [id]);
+    cache.invalidateGroup('blog');
+    cache.invalidateGroup('admin');
+    res.redirect("/admin/blog");
+  } catch (err) {
+    console.error("[Admin] Blog delete error:", err);
+    res.status(500).send("Eroare la ștergerea articolului.");
+  }
+});
+
 module.exports = router;

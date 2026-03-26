@@ -2107,6 +2107,147 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
 router.use(require("./web-portal-api"));
 
 // ═══════════════════════════════════════════════════════
+// BLOG
+// ═══════════════════════════════════════════════════════
+
+router.get("/blog", async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = 12;
+    const offset = (page - 1) * limit;
+    const categorySlug = req.query.categorie || null;
+
+    const cacheKey = `blog:list:${categorySlug || 'all'}:p${page}`;
+    const data = await cache.cached(cacheKey, 15 * 60 * 1000, async () => {
+      const categoryFilter = categorySlug
+        ? `AND bc.slug = $3`
+        : '';
+      const params = categorySlug
+        ? [limit, offset, categorySlug]
+        : [limit, offset];
+
+      const [postsResult, countResult, categoriesResult] = await Promise.all([
+        pool.query(`
+          SELECT bp.*, bc.name AS category_name, bc.slug AS category_slug
+          FROM blog_posts bp
+          LEFT JOIN blog_categories bc ON bc.id = bp.category_id
+          WHERE bp.is_published = TRUE ${categoryFilter}
+          ORDER BY bp.published_at DESC
+          LIMIT $1 OFFSET $2
+        `, params),
+        pool.query(`
+          SELECT COUNT(*)::int AS cnt
+          FROM blog_posts bp
+          LEFT JOIN blog_categories bc ON bc.id = bp.category_id
+          WHERE bp.is_published = TRUE ${categoryFilter}
+        `, categorySlug ? [categorySlug] : []),
+        pool.query('SELECT id, name, slug FROM blog_categories ORDER BY sort_order'),
+      ]);
+
+      return {
+        posts: postsResult.rows,
+        total: countResult.rows[0].cnt,
+        categories: categoriesResult.rows,
+      };
+    }, { groups: ['blog'] });
+
+    const totalPages = Math.ceil(data.total / limit);
+
+    res.render("public/blog", {
+      activePage: 'blog',
+      webUser: req.webUser,
+      posts: data.posts,
+      categories: data.categories,
+      currentCategory: categorySlug,
+      pagination: { page, limit, total: data.total, totalPages },
+      pageTitle: categorySlug ? `Blog — ${data.categories.find(c => c.slug === categorySlug)?.name || 'Articole'}` : 'Blog',
+      pageDesc: 'Articole, ghiduri și noutăți despre reduceri, oferte și business-uri locale din România.',
+      canonicalUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : ''),
+      seoPage: page,
+      seoTotalPages: totalPages,
+      seoBaseUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}&` : '?'),
+      loadBlogCss: true,
+    });
+  } catch (err) {
+    console.error('[Blog] List error:', err.message);
+    res.status(500).render("public/500", { pageTitle: 'Eroare', activePage: null, webUser: req.webUser || null });
+  }
+});
+
+router.get("/blog/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null });
+    }
+
+    const cacheKey = `blog:post:${slug}`;
+    const post = await cache.cached(cacheKey, 30 * 60 * 1000, async () => {
+      const { rows } = await pool.query(`
+        SELECT bp.*, bc.name AS category_name, bc.slug AS category_slug
+        FROM blog_posts bp
+        LEFT JOIN blog_categories bc ON bc.id = bp.category_id
+        WHERE bp.slug = $1 AND bp.is_published = TRUE
+      `, [slug]);
+      return rows[0] || null;
+    }, { groups: ['blog'] });
+
+    if (!post) {
+      return res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null });
+    }
+
+    // Increment view count (fire-and-forget, outside cache)
+    pool.query('UPDATE blog_posts SET view_count = view_count + 1 WHERE id = $1', [post.id]).catch(() => {});
+
+    // Related posts (same category, exclude current)
+    const related = await cache.cached(`blog:related:${post.id}`, 30 * 60 * 1000, async () => {
+      const { rows } = await pool.query(`
+        SELECT bp.id, bp.slug, bp.title, bp.excerpt, bp.image_url, bp.published_at,
+               bc.name AS category_name, bc.slug AS category_slug
+        FROM blog_posts bp
+        LEFT JOIN blog_categories bc ON bc.id = bp.category_id
+        WHERE bp.is_published = TRUE AND bp.id != $1
+          AND ($2::int IS NULL OR bp.category_id = $2)
+        ORDER BY bp.published_at DESC LIMIT 3
+      `, [post.id, post.category_id]);
+      return rows;
+    }, { groups: ['blog'] });
+
+    const structuredData = {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.excerpt || post.meta_description || '',
+      author: { '@type': 'Person', name: post.author_name || 'Echipa OFAI' },
+      datePublished: post.published_at?.toISOString(),
+      dateModified: post.updated_at?.toISOString(),
+      publisher: { '@type': 'Organization', name: 'OFAI', url: 'https://ofai.ro' },
+      mainEntityOfPage: `https://ofai.ro/blog/${post.slug}`,
+      ...(post.image_url ? { image: post.image_url } : {}),
+    };
+
+    res.render("public/blog-post", {
+      activePage: 'blog',
+      webUser: req.webUser,
+      post,
+      related,
+      pageTitle: post.meta_title || post.title,
+      pageDesc: post.meta_description || post.excerpt || '',
+      canonicalUrl: `https://ofai.ro/blog/${post.slug}`,
+      ogTitle: post.meta_title || post.title,
+      ogDesc: post.meta_description || post.excerpt || '',
+      ogImage: post.image_url || null,
+      ogType: 'article',
+      structuredData,
+      loadBlogCss: true,
+    });
+  } catch (err) {
+    console.error('[Blog] Post error:', err.message);
+    res.status(500).render("public/500", { pageTitle: 'Eroare', activePage: null, webUser: req.webUser || null });
+  }
+});
+
+// ═══════════════════════════════════════════════════════
 // STATIC / LEGAL PAGES
 // ═══════════════════════════════════════════════════════
 router.get("/termeni", (req, res) => {

@@ -73,6 +73,9 @@
   <% if (typeof loadPortalCss !== 'undefined' && loadPortalCss) { %>
   <link rel="stylesheet" href="/css/portal.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
   <% } %>
+  <% if (typeof loadBlogCss !== 'undefined' && loadBlogCss) { %>
+  <link rel="stylesheet" href="/css/blog.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
+  <% } %>
   <!-- Google Analytics 4 -->
   <% if (typeof gaMeasurementId !== 'undefined' && gaMeasurementId) { %>
   <script async src="https://www.googletagmanager.com/gtag/js?id=<%= gaMeasurementId %>" nonce="<%= cspNonce %>"></script>
