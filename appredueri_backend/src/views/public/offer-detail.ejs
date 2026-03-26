@@ -1148,6 +1148,8 @@
       const data = await resp.json();
 
       if (data.promo_code) {
+        // GA4: track promo code reveal
+        if (typeof gaEvent === 'function') gaEvent('promo_code_reveal', { offer_id: offerId });
         // Show revealed code
         codeText.textContent = data.promo_code;
         codeText.classList.add('revealed');

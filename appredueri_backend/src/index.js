@@ -58,6 +58,9 @@ app.set('pool', pool);
 // Cache buster — changes on each server restart
 app.locals.cacheBust = Date.now();
 
+// Google Analytics 4 — set GA_MEASUREMENT_ID env var (e.g. G-XXXXXXXXXX)
+app.locals.gaMeasurementId = process.env.GA_MEASUREMENT_ID || null;
+
 // Trust proxy — necesar pentru Railway/Cloudflare (corect req.secure, req.ip, cookies Secure)
 if (isProduction) {
   app.set("trust proxy", 1);
@@ -137,12 +140,12 @@ app.use((req, res, next) => {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", `'nonce-${res.locals.cspNonce}'`, "https://accounts.google.com", "https://cdn.jsdelivr.net"],
+        scriptSrc: ["'self'", "'unsafe-inline'", `'nonce-${res.locals.cspNonce}'`, "https://accounts.google.com", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com", "https://www.google-analytics.com"],
         scriptSrcAttr: ["'unsafe-inline'"], // Phase 2: will remove after migrating 54+ inline handlers
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
-        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        imgSrc: ["'self'", "data:", "https:", "blob:", "https://www.google-analytics.com", "https://www.googletagmanager.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        connectSrc: ["'self'", "https://accounts.google.com"],
+        connectSrc: ["'self'", "https://accounts.google.com", "https://www.google-analytics.com", "https://analytics.google.com", "https://*.google-analytics.com", "https://*.analytics.google.com"],
         frameSrc: ["https://accounts.google.com"],
       },
     },

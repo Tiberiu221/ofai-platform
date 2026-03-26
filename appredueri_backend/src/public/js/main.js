@@ -3,6 +3,13 @@
    Scroll reveal, navbar logic, counters, interactions
    ═══════════════════════════════════════════════════════════ */
 
+/* ─── GA4 EVENT HELPER ─────────────────────────────────── */
+window.gaEvent = function(eventName, params) {
+  if (typeof gtag === 'function') {
+    gtag('event', eventName, params || {});
+  }
+};
+
 /* ─── CSRF TOKEN HELPER ──────────────────────────────────── */
 function getCsrfToken() {
   const meta = document.querySelector('meta[name="csrf-token"]');
@@ -322,6 +329,7 @@ window.toggleFavorite = async function(offerId) {
         btn.classList.remove('is-favorited', 'is-active');
       });
       showToast('Eliminat din favorite', 'info');
+      window.gaEvent('remove_from_wishlist', { item_id: offerId });
       const businessId = extractBusinessIdFromContext();
       if (businessId && window.trackClick) {
         window.trackClick(businessId, 'unfavorite', offerId);
@@ -345,6 +353,7 @@ window.toggleFavorite = async function(offerId) {
         btn.classList.add('is-favorited', 'is-active');
       });
       showToast('Adăugat la favorite!', 'success');
+      window.gaEvent('add_to_wishlist', { item_id: offerId });
       const businessId = extractBusinessIdFromContext();
       if (businessId && window.trackClick) {
         window.trackClick(businessId, 'favorite', offerId);
@@ -385,6 +394,7 @@ window.toggleFollow = async function(businessId) {
       }
       heartBtns.forEach(btn => btn.classList.remove('is-active'));
       showToast('Nu mai urmărești acest business', 'info');
+      window.gaEvent('unfollow_business', { business_id: businessId });
       if (window.trackClick) {
         window.trackClick(businessId, 'unfollow');
       }
@@ -409,6 +419,7 @@ window.toggleFollow = async function(businessId) {
       }
       heartBtns.forEach(btn => btn.classList.add('is-active'));
       showToast('Urmărești acest business!', 'success');
+      window.gaEvent('follow_business', { business_id: businessId });
       if (window.trackClick) {
         window.trackClick(businessId, 'follow');
       }
