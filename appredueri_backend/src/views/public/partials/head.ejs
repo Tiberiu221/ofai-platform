@@ -39,8 +39,9 @@
 
   <!-- Pagination SEO -->
   <% if (typeof seoPage !== 'undefined' && typeof seoTotalPages !== 'undefined' && typeof seoBaseUrl !== 'undefined') { %>
-    <% if (seoPage > 1) { %><link rel="prev" href="<%= seoBaseUrl %><%= seoPage === 2 ? '' : '?page=' + (seoPage - 1) %>"><% } %>
-    <% if (seoPage < seoTotalPages) { %><link rel="next" href="<%= seoBaseUrl %>?page=<%= seoPage + 1 %>"><% } %>
+    <% var _sep = seoBaseUrl.includes('?') ? '&' : '?'; %>
+    <% if (seoPage > 1) { %><link rel="prev" href="<%= seoBaseUrl %><%= seoPage === 2 ? '' : _sep + 'page=' + (seoPage - 1) %>"><% } %>
+    <% if (seoPage < seoTotalPages) { %><link rel="next" href="<%= seoBaseUrl %><%= _sep %>page=<%= seoPage + 1 %>"><% } %>
   <% } %>
 
   <!-- Noindex for filtered/auth pages -->

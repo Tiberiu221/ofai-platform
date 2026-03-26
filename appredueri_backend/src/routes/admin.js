@@ -2682,7 +2682,8 @@ router.post("/blog/new", upload.single("image"), async (req, res) => {
 // Edit blog post form
 router.get("/blog/:id/edit", async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM blog_posts WHERE id = $1', [req.params.id]);
+    const id = parseInt(req.params.id, 10);
+    const { rows } = await pool.query('SELECT * FROM blog_posts WHERE id = $1', [id]);
     if (!rows[0]) return res.status(404).send("Articol negăsit.");
     const { rows: categories } = await pool.query('SELECT id, name FROM blog_categories ORDER BY sort_order');
     res.render("admin/blog-edit", { post: rows[0], categories, error: null });

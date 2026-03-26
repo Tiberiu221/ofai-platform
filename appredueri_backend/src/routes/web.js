@@ -2115,7 +2115,8 @@ router.get("/blog", async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = 12;
     const offset = (page - 1) * limit;
-    const categorySlug = req.query.categorie || null;
+    const rawCategory = req.query.categorie || null;
+    const categorySlug = rawCategory && /^[a-z0-9-]+$/.test(rawCategory) ? rawCategory : null;
 
     const cacheKey = `blog:list:${categorySlug || 'all'}:p${page}`;
     const data = await cache.cached(cacheKey, 15 * 60 * 1000, async () => {
@@ -2168,7 +2169,7 @@ router.get("/blog", async (req, res) => {
       canonicalUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : ''),
       seoPage: page,
       seoTotalPages: totalPages,
-      seoBaseUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}&` : '?'),
+      seoBaseUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : ''),
       loadBlogCss: true,
     });
   } catch (err) {
