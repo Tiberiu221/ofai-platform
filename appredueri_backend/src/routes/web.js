@@ -424,7 +424,7 @@ router.get("/oferte", async (req, res) => {
     const whereClause = conditions.join(" AND ");
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) as total FROM offers o JOIN businesses b ON o.business_id = b.id WHERE ${whereClause}`,
+      `SELECT COUNT(*) as total FROM offers o JOIN businesses b ON o.business_id = b.id LEFT JOIN categories cat ON b.category_id = cat.id WHERE ${whereClause}`,
       params
     );
     const totalOffers = parseInt(countResult.rows[0].total);
