@@ -1,0 +1,139 @@
+<%- include('partials/layout-top', { pageTitle: 'Email Logs', activePage: 'emails' }) %>
+
+<div class="a-page-header">
+  <h1>Email Logs</h1>
+</div>
+
+<!-- Stats Cards -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-primary);"><%= emailStats.today_count %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Trimise azi</div>
+  </div>
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-success);"><%= emailStats.week_count %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Trimise saptamana</div>
+  </div>
+  <div class="a-card" style="text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; color: var(--a-danger);"><%= emailStats.failed_count %></div>
+    <div class="a-text-muted" style="font-size: 13px;">Esuate saptamana</div>
+  </div>
+</div>
+
+<!-- Env Flags -->
+<div class="a-card" style="margin-bottom: 20px; padding: 14px 16px;">
+  <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--a-text-muted); margin-bottom: 10px;">Stare feature flags</div>
+  <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: <%= envFlags.weeklyDigest === 'true' ? 'var(--a-success)' : '#52525b' %>; display: inline-block;"></span>
+      <span>ENABLE_WEEKLY_DIGEST</span>
+      <span style="color: <%= envFlags.weeklyDigest === 'true' ? 'var(--a-success)' : 'var(--a-text-muted)' %>; font-weight: 600;"><%= envFlags.weeklyDigest === 'true' ? 'ON' : 'OFF' %></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: <%= envFlags.trialWarning === 'true' ? 'var(--a-success)' : '#52525b' %>; display: inline-block;"></span>
+      <span>ENABLE_TRIAL_WARNING</span>
+      <span style="color: <%= envFlags.trialWarning === 'true' ? 'var(--a-success)' : 'var(--a-text-muted)' %>; font-weight: 600;"><%= envFlags.trialWarning === 'true' ? 'ON' : 'OFF' %></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: <%= envFlags.reengagement === 'true' ? 'var(--a-success)' : '#52525b' %>; display: inline-block;"></span>
+      <span>ENABLE_REENGAGEMENT</span>
+      <span style="color: <%= envFlags.reengagement === 'true' ? 'var(--a-success)' : 'var(--a-text-muted)' %>; font-weight: 600;"><%= envFlags.reengagement === 'true' ? 'ON' : 'OFF' %></span>
+    </div>
+  </div>
+</div>
+
+<!-- Filtre -->
+<form method="get" action="/admin/emails" class="filters">
+  <div class="filters-row">
+    <label>
+      Tip
+      <select name="type">
+        <option value="">Toate</option>
+        <option value="welcome" <%= filters.type === 'welcome' ? 'selected' : '' %>>welcome</option>
+        <option value="password_reset" <%= filters.type === 'password_reset' ? 'selected' : '' %>>password_reset</option>
+        <option value="business_approved" <%= filters.type === 'business_approved' ? 'selected' : '' %>>business_approved</option>
+        <option value="business_rejected" <%= filters.type === 'business_rejected' ? 'selected' : '' %>>business_rejected</option>
+        <option value="offer_approved" <%= filters.type === 'offer_approved' ? 'selected' : '' %>>offer_approved</option>
+        <option value="offer_rejected" <%= filters.type === 'offer_rejected' ? 'selected' : '' %>>offer_rejected</option>
+        <option value="weekly_digest" <%= filters.type === 'weekly_digest' ? 'selected' : '' %>>weekly_digest</option>
+        <option value="trial_warning" <%= filters.type === 'trial_warning' ? 'selected' : '' %>>trial_warning</option>
+        <option value="reengagement" <%= filters.type === 'reengagement' ? 'selected' : '' %>>reengagement</option>
+        <option value="premium_support" <%= filters.type === 'premium_support' ? 'selected' : '' %>>premium_support</option>
+        <option value="admin_onboarding" <%= filters.type === 'admin_onboarding' ? 'selected' : '' %>>admin_onboarding</option>
+      </select>
+    </label>
+    <label>
+      Status
+      <select name="status">
+        <option value="">Toate</option>
+        <option value="sent" <%= filters.status === 'sent' ? 'selected' : '' %>>sent</option>
+        <option value="failed" <%= filters.status === 'failed' ? 'selected' : '' %>>failed</option>
+      </select>
+    </label>
+    <div class="filters-actions">
+      <button type="submit" class="a-btn">Aplică</button>
+      <a href="/admin/emails" class="a-btn a-btn-secondary">Resetează</a>
+    </div>
+  </div>
+</form>
+
+<% if (!emails || emails.length === 0) { %>
+  <p class="a-text-muted">Nu există email-uri pentru filtrele curente.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 60px;">ID</th>
+        <th style="width: 140px;">Data</th>
+        <th>Destinatar</th>
+        <th style="width: 140px;">Tip</th>
+        <th>Subiect</th>
+        <th style="width: 80px;">Status</th>
+        <th style="width: 180px;">Resend ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% emails.forEach(function(e) { %>
+        <tr>
+          <td><%= e.id %></td>
+          <td style="white-space: nowrap;"><%= e.created_at ? new Date(e.created_at).toLocaleString('ro-RO', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-' %></td>
+          <td>
+            <% if (e.user_id) { %>
+              <a href="/admin/users/<%= e.user_id %>/edit"><%= e.email_to %></a>
+              <% if (e.first_name) { %>
+                <br><small class="a-text-muted"><%= e.first_name %> <%= e.last_name || '' %></small>
+              <% } %>
+            <% } else { %>
+              <%= e.email_to %>
+            <% } %>
+          </td>
+          <td>
+            <span class="a-badge" style="background: rgba(255,255,255,0.06); color: var(--a-text-secondary); font-size: 11px;"><%= e.email_type %></span>
+          </td>
+          <td>
+            <%= e.subject ? e.subject.slice(0, 80) + (e.subject.length > 80 ? '...' : '') : '-' %>
+            <% if (e.error_message) { %>
+              <br><small style="color: var(--a-danger);" title="<%= e.error_message.replace(/"/g, '&quot;') %>"><%= e.error_message.slice(0, 60) + (e.error_message.length > 60 ? '...' : '') %></small>
+            <% } %>
+          </td>
+          <td>
+            <% if (e.status === 'sent') { %>
+              <span class="a-badge a-badge-success">sent</span>
+            <% } else if (e.status === 'failed') { %>
+              <span class="a-badge a-badge-danger">failed</span>
+            <% } else { %>
+              <span class="a-badge"><%= e.status %></span>
+            <% } %>
+          </td>
+          <td style="font-size: 11px; color: var(--a-text-muted); word-break: break-all;">
+            <%= e.resend_id || '-' %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/emails', currentQuery: _qs }) %>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

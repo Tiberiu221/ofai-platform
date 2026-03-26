@@ -501,13 +501,14 @@ function initCronJobs() {
     }
   });
 
-  // 13. Weekly digest — Sunday 17:00 UTC (19:00 Romania)
+  // 13. Weekly digest — Sunday 17:00 UTC (19:00 Romania) — push + email
   cron.schedule('0 17 * * 0', async () => {
     const { sendToUser } = require('./pushNotifications');
+    const { sendWeeklyDigestEmail, sleep } = require('./email');
 
     try {
-      // Get users with active push tokens who haven't disabled weekly_digest
-      const { rows: users } = await pool.query(`
+      // ── Push notifications (users with active tokens) ──
+      const { rows: pushUsers } = await pool.query(`
         SELECT DISTINCT u.id AS user_id,
           u.preferred_city_ids AS city_ids,
           (SELECT c.name FROM cities c
@@ -523,8 +524,8 @@ function initCronJobs() {
         LIMIT 500
       `);
 
-      let sent = 0;
-      for (const user of users) {
+      let pushSent = 0;
+      for (const user of pushUsers) {
         try {
           const cityIds = user.city_ids || [];
           if (cityIds.length === 0) continue;
@@ -547,12 +548,60 @@ function initCronJobs() {
             body: `Descoperă cele mai noi reduceri în ${cityLabel}!`,
             data: { type: 'weekly_digest', deepLink: '/explore' },
           });
-          sent++;
+          pushSent++;
         } catch (e) {
           console.error(`[Cron] Weekly digest push failed for user ${user.user_id}:`, e.message);
         }
       }
-      if (sent > 0) console.log(`[Cron] Sent ${sent} weekly digest notifications`);
+      if (pushSent > 0) console.log(`[Cron] Sent ${pushSent} weekly digest push notifications`);
+
+      // ── Email digest (all users with email, not just push token holders) ──
+      if (process.env.ENABLE_WEEKLY_DIGEST === 'false') {
+        console.log('[Cron] Weekly digest email disabled via env');
+      } else {
+        const { rows: emailUsers } = await pool.query(`
+          SELECT DISTINCT u.id AS user_id, u.email, u.first_name,
+            u.preferred_city_ids AS city_ids,
+            (SELECT c.name FROM cities c WHERE c.id = ANY(u.preferred_city_ids) LIMIT 1) AS city_name
+          FROM users u
+          WHERE u.preferred_city_ids IS NOT NULL
+            AND array_length(u.preferred_city_ids, 1) > 0
+            AND u.email IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM notification_preferences np
+              WHERE np.user_id = u.id AND np.pref_key = 'weekly_digest' AND np.enabled = FALSE
+            )
+          LIMIT 500
+        `);
+
+        let emailSent = 0;
+        for (const user of emailUsers) {
+          try {
+            const cityIds = user.city_ids || [];
+            if (cityIds.length === 0) continue;
+
+            const { rows: countRows } = await pool.query(`
+              SELECT COUNT(*) AS cnt FROM offers o
+              JOIN businesses b ON b.id = o.business_id
+              WHERE o.is_active = TRUE
+                AND o.moderation_status IN ('approved', 'auto_approved')
+                AND o.start_date >= CURRENT_DATE - 7
+                AND b.city_id = ANY($1::int[])
+            `, [cityIds]);
+
+            const count = parseInt(countRows[0]?.cnt || '0', 10);
+            if (count === 0) continue;
+
+            const cityLabel = user.city_name || 'orașul tău';
+            await sendWeeklyDigestEmail(user.email, user.first_name, count, cityLabel, user.user_id);
+            await sleep(150); // Rate limit: ~6.6 emails/sec (Resend limit is 10/sec)
+            emailSent++;
+          } catch (e) {
+            console.error(`[Cron] Weekly digest email failed for user ${user.user_id}:`, e.message);
+          }
+        }
+        if (emailSent > 0) console.log(`[Cron] Sent ${emailSent} weekly digest emails`);
+      }
     } catch (err) {
       console.error('[Cron] Weekly digest cron error:', err.message);
     }
@@ -666,7 +715,109 @@ function initCronJobs() {
     }
   })();
 
-  console.log('[Cron] All 15 scheduled jobs registered.');
+  // 16. Trial expiration warning — Daily 09:00 UTC (11:00 Romania)
+  cron.schedule('0 9 * * *', async () => {
+    if (process.env.ENABLE_TRIAL_WARNING === 'false') {
+      console.log('[Cron] Trial warning email disabled via env');
+      return;
+    }
+    const { sendTrialExpirationEmail, sleep } = require('./email');
+
+    try {
+      const { rows } = await pool.query(`
+        SELECT bs.id AS sub_id, bs.business_id, bs.trial_end,
+               b.name AS business_name, sp.name AS plan_name,
+               u.id AS user_id, u.email, u.first_name
+        FROM business_subscriptions bs
+        JOIN businesses b ON b.id = bs.business_id
+        JOIN subscription_plans sp ON sp.id = bs.plan_id
+        JOIN user_businesses ub ON ub.business_id = bs.business_id
+        JOIN users u ON u.id = ub.user_id
+        WHERE bs.status = 'trial'
+          AND bs.trial_end BETWEEN NOW() AND NOW() + INTERVAL '3 days'
+          AND bs.trial_warning_sent_at IS NULL
+          AND u.email IS NOT NULL
+      `);
+
+      let sent = 0;
+      for (const row of rows) {
+        try {
+          const daysLeft = Math.max(1, Math.ceil((new Date(row.trial_end) - Date.now()) / (1000 * 60 * 60 * 24)));
+          await sendTrialExpirationEmail(row.email, row.first_name, row.business_name, daysLeft, row.plan_name, row.user_id);
+          await pool.query('UPDATE business_subscriptions SET trial_warning_sent_at = NOW() WHERE id = $1', [row.sub_id]);
+          await sleep(150);
+          sent++;
+        } catch (e) {
+          console.error(`[Cron] Trial warning failed for sub ${row.sub_id}:`, e.message);
+        }
+      }
+      if (sent > 0) console.log(`[Cron] Sent ${sent} trial expiration warning emails`);
+    } catch (err) {
+      console.error('[Cron] Trial warning cron error:', err.message);
+    }
+  });
+
+  // 17. Re-engagement email — Tuesday 10:00 UTC (12:00 Romania)
+  cron.schedule('0 10 * * 2', async () => {
+    if (process.env.ENABLE_REENGAGEMENT === 'false') {
+      console.log('[Cron] Re-engagement email disabled via env');
+      return;
+    }
+    const { sendReengagementEmail, sleep } = require('./email');
+
+    try {
+      const { rows: users } = await pool.query(`
+        SELECT u.id, u.email, u.first_name,
+               u.preferred_city_ids AS city_ids,
+               (SELECT c.name FROM cities c WHERE c.id = ANY(u.preferred_city_ids) LIMIT 1) AS city_name
+        FROM users u
+        WHERE u.last_active_at < NOW() - INTERVAL '14 days'
+          AND u.last_active_at > NOW() - INTERVAL '90 days'
+          AND u.email IS NOT NULL
+          AND u.preferred_city_ids IS NOT NULL
+          AND array_length(u.preferred_city_ids, 1) > 0
+          AND (u.reengagement_sent_at IS NULL OR u.reengagement_sent_at < NOW() - INTERVAL '30 days')
+          AND NOT EXISTS (
+            SELECT 1 FROM notification_preferences np
+            WHERE np.user_id = u.id AND np.pref_key = 'marketing' AND np.enabled = FALSE
+          )
+        LIMIT 200
+      `);
+
+      let sent = 0;
+      for (const user of users) {
+        try {
+          const cityIds = user.city_ids || [];
+          if (cityIds.length === 0) continue;
+
+          const { rows: countRows } = await pool.query(`
+            SELECT COUNT(*) AS cnt FROM offers o
+            JOIN businesses b ON b.id = o.business_id
+            WHERE o.is_active = TRUE
+              AND o.moderation_status IN ('approved', 'auto_approved')
+              AND o.start_date >= CURRENT_DATE - 14
+              AND b.city_id = ANY($1::int[])
+          `, [cityIds]);
+
+          const count = parseInt(countRows[0]?.cnt || '0', 10);
+          if (count === 0) continue;
+
+          const cityLabel = user.city_name || 'orașul tău';
+          await sendReengagementEmail(user.email, user.first_name, count, cityLabel, user.id);
+          await pool.query('UPDATE users SET reengagement_sent_at = NOW() WHERE id = $1', [user.id]);
+          await sleep(150);
+          sent++;
+        } catch (e) {
+          console.error(`[Cron] Re-engagement failed for user ${user.id}:`, e.message);
+        }
+      }
+      if (sent > 0) console.log(`[Cron] Sent ${sent} re-engagement emails`);
+    } catch (err) {
+      console.error('[Cron] Re-engagement cron error:', err.message);
+    }
+  });
+
+  console.log('[Cron] All 17 scheduled jobs registered.');
 }
 
 module.exports = { initCronJobs };

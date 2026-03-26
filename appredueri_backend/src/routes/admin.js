@@ -2524,4 +2524,72 @@ router.delete("/collections/:id/offers/:offerId", async (req, res) => {
   }
 });
 
+// =====================================
+//   EMAIL LOGS
+// =====================================
+
+// GET /admin/emails — list email logs with filters
+router.get("/emails", async (req, res) => {
+  try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 50 });
+    const { type, status } = req.query;
+
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    if (type && type.trim()) {
+      filters.push(`el.email_type = $${idx++}`);
+      values.push(type.trim());
+    }
+    if (status && status.trim()) {
+      filters.push(`el.status = $${idx++}`);
+      values.push(status.trim());
+    }
+
+    const whereClause = filters.length ? `AND ${filters.join(" AND ")}` : "";
+
+    const statsRes = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) AS today_count,
+        COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '7 days') AS week_count,
+        COUNT(*) FILTER (WHERE status = 'failed' AND created_at >= CURRENT_DATE - INTERVAL '7 days') AS failed_count
+      FROM email_logs
+    `);
+    const emailStats = statsRes.rows[0];
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM email_logs el WHERE TRUE ${whereClause}`,
+      values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT el.id, el.user_id, el.email_to, el.email_type, el.subject,
+             el.status, el.resend_id, el.error_message, el.created_at,
+             u.first_name, u.last_name, u.email AS user_email
+      FROM email_logs el
+      LEFT JOIN users u ON u.id = el.user_id
+      WHERE TRUE ${whereClause}
+      ORDER BY el.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    res.render("admin/emails", {
+      emails: result.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      filters: { type: type || "", status: status || "" },
+      emailStats,
+      envFlags: {
+        weeklyDigest: process.env.ENABLE_WEEKLY_DIGEST || "false",
+        trialWarning: process.env.ENABLE_TRIAL_WARNING || "false",
+        reengagement: process.env.ENABLE_REENGAGEMENT || "false",
+      },
+    });
+  } catch (err) {
+    console.error("[Admin] Email logs error:", err);
+    res.status(500).send("Eroare la încărcarea email logs.");
+  }
+});
+
 module.exports = router;

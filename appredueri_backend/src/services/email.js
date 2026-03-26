@@ -1,4 +1,5 @@
 const { Resend } = require("resend");
+const pool = require("../db");
 
 // ============================================
 // EMAIL SERVICE (Resend)
@@ -6,12 +7,13 @@ const { Resend } = require("resend");
 
 // Inițializează Resend doar dacă avem API key
 // Folosim un placeholder dacă nu există pentru a evita crash-ul la import
-const resend = process.env.RESEND_API_KEY 
+const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
 const FROM_EMAIL = process.env.FROM_EMAIL || "OFAI <noreply@ofai.ro>";
 const APP_NAME = "OFAI";
+const BASE_URL = process.env.BASE_URL || "https://ofai.ro";
 
 /**
  * Escape HTML entities to prevent XSS in email templates
@@ -20,6 +22,20 @@ function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+/**
+ * Log email to database for admin visibility. Fire-and-forget.
+ */
+function logEmail({ userId, to, type, subject, resendId, status, error }) {
+  pool.query(
+    `INSERT INTO email_logs (user_id, email_to, email_type, subject, resend_id, status, error_message)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [userId || null, to, type, subject || '', resendId || null, status || 'sent', error || null]
+  ).catch(err => console.error('[Email] Log failed:', err.message));
+}
+
+/** Rate-limit helper for batch sends */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Trimite email de bun venit după înregistrare
@@ -741,6 +757,172 @@ async function sendAdminOnboardingEmail(businessId, businessName, requestType, m
   }
 }
 
+// ============================================
+// ENGAGEMENT EMAILS
+// ============================================
+
+/**
+ * Engagement email base template (dark theme, matching existing style)
+ */
+function buildEngagementHtml({ title, greeting, bodyHtml, ctaText, ctaUrl, footerNote }) {
+  const safeTitle = escapeHtml(title);
+  return `<!DOCTYPE html>
+<html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background-color:#06060a;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#06060a;">
+<tr><td align="center" style="padding:40px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+  <tr><td align="center" style="padding:40px 32px 24px;background:radial-gradient(ellipse at center top,rgba(251,146,60,0.12) 0%,rgba(6,6,10,0) 70%);background-color:#0d0d12;border:1px solid rgba(255,255,255,0.06);border-bottom:none;border-radius:16px 16px 0 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+      <tr><td align="center" valign="middle" width="48" height="48" style="width:48px;height:48px;background:linear-gradient(135deg,#f97316,#fb923c);border-radius:12px;font-family:'Inter',sans-serif;font-size:22px;font-weight:800;color:#06060a;text-align:center;line-height:48px;">O</td></tr>
+    </table>
+    <p style="margin:12px 0 0 0;font-family:'Inter',sans-serif;font-size:18px;font-weight:700;color:#fafafa;letter-spacing:-0.02em;">OFAI</p>
+  </td></tr>
+  <tr><td style="background-color:#0d0d12;border-left:1px solid rgba(255,255,255,0.06);border-right:1px solid rgba(255,255,255,0.06);padding:0 32px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr><td style="border-top:1px solid rgba(255,255,255,0.06);font-size:0;line-height:0;height:1px;">&nbsp;</td></tr>
+    </table>
+    <h1 style="margin:32px 0 0 0;font-family:'DM Serif Display',Georgia,serif;font-size:26px;font-weight:400;color:#fafafa;text-align:center;line-height:1.3;">${safeTitle}</h1>
+    <p style="margin:24px 0 0 0;font-family:'Inter',sans-serif;font-size:16px;color:#a1a1aa;line-height:1.6;">${greeting}</p>
+    ${bodyHtml}
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${ctaUrl}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#f97316,#fb923c);color:#06060a;font-family:'Inter',sans-serif;font-size:15px;font-weight:700;text-decoration:none;border-radius:10px;letter-spacing:-0.01em;">${escapeHtml(ctaText)}</a>
+    </div>
+  </td></tr>
+  <tr><td style="background-color:#0d0d12;border:1px solid rgba(255,255,255,0.06);border-top:none;border-radius:0 0 16px 16px;padding:24px 32px;">
+    ${footerNote ? `<p style="margin:0 0 16px 0;font-family:'Inter',sans-serif;font-size:12px;color:#52525b;text-align:center;">${footerNote}</p>` : ''}
+    <p style="margin:0;font-family:'Inter',sans-serif;font-size:12px;color:#3f3f46;text-align:center;">&copy; ${new Date().getFullYear()} OFAI. Toate drepturile rezervate.</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+/**
+ * Weekly digest email — sent every Sunday with new offer counts
+ */
+async function sendWeeklyDigestEmail(to, firstName, offerCount, cityName, userId) {
+  if (!resend) {
+    console.log(`[Email] Skipping weekly digest (no API key): ${to}`);
+    return { success: false, reason: 'no_api_key' };
+  }
+  const subject = `${offerCount} oferte noi saptamana asta in ${cityName || 'orasul tau'}`;
+  try {
+    const html = buildEngagementHtml({
+      title: `${offerCount} oferte noi!`,
+      greeting: `Salut${firstName ? ` <span style="color:#fafafa;font-weight:600;">${escapeHtml(firstName)}</span>` : ''},`,
+      bodyHtml: `
+        <p style="margin:16px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Saptamana aceasta au aparut <span style="color:#fb923c;font-weight:700;">${offerCount} oferte noi</span> in <span style="color:#fafafa;font-weight:600;">${escapeHtml(cityName || 'orasul tau')}</span>.
+        </p>
+        <p style="margin:12px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Nu rata reducerile — unele se termina curand!
+        </p>`,
+      ctaText: 'Descopera ofertele',
+      ctaUrl: `${BASE_URL}/oferte`,
+      footerNote: `Poti dezactiva acest email din <a href="${BASE_URL}/cont" style="color:#fb923c;text-decoration:underline;">Setari &rarr; Notificari</a>.`,
+    });
+    const { data, error } = await resend.emails.send({ from: FROM_EMAIL, to: [to], subject, html });
+    if (error) {
+      console.error('[Email] Weekly digest error:', error);
+      logEmail({ userId, to, type: 'weekly_digest', subject, status: 'failed', error: JSON.stringify(error) });
+      return { success: false, error };
+    }
+    logEmail({ userId, to, type: 'weekly_digest', subject, resendId: data?.id, status: 'sent' });
+    return { success: true, data };
+  } catch (err) {
+    console.error('[Email] Weekly digest exception:', err.message);
+    logEmail({ userId, to, type: 'weekly_digest', subject, status: 'failed', error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Trial expiration warning — sent 3 days before trial ends
+ */
+async function sendTrialExpirationEmail(to, firstName, businessName, daysLeft, planName, userId) {
+  if (!resend) {
+    console.log(`[Email] Skipping trial warning (no API key): ${to}`);
+    return { success: false, reason: 'no_api_key' };
+  }
+  const safeBiz = escapeHtml(businessName);
+  const safePlan = escapeHtml(planName);
+  const subject = `Trial-ul tau expira in ${daysLeft} zile — OFAI`;
+  try {
+    const html = buildEngagementHtml({
+      title: `Trial-ul expira in ${daysLeft} zile`,
+      greeting: `Salut${firstName ? ` <span style="color:#fafafa;font-weight:600;">${escapeHtml(firstName)}</span>` : ''},`,
+      bodyHtml: `
+        <p style="margin:16px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Perioada de trial pentru business-ul <span style="color:#fafafa;font-weight:600;">${safeBiz}</span> (planul <span style="color:#fb923c;font-weight:600;">${safePlan}</span>) se incheie in <span style="color:#dc2626;font-weight:700;">${daysLeft} zile</span>.
+        </p>
+        <p style="margin:12px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Dupa expirare, business-ul va fi trecut automat pe planul <span style="color:#fafafa;font-weight:600;">Free</span> si va pierde accesul la functiile premium.
+        </p>
+        <p style="margin:12px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Alege un plan acum pentru a pastra toate beneficiile.
+        </p>`,
+      ctaText: 'Alege un plan',
+      ctaUrl: `${BASE_URL}/preturi`,
+      footerNote: null,
+    });
+    const { data, error } = await resend.emails.send({ from: FROM_EMAIL, to: [to], subject, html });
+    if (error) {
+      console.error('[Email] Trial warning error:', error);
+      logEmail({ userId, to, type: 'trial_warning', subject, status: 'failed', error: JSON.stringify(error) });
+      return { success: false, error };
+    }
+    logEmail({ userId, to, type: 'trial_warning', subject, resendId: data?.id, status: 'sent' });
+    return { success: true, data };
+  } catch (err) {
+    console.error('[Email] Trial warning exception:', err.message);
+    logEmail({ userId, to, type: 'trial_warning', subject, status: 'failed', error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Re-engagement email — sent to users inactive 14+ days
+ */
+async function sendReengagementEmail(to, firstName, offerCount, cityName, userId) {
+  if (!resend) {
+    console.log(`[Email] Skipping re-engagement (no API key): ${to}`);
+    return { success: false, reason: 'no_api_key' };
+  }
+  const subject = `${offerCount} oferte noi te asteapta in ${cityName || 'orasul tau'}`;
+  try {
+    const html = buildEngagementHtml({
+      title: 'Ne-a fost dor de tine!',
+      greeting: `Salut${firstName ? ` <span style="color:#fafafa;font-weight:600;">${escapeHtml(firstName)}</span>` : ''},`,
+      bodyHtml: `
+        <p style="margin:16px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          De cand nu ai mai fost pe OFAI, au aparut <span style="color:#fb923c;font-weight:700;">${offerCount} oferte noi</span> in <span style="color:#fafafa;font-weight:600;">${escapeHtml(cityName || 'orasul tau')}</span>.
+        </p>
+        <p style="margin:12px 0 0 0;font-family:'Inter',sans-serif;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Reduceri la frizerii, restaurante, fitness si multe altele — vezi ce ai pierdut!
+        </p>`,
+      ctaText: 'Vezi ofertele',
+      ctaUrl: `${BASE_URL}/oferte`,
+      footerNote: `Poti dezactiva acest email din <a href="${BASE_URL}/cont" style="color:#fb923c;text-decoration:underline;">Setari &rarr; Notificari</a>.`,
+    });
+    const { data, error } = await resend.emails.send({ from: FROM_EMAIL, to: [to], subject, html });
+    if (error) {
+      console.error('[Email] Re-engagement error:', error);
+      logEmail({ userId, to, type: 'reengagement', subject, status: 'failed', error: JSON.stringify(error) });
+      return { success: false, error };
+    }
+    logEmail({ userId, to, type: 'reengagement', subject, resendId: data?.id, status: 'sent' });
+    return { success: true, data };
+  } catch (err) {
+    console.error('[Email] Re-engagement exception:', err.message);
+    logEmail({ userId, to, type: 'reengagement', subject, status: 'failed', error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
@@ -751,4 +933,9 @@ module.exports = {
   sendOfferRejectedEmail,
   sendPremiumSupportWelcome,
   sendAdminOnboardingEmail,
+  sendWeeklyDigestEmail,
+  sendTrialExpirationEmail,
+  sendReengagementEmail,
+  logEmail,
+  sleep,
 };

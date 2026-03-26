@@ -19,7 +19,7 @@ async function authenticateToken(req, res, next) {
 
     // Ia detaliile complete ale userului din DB
     const { rows } = await pool.query(
-      "SELECT id, email, role, banned_at FROM users WHERE id = $1",
+      "SELECT id, email, role, banned_at, last_active_at FROM users WHERE id = $1",
       [decoded.id]
     );
 
@@ -35,6 +35,11 @@ async function authenticateToken(req, res, next) {
     // Fire-and-forget: update login streak (also awards daily login point once per day)
     const { updateStreak } = require("../services/gamification");
     updateStreak(req.user.id).catch(() => {});
+    // Throttled last_active_at update (max once per hour)
+    const la = req.user.last_active_at;
+    if (!la || (Date.now() - new Date(la).getTime()) > 3600000) {
+      pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.user.id]).catch(() => {});
+    }
     next();
   } catch (err) {
     console.error("Eroare token:", err);
@@ -87,7 +92,7 @@ function optionalAuth(req, res, next) {
   const token = authHeader.split(" ")[1];
   try {
     const decoded = verifyToken(token);
-    pool.query("SELECT id, email, role, banned_at FROM users WHERE id = $1", [decoded.id])
+    pool.query("SELECT id, email, role, banned_at, last_active_at FROM users WHERE id = $1", [decoded.id])
       .then(({ rows }) => {
         req.user = (rows.length > 0 && !rows[0].banned_at) ? rows[0] : null;
         if (req.user) {

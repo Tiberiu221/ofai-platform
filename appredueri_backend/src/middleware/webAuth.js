@@ -67,7 +67,7 @@ async function tryRefreshTokens(refreshTokenValue) {
  */
 async function fetchUser(userId) {
   const { rows } = await pool.query(
-    "SELECT id, email, first_name, last_name, role, profile_picture_url, display_badge_id, banned_at FROM users WHERE id = $1",
+    "SELECT id, email, first_name, last_name, role, profile_picture_url, display_badge_id, banned_at, last_active_at FROM users WHERE id = $1",
     [userId]
   );
   if (!rows[0]) return null;
@@ -109,6 +109,11 @@ async function optionalWebAuth(req, res, next) {
       if (req.webUser) {
         const { updateStreak } = require("../services/gamification");
         updateStreak(req.webUser.id).catch(() => {});
+        // Throttled last_active_at update (max once per hour to avoid DB spam)
+        const la = req.webUser.last_active_at;
+        if (!la || (Date.now() - new Date(la).getTime()) > 3600000) {
+          pool.query('UPDATE users SET last_active_at = NOW() WHERE id = $1', [req.webUser.id]).catch(() => {});
+        }
       }
       return next();
     } catch (verifyErr) {
