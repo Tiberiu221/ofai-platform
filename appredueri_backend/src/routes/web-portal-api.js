@@ -114,10 +114,11 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
     step = 'BEGIN';
     await client.query("BEGIN");
 
-    // Atomic count check with row lock to prevent race condition
+    // Atomic count check — advisory lock prevents race condition
     step = 'count_check';
+    await client.query("SELECT pg_advisory_xact_lock($1)", [businessId]);
     const countRes = await client.query(
-      "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1 FOR UPDATE",
+      "SELECT COUNT(*) as cnt FROM business_images WHERE business_id = $1",
       [businessId]
     );
     // Use tier limit (requireLimit middleware already checks, this is a race-condition backup)
