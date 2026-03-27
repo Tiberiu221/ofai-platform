@@ -255,6 +255,72 @@
     color: #09090b;
   }
 
+  /* ─── Add Business Card ───────────────────────────────── */
+  .portal-card-add {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    background: transparent;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: border-color 0.3s var(--ease-smooth),
+                background 0.3s var(--ease-smooth),
+                transform 0.3s var(--ease-smooth);
+    text-decoration: none;
+    gap: 12px;
+  }
+
+  .portal-card-add:hover {
+    border-color: var(--accent);
+    background: rgba(251, 146, 60, 0.04);
+    transform: translateY(-4px);
+  }
+
+  .portal-card-add-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full);
+    background: var(--accent-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s var(--ease-smooth),
+                transform 0.3s var(--ease-smooth);
+  }
+
+  .portal-card-add:hover .portal-card-add-icon {
+    background: var(--accent);
+    transform: scale(1.1);
+  }
+
+  .portal-card-add-icon svg {
+    color: var(--accent);
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .portal-card-add:hover .portal-card-add-icon svg {
+    color: #09090b;
+  }
+
+  .portal-card-add-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: color 0.3s var(--ease-smooth);
+  }
+
+  .portal-card-add:hover .portal-card-add-label {
+    color: var(--accent);
+  }
+
+  .portal-card-add-hint {
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+  }
+
   /* ─── Empty State ─────────────────────────────────────── */
   .portal-empty {
     text-align: center;
@@ -443,6 +509,18 @@
 
         </a>
       <% }); %>
+
+      <!-- Add Business Card -->
+      <a href="/pentru-business#adauga-business" class="portal-card-add reveal reveal-delay-<%= Math.min(businesses.length + 1, 5) %>">
+        <div class="portal-card-add-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </div>
+        <span class="portal-card-add-label">Adaugă alt business</span>
+        <span class="portal-card-add-hint">Poți gestiona mai multe business-uri</span>
+      </a>
     </div>
 
   <% } %>
