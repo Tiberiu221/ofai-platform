@@ -731,10 +731,10 @@ async function sendAdminOnboardingEmail(businessId, businessName, requestType, m
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: adminEmail,
-      subject: `[OFAI Concierge] Cerere nouă: ${escapeHtml(businessName)} — ${typeLabel}`,
+      subject: `[OFAI] Cerere configurare asistată: ${escapeHtml(businessName)} — ${typeLabel}`,
       html: `
         <div style="font-family: 'Inter', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 20px;">
-          <h2 style="color: #18181b; margin-top: 0;">Cerere Concierge nouă</h2>
+          <h2 style="color: #18181b; margin-top: 0;">Cerere configurare asistată</h2>
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <tr><td style="padding: 8px 0; color: #71717a; width: 120px;">Business:</td><td style="padding: 8px 0; font-weight: 600;">${escapeHtml(businessName)} (#${businessId})</td></tr>
             <tr><td style="padding: 8px 0; color: #71717a;">Tip cerere:</td><td style="padding: 8px 0;">${escapeHtml(typeLabel)}</td></tr>

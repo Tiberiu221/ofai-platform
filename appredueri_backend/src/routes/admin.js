@@ -2349,7 +2349,7 @@ router.get("/onboarding", async (req, res) => {
     const statusColors = { pending: '#f59e0b', in_progress: '#3b82f6', completed: '#22c55e', cancelled: '#71717a' };
     const typeLabels = { catalog: 'Catalog', hours: 'Program', full_setup: 'Setup complet' };
 
-    let html = `<!DOCTYPE html><html><head><title>Concierge Onboarding — Admin</title>
+    let html = `<!DOCTYPE html><html><head><title>Cereri configurare asistată — Admin</title>
       <style>body{font-family:Inter,sans-serif;background:#09090b;color:#fafafa;padding:20px;max-width:900px;margin:0 auto}
       h1{font-size:1.5rem;margin-bottom:20px}a{color:#fb923c}
       .card{background:#18181b;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:12px}
@@ -2361,7 +2361,7 @@ router.get("/onboarding", async (req, res) => {
       .btn-blue{background:#3b82f6;color:#fff}.btn-green{background:#22c55e;color:#fff}.btn-gray{background:#3f3f46;color:#a1a1aa}
       .att{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);padding:4px 10px;border-radius:6px;font-size:12px;margin:4px 4px 0 0}
       </style></head><body>
-      <h1>Cereri Concierge Onboarding</h1>
+      <h1>Cereri configurare asistată</h1>
       <p style="margin-bottom:16px"><a href="/admin/onboarding?status=active">Active</a> · <a href="/admin/onboarding?status=all">Toate</a> · <a href="/admin">← Admin</a></p>`;
 
     if (requests.length === 0) {

@@ -97,7 +97,7 @@
     <div class="portal-modal-backdrop" onclick="concierge_close()"></div>
     <div class="portal-modal-content" style="max-width: 540px;">
       <div class="portal-modal-header">
-        <h3 style="margin: 0;">Solicită ajutor Concierge</h3>
+        <h3 style="margin: 0;">Configurare asistată de echipă</h3>
         <button class="portal-modal-close" onclick="concierge_close()">&times;</button>
       </div>
       <div class="portal-modal-body">
@@ -1292,7 +1292,7 @@
     // Concierge onboarding — Standard+ (multiple elements via class)
     document.querySelectorAll('.concierge-section').forEach(function(el, idx) {
       el.id = 'concierge-gate-' + idx;
-      gateSection(el.id, plan.hasConcierge, 'Concierge Onboarding', 'Standard');
+      gateSection(el.id, plan.hasConcierge, 'Configurare asistată', 'Standard');
     });
   }
 
