@@ -70,52 +70,38 @@
                 <span><%= plan.max_locations === null ? 'Locatii nelimitate' : plan.max_locations + (plan.max_locations === 1 ? ' locatie' : ' locatii') %></span>
               </li>
               <li class="pricing-feature">
-                <% if (plan.max_promo_codes_per_offer > 0 || plan.max_promo_codes_per_offer === null) { %>
-                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span><%= plan.max_promo_codes_per_offer === null ? 'Coduri promo nelimitate' : plan.max_promo_codes_per_offer + ' coduri promo/oferta' %></span>
-                <% } else { %>
-                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Coduri promo</span>
-                <% } %>
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><%= plan.max_promo_codes_per_offer === null ? 'Coduri promo nelimitate' : plan.max_promo_codes_per_offer + ' coduri promo/oferta' %></span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 <span>Statistici (<%= plan.analytics_days %> zile)</span>
               </li>
+              <% if (plan.badge_type) { %>
               <li class="pricing-feature">
                 <% if (plan.badge_type === 'premium') { %>
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   <span style="color: #a78bfa;">Badge Premium</span>
-                <% } else if (plan.badge_type === 'verified') { %>
+                <% } else { %>
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                   <span>Badge Verificat</span>
-                <% } else { %>
-                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Badge verificare</span>
                 <% } %>
               </li>
+              <% } %>
               <li class="pricing-feature">
-                <% if (plan.can_respond_reviews) { %>
-                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Raspunsuri la recenzii</span>
-                <% } else { %>
-                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Raspunsuri la recenzii</span>
-                <% } %>
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Raspunsuri la recenzii</span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                 <span>Rezervari</span>
               </li>
+              <% if (plan.has_concierge) { %>
               <li class="pricing-feature">
-                <% if (plan.has_concierge) { %>
-                  <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Configurare asistata de echipa</span>
-                <% } else { %>
-                  <svg class="pricing-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                  <span class="pricing-feature--disabled">Configurare asistata</span>
-                <% } %>
+                <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Configurare asistata de echipa</span>
               </li>
+              <% } %>
               <% if (plan.has_priority_support) { %>
                 <li class="pricing-feature">
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
