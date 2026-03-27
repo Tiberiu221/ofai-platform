@@ -18,27 +18,28 @@ cloudinary.config({
 
 /**
  * Configurații de transformare pentru diferite tipuri de imagini
- * 
- * REZOLUȚII:
- * - logo:    400x400   (pătrat, pentru avatar/logo business)
- * - cover:   1200x600  (banner landscape 2:1)
- * - gallery: 1200x800  (imagini galerie 3:2)
- * - offer:   800x600   (imagine ofertă 4:3)
+ *
+ * REZOLUȚII (2x retina-ready):
+ * - logo:    800x800   (pătrat, pentru avatar/logo business)
+ * - cover:   2400x1200 (banner landscape 2:1, retina)
+ * - gallery: 1920x1280 (imagini galerie 3:2, retina)
+ * - offer:   1200x900  (imagine ofertă 4:3, retina)
+ * - profile: 600x600   (avatar utilizator, retina)
  */
 const IMAGE_CONFIGS = {
   logo: {
     folder: "businesses/logos",
-    width: 400,
-    height: 400,
+    width: 800,
+    height: 800,
     crop: "fill",
     gravity: "center",
-    quality: "auto:good",
+    quality: "auto:best",
     format: "webp"
   },
   cover: {
     folder: "businesses/covers",
-    width: 1200,
-    height: 600,
+    width: 2400,
+    height: 1200,
     crop: "fill",
     gravity: "auto",
     quality: "auto:best",
@@ -46,29 +47,29 @@ const IMAGE_CONFIGS = {
   },
   gallery: {
     folder: "businesses/gallery",
-    width: 1200,
-    height: 800,
+    width: 1920,
+    height: 1280,
     crop: "fill",
     gravity: "auto",
-    quality: "auto:good",
+    quality: "auto:best",
     format: "webp"
   },
   offer: {
     folder: "offers",
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 900,
     crop: "fill",
     gravity: "auto",
-    quality: "auto:good",
+    quality: "auto:best",
     format: "webp"
   },
   profile: {
     folder: "users/profiles",
-    width: 300,
-    height: 300,
+    width: 600,
+    height: 600,
     crop: "fill",
     gravity: "face",
-    quality: "auto:good",
+    quality: "auto:best",
     format: "webp"
   }
 };

@@ -188,7 +188,7 @@ router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwn
 router.use("/api/web/portal/:businessId", (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ message: "Fișierul depășește limita de 5MB" });
+      return res.status(400).json({ message: "Fișierul depășește limita de 10MB" });
     }
     return res.status(400).json({ message: "Eroare la procesarea fișierului: " + err.message });
   }

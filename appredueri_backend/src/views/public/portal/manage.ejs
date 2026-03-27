@@ -332,8 +332,8 @@
     var file = input.files && input.files[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Imaginea nu poate depăși 5MB', 'error');
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Imaginea nu poate depăși 10MB', 'error');
       input.value = '';
       return;
     }
@@ -538,8 +538,8 @@
 
     Array.from(files).forEach(function(file) {
       // Validate size
-      if (file.size > 5 * 1024 * 1024) {
-        showToast('Fișierul "' + file.name + '" depășește 5MB', 'error');
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('Fișierul "' + file.name + '" depășește 10MB', 'error');
         return;
       }
 

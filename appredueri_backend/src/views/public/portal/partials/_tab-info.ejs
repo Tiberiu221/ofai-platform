@@ -118,7 +118,7 @@
                 <% } %>
               </div>
               <p class="img-preview-label">Logo</p>
-              <p class="img-upload-hint">JPEG, PNG sau WebP &middot; Recomandat: 400&times;400px</p>
+              <p class="img-upload-hint">JPEG, PNG sau WebP &middot; Recomandat: 800&times;800px sau mai mare</p>
               <div style="display: flex; gap: 8px; margin-top: 6px; justify-content: center;">
                 <label class="btn-sm" style="cursor: pointer;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -145,7 +145,7 @@
                 <% } %>
               </div>
               <p class="img-preview-label">Imagine copertă</p>
-              <p class="img-upload-hint">JPEG, PNG sau WebP &middot; Recomandat: 1200&times;400px</p>
+              <p class="img-upload-hint">JPEG, PNG sau WebP &middot; Recomandat: 2400&times;1200px sau mai mare</p>
               <div style="display: flex; gap: 8px; margin-top: 6px; justify-content: center;">
                 <label class="btn-sm" style="cursor: pointer;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -176,7 +176,7 @@
         <h3 class="section-title">Galerie foto</h3>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
           <% var _gMax = (tier && tier.plan) ? tier.plan.max_gallery_images : 8; %>
-          <%= _gMax == null ? 'Nelimitat' : ('Maximum ' + _gMax) %> imagini. JPEG, PNG sau WebP, format landscape, minim 1200&times;800px.
+          <%= _gMax == null ? 'Nelimitat' : ('Maximum ' + _gMax) %> imagini. JPEG, PNG sau WebP, format landscape, minim 1920&times;1280px.
         </p>
         <div class="gallery-upload-grid" id="gallery-grid">
           <% if (business.images && business.images.length > 0) { %>

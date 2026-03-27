@@ -8,7 +8,7 @@ const { createImageFilter } = require("../helpers/validate");
 
 const portalUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: createImageFilter(), // Whitelist: JPEG, PNG, WebP, GIF
 });
 
