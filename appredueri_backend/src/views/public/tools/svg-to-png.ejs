@@ -85,9 +85,9 @@
     min-height: 200px;
     background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
   }
-  .svg-preview-area img {
+  .svg-preview-area canvas {
     max-width: 100%; max-height: 400px;
-    object-fit: contain;
+    border-radius: 4px;
   }
 
   /* Controls */
@@ -203,9 +203,6 @@
     color: var(--text-primary);
   }
 
-  /* Hidden canvas */
-  #svg-canvas { display: none; }
-
   @media (max-width: 640px) {
     .svg-controls-row { flex-direction: column; }
     .svg-control-group { width: 100%; }
@@ -252,8 +249,8 @@
         </span>
         <span class="svg-preview-size" id="preview-size"></span>
       </div>
-      <div class="svg-preview-area">
-        <img id="preview-img" src="" alt="SVG Preview">
+      <div class="svg-preview-area" id="preview-area">
+        <canvas id="preview-canvas"></canvas>
       </div>
     </div>
 
@@ -273,6 +270,8 @@
             <option value="1">1x (original)</option>
             <option value="2" selected>2x</option>
             <option value="4">4x</option>
+            <option value="logo">Logo (400&times;400)</option>
+            <option value="cover">Coperta (1200&times;400)</option>
             <option value="custom">Personalizat</option>
           </select>
         </div>
@@ -324,8 +323,6 @@
   </div>
 </div>
 
-<canvas id="svg-canvas"></canvas>
-
 <%- include('../partials/footer') %>
 
 <script nonce="<%= cspNonce %>">
@@ -334,9 +331,8 @@
   var dropZone = document.getElementById('drop-zone');
   var fileInput = document.getElementById('svg-file-input');
   var workspace = document.getElementById('workspace');
-  var previewImg = document.getElementById('preview-img');
-  var canvas = document.getElementById('svg-canvas');
-  var ctx = canvas.getContext('2d');
+  var previewCanvas = document.getElementById('preview-canvas');
+  var previewCtx = previewCanvas.getContext('2d');
   var formatSelect = document.getElementById('output-format');
   var scaleSelect = document.getElementById('output-scale');
   var bgSelect = document.getElementById('output-bg');
@@ -353,6 +349,7 @@
   var svgNaturalHeight = 0;
   var svgDataUrl = '';
   var svgFileName = '';
+  var svgImage = null; // cached Image object for re-rendering
 
   // ── Drop zone events ──
   dropZone.addEventListener('click', function() { fileInput.click(); });
@@ -372,26 +369,29 @@
     if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
   });
 
-  // ── Control events (no inline handlers) ──
+  // ── Control events — all trigger live preview ──
   formatSelect.addEventListener('change', function() {
     var isJpeg = formatSelect.value === 'jpeg';
     qualityRow.classList.toggle('hidden', !isJpeg);
     downloadLabel.textContent = isJpeg ? 'Descarca JPEG' : 'Descarca PNG';
-    // JPEG forces non-transparent background
-    if (isJpeg && bgSelect.value === 'transparent') {
-      bgSelect.value = 'white';
-    }
+    if (isJpeg && bgSelect.value === 'transparent') bgSelect.value = 'white';
+    renderPreview();
   });
 
-  scaleSelect.addEventListener('change', updateDimensions);
-  customWidth.addEventListener('input', updateDimensions);
+  scaleSelect.addEventListener('change', function() {
+    customGroup.style.display = scaleSelect.value === 'custom' ? '' : 'none';
+    renderPreview();
+  });
+
+  customWidth.addEventListener('input', renderPreview);
+
   bgSelect.addEventListener('change', function() {
-    // If user picks transparent, force PNG
     if (bgSelect.value === 'transparent' && formatSelect.value === 'jpeg') {
       formatSelect.value = 'png';
       qualityRow.classList.add('hidden');
       downloadLabel.textContent = 'Descarca PNG';
     }
+    renderPreview();
   });
 
   qualitySlider.addEventListener('input', function() {
@@ -400,6 +400,60 @@
 
   downloadBtn.addEventListener('click', downloadImage);
   resetBtn.addEventListener('click', resetTool);
+
+  // ── Compute output dimensions ──
+  function getOutputSize() {
+    var scale = scaleSelect.value;
+    if (scale === 'logo') return { w: 400, h: 400 };
+    if (scale === 'cover') return { w: 1200, h: 400 };
+    if (scale === 'custom') {
+      var w = parseInt(customWidth.value) || svgNaturalWidth;
+      return { w: w, h: Math.round(w * (svgNaturalHeight / svgNaturalWidth)) };
+    }
+    var s = parseInt(scale);
+    return { w: svgNaturalWidth * s, h: svgNaturalHeight * s };
+  }
+
+  // ── Render live preview ──
+  function renderPreview() {
+    if (!svgImage) return;
+
+    var size = getOutputSize();
+    var bg = bgSelect.value;
+    var scale = scaleSelect.value;
+    var isPreset = (scale === 'logo' || scale === 'cover');
+
+    previewCanvas.width = size.w;
+    previewCanvas.height = size.h;
+
+    // Background
+    if (bg === 'white' || formatSelect.value === 'jpeg') {
+      previewCtx.fillStyle = '#FFFFFF';
+      previewCtx.fillRect(0, 0, size.w, size.h);
+    } else if (bg === 'black') {
+      previewCtx.fillStyle = '#000000';
+      previewCtx.fillRect(0, 0, size.w, size.h);
+    } else {
+      previewCtx.clearRect(0, 0, size.w, size.h);
+    }
+
+    // Draw SVG — presets use "contain" fit (centered), others stretch to fill
+    if (isPreset) {
+      // Fit SVG inside the preset box, centered
+      var ratio = Math.min(size.w / svgNaturalWidth, size.h / svgNaturalHeight);
+      var drawW = svgNaturalWidth * ratio;
+      var drawH = svgNaturalHeight * ratio;
+      var offsetX = (size.w - drawW) / 2;
+      var offsetY = (size.h - drawH) / 2;
+      previewCtx.drawImage(svgImage, offsetX, offsetY, drawW, drawH);
+    } else {
+      previewCtx.drawImage(svgImage, 0, 0, size.w, size.h);
+    }
+
+    // Update dimensions text
+    document.getElementById('dim-original').textContent = svgNaturalWidth + ' \u00d7 ' + svgNaturalHeight + ' px';
+    document.getElementById('dim-output').textContent = size.w + ' \u00d7 ' + size.h + ' px';
+  }
 
   // ── Handle SVG file ──
   function handleFile(file) {
@@ -429,6 +483,8 @@
             svgNaturalHeight = 300;
           }
         }
+
+        svgImage = img; // cache for re-rendering
         showWorkspace(file);
       };
       img.onerror = function() {
@@ -448,79 +504,59 @@
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> ' +
       file.name;
     document.getElementById('preview-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
-    previewImg.src = svgDataUrl;
-    updateDimensions();
-  }
 
-  // ── Update dimensions display ──
-  function updateDimensions() {
-    var scale = scaleSelect.value;
-    customGroup.style.display = scale === 'custom' ? '' : 'none';
-
-    var outW, outH;
-    if (scale === 'custom') {
-      outW = parseInt(customWidth.value) || svgNaturalWidth;
-      outH = Math.round(outW * (svgNaturalHeight / svgNaturalWidth));
-    } else {
-      var s = parseInt(scale);
-      outW = svgNaturalWidth * s;
-      outH = svgNaturalHeight * s;
-    }
-
-    document.getElementById('dim-original').textContent = svgNaturalWidth + ' x ' + svgNaturalHeight + ' px';
-    document.getElementById('dim-output').textContent = outW + ' x ' + outH + ' px';
+    renderPreview();
   }
 
   // ── Download image ──
   function downloadImage() {
+    var size = getOutputSize();
     var format = formatSelect.value;
-    var scale = scaleSelect.value;
     var bg = bgSelect.value;
+    var scale = scaleSelect.value;
+    var isPreset = (scale === 'logo' || scale === 'cover');
 
-    var outW, outH;
-    if (scale === 'custom') {
-      outW = parseInt(customWidth.value) || svgNaturalWidth;
-      outH = Math.round(outW * (svgNaturalHeight / svgNaturalWidth));
-    } else {
-      var s = parseInt(scale);
-      outW = svgNaturalWidth * s;
-      outH = svgNaturalHeight * s;
-    }
-
-    canvas.width = outW;
-    canvas.height = outH;
+    // Use a separate canvas for full-resolution export
+    var expCanvas = document.createElement('canvas');
+    var expCtx = expCanvas.getContext('2d');
+    expCanvas.width = size.w;
+    expCanvas.height = size.h;
 
     // Background
     if (bg === 'white' || format === 'jpeg') {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, outW, outH);
+      expCtx.fillStyle = '#FFFFFF';
+      expCtx.fillRect(0, 0, size.w, size.h);
     } else if (bg === 'black') {
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, outW, outH);
-    } else {
-      ctx.clearRect(0, 0, outW, outH);
+      expCtx.fillStyle = '#000000';
+      expCtx.fillRect(0, 0, size.w, size.h);
     }
 
-    var img = new Image();
-    img.onload = function() {
-      ctx.drawImage(img, 0, 0, outW, outH);
+    // Draw
+    if (isPreset) {
+      var ratio = Math.min(size.w / svgNaturalWidth, size.h / svgNaturalHeight);
+      var drawW = svgNaturalWidth * ratio;
+      var drawH = svgNaturalHeight * ratio;
+      var offsetX = (size.w - drawW) / 2;
+      var offsetY = (size.h - drawH) / 2;
+      expCtx.drawImage(svgImage, offsetX, offsetY, drawW, drawH);
+    } else {
+      expCtx.drawImage(svgImage, 0, 0, size.w, size.h);
+    }
 
-      var mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-      var quality = format === 'jpeg' ? parseInt(qualitySlider.value) / 100 : undefined;
-      var ext = format === 'jpeg' ? '.jpg' : '.png';
+    var mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+    var quality = format === 'jpeg' ? parseInt(qualitySlider.value) / 100 : undefined;
+    var ext = format === 'jpeg' ? '.jpg' : '.png';
 
-      canvas.toBlob(function(blob) {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = svgFileName + ext;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-      }, mimeType, quality);
-    };
-    img.src = svgDataUrl;
+    expCanvas.toBlob(function(blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = svgFileName + ext;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }, mimeType, quality);
   }
 
   // ── Reset ──
@@ -528,8 +564,8 @@
     workspace.classList.remove('active');
     dropZone.style.display = '';
     fileInput.value = '';
-    previewImg.src = '';
     svgDataUrl = '';
+    svgImage = null;
     svgNaturalWidth = 0;
     svgNaturalHeight = 0;
     formatSelect.value = 'png';
