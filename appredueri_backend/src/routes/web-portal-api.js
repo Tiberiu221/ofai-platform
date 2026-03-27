@@ -17,6 +17,7 @@ const offerService = require("../services/offerService");
 const { validateOfferData } = require("../services/llm/offerValidation");
 const pushService = require("../services/pushNotifications");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
+const multer = require("multer");
 const { portalUpload } = require("./web-shared");
 const { cancelSubscription } = require("../services/subscriptionService");
 const { generateReviewSuggestions } = require("../services/llm/reviewSuggestions");
@@ -145,7 +146,15 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
   } catch (err) {
     if (client) await client.query("ROLLBACK").catch(() => {});
     console.error(`[Web API] Portal gallery error at step="${step}":`, err.message || err);
-    res.status(500).json({ message: "Eroare la upload" });
+    const stepMessages = {
+      'pool.connect': 'Eroare de conexiune la server',
+      'BEGIN': 'Eroare de conexiune la baza de date',
+      'count_check': 'Eroare la verificarea numărului de imagini',
+      'cloudinary_upload': 'Eroare la încărcarea imaginii pe server',
+      'db_insert': 'Eroare la salvarea imaginii',
+      'COMMIT': 'Eroare la salvarea imaginii'
+    };
+    res.status(500).json({ message: stepMessages[step] || "Eroare la upload" });
   } finally {
     if (client) client.release();
   }
@@ -172,6 +181,20 @@ router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwn
     console.error("[Web API] Portal delete gallery error:", err);
     res.status(500).json({ message: "Eroare la ștergere" });
   }
+});
+
+// Multer error handler for all image upload routes above
+router.use("/api/web/portal/:businessId", (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: "Fișierul depășește limita de 5MB" });
+    }
+    return res.status(400).json({ message: "Eroare la procesarea fișierului: " + err.message });
+  }
+  if (err && err.message && err.message.includes("Tip de fișier nepermis")) {
+    return res.status(400).json({ message: "Doar fișiere JPEG, PNG sau WebP sunt acceptate." });
+  }
+  next(err);
 });
 
 // =====================================

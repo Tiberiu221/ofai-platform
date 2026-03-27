@@ -534,7 +534,11 @@
         method: 'POST',
         body: formData
       })
-      .then(function(res) { return res.json(); })
+      .then(function(res) {
+        return res.json().catch(function() {
+          return { success: false, message: 'Eroare de server (cod ' + res.status + ')' };
+        });
+      })
       .then(function(data) {
         if (data.success && data.image) {
           placeholder.style.opacity = '1';
@@ -569,9 +573,10 @@
           showToast(data.message || 'Eroare la încărcare', 'error');
         }
       })
-      .catch(function() {
+      .catch(function(err) {
         placeholder.remove();
-        showToast('Eroare la încărcarea imaginii', 'error');
+        showToast('Eroare la încărcarea imaginii: ' + (err.message || err), 'error');
+        console.error('[Gallery upload error]', err);
       });
     });
 
