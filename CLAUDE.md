@@ -209,10 +209,11 @@ psql $DATABASE_URL                              # Connect to DB
 - **Portal Tools Tab:** "Tool-uri" tab with SVG → PNG/JPEG converter (100% client-side, Canvas API, presets for Logo/Cover sizes)
 - **Image Quality Upgrade:** 2x retina resolutions (logo 800px, cover 2400×1200, gallery 1920×1280, offer 1200×900), auto:best quality, 10MB upload limit
 - **Gallery Limits Update:** Free tier 8 images (was 3), Standard 16 (was 8), Premium unlimited
-- **Booking Simplification:** Booking type selection auto-uses profile data (phone/website) — no separate fields needed, consumer page falls back to profile data
+- **Booking Simplification:** Booking type selection auto-uses profile data (phone/website) with "Schimbă" link to override; consumer page falls back to profile data when booking-specific fields are null
 - **Portal Dashboard:** "Adaugă alt business" card for multi-business owners
 - **Login Redirect:** Auth redirects to homepage (/) instead of /cont, new Google users still go to /onboarding
 - **Multer Error Handler:** User-friendly error messages for file type/size rejections on gallery uploads
+- **Portal Hint Texts:** Explanatory hints on booking section ("va apărea un card pe pagina business-ului"), opening hours ("va fi afișat cu status Deschis/Închis"), and image uploads (format + resolution recommendations)
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
