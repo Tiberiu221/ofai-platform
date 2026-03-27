@@ -231,7 +231,7 @@
             </div>
             <div>
               <label style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Oraș *</label>
-              <select id="loc-add-city" class="form-input">
+              <select id="loc-add-city" class="form-select">
                 <option value="">Selectează</option>
                 <% if (typeof cities !== 'undefined' && cities) { cities.forEach(function(c) { %>
                   <option value="<%= c.id %>"><%= c.name %></option>
@@ -276,7 +276,7 @@
                   </div>
                   <div>
                     <label style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 2px; display: block;">Oraș</label>
-                    <select class="form-input loc-city" data-loc-id="<%= loc.id %>">
+                    <select class="form-select loc-city" data-loc-id="<%= loc.id %>">
                       <% if (typeof cities !== 'undefined' && cities) { cities.forEach(function(c) { %>
                         <option value="<%= c.id %>" <%= c.id === loc.city_id ? 'selected' : '' %>><%= c.name %></option>
                       <% }); } %>
