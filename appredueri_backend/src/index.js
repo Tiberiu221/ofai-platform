@@ -142,7 +142,7 @@ app.use((req, res, next) => {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", `'nonce-${res.locals.cspNonce}'`, "https://accounts.google.com", "https://cdn.jsdelivr.net", "https://www.googletagmanager.com", "https://www.google-analytics.com"],
         scriptSrcAttr: ["'unsafe-inline'"], // Phase 2: will remove after migrating 54+ inline handlers
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://accounts.google.com", "https://cdn.jsdelivr.net"],
         imgSrc: ["'self'", "data:", "https:", "blob:", "https://www.google-analytics.com", "https://www.googletagmanager.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         connectSrc: ["'self'", "https://accounts.google.com", "https://www.google-analytics.com", "https://analytics.google.com", "https://*.google-analytics.com", "https://*.analytics.google.com"],

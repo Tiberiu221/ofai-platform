@@ -73,6 +73,7 @@
   <% } %>
   <% if (typeof loadPortalCss !== 'undefined' && loadPortalCss) { %>
   <link rel="stylesheet" href="/css/portal.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css">
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js" defer></script>
   <% } %>
   <% if (typeof loadBlogCss !== 'undefined' && loadBlogCss) { %>
