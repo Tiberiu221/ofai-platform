@@ -17,7 +17,7 @@
 | 0 | Auth & Sesiune | 4 | ✅ ALL PASS | Login persistent, redirect corect, 403 pe non-owner, 401 pe unauth |
 | 1 | Navigare & Tab-uri | 7 | ✅ ALL PASS | 7 tab-uri switch corect, URL hash update, lazy-load catalog/subscription/charts |
 | 2 | Tab INFO — Formular | 5 | ✅ ALL PASS | Pre-populat (AutoPro), 11 orase, 17 categorii, buton save functional |
-| 3 | Tab INFO — Imagini | 5 | ✅ ALL PASS | Logo/cover preview exist, gallery grid OK, "Galerie foto (max 3)", functii upload/delete pe window |
+| 3 | Tab INFO — Imagini | 5 | ✅ ALL PASS | Logo/cover preview exist, gallery grid OK, "Galerie foto (max 8)", functii upload/delete pe window |
 | 4 | Tab INFO — Locatii | 6 | ✅ ALL PASS | 1 locatie (ID 1247), add form toggle show/hide, 6 campuri (address, city, phone, maps-url, lat, lng), CRUD fn |
 | 5 | Tab INFO — Ore | 5 | ✅ ALL PASS | 7 zile, panel toggle, Lun-Vin 08-18, Sam 08-14, Dum inchis, badge "Deschis acum" |
 | 6 | Tab INFO — Booking | 4 | ✅ ALL PASS | Selector tip (none/phone/whatsapp/url), campuri conditionale show/hide corect, hasBooking=true pe Free |
@@ -83,7 +83,7 @@ if (existing) existing.remove();
 | OBS-FREE-001 | `_serverTier` nu e pe window scope | Info | E in IIFE closure, nu pe window. Gating-ul depinde 100% de API call async. Functional corect. |
 | OBS-FREE-002 | `apiFetch` nu e pe window scope | Info | Intern in IIFE. `showToast` e pe window. Consistent cu pattern-ul IIFE. |
 | OBS-FREE-003 | Toast class = `toast toast-success` nu `pm-toast` | Info | Clasa reala vs documentatie. Functional corect. |
-| OBS-FREE-004 | Gallery fara buton upgrade vizibil | Low | Afiseaza "max 3" dar nu arata un CTA de upgrade langa limita. |
+| OBS-FREE-004 | Gallery fara buton upgrade vizibil | Low | Afiseaza "max 8" dar nu arata un CTA de upgrade langa limita. |
 | OBS-FREE-005 | 0 recenzii = filtre/pills nu se randeaza | Info | UX corect (nu afisezi filtre fara date), dar pierde testabilitate. |
 | OBS-FREE-006 | FAQ in tab Suport: 0 items gasite initial | Low | FAQ exista (3 intrebari) dar in `<div>` plain, nu `<details>`. Testul initial a cautat taguri gresite. Corectat in testarea Premium. |
 | OBS-FREE-007 | Period buttons: 4 in loc de 3 | Info | Probabil include grouping toggle in count. |
@@ -97,7 +97,7 @@ if (existing) existing.remove();
   "plan": {
     "slug": "free", "name": "Gratuit",
     "priceMonthly": 0, "priceYearly": 0,
-    "maxActiveOffers": 2, "maxGalleryImages": 3, "maxLocations": 1,
+    "maxActiveOffers": 2, "maxGalleryImages": 8, "maxLocations": 1,
     "maxPromoCodesPerOffer": 1, "analyticsDays": 7,
     "canRespondReviews": true, "canUploadLogo": true, "canUploadCover": true,
     "hasVerifiedBadge": false, "hasAiSummary": false, "hasAiSuggestedResponses": false,
@@ -186,7 +186,7 @@ if (existing) existing.remove();
 
 **Simptom:** Standard tier are `maxActiveOffers: 6` dar `requireLimit('max_active_offers', countActiveOffers)` este bypassed din cauza `TIER_GATING_ENABLED=undefined`. Un business Standard ar putea crea oferte nelimitat.
 
-**Nota:** Acelasi lucru se aplica pt `maxGalleryImages: 8`, `maxLocations: 3`, `maxPromoCodesPerOffer: 1`.
+**Nota:** Acelasi lucru se aplica pt `maxGalleryImages: 16`, `maxLocations: 3`, `maxPromoCodesPerOffer: 1`.
 
 ### Observatii (non-bugs)
 
@@ -206,7 +206,7 @@ if (existing) existing.remove();
   "plan": {
     "slug": "standard", "name": "Standard",
     "priceMonthly": 4900, "priceYearly": 49000,
-    "maxActiveOffers": 6, "maxGalleryImages": 8, "maxLocations": 3,
+    "maxActiveOffers": 6, "maxGalleryImages": 16, "maxLocations": 3,
     "maxPromoCodesPerOffer": 1, "analyticsDays": 30,
     "canRespondReviews": true, "canUploadLogo": true, "canUploadCover": true,
     "hasVerifiedBadge": true, "hasAiSummary": true, "hasAiSuggestedResponses": false,
