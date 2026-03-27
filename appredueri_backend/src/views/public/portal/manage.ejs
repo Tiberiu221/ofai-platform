@@ -2115,7 +2115,7 @@
     var fields = ['phone', 'whatsapp', 'url'];
     fields.forEach(function(f) {
       var el = document.getElementById('booking-field-' + f);
-      if (el) el.style.display = (f === type) ? '' : 'none';
+      if (el) el.style.display = (f === type) ? 'block' : 'none';
     });
     // Update preview text from profile fields
     var phoneVal = document.querySelector('input[name="phone"]');
