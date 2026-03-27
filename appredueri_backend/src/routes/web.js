@@ -1722,6 +1722,16 @@ router.get("/onboarding", requireWebAuth, async (req, res) => {
 // Attach tier info for all portal routes that carry a :businessId param
 router.use('/api/web/portal/:businessId', attachTier());
 
+// ── Tools ──
+router.get("/tools/svg-to-png", requireWebAuth, (req, res) => {
+  res.render("public/tools/svg-to-png", {
+    pageTitle: "SVG → PNG Converter",
+    activePage: "portal",
+    webUser: req.webUser,
+    noIndex: true,
+  });
+});
+
 // Portal Dashboard — lista de business-uri
 router.get("/portal", requireWebAuth, async (req, res) => {
   try {

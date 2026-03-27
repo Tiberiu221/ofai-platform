@@ -34,6 +34,7 @@
         Recenzii<span class="portal-tab-badge"><%= reviewCount %></span>
       </button>
       <button class="portal-tab" onclick="switchTab('statistici')">Statistici</button>
+      <button class="portal-tab" onclick="switchTab('tools')">Tool-uri</button>
       <button class="portal-tab" onclick="switchTab('support')">Suport</button>
       <button class="portal-tab" onclick="switchTab('subscription')">Abonament</button>
     </div>
@@ -73,6 +74,13 @@
     <div class="tab-panel" id="tab-statistici">
       <%- include("./partials/_tab-statistici") %>
     </div><!-- /tab-statistici -->
+
+    <!-- ═══════════════════════════════════════
+         TAB: TOOL-URI
+         ═══════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-tools">
+      <%- include("./partials/_tab-tools") %>
+    </div><!-- /tab-tools -->
 
     <!-- ═══════════════════════════════════════
          TAB 5: SUPORT

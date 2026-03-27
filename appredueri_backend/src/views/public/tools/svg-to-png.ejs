@@ -1,0 +1,531 @@
+<%- include('../partials/head', { pageTitle: 'SVG → PNG Converter', activePage: 'portal', noIndex: true }) %>
+<%- include('../partials/navbar', { activePage: 'portal', webUser: webUser }) %>
+
+<style nonce="<%= cspNonce %>">
+  .tool-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 100px var(--container-px) 80px;
+  }
+  .tool-page-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.875rem; color: var(--text-secondary);
+    text-decoration: none; margin-bottom: 24px;
+    transition: color 0.2s;
+  }
+  .tool-page-back:hover { color: var(--accent); }
+  .tool-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin-bottom: 8px;
+  }
+  .tool-page-desc {
+    color: var(--text-secondary); font-size: 0.9375rem;
+    margin-bottom: 32px; line-height: 1.5;
+  }
+
+  /* Drop zone */
+  .svg-drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative;
+  }
+  .svg-drop-zone:hover,
+  .svg-drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(251, 146, 60, 0.04);
+  }
+  .svg-drop-zone-icon {
+    width: 64px; height: 64px;
+    border-radius: var(--radius-full);
+    background: var(--accent-muted);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    color: var(--accent);
+  }
+  .svg-drop-zone-text {
+    font-size: 1rem; font-weight: 500;
+    color: var(--text-primary); margin-bottom: 4px;
+  }
+  .svg-drop-zone-hint {
+    font-size: 0.8125rem; color: var(--text-tertiary);
+  }
+
+  /* Preview + controls */
+  .svg-workspace { display: none; margin-top: 24px; }
+  .svg-workspace.active { display: block; }
+
+  .svg-preview-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .svg-preview-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .svg-preview-filename {
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--text-primary);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .svg-preview-size {
+    font-size: 0.75rem; color: var(--text-tertiary);
+  }
+  .svg-preview-area {
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    min-height: 200px;
+    background: repeating-conic-gradient(rgba(255,255,255,0.03) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+  }
+  .svg-preview-area img {
+    max-width: 100%; max-height: 400px;
+    object-fit: contain;
+  }
+
+  /* Controls */
+  .svg-controls {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .svg-controls-row {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: end;
+  }
+  .svg-control-group {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .svg-control-group label {
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--text-secondary); text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .svg-control-group select,
+  .svg-control-group input[type="number"] {
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    min-width: 100px;
+  }
+  .svg-control-group select:focus,
+  .svg-control-group input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* Quality slider */
+  .svg-quality-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .svg-quality-row.hidden { display: none; }
+  .svg-quality-row label {
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--text-secondary); text-transform: uppercase;
+    letter-spacing: 0.04em; white-space: nowrap;
+  }
+  .svg-quality-slider {
+    flex: 1; height: 4px;
+    -webkit-appearance: none; appearance: none;
+    background: var(--border); border-radius: 2px;
+    outline: none;
+  }
+  .svg-quality-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent);
+    cursor: pointer; border: none;
+  }
+  .svg-quality-slider::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent);
+    cursor: pointer; border: none;
+  }
+  .svg-quality-value {
+    font-size: 0.8125rem; color: var(--text-primary);
+    font-weight: 600; min-width: 36px; text-align: right;
+  }
+
+  /* Dimensions display */
+  .svg-dimensions {
+    display: flex; gap: 12px; align-items: center;
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8125rem; color: var(--text-secondary);
+  }
+  .svg-dimensions strong { color: var(--text-primary); }
+
+  /* Actions */
+  .svg-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .svg-btn-download {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px;
+    background: var(--accent);
+    color: #09090b;
+    font-weight: 600; font-size: 0.9375rem;
+    border: none; border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+  }
+  .svg-btn-download:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+  }
+  .svg-btn-reset {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 12px 20px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500; font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .svg-btn-reset:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+
+  /* Hidden canvas */
+  #svg-canvas { display: none; }
+
+  @media (max-width: 640px) {
+    .svg-controls-row { flex-direction: column; }
+    .svg-control-group { width: 100%; }
+    .svg-control-group select,
+    .svg-control-group input[type="number"] { width: 100%; }
+  }
+</style>
+
+<div class="tool-page">
+  <a href="javascript:history.back()" class="tool-page-back">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    Inapoi la portal
+  </a>
+
+  <h1 class="tool-page-title text-gradient">SVG &rarr; PNG / JPEG</h1>
+  <p class="tool-page-desc">
+    Converteste fisiere SVG in format PNG sau JPEG. Ideal pentru logo-uri si imagini vectoriale
+    care trebuie uploadate in format raster. Totul se proceseaza local, in browser.
+  </p>
+
+  <!-- Drop Zone -->
+  <div class="svg-drop-zone" id="drop-zone">
+    <div class="svg-drop-zone-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <p class="svg-drop-zone-text">Trage un fisier SVG aici</p>
+    <p class="svg-drop-zone-hint">sau click pentru a selecta un fisier</p>
+    <input type="file" accept=".svg,image/svg+xml" style="display:none;" id="svg-file-input">
+  </div>
+
+  <!-- Workspace (hidden until SVG loaded) -->
+  <div class="svg-workspace" id="workspace">
+
+    <!-- Preview -->
+    <div class="svg-preview-card">
+      <div class="svg-preview-header">
+        <span class="svg-preview-filename" id="preview-filename">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          file.svg
+        </span>
+        <span class="svg-preview-size" id="preview-size"></span>
+      </div>
+      <div class="svg-preview-area">
+        <img id="preview-img" src="" alt="SVG Preview">
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="svg-controls">
+      <div class="svg-controls-row">
+        <div class="svg-control-group">
+          <label>Format</label>
+          <select id="output-format" onchange="toggleQuality()">
+            <option value="png">PNG (transparent)</option>
+            <option value="jpeg">JPEG (fundal alb)</option>
+          </select>
+        </div>
+        <div class="svg-control-group">
+          <label>Scala</label>
+          <select id="output-scale" onchange="updateDimensions()">
+            <option value="1">1x (original)</option>
+            <option value="2" selected>2x</option>
+            <option value="4">4x</option>
+            <option value="custom">Personalizat</option>
+          </select>
+        </div>
+        <div class="svg-control-group" id="custom-size-group" style="display:none;">
+          <label>Latime (px)</label>
+          <input type="number" id="custom-width" min="16" max="4096" value="800" oninput="updateDimensions()">
+        </div>
+      </div>
+
+      <div class="svg-quality-row hidden" id="quality-row">
+        <label>Calitate JPEG</label>
+        <input type="range" class="svg-quality-slider" id="quality-slider" min="10" max="100" step="5" value="90" oninput="updateQualityLabel()">
+        <span class="svg-quality-value" id="quality-value">90%</span>
+      </div>
+
+      <div class="svg-dimensions" id="dimensions-info">
+        <span>Original: <strong id="dim-original">—</strong></span>
+        <span>&rarr;</span>
+        <span>Output: <strong id="dim-output">—</strong></span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="svg-actions">
+      <button class="svg-btn-download" onclick="downloadImage()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="download-label">Descarca PNG</span>
+      </button>
+      <button class="svg-btn-reset" onclick="resetTool()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+        Alt fisier
+      </button>
+    </div>
+  </div>
+</div>
+
+<canvas id="svg-canvas"></canvas>
+
+<%- include('../partials/footer') %>
+
+<script nonce="<%= cspNonce %>">
+(function() {
+  var dropZone = document.getElementById('drop-zone');
+  var fileInput = document.getElementById('svg-file-input');
+  var workspace = document.getElementById('workspace');
+  var previewImg = document.getElementById('preview-img');
+  var canvas = document.getElementById('svg-canvas');
+  var ctx = canvas.getContext('2d');
+
+  var svgNaturalWidth = 0;
+  var svgNaturalHeight = 0;
+  var svgDataUrl = '';
+  var svgFileName = '';
+
+  // ── Drop zone events ──
+  dropZone.addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function() {
+    if (this.files && this.files[0]) handleFile(this.files[0]);
+  });
+
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', function() {
+    dropZone.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    var file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  // ── Handle SVG file ──
+  function handleFile(file) {
+    if (!file.name.toLowerCase().endsWith('.svg') && file.type !== 'image/svg+xml') {
+      alert('Te rugam selecteaza un fisier SVG.');
+      return;
+    }
+
+    svgFileName = file.name.replace(/\.svg$/i, '');
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var svgText = e.target.result;
+
+      // Encode as data URL
+      svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgText)));
+
+      // Load to get natural dimensions
+      var img = new Image();
+      img.onload = function() {
+        svgNaturalWidth = img.naturalWidth || 300;
+        svgNaturalHeight = img.naturalHeight || 150;
+
+        // If SVG has no intrinsic size, try parsing viewBox
+        if (svgNaturalWidth <= 1 || svgNaturalHeight <= 1) {
+          var match = svgText.match(/viewBox=["'][\s]*([0-9.]+)[\s]+([0-9.]+)[\s]+([0-9.]+)[\s]+([0-9.]+)[\s]*["']/);
+          if (match) {
+            svgNaturalWidth = Math.round(parseFloat(match[3]));
+            svgNaturalHeight = Math.round(parseFloat(match[4]));
+          } else {
+            svgNaturalWidth = 300;
+            svgNaturalHeight = 300;
+          }
+        }
+
+        showWorkspace(file);
+      };
+      img.onerror = function() {
+        alert('Nu am putut incarca fisierul SVG. Verifica daca e un SVG valid.');
+      };
+      img.src = svgDataUrl;
+    };
+    reader.readAsText(file);
+  }
+
+  // ── Show workspace ──
+  function showWorkspace(file) {
+    dropZone.style.display = 'none';
+    workspace.classList.add('active');
+
+    // Filename
+    document.getElementById('preview-filename').innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> ' +
+      file.name;
+
+    // File size
+    var kb = (file.size / 1024).toFixed(1);
+    document.getElementById('preview-size').textContent = kb + ' KB';
+
+    // Preview
+    previewImg.src = svgDataUrl;
+
+    // Dimensions
+    updateDimensions();
+  }
+
+  // ── Update dimensions display ──
+  window.updateDimensions = function() {
+    var scale = document.getElementById('output-scale').value;
+    var customGroup = document.getElementById('custom-size-group');
+
+    if (scale === 'custom') {
+      customGroup.style.display = '';
+    } else {
+      customGroup.style.display = 'none';
+    }
+
+    var outW, outH;
+    if (scale === 'custom') {
+      outW = parseInt(document.getElementById('custom-width').value) || svgNaturalWidth;
+      outH = Math.round(outW * (svgNaturalHeight / svgNaturalWidth));
+    } else {
+      var s = parseInt(scale);
+      outW = svgNaturalWidth * s;
+      outH = svgNaturalHeight * s;
+    }
+
+    document.getElementById('dim-original').textContent = svgNaturalWidth + ' x ' + svgNaturalHeight + ' px';
+    document.getElementById('dim-output').textContent = outW + ' x ' + outH + ' px';
+  };
+
+  // ── Toggle quality slider ──
+  window.toggleQuality = function() {
+    var format = document.getElementById('output-format').value;
+    var qualityRow = document.getElementById('quality-row');
+    var downloadLabel = document.getElementById('download-label');
+
+    if (format === 'jpeg') {
+      qualityRow.classList.remove('hidden');
+      downloadLabel.textContent = 'Descarca JPEG';
+    } else {
+      qualityRow.classList.add('hidden');
+      downloadLabel.textContent = 'Descarca PNG';
+    }
+  };
+
+  window.updateQualityLabel = function() {
+    document.getElementById('quality-value').textContent =
+      document.getElementById('quality-slider').value + '%';
+  };
+
+  // ── Download image ──
+  window.downloadImage = function() {
+    var format = document.getElementById('output-format').value;
+    var scale = document.getElementById('output-scale').value;
+
+    var outW, outH;
+    if (scale === 'custom') {
+      outW = parseInt(document.getElementById('custom-width').value) || svgNaturalWidth;
+      outH = Math.round(outW * (svgNaturalHeight / svgNaturalWidth));
+    } else {
+      var s = parseInt(scale);
+      outW = svgNaturalWidth * s;
+      outH = svgNaturalHeight * s;
+    }
+
+    canvas.width = outW;
+    canvas.height = outH;
+
+    // JPEG needs white background
+    if (format === 'jpeg') {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, outW, outH);
+    } else {
+      ctx.clearRect(0, 0, outW, outH);
+    }
+
+    var img = new Image();
+    img.onload = function() {
+      ctx.drawImage(img, 0, 0, outW, outH);
+
+      var mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+      var quality = format === 'jpeg' ? parseInt(document.getElementById('quality-slider').value) / 100 : undefined;
+      var ext = format === 'jpeg' ? '.jpg' : '.png';
+
+      canvas.toBlob(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = svgFileName + ext;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      }, mimeType, quality);
+    };
+    img.src = svgDataUrl;
+  };
+
+  // ── Reset ──
+  window.resetTool = function() {
+    workspace.classList.remove('active');
+    dropZone.style.display = '';
+    fileInput.value = '';
+    previewImg.src = '';
+    svgDataUrl = '';
+    svgNaturalWidth = 0;
+    svgNaturalHeight = 0;
+    document.getElementById('output-format').value = 'png';
+    document.getElementById('output-scale').value = '2';
+    document.getElementById('custom-size-group').style.display = 'none';
+    document.getElementById('quality-row').classList.add('hidden');
+    document.getElementById('download-label').textContent = 'Descarca PNG';
+  };
+})();
+</script>
