@@ -137,7 +137,7 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
 
     step = 'db_insert';
     const insertRes = await client.query(
-      "INSERT INTO business_images (business_id, image_url, sort_order) VALUES ($1, $2, $3) RETURNING id",
+      "INSERT INTO business_images (business_id, image_url, sort_order, image_filename) VALUES ($1, $2, $3, '') RETURNING id",
       [businessId, result.url, sortOrder]
     );
 

@@ -401,7 +401,7 @@ router.post("/:businessId/images", businessAuth, requireLimit('max_gallery_image
     // Salvează în DB
     const sortOrder = parseInt(countRes.rows[0].cnt) + 1;
     await client.query(
-      "INSERT INTO business_images (business_id, image_url, sort_order) VALUES ($1, $2, $3)",
+      "INSERT INTO business_images (business_id, image_url, sort_order, image_filename) VALUES ($1, $2, $3, '')",
       [businessId, result.url, sortOrder]
     );
 
