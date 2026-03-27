@@ -112,8 +112,8 @@ router.post("/login", async (req, res) => {
     res.cookie("ofai_token", token, ACCESS_COOKIE_OPTS);
     res.cookie("ofai_refresh_token", refreshToken, REFRESH_COOKIE_OPTS);
 
-    const returnTo = req.body.returnTo || "/cont";
-    const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";
+    const returnTo = req.body.returnTo || "/";
+    const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/";
     return res.json({ success: true, redirect: safeRedirect });
   } catch (err) {
     console.error("[Web] Login error:", err);
@@ -164,8 +164,8 @@ router.post("/register", async (req, res) => {
       user_id: user.id, created_at: new Date().toISOString(),
     });
 
-    const returnTo = req.body.returnTo || "/cont";
-    const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/cont";
+    const returnTo = req.body.returnTo || "/";
+    const safeRedirect = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/";
     return res.status(201).json({ success: true, redirect: safeRedirect });
   } catch (err) {
     console.error("[Web] Register error:", err);
@@ -255,7 +255,7 @@ router.post("/auth/google", async (req, res, next) => {
     res.cookie("ofai_refresh_token", refreshToken, REFRESH_COOKIE_OPTS);
 
     // Redirect to onboarding for new users, account page for existing
-    const redirect = isNewUser ? "/onboarding" : "/cont";
+    const redirect = isNewUser ? "/onboarding" : "/";
     return res.json({ success: true, redirect });
   } catch (err) {
     console.error("[Web] Google OAuth error:", err);
