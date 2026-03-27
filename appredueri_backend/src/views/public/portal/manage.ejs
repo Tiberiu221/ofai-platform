@@ -1765,6 +1765,11 @@
     h += '<td' + highlightClass('standard') + '>' + yn(std.hasSearchPriority, true) + '</td>';
     h += '<td' + highlightClass('premium') + '>' + yn(prem.hasSearchPriority, true) + '</td></tr>';
 
+    h += '<tr><td>Imagine personalizata oferta</td>';
+    h += '<td' + highlightClass('free') + '>' + yn(free.hasCustomOfferImage, true) + '</td>';
+    h += '<td' + highlightClass('standard') + '>' + yn(std.hasCustomOfferImage, true) + '</td>';
+    h += '<td' + highlightClass('premium') + '>' + yn(prem.hasCustomOfferImage, true) + '</td></tr>';
+
     // ── Suport ──
     h += '<tr class="pricing-comparison-category"><td colspan="4">Suport</td></tr>';
 

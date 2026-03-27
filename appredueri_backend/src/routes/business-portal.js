@@ -584,11 +584,16 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
   try {
     const businessId = parseInt(req.params.businessId, 10);
     if (isNaN(businessId)) return res.status(400).json({ message: 'ID invalid' });
-    const {
+    let {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, flash_expires_at, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals,
+      locationIds
     } = req.body;
+
+    // FormData sends arrays/objects as JSON strings — parse them
+    if (typeof promo_codes === 'string') { try { promo_codes = JSON.parse(promo_codes); } catch(e) { promo_codes = null; } }
+    if (typeof locationIds === 'string') { try { locationIds = JSON.parse(locationIds); } catch(e) { locationIds = []; } }
 
     console.log("[BusinessPortal] Creating offer:", title);
 
@@ -599,9 +604,12 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
 
     let logoUrl = null;
     if (req.file) {
-      // Upload pe Cloudinary cu rezoluție specifică pentru ofertă (800x600)
-      const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
-      logoUrl = uploadResult.url;
+      // Tier gate: only Premium can upload custom offer images
+      const canUpload = req.tier && req.tier.plan && req.tier.plan.has_custom_offer_image;
+      if (canUpload) {
+        const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
+        logoUrl = uploadResult.url;
+      }
     }
 
     // Backward compat: if single promo_code string sent, convert to array
@@ -707,11 +715,16 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       return res.status(404).json({ message: "Oferta nu există" });
     }
 
-    const {
+    let {
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, flash_expires_at, is_active,
-      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals
+      booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals,
+      locationIds, remove_image
     } = req.body;
+
+    // FormData sends arrays/objects as JSON strings — parse them
+    if (typeof promo_codes === 'string') { try { promo_codes = JSON.parse(promo_codes); } catch(e) { promo_codes = null; } }
+    if (typeof locationIds === 'string') { try { locationIds = JSON.parse(locationIds); } catch(e) { locationIds = []; } }
 
     const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'special', 'free', 'bogo', 'other'];
     if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
@@ -783,8 +796,9 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       updates.push(`max_reveals = $${paramIndex++}`);
       values.push(max_reveals ? parseInt(max_reveals) : null);
     }
-    // Handle image upload
-    if (req.file) {
+    // Handle image upload (tier-gated)
+    const canUploadImg = req.tier && req.tier.plan && req.tier.plan.has_custom_offer_image;
+    if (req.file && canUploadImg) {
       // Șterge imaginea veche din Cloudinary
       const oldUrl = checkRes.rows[0].logo_url;
       if (oldUrl) {
@@ -793,11 +807,19 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
           await deleteFromCloudinary(oldPublicId);
         }
       }
-
-      // Upload noua imagine cu rezoluție specifică pentru ofertă (800x600)
       const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
       updates.push(`logo_url = $${paramIndex++}`);
       values.push(uploadResult.url);
+    }
+    // Handle image removal
+    if (!req.file && remove_image === 'true' && canUploadImg) {
+      const oldUrl = checkRes.rows[0].logo_url;
+      if (oldUrl) {
+        const oldPublicId = getPublicIdFromUrl(oldUrl);
+        if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+      }
+      updates.push(`logo_url = $${paramIndex++}`);
+      values.push(null);
     }
 
     // Re-run AI validation (advisory) on edited data

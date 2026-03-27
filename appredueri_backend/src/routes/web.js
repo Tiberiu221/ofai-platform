@@ -2022,7 +2022,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
 });
 
 // Portal — new offer form
-router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, res) => {
+router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, attachTier(), async (req, res) => {
   try {
     const { businessId } = req.params;
     const [bizRes, locsRes] = await Promise.all([
@@ -2049,6 +2049,7 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, 
       offer: null,
       locations: locsRes.rows,
       selectedLocationIds: [],
+      tier: req.tier || { tier: 'free', plan: {} },
       activePage: "portal",
       webUser: req.webUser,
     });
@@ -2059,7 +2060,7 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, async (req, 
 });
 
 // Portal — edit offer form
-router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (req, res) => {
+router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, attachTier(), async (req, res) => {
   try {
     const { businessId, offerId } = req.params;
     const bizRes = await pool.query(
@@ -2102,6 +2103,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, async (r
       promoCodes: promoCodesRes.rows,
       locations: locsRes.rows,
       selectedLocationIds: offerLocsRes.rows.map(r => r.location_id),
+      tier: req.tier || { tier: 'free', plan: {} },
       activePage: "portal",
       webUser: req.webUser,
     });

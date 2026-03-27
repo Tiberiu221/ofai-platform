@@ -2076,6 +2076,7 @@ router.get("/api/web/portal/:businessId/subscription", requireBusinessOwner, asy
         hasBooking: p.has_booking,
         hasPrioritySupport: p.has_priority_support,
         hasConcierge: p.has_concierge,
+        hasCustomOfferImage: p.has_custom_offer_image,
         badgeType: p.badge_type,
       };
     }

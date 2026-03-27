@@ -75,6 +75,7 @@ function normalisePlan(row) {
     has_booking: row.has_booking,
     has_priority_support: row.has_priority_support,
     has_concierge: row.has_concierge,
+    has_custom_offer_image: row.has_custom_offer_image,
     badge_type: row.badge_type,
     sort_order: row.sort_order,
   };
