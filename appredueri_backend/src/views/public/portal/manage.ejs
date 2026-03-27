@@ -396,10 +396,34 @@
 
   window.applyCrop = function() {
     if (!_cropper) return;
+    // Detect background color from image corners to use as fill
+    var fillColor = '#ffffff';
+    try {
+      var imgData = _cropper.getImageData();
+      var tempCanvas = document.createElement('canvas');
+      var tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = imgData.naturalWidth;
+      tempCanvas.height = imgData.naturalHeight;
+      tempCtx.drawImage(_cropper.image, 0, 0);
+      // Sample 4 corners (2x2 px each)
+      var corners = [
+        tempCtx.getImageData(0, 0, 2, 2).data,
+        tempCtx.getImageData(imgData.naturalWidth - 2, 0, 2, 2).data,
+        tempCtx.getImageData(0, imgData.naturalHeight - 2, 2, 2).data,
+        tempCtx.getImageData(imgData.naturalWidth - 2, imgData.naturalHeight - 2, 2, 2).data
+      ];
+      var totalR = 0, totalG = 0, totalB = 0;
+      corners.forEach(function(d) { totalR += d[0]; totalG += d[1]; totalB += d[2]; });
+      var avgR = Math.round(totalR / 4);
+      var avgG = Math.round(totalG / 4);
+      var avgB = Math.round(totalB / 4);
+      fillColor = 'rgb(' + avgR + ',' + avgG + ',' + avgB + ')';
+    } catch(e) { /* CORS or other error, fallback to white */ }
+
     var canvas = _cropper.getCroppedCanvas({
       width: 400,
       height: 400,
-      fillColor: '#ffffff',
+      fillColor: fillColor,
       imageSmoothingEnabled: true,
       imageSmoothingQuality: 'high'
     });

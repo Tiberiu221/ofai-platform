@@ -41,7 +41,7 @@ const IMAGE_CONFIGS = {
     height: 600,
     crop: "fill",
     gravity: "auto",
-    quality: "auto:good",
+    quality: "auto:best",
     format: "webp"
   },
   gallery: {
