@@ -118,11 +118,12 @@
                 <% } %>
               </div>
               <p class="img-preview-label">Logo</p>
+              <p class="img-upload-hint">JPEG, PNG sau WebP &middot; Recomandat: 400&times;400px</p>
               <div style="display: flex; gap: 8px; margin-top: 6px; justify-content: center;">
                 <label class="btn-sm" style="cursor: pointer;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Încarcă
-                  <input type="file" accept="image/*" style="display:none;" onchange="uploadImage('logo', this)">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadImage('logo', this)">
                 </label>
                 <% if (business.logo_url) { %>
                   <button type="button" class="btn-sm danger" onclick="deleteImage('logo')">
@@ -144,11 +145,12 @@
                 <% } %>
               </div>
               <p class="img-preview-label">Imagine copertă</p>
+              <p class="img-upload-hint">JPEG, PNG sau WebP &middot; Recomandat: 1200&times;400px</p>
               <div style="display: flex; gap: 8px; margin-top: 6px; justify-content: center;">
                 <label class="btn-sm" style="cursor: pointer;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Încarcă
-                  <input type="file" accept="image/*" style="display:none;" onchange="uploadImage('cover', this)">
+                  <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadImage('cover', this)">
                 </label>
                 <% if (business.cover_image_url) { %>
                   <button type="button" class="btn-sm danger" onclick="deleteImage('cover')">
@@ -174,7 +176,7 @@
         <h3 class="section-title">Galerie foto</h3>
         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
           <% var _gMax = (tier && tier.plan) ? tier.plan.max_gallery_images : 8; %>
-          <%= _gMax == null ? 'Nelimitat' : ('Maximum ' + _gMax) %> imagini. Recomandat: format landscape, minim 1200x800px.
+          <%= _gMax == null ? 'Nelimitat' : ('Maximum ' + _gMax) %> imagini. JPEG, PNG sau WebP, format landscape, minim 1200&times;800px.
         </p>
         <div class="gallery-upload-grid" id="gallery-grid">
           <% if (business.images && business.images.length > 0) { %>
@@ -191,7 +193,7 @@
             <label class="gallery-upload-add" id="gallery-add-btn">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <span>Adaugă</span>
-              <input type="file" accept="image/*" multiple style="display:none;" onchange="uploadGalleryImages(this)">
+              <input type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" onchange="uploadGalleryImages(this)">
             </label>
           <% } %>
         </div>

@@ -144,6 +144,37 @@
 
 </div><!-- /portal-page -->
 
+<!-- Logo Crop Modal -->
+<div id="logo-crop-modal" class="crop-modal" style="display:none;">
+  <div class="crop-modal-backdrop" onclick="closeCropModal()"></div>
+  <div class="crop-modal-content">
+    <div class="crop-modal-header">
+      <h3>Alege zona vizibilă</h3>
+      <button type="button" class="crop-modal-close" onclick="closeCropModal()">&times;</button>
+    </div>
+    <div class="crop-modal-body">
+      <div class="crop-container">
+        <img id="crop-image" src="" alt="Crop">
+      </div>
+    </div>
+    <div class="crop-modal-footer">
+      <div class="crop-zoom-row">
+        <button type="button" class="crop-zoom-btn" onclick="cropZoom(-0.1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <input type="range" id="crop-zoom-slider" min="0" max="2" step="0.01" value="0" class="crop-zoom-slider" oninput="cropZoomSlider(this.value)">
+        <button type="button" class="crop-zoom-btn" onclick="cropZoom(0.1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="crop-actions">
+        <button type="button" class="btn-secondary-portal" onclick="closeCropModal()">Anulează</button>
+        <button type="button" class="btn-accent" onclick="applyCrop()">Salvează</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <%- include('../partials/footer') %>
 
 <script nonce="<%= cspNonce %>">
@@ -234,19 +265,12 @@
   /* ════════════════════════════════
      IMAGE UPLOAD / DELETE
      ════════════════════════════════ */
-  window.uploadImage = function(type, input) {
-    var file = input.files && input.files[0];
-    if (!file) return;
+  var _cropper = null;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Imaginea nu poate depăși 5MB', 'error');
-      input.value = '';
-      return;
-    }
-
+  // Direct upload (cover, or logo fallback when Cropper.js unavailable)
+  function uploadImageDirect(type, fileOrBlob) {
     var formData = new FormData();
-    formData.append(type, file);
+    formData.append(type, fileOrBlob, fileOrBlob.name || 'image.jpg');
 
     var previewBox = document.getElementById(type + '-preview');
     previewBox.style.opacity = '0.5';
@@ -259,14 +283,10 @@
     .then(function(data) {
       previewBox.style.opacity = '1';
       if (data.url) {
-        // Update preview image
         var existingImg = document.getElementById(type + '-img');
-        var placeholder = document.getElementById(type + '-placeholder');
-
         if (existingImg) {
           existingImg.src = data.url;
         } else {
-          // Create new img element
           var img = document.createElement('img');
           img.src = data.url;
           img.alt = type === 'logo' ? 'Logo' : 'Cover';
@@ -274,8 +294,6 @@
           previewBox.innerHTML = '';
           previewBox.appendChild(img);
         }
-
-        // Show delete button if hidden
         var btnContainer = previewBox.parentNode.querySelector('div[style*="display: flex"]');
         if (btnContainer && !btnContainer.querySelector('.danger')) {
           var delBtn = document.createElement('button');
@@ -285,7 +303,6 @@
           delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Șterge';
           btnContainer.appendChild(delBtn);
         }
-
         showToast(type === 'logo' ? 'Logo actualizat' : 'Copertă actualizată', 'success');
       } else {
         showToast(data.message || 'Eroare la încărcare', 'error');
@@ -295,8 +312,92 @@
       previewBox.style.opacity = '1';
       showToast('Eroare la încărcarea imaginii', 'error');
     });
+  }
 
+  window.uploadImage = function(type, input) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Imaginea nu poate depăși 5MB', 'error');
+      input.value = '';
+      return;
+    }
+
+    // Logo: open crop modal if Cropper.js is available
+    if (type === 'logo' && typeof Cropper !== 'undefined') {
+      openCropModal(file);
+      input.value = '';
+      return;
+    }
+
+    // Cover or fallback: upload directly
+    uploadImageDirect(type, file);
     input.value = '';
+  };
+
+  /* ── Logo Crop Modal ── */
+  window.openCropModal = function(file) {
+    var modal = document.getElementById('logo-crop-modal');
+    var cropImg = document.getElementById('crop-image');
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      cropImg.src = e.target.result;
+      modal.style.display = 'flex';
+      if (window.lenis) window.lenis.stop();
+
+      if (_cropper) _cropper.destroy();
+      _cropper = new Cropper(cropImg, {
+        aspectRatio: 1,
+        viewMode: 1,
+        dragMode: 'move',
+        cropBoxResizable: false,
+        cropBoxMovable: false,
+        toggleDragModeOnDblclick: false,
+        minCropBoxWidth: 150,
+        minCropBoxHeight: 150,
+        background: false,
+        guides: false,
+        center: false,
+        highlight: false,
+        responsive: true,
+        ready: function() {
+          document.getElementById('crop-zoom-slider').value = '0';
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.closeCropModal = function() {
+    var modal = document.getElementById('logo-crop-modal');
+    modal.style.display = 'none';
+    if (_cropper) { _cropper.destroy(); _cropper = null; }
+    if (window.lenis) window.lenis.start();
+  };
+
+  window.applyCrop = function() {
+    if (!_cropper) return;
+    var canvas = _cropper.getCroppedCanvas({
+      width: 400,
+      height: 400,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high'
+    });
+    canvas.toBlob(function(blob) {
+      closeCropModal();
+      uploadImageDirect('logo', blob);
+    }, 'image/jpeg', 0.9);
+  };
+
+  window.cropZoom = function(delta) {
+    if (_cropper) _cropper.zoom(delta);
+  };
+
+  window.cropZoomSlider = function(val) {
+    if (!_cropper) return;
+    var ratio = 1 + parseFloat(val);
+    _cropper.zoomTo(ratio);
   };
 
   window.deleteImage = function(type) {
