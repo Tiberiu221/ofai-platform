@@ -40,10 +40,11 @@ appredueri_backend/
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
       llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, reviewSuggestions, prompts)
-    migrations/     # SQL migration files (006-067)
+    migrations/     # SQL migration files (006-068)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
-      public/portal/partials/           # 7 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support)
+      public/portal/partials/           # 8 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support, _tab-tools)
+      public/tools/svg-to-png.ejs        # SVG → PNG/JPEG converter tool
       public/business-detail.ejs        # Consumer business page (hours + catalog display)
       public/blog.ejs                   # Blog listing page
       public/blog-post.ejs              # Blog article detail page
@@ -119,19 +120,23 @@ psql $DATABASE_URL                              # Connect to DB
 - **Route count:** 23 route files total, ~256 endpoints — don't forget to update both web and mobile routes when changing shared logic
 - **Refresh token rotation:** Uses `SELECT ... FOR UPDATE` in a transaction to prevent race conditions from concurrent requests
 - **Lenis smooth scroll:** `window.lenis` is global. Use `lenis.scrollTo(target, { offset: -80 })` instead of `scrollIntoView`. Use `lenis.stop()`/`lenis.start()` for modals. Horizontal scroll containers are NOT affected (Lenis is vertical only). If CDN fails, all code falls back to native via `if (window.lenis)` guards
+- **Portal CSS `.booking-field`:** Has `display: none` in CSS — JS toggle MUST use `display: 'block'` (not `''`) to override
+- **Cropper.js CDN:** Loaded conditionally when `loadPortalCss` is set; `cdn.jsdelivr.net` added to CSP `scriptSrc` + `styleSrc`
+- **Booking fallback:** Consumer business-detail.ejs falls back to `business.phone`/`business.website` when `booking_phone`/`booking_url` are null
+- **Image upload:** `accept="image/jpeg,image/png,image/webp"` on all upload inputs (not `image/*`); multer error handler in web-portal-api.js
 
 ## Language
 - UI text and user-facing strings: Romanian
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (26 March 2026)
+## Current State (27 March 2026)
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~256 endpoints, 20 providers, 67 migrations, 26 screens, 13 models, 24 widgets
+- 23 route files, ~256 endpoints, 20 providers, 68 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
-- Business portal (manage.ejs ~2250 lines) — 7 tabs split into partials
+- Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
 - main.css split into 7 section files + loader
 
@@ -200,6 +205,14 @@ psql $DATABASE_URL                              # Connect to DB
 - **User Activity Tracking:** `last_active_at` column updated on every authenticated request (throttled max 1x/hour) via web + mobile auth middleware
 - **Blog/Content System:** Full CMS with blog_posts + blog_categories tables, admin CRUD, public /blog listing + /blog/:slug detail, featured first card, breadcrumbs, reading time, CTA, related posts, SEO (canonical, OG article, JSON-LD Article), sitemap integration, in-memory cache (15min list, 30min post), Unsplash images, 8 initial SEO posts across 5 categories
 - **500 Error Page:** Custom 500.ejs with try/catch fallback, dev stack trace, matches 404 design
+- **Logo Crop Tool:** Cropper.js circular crop modal for logo uploads, zoom slider, "Încadrează tot" (fit all) button, auto-detects background color for fill
+- **Portal Tools Tab:** "Tool-uri" tab with SVG → PNG/JPEG converter (100% client-side, Canvas API, presets for Logo/Cover sizes)
+- **Image Quality Upgrade:** 2x retina resolutions (logo 800px, cover 2400×1200, gallery 1920×1280, offer 1200×900), auto:best quality, 10MB upload limit
+- **Gallery Limits Update:** Free tier 8 images (was 3), Standard 16 (was 8), Premium unlimited
+- **Booking Simplification:** Booking type selection auto-uses profile data (phone/website) — no separate fields needed, consumer page falls back to profile data
+- **Portal Dashboard:** "Adaugă alt business" card for multi-business owners
+- **Login Redirect:** Auth redirects to homepage (/) instead of /cont, new Google users still go to /onboarding
+- **Multer Error Handler:** User-friendly error messages for file type/size rejections on gallery uploads
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
