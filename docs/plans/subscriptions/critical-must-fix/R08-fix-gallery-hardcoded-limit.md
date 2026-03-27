@@ -2,7 +2,7 @@
 
 > **Severitate:** CRITICAL
 > **Fisier:** `appredueri_backend/src/routes/business-portal.js`, linia ~349
-> **Impact:** Gallery upload este blocat la 8 imagini indiferent de plan. Premium (unlimited) si Standard (8) sunt tratate identic. Free (3 imagini) nu este aplicat — tot 8.
+> **Impact:** Gallery upload este blocat la 8 imagini indiferent de plan. Premium (unlimited) si Standard (16) sunt tratate identic. Free (8 imagini) nu este aplicat — tot 8. (Note: limits updated Mar 2026 — Free: 3→8, Standard: 8→16)
 
 ---
 

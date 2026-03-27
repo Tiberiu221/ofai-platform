@@ -14,7 +14,7 @@ From `subscription_plans` seed data (migration 033):
 | Feature | Free | Standard | Premium | Gate Key |
 |---|---|---|---|---|
 | Active offers | 2 | 10 | Unlimited | `max_active_offers` |
-| Gallery images | 3 | 8 | Unlimited | `max_gallery_images` |
+| Gallery images | 8 | 16 | Unlimited | `max_gallery_images` |
 | Locations | 1 | 3 | Unlimited | `max_locations` |
 | Promo codes/offer | 0 | 3 | Unlimited | `max_promo_codes_per_offer` |
 | Analytics period | 7 days | 30 days | 90 days | `analytics_days` |
@@ -567,7 +567,7 @@ function handleApiError(response) {
 ## 7. Existing Data Over Limits (Grandfather Rule)
 
 **Critical:** When a business downgrades from Standard to Free, they may have:
-- 8 gallery images (free limit: 3)
+- 16 gallery images (free limit: 8)
 - 10 active offers (free limit: 2)
 - 3 locations (free limit: 1)
 - Review responses already posted
@@ -746,7 +746,7 @@ function requireLimit(limitKey, countFn) {
 
 ## 11. Gotchas
 
-1. **NEVER delete existing data over limits.** The grandfather rule is critical. If a Premium business with 20 gallery images downgrades to Free (limit 3), all 20 images remain. They just cannot add more. Same for offers, locations, review responses, logo, cover.
+1. **NEVER delete existing data over limits.** The grandfather rule is critical. If a Premium business with 20 gallery images downgrades to Free (limit 8), all 20 images remain. They just cannot add more. Same for offers, locations, review responses, logo, cover.
 
 2. **`attachTier` in web.js.** The web portal routes in web.js (e.g., `/api/web/portal/:businessId/reviews/:reviewId/respond`) use `requireBusinessOwner` middleware which is cookie-based (not Bearer token). Ensure `attachTier` works with the `req.params.businessId` from these routes. The `attachTier` function looks for `req.params.businessId || req.params.bid` -- verify the parameter name matches.
 
