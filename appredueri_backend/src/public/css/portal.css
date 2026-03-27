@@ -168,6 +168,15 @@
     border-radius: var(--radius-md);
   }
   .booking-info-text strong { color: var(--text-primary); }
+  .booking-change-link {
+    margin-left: auto; font-size: 0.75rem;
+    color: var(--accent); text-decoration: none; white-space: nowrap;
+  }
+  .booking-change-link:hover { text-decoration: underline; }
+  .booking-override {
+    display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  }
+  .booking-override .form-input { flex: 1; }
 
   /* ── Image Preview ── */
   .img-preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }

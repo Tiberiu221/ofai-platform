@@ -2128,6 +2128,24 @@
     if (up) up.textContent = (websiteVal && websiteVal.value) || 'Adaugă un website în profil';
   };
 
+  window.toggleBookingOverride = function(type) {
+    var infoEl = document.getElementById('booking-info-' + type);
+    var overrideEl = document.getElementById('booking-override-' + type);
+    if (!infoEl || !overrideEl) return;
+    var isShown = overrideEl.style.display !== 'none';
+    infoEl.style.display = isShown ? 'flex' : 'none';
+    overrideEl.style.display = isShown ? 'none' : 'flex';
+    if (!isShown) {
+      var input = overrideEl.querySelector('input');
+      if (input && !input.value) {
+        var profileMap = { phone: 'phone', whatsapp: 'phone', url: 'website' };
+        var profileInput = document.querySelector('input[name="' + profileMap[type] + '"]');
+        if (profileInput) input.value = profileInput.value;
+      }
+      if (input) input.focus();
+    }
+  };
+
   window.saveBusinessInfo = function(e) {
     e.preventDefault();
     var form = document.getElementById('business-info-form');
