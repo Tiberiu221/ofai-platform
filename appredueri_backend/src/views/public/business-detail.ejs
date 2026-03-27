@@ -167,7 +167,14 @@
     <% } %>
   </div>
 
-  <% if (business.booking && business.booking.type && business.booking.type !== 'none') { %>
+  <% var _bk = business.booking;
+     var _bkHasData = _bk && _bk.type && _bk.type !== 'none' && (
+       (_bk.type === 'phone' && _bk.phone) ||
+       (_bk.type === 'whatsapp' && _bk.whatsapp) ||
+       (_bk.type === 'url' && _bk.url)
+     );
+  %>
+  <% if (_bkHasData) { %>
   <div class="bd-booking-inline">
     <div class="booking-card">
       <% if (business.booking.type === 'phone' && business.booking.phone) { %>
