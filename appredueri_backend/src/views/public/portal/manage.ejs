@@ -162,7 +162,7 @@
         <button type="button" class="crop-zoom-btn" onclick="cropZoom(-0.1)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
-        <input type="range" id="crop-zoom-slider" min="0" max="2" step="0.01" value="0" class="crop-zoom-slider" oninput="cropZoomSlider(this.value)">
+        <input type="range" id="crop-zoom-slider" min="0" max="3" step="0.02" value="0" class="crop-zoom-slider" oninput="cropZoomSlider(this.value)">
         <button type="button" class="crop-zoom-btn" onclick="cropZoom(0.1)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
@@ -266,6 +266,7 @@
      IMAGE UPLOAD / DELETE
      ════════════════════════════════ */
   var _cropper = null;
+  var _cropInitialZoom = 1; // store initial zoom ratio for slider reference
 
   // Direct upload (cover, or logo fallback when Cropper.js unavailable)
   function uploadImageDirect(type, fileOrBlob) {
@@ -362,6 +363,9 @@
         highlight: false,
         responsive: true,
         ready: function() {
+          // Capture the initial zoom level so slider works relative to it
+          var imageData = _cropper.getImageData();
+          _cropInitialZoom = imageData.width / imageData.naturalWidth;
           document.getElementById('crop-zoom-slider').value = '0';
         }
       });
@@ -391,13 +395,24 @@
   };
 
   window.cropZoom = function(delta) {
-    if (_cropper) _cropper.zoom(delta);
+    if (!_cropper) return;
+    _cropper.zoom(delta);
+    // Sync slider with current zoom level
+    var imageData = _cropper.getImageData();
+    var currentZoom = imageData.width / imageData.naturalWidth;
+    var sliderVal = Math.max(0, Math.min(3, (currentZoom / _cropInitialZoom) - 1));
+    document.getElementById('crop-zoom-slider').value = sliderVal.toString();
   };
 
   window.cropZoomSlider = function(val) {
     if (!_cropper) return;
-    var ratio = 1 + parseFloat(val);
-    _cropper.zoomTo(ratio);
+    // Slider 0 = initial fit, slider 3 = 4x initial zoom
+    var targetZoom = _cropInitialZoom * (1 + parseFloat(val));
+    var containerData = _cropper.getContainerData();
+    _cropper.zoomTo(targetZoom, {
+      x: containerData.width / 2,
+      y: containerData.height / 2
+    });
   };
 
   window.deleteImage = function(type) {
