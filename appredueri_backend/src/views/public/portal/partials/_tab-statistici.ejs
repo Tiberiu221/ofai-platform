@@ -207,9 +207,13 @@
             <div class="period-selector">
               <button class="period-btn grouping-btn" id="grouping-toggle" onclick="toggleGrouping(this)">Săptămânal</button>
               <span class="period-separator"></span>
-              <button class="period-btn" onclick="changePeriod(7, this)">7 zile</button>
-              <button class="period-btn active" onclick="changePeriod(30, this)">30 zile</button>
-              <button class="period-btn" onclick="changePeriod(90, this)">90 zile</button>
+              <button class="period-btn<%= tier.plan.analytics_days === 7 ? ' active' : '' %>" onclick="changePeriod(7, this)">7 zile</button>
+              <% if (tier.plan.analytics_days >= 30) { %>
+                <button class="period-btn<%= tier.plan.analytics_days < 90 ? ' active' : '' %>" onclick="changePeriod(30, this)">30 zile</button>
+              <% } %>
+              <% if (tier.plan.analytics_days >= 90) { %>
+                <button class="period-btn active" onclick="changePeriod(90, this)">90 zile</button>
+              <% } %>
             </div>
           </div>
         </div>

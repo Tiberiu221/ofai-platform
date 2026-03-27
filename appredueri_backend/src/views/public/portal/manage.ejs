@@ -193,7 +193,7 @@
 <script nonce="<%= cspNonce %>">
 (function() {
   var businessId = '<%= business.id %>';
-  var currentPeriod = 30;
+  var currentPeriod = <%= tier.plan.analytics_days || 7 %>;
   var currentViewsMode = 'business';
   var currentClicksAction = 'phone';
 
