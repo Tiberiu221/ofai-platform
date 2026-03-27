@@ -176,6 +176,11 @@
         </button>
       </div>
       <div class="crop-actions">
+        <button type="button" class="crop-fit-btn" onclick="cropFitAll()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+          Încadrează tot
+        </button>
+        <div style="flex: 1;"></div>
         <button type="button" class="btn-secondary-portal" onclick="closeCropModal()">Anulează</button>
         <button type="button" class="btn-accent" onclick="applyCrop()">Salvează</button>
       </div>
@@ -358,20 +363,21 @@
       if (_cropper) _cropper.destroy();
       _cropper = new Cropper(cropImg, {
         aspectRatio: 1,
-        viewMode: 1,
+        viewMode: 0,
         dragMode: 'move',
         cropBoxResizable: false,
         cropBoxMovable: false,
         toggleDragModeOnDblclick: false,
         minCropBoxWidth: 150,
         minCropBoxHeight: 150,
+        minCanvasWidth: 0,
+        minCanvasHeight: 0,
         background: false,
         guides: false,
         center: false,
         highlight: false,
         responsive: true,
         ready: function() {
-          // Capture the initial zoom level so slider works relative to it
           var imageData = _cropper.getImageData();
           _cropInitialZoom = imageData.width / imageData.naturalWidth;
           document.getElementById('crop-zoom-slider').value = '0';
@@ -393,6 +399,7 @@
     var canvas = _cropper.getCroppedCanvas({
       width: 400,
       height: 400,
+      fillColor: '#ffffff',
       imageSmoothingEnabled: true,
       imageSmoothingQuality: 'high'
     });
@@ -414,13 +421,38 @@
 
   window.cropZoomSlider = function(val) {
     if (!_cropper) return;
-    // Slider 0 = initial fit, slider 3 = 4x initial zoom
     var targetZoom = _cropInitialZoom * (1 + parseFloat(val));
     var containerData = _cropper.getContainerData();
     _cropper.zoomTo(targetZoom, {
       x: containerData.width / 2,
       y: containerData.height / 2
     });
+  };
+
+  window.cropFitAll = function() {
+    if (!_cropper) return;
+    // Zoom out so the entire image fits inside the crop box
+    var cropBoxData = _cropper.getCropBoxData();
+    var imageData = _cropper.getImageData();
+    // Calculate zoom needed to fit entire image in crop box
+    var fitZoom = Math.min(
+      cropBoxData.width / imageData.naturalWidth,
+      cropBoxData.height / imageData.naturalHeight
+    );
+    var containerData = _cropper.getContainerData();
+    _cropper.zoomTo(fitZoom, {
+      x: containerData.width / 2,
+      y: containerData.height / 2
+    });
+    // Center the image in the crop box
+    var newImageData = _cropper.getCanvasData();
+    _cropper.setCanvasData({
+      left: cropBoxData.left + (cropBoxData.width - newImageData.width) / 2,
+      top: cropBoxData.top + (cropBoxData.height - newImageData.height) / 2
+    });
+    // Reset slider
+    var sliderVal = Math.max(0, (fitZoom / _cropInitialZoom) - 1);
+    document.getElementById('crop-zoom-slider').value = Math.max(0, sliderVal).toString();
   };
 
   window.deleteImage = function(type) {

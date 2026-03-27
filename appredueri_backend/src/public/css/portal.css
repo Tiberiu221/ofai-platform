@@ -1080,6 +1080,18 @@
   border-radius: 50%; background: var(--accent);
   cursor: pointer; border: none;
 }
+.crop-fit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary); font-size: 0.8125rem; font-weight: 500;
+  cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.crop-fit-btn:hover {
+  background: var(--accent-muted); color: var(--accent);
+  border-color: var(--accent);
+}
 .crop-actions {
-  display: flex; justify-content: flex-end; gap: 8px;
+  display: flex; align-items: center; gap: 8px;
 }
