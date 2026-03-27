@@ -77,22 +77,22 @@
 
           <div class="booking-fields">
             <div class="booking-field" id="booking-field-phone" style="<%= business.booking_type === 'phone' ? '' : 'display:none' %>">
-              <div class="form-group">
-                <label class="form-label">Telefon rezervări</label>
-                <input type="text" name="booking_phone" class="form-input" value="<%= business.booking_phone || '' %>" placeholder="+40 7XX XXX XXX">
-              </div>
+              <p class="booking-info-text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Se va folosi: <strong id="booking-phone-preview"><%= business.phone || 'Adaugă un telefon în profil' %></strong>
+              </p>
             </div>
             <div class="booking-field" id="booking-field-whatsapp" style="<%= business.booking_type === 'whatsapp' ? '' : 'display:none' %>">
-              <div class="form-group">
-                <label class="form-label">Număr WhatsApp</label>
-                <input type="text" name="booking_whatsapp" class="form-input" value="<%= business.booking_whatsapp || '' %>" placeholder="+40 7XX XXX XXX">
-              </div>
+              <p class="booking-info-text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Se va folosi: <strong id="booking-whatsapp-preview"><%= business.phone || 'Adaugă un telefon în profil' %></strong>
+              </p>
             </div>
             <div class="booking-field" id="booking-field-url" style="<%= business.booking_type === 'url' ? '' : 'display:none' %>">
-              <div class="form-group">
-                <label class="form-label">Link rezervare</label>
-                <input type="text" name="booking_url" class="form-input" value="<%= business.booking_url || '' %>" placeholder="https://">
-              </div>
+              <p class="booking-info-text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Se va folosi: <strong id="booking-url-preview"><%= business.website || 'Adaugă un website în profil' %></strong>
+              </p>
             </div>
           </div>
 

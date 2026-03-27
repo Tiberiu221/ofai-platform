@@ -2117,6 +2117,15 @@
       var el = document.getElementById('booking-field-' + f);
       if (el) el.style.display = (f === type) ? '' : 'none';
     });
+    // Update preview text from profile fields
+    var phoneVal = document.querySelector('input[name="phone"]');
+    var websiteVal = document.querySelector('input[name="website"]');
+    var pp = document.getElementById('booking-phone-preview');
+    var wp = document.getElementById('booking-whatsapp-preview');
+    var up = document.getElementById('booking-url-preview');
+    if (pp) pp.textContent = (phoneVal && phoneVal.value) || 'Adaugă un telefon în profil';
+    if (wp) wp.textContent = (phoneVal && phoneVal.value) || 'Adaugă un telefon în profil';
+    if (up) up.textContent = (websiteVal && websiteVal.value) || 'Adaugă un website în profil';
   };
 
   window.saveBusinessInfo = function(e) {

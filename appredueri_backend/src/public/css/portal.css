@@ -159,6 +159,15 @@
   .booking-fields { margin-top: 12px; }
   .booking-field { display: none; }
   .booking-field.visible { display: block; }
+  .booking-info-text {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.8125rem; color: var(--text-secondary);
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .booking-info-text strong { color: var(--text-primary); }
 
   /* ── Image Preview ── */
   .img-preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
