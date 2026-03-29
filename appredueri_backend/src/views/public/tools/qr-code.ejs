@@ -196,9 +196,9 @@
 
   <!-- Input Section -->
   <div class="qr-input-section">
-    <div class="qr-input-label">Link sau text</div>
-    <input type="url" id="qr-url" class="qr-url-input"
-           placeholder="https://ofai.ro/b/152"
+    <div class="qr-input-label">Link (URL)</div>
+    <input type="text" id="qr-url" class="qr-url-input"
+           placeholder="ofai.ro/b/152"
            value="<%= typeof prefillUrl !== 'undefined' && prefillUrl ? prefillUrl : '' %>"
            autocomplete="off" spellcheck="false">
 
@@ -341,6 +341,11 @@
       dlSvg.disabled = true;
       currentText = '';
       return;
+    }
+
+    // Auto-prefix https:// if user typed a domain without protocol
+    if (text && !text.match(/^https?:\/\//i) && text.includes('.')) {
+      text = 'https://' + text;
     }
 
     currentText = text;
