@@ -588,7 +588,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, flash_expires_at, is_active,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals,
-      locationIds
+      redemption_method, locationIds
     } = req.body;
 
     // FormData sends arrays/objects as JSON strings — parse them
@@ -644,6 +644,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
       bookingInstructions: booking_instructions,
       promoCodes: sanitizedPromoCodes,
       maxReveals: max_reveals ? parseInt(max_reveals) : null,
+      redemptionMethod: redemption_method === 'auto' ? null : (redemption_method || null),
       sendWebhook: true, // Business portal triggers n8n webhook
       tier: req.tier || null, // W11: Pass pre-fetched tier to avoid redundant DB query
     });
@@ -674,7 +675,7 @@ router.get("/:businessId/offers/:offerId", businessAuth, async (req, res) => {
     console.log("[BusinessPortal] GET single offer - Business:", businessId, "Offer:", offerId);
 
     const result = await pool.query(`
-      SELECT id, business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, max_reveals FROM offers WHERE id = $1 AND business_id = $2
+      SELECT id, business_id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, max_reveals, redemption_method FROM offers WHERE id = $1 AND business_id = $2
     `, [offerId, businessId]);
 
     if (result.rows.length === 0) {
@@ -719,7 +720,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       title, description, discount_type, discount_value, conditions,
       start_date, end_date, flash_expires_at, is_active,
       booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals,
-      locationIds, remove_image
+      redemption_method, locationIds, remove_image
     } = req.body;
 
     // FormData sends arrays/objects as JSON strings — parse them
@@ -795,6 +796,10 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     if (max_reveals !== undefined) {
       updates.push(`max_reveals = $${paramIndex++}`);
       values.push(max_reveals ? parseInt(max_reveals) : null);
+    }
+    if (redemption_method !== undefined) {
+      updates.push(`redemption_method = $${paramIndex++}`);
+      values.push(redemption_method === 'auto' ? null : (redemption_method || null));
     }
     // Handle image upload (tier-gated)
     const canUploadImg = req.tier && req.tier.plan && req.tier.plan.has_custom_offer_image;

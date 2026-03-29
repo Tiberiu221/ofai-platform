@@ -798,6 +798,7 @@ router.get("/oferta/:id", async (req, res) => {
         (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
         (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending,
         o.max_reveals,
+        o.redemption_method,
         (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
@@ -874,6 +875,7 @@ router.get("/oferta/:id", async (req, res) => {
       max_reveals: row.max_reveals || null,
       reveal_count: parseInt(row.reveal_count || 0),
       image_url: row.offer_logo || row.business_cover || row.business_logo,
+      redemption_method: row.redemption_method || null,
       booking,
       business: {
         id: row.business_id,
@@ -2086,7 +2088,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, attachTi
 
     const [offerRes, promoCodesRes, locsRes, offerLocsRes] = await Promise.all([
       pool.query(
-        "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, moderation_status, rejection_reason FROM offers WHERE id = $1 AND business_id = $2",
+        "SELECT id, title, description, discount_type, discount_value, conditions, start_date, end_date, is_active, logo_url, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, moderation_status, rejection_reason, redemption_method FROM offers WHERE id = $1 AND business_id = $2",
         [offerId, businessId]
       ),
       pool.query(

@@ -759,6 +759,7 @@ router.get("/:id", async (req, res) => {
         (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count,
         (CASE WHEN (SELECT COUNT(*) FROM favorite_offers fo2 WHERE fo2.offer_id = o.id AND fo2.created_at > NOW() - INTERVAL '14 days') >= 5 THEN true ELSE false END) as is_trending,
         o.max_reveals,
+        o.redemption_method,
         (SELECT COUNT(*) FROM code_reveals cr WHERE cr.offer_id = o.id) as reveal_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
@@ -874,6 +875,7 @@ router.get("/:id", async (req, res) => {
       reveal_count: parseInt(row.reveal_count || 0),
 
       image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
+      redemption_method: row.redemption_method || null,
 
       // Booking efectiv (dupa logica inherit)
       booking: {

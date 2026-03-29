@@ -28,6 +28,7 @@ const { validateOfferData } = require('./llm/offerValidation');
  * @param {string} [params.bookingInstructions] - Booking instructions
  * @param {Array<{code: string, is_active: boolean}>} [params.promoCodes] - Array of promo codes
  * @param {number} [params.maxReveals] - Maximum number of code reveals (null = unlimited)
+ * @param {string} [params.redemptionMethod] - Owner-chosen redemption message key or custom text
  * @param {boolean} [params.sendWebhook] - Whether to send n8n webhook (default: true for business portal)
  * @param {Object} [params.tier] - Pre-fetched tier info from req.tier (avoids redundant DB query)
  * @returns {Promise<number>} - Created offer ID
@@ -51,6 +52,7 @@ async function createOffer(pool, params) {
     bookingInstructions,
     promoCodes,
     maxReveals,
+    redemptionMethod,
     sendWebhook = false, // Only business portal triggers webhook by default
     tier = null, // Pre-fetched tier info from middleware (avoids redundant DB query)
   } = params;
@@ -135,9 +137,9 @@ async function createOffer(pool, params) {
         business_id, title, description, discount_type, discount_value,
         conditions, start_date, end_date, is_active, logo_url,
         booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions,
-        max_reveals, moderation_status, ai_score, ai_flags, ai_reasoning
+        max_reveals, redemption_method, moderation_status, ai_score, ai_flags, ai_reasoning
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
       RETURNING id
     `, [
       businessId,
@@ -156,6 +158,7 @@ async function createOffer(pool, params) {
       bookingUrl || null,
       bookingInstructions || null,
       maxReveals ?? null,
+      redemptionMethod || null,
       moderationStatus,
       moderation.score,
       moderation.flags ? JSON.stringify(moderation.flags) : null,

@@ -840,6 +840,35 @@
           </div>
         </div>
 
+        <!-- ═══ Section: Cum profiți de ofertă? ═══ -->
+        <div class="of-section">
+          <h2 class="of-section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Cum profiți de ofertă?
+          </h2>
+          <div class="of-hint" style="margin-bottom: 12px;">Alege mesajul pe care consumatorul îl va vedea pe pagina ofertei, în secțiunea "Cum profiți de ofertă?"</div>
+          <div class="of-field">
+            <label class="of-label" for="of-redemption-select">Mesaj afișat</label>
+            <select id="of-redemption-select" class="of-input" style="cursor:pointer;">
+              <option value="auto">Automat (detectează din tipul de rezervare)</option>
+              <option value="call">Sună și menționează oferta OFAI</option>
+              <option value="whatsapp">Scrie pe WhatsApp și menționează oferta OFAI</option>
+              <option value="online">Rezervă online și menționează oferta OFAI</option>
+              <option value="booking">Menționează oferta OFAI la rezervare</option>
+              <option value="appointment">Menționează oferta OFAI la programare</option>
+              <option value="order">Menționează oferta OFAI la comandă</option>
+              <option value="checkout">Aplică codul sau menționează oferta OFAI la checkout</option>
+              <option value="show_page">Arată această pagină pentru a beneficia de reducere</option>
+              <option value="custom">Personalizat...</option>
+            </select>
+          </div>
+          <div class="of-field" id="of-redemption-custom-wrap" style="display:none; margin-top: 10px;">
+            <label class="of-label" for="of-redemption-custom">Text personalizat</label>
+            <textarea id="of-redemption-custom" class="of-textarea" placeholder="Scrie mesajul personalizat..." style="min-height: 70px;" maxlength="500"></textarea>
+          </div>
+          <input type="hidden" name="redemption_method" id="of-redemption-method" value="<%= offer && offer.redemption_method ? offer.redemption_method : 'auto' %>">
+        </div>
+
         <!-- ═══ Section 3: Coduri promoționale ═══ -->
         <div class="of-section">
           <h2 class="of-section-title">
@@ -1280,6 +1309,47 @@
     });
   });
 
+  // ─── Redemption method toggle ────────────────────────────────
+  var redemptionSelect = document.getElementById('of-redemption-select');
+  var redemptionHidden = document.getElementById('of-redemption-method');
+  var redemptionCustomWrap = document.getElementById('of-redemption-custom-wrap');
+  var redemptionCustomInput = document.getElementById('of-redemption-custom');
+
+  var REDEMPTION_KEYS = ['auto','call','whatsapp','online','booking','appointment','order','checkout','show_page','custom'];
+
+  function updateRedemptionMethod() {
+    var val = redemptionSelect.value;
+    if (val === 'custom') {
+      redemptionCustomWrap.style.display = 'block';
+      redemptionHidden.value = redemptionCustomInput.value.trim() || 'custom';
+    } else {
+      redemptionCustomWrap.style.display = 'none';
+      redemptionHidden.value = val;
+    }
+  }
+
+  redemptionSelect.addEventListener('change', updateRedemptionMethod);
+  if (redemptionCustomInput) {
+    redemptionCustomInput.addEventListener('input', function() {
+      if (redemptionSelect.value === 'custom') {
+        redemptionHidden.value = this.value.trim() || 'custom';
+      }
+    });
+  }
+
+  // Initialize from existing value (edit mode)
+  (function() {
+    var saved = redemptionHidden.value || 'auto';
+    if (REDEMPTION_KEYS.indexOf(saved) !== -1 && saved !== 'custom') {
+      redemptionSelect.value = saved;
+    } else if (saved !== 'auto') {
+      // Custom text — set select to "custom" and fill textarea
+      redemptionSelect.value = 'custom';
+      redemptionCustomInput.value = saved;
+      redemptionCustomWrap.style.display = 'block';
+    }
+  })();
+
   // ─── Message display ───────────────────────────────────────
   var msgEl = document.getElementById('of-message');
 
@@ -1327,7 +1397,8 @@
       booking_url: document.getElementById('of-booking-url-input').value.trim(),
       booking_instructions: document.getElementById('of-booking-instructions-input').value.trim(),
       promo_codes: promoCodes.filter(function(pc) { return pc.code && pc.code.trim(); }),
-      max_reveals: document.getElementById('of-max-reveals').value || null
+      max_reveals: document.getElementById('of-max-reveals').value || null,
+      redemption_method: document.getElementById('of-redemption-method').value || 'auto'
     };
 
     // Collect location IDs if location checkboxes exist

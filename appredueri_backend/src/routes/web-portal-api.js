@@ -986,7 +986,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireLimit('max_active_offers', countActiveOffers), portalUpload.single("image"), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals, redemption_method } = req.body || {};
 
     if (!title) return res.status(400).json({ message: "Titlul este obligatoriu" });
 
@@ -1039,6 +1039,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       bookingInstructions: sanitizeString(booking_instructions, 500),
       promoCodes: sanitizedPromoCodes,
       maxReveals: max_reveals ? parseInt(max_reveals) : null,
+      redemptionMethod: redemption_method === 'auto' ? null : (redemption_method ? sanitizeString(redemption_method, 500) : null),
       sendWebhook: false, // Web portal doesn't send webhook
       tier: req.tier || null, // W11: Pass pre-fetched tier to avoid redundant DB query
     });
@@ -1082,7 +1083,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     const businessId = req.businessId;
     const offerId = parseInt(req.params.offerId, 10);
     if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals, remove_image } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals, remove_image, redemption_method } = req.body || {};
 
     const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'special', 'free', 'bogo', 'other'];
     if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
@@ -1138,7 +1139,8 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     const parsedMaxReveals = max_reveals ? parseInt(max_reveals, 10) : null;
 
     // Build logo_url clause conditionally
-    const logoClause = logoUrlUpdate !== undefined ? ', logo_url = $20' : '';
+    const logoClause = logoUrlUpdate !== undefined ? ', logo_url = $21' : '';
+    const redemptionMethodValue = redemption_method === 'auto' ? null : (redemption_method ? sanitizeString(redemption_method, 500) : null);
     const params = [
       sanitizeString(title, 200),
       sanitizeString(description, 2000) || null,
@@ -1159,6 +1161,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       aiReasoning,
       offerId,
       businessId,
+      redemptionMethodValue,
     ];
     if (logoUrlUpdate !== undefined) params.push(logoUrlUpdate);
 
@@ -1176,6 +1179,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         booking_type = COALESCE($9, booking_type),
         booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
         max_reveals = $14,
+        redemption_method = $20,
         moderation_status = 'pending_review',
         rejection_reason = NULL,
         ai_score = $15, ai_flags = $16::jsonb, ai_reasoning = $17
