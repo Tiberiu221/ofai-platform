@@ -96,6 +96,16 @@ cd ofai_flutter && flutter run                  # Run app
 psql $DATABASE_URL                              # Connect to DB
 ```
 
+## Investigation Workflow
+When a bug, unexpected behavior, or "something doesn't make sense" is reported:
+1. **Explore** — Trace the full data flow (form → API → DB → display). Read actual code.
+2. **Diagnose** — Query DB to see actual data state. Compare portal vs DB vs display.
+3. **Plan** — Enter plan mode. Group fixes by priority phases (CRITICAL → MODERATE).
+4. **Present** — Show root cause + impact + plan summary. Wait for approval.
+5. **Fix** — Implement phase by phase. Backfill corrupted data. Verify each phase.
+- Use `/investigate` slash command to trigger this workflow
+- Never jump to fixing symptoms without understanding the full data path
+
 ## Important Gotchas
 - **manage.ejs is HUGE** (~2250 lines) - be careful with edits, check closing divs
 - **Portal tab partials:** Catalog tab is in `_tab-catalog.ejs`, Info tab in `_tab-info.ejs`
