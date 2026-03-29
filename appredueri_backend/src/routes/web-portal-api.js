@@ -983,7 +983,7 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
 });
 
 // Create offer
-router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireLimit('max_active_offers', countActiveOffers), async (req, res) => {
+router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireLimit('max_active_offers', countActiveOffers), portalUpload.single("image"), async (req, res) => {
   try {
     const businessId = req.businessId;
     const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
@@ -1011,6 +1011,16 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
 
     const { locationIds } = req.body || {};
 
+    // Tier-gated offer image upload (Premium only)
+    let logoUrl = null;
+    if (req.file) {
+      const canUpload = req.tier && req.tier.plan && req.tier.plan.has_custom_offer_image;
+      if (canUpload) {
+        const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
+        logoUrl = uploadResult.url;
+      }
+    }
+
     const result = await offerService.createOffer(pool, {
       businessId: parseInt(businessId),
       title: sanitizeString(title, 200),
@@ -1021,6 +1031,7 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       startDate: start_date,
       endDate: end_date,
       isActive: is_active !== false,
+      logoUrl: logoUrl,
       bookingType: booking_type,
       bookingPhone: booking_phone,
       bookingWhatsapp: booking_whatsapp,
@@ -1066,12 +1077,12 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
 });
 
 // Update offer
-router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, async (req, res) => {
+router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, portalUpload.single("image"), async (req, res) => {
   try {
     const businessId = req.businessId;
     const offerId = parseInt(req.params.offerId, 10);
     if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
-    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals } = req.body || {};
+    const { title, description, discount_type, discount_value, conditions, start_date, end_date, flash_expires_at, is_active, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, promo_code, promo_codes, max_reveals, remove_image } = req.body || {};
 
     const VALID_DISCOUNT_TYPES = ['percentage', 'fixed', 'special', 'free', 'bogo', 'other'];
     if (discount_type && !VALID_DISCOUNT_TYPES.includes(discount_type)) {
@@ -1097,29 +1108,38 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       console.error("[OfferValidation] Re-validation error (non-blocking):", validationErr.message);
     }
 
+    // Handle offer image upload/remove (Premium only)
+    const canUploadImg = req.tier && req.tier.plan && req.tier.plan.has_custom_offer_image;
+    let logoUrlUpdate = undefined; // undefined = no change, null = remove, string = new URL
+
+    if (req.file && canUploadImg) {
+      // Fetch existing logo_url for Cloudinary cleanup
+      const existingRes = await pool.query("SELECT logo_url FROM offers WHERE id = $1 AND business_id = $2", [offerId, businessId]);
+      const oldUrl = existingRes.rows[0]?.logo_url;
+      if (oldUrl) {
+        const oldPublicId = getPublicIdFromUrl(oldUrl);
+        if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+      }
+      const uploadResult = await uploadToCloudinary(req.file.buffer, "offer");
+      logoUrlUpdate = uploadResult.url;
+    } else if (remove_image === 'true' && !req.file) {
+      // Remove existing image
+      const existingRes = await pool.query("SELECT logo_url FROM offers WHERE id = $1 AND business_id = $2", [offerId, businessId]);
+      const oldUrl = existingRes.rows[0]?.logo_url;
+      if (oldUrl) {
+        const oldPublicId = getPublicIdFromUrl(oldUrl);
+        if (oldPublicId) await deleteFromCloudinary(oldPublicId);
+      }
+      logoUrlUpdate = null;
+    }
+
     // Update offer fields + reset to pending_review for admin re-review
     const parsedDiscountValue = discount_value != null && discount_value !== '' ? parseInt(discount_value, 10) : 0;
     const parsedMaxReveals = max_reveals ? parseInt(max_reveals, 10) : null;
 
-    await pool.query(`
-      UPDATE offers SET
-        title = COALESCE($1, title),
-        description = $2,
-        discount_type = COALESCE($3, discount_type),
-        discount_value = COALESCE($4, discount_value),
-        conditions = $5,
-        start_date = COALESCE($6, start_date),
-        end_date = COALESCE($7, end_date),
-        flash_expires_at = $8,
-        is_active = false,
-        booking_type = COALESCE($9, booking_type),
-        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
-        max_reveals = $14,
-        moderation_status = 'pending_review',
-        rejection_reason = NULL,
-        ai_score = $15, ai_flags = $16::jsonb, ai_reasoning = $17
-      WHERE id = $18 AND business_id = $19
-    `, [
+    // Build logo_url clause conditionally
+    const logoClause = logoUrlUpdate !== undefined ? ', logo_url = $20' : '';
+    const params = [
       sanitizeString(title, 200),
       sanitizeString(description, 2000) || null,
       discount_type || null,
@@ -1139,7 +1159,29 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       aiReasoning,
       offerId,
       businessId,
-    ]);
+    ];
+    if (logoUrlUpdate !== undefined) params.push(logoUrlUpdate);
+
+    await pool.query(`
+      UPDATE offers SET
+        title = COALESCE($1, title),
+        description = $2,
+        discount_type = COALESCE($3, discount_type),
+        discount_value = COALESCE($4, discount_value),
+        conditions = $5,
+        start_date = COALESCE($6, start_date),
+        end_date = COALESCE($7, end_date),
+        flash_expires_at = $8,
+        is_active = false,
+        booking_type = COALESCE($9, booking_type),
+        booking_phone = $10, booking_whatsapp = $11, booking_url = $12, booking_instructions = $13,
+        max_reveals = $14,
+        moderation_status = 'pending_review',
+        rejection_reason = NULL,
+        ai_score = $15, ai_flags = $16::jsonb, ai_reasoning = $17
+        ${logoClause}
+      WHERE id = $18 AND business_id = $19
+    `, params);
 
     // Backward compat: if single promo_code string sent, convert to array
     let promoCodesArr = promo_codes;
@@ -1207,7 +1249,12 @@ router.delete("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwne
     const businessId = req.businessId;
     const offerId = parseInt(req.params.offerId, 10);
     if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
-    await pool.query("DELETE FROM offers WHERE id = $1 AND business_id = $2", [offerId, businessId]);
+    const delResult = await pool.query("DELETE FROM offers WHERE id = $1 AND business_id = $2 RETURNING logo_url", [offerId, businessId]);
+    // Cleanup Cloudinary image if offer had a custom image
+    if (delResult.rows[0]?.logo_url) {
+      const publicId = getPublicIdFromUrl(delResult.rows[0].logo_url);
+      if (publicId) await deleteFromCloudinary(publicId).catch(() => {});
+    }
     cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({ success: true });
   } catch (err) {

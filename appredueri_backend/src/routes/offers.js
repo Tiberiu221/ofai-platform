@@ -265,7 +265,7 @@ router.get("/", optionalAuth, async (req, res) => {
         save_count: parseInt(row.save_count || 0),
         is_trending: row.is_trending === true,
         is_promoted: row.is_promoted || false,
-        image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+        image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
         locations: Array.isArray(row.locations) ? row.locations : [],
         business: {
           id: row.business_id,
@@ -335,7 +335,7 @@ router.get("/flash", async (req, res) => {
       flash_expires_at: row.flash_expires_at,
       has_promo_code: !!row.has_promo_code,
       save_count: parseInt(row.save_count || 0),
-      image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
       business: {
         id: row.business_id,
         name: row.business_name,
@@ -455,7 +455,7 @@ router.get("/feed", auth, async (req, res) => {
       start_date: row.start_date,
       end_date: row.end_date,
       has_promo_code: !!row.has_promo_code,
-      image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
       locations: Array.isArray(row.locations) ? row.locations : [],
       business: {
         id: row.business_id,
@@ -595,7 +595,7 @@ router.get("/category-feed", searchLimiter, async (req, res) => {
           save_count: parseInt(row.save_count || 0),
           is_trending: row.is_trending === true,
           is_promoted: row.is_promoted || false,
-          image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+          image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
           locations: Array.isArray(row.locations) ? row.locations : [],
           business: {
             id: row.business_id,
@@ -692,7 +692,7 @@ router.get("/deal-of-day", async (req, res) => {
       discount_value: row.discount_value,
       end_date: row.end_date,
       save_count: parseInt(row.save_count || 0),
-      image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
       business: {
         id: row.business_id,
         name: row.business_name,
@@ -873,7 +873,7 @@ router.get("/:id", async (req, res) => {
       max_reveals: row.max_reveals || null,
       reveal_count: parseInt(row.reveal_count || 0),
 
-      image_url: makeAbsoluteUrl(req, row.business_cover || row.offer_logo || row.business_logo),
+      image_url: makeAbsoluteUrl(req, row.offer_logo || row.business_cover || row.business_logo),
 
       // Booking efectiv (dupa logica inherit)
       booking: {

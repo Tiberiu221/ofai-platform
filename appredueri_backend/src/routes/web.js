@@ -27,7 +27,7 @@ async function _getDealOfDay() {
     let dodResult = await pool.query(`
       SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
-             COALESCE(b.cover_image_url, o.logo_url) as image_url,
+             COALESCE(o.logo_url, b.cover_image_url) as image_url,
              ci2.name as city_name,
              b.subscription_badge_type as business_badge_type,
              b.is_verified as business_verified,
@@ -43,7 +43,7 @@ async function _getDealOfDay() {
       dodResult = await pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name as business_name, b.logo_url as business_logo,
-               COALESCE(b.cover_image_url, o.logo_url) as image_url,
+               COALESCE(o.logo_url, b.cover_image_url) as image_url,
                ci2.name as city_name,
                b.subscription_badge_type as business_badge_type,
                b.is_verified as business_verified,
@@ -86,7 +86,7 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
            b.subscription_badge_type as business_badge_type,
            b.is_verified as business_verified,
            ci.name as city_name, cat.name as category_name,
-           COALESCE(b.cover_image_url, o.logo_url) as image_url,
+           COALESCE(o.logo_url, b.cover_image_url) as image_url,
            COALESCE(AVG(r.rating), 0) as rating_avg,
            COUNT(DISTINCT r.id) as rating_count,
            COALESCE(fav_agg.favorite_count, 0) as favorite_count,
@@ -134,7 +134,7 @@ async function _getPromotedOffers(dealOfDay) {
              b.subscription_badge_type as business_badge_type,
              b.is_verified as business_verified,
              ci.name as city_name, cat.name as category_name,
-             COALESCE(b.cover_image_url, o.logo_url) as image_url,
+             COALESCE(o.logo_url, b.cover_image_url) as image_url,
              COALESCE(AVG(r.rating), 0) as rating_avg,
              COUNT(DISTINCT r.id) as rating_count,
              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
@@ -252,7 +252,7 @@ router.get("/", async (req, res) => {
         ? pool.query(`
             SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
-                   COALESCE(b.cover_image_url, o.logo_url) as image_url,
+                   COALESCE(o.logo_url, b.cover_image_url) as image_url,
                    b.subscription_badge_type as business_badge_type,
                    b.is_verified as business_verified
             FROM offers o
@@ -873,7 +873,7 @@ router.get("/oferta/:id", async (req, res) => {
       is_trending: row.is_trending === true,
       max_reveals: row.max_reveals || null,
       reveal_count: parseInt(row.reveal_count || 0),
-      image_url: row.business_cover || row.offer_logo || row.business_logo,
+      image_url: row.offer_logo || row.business_cover || row.business_logo,
       booking,
       business: {
         id: row.business_id,
@@ -1216,7 +1216,7 @@ router.get("/business/:id", async (req, res) => {
     const offersRes = await pool.query(`
       SELECT o.id, o.title, o.discount_type, o.discount_value,
              o.start_date, o.end_date,
-             COALESCE(b2.cover_image_url, o.logo_url) as image_url,
+             COALESCE(o.logo_url, b2.cover_image_url) as image_url,
              b2.name as business_name, b2.logo_url as business_logo,
              (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
       FROM offers o
@@ -1558,7 +1558,7 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
       SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover, b.lat, b.lng,
-             COALESCE(b.cover_image_url, o.logo_url, b.logo_url) as image_url,
+             COALESCE(o.logo_url, b.cover_image_url, b.logo_url) as image_url,
              ci.name as city_name, cat.name as category_name,
              COALESCE(AVG(r.rating), 0) as rating_avg
       FROM favorite_offers f
