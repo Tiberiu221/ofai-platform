@@ -1117,8 +1117,8 @@
         ofpImgBtnText.textContent = 'Schimbă imaginea';
         // Update all preview cards
         if (typeof window._ofpSetPreviewImage === 'function') {
-          document.querySelectorAll('.ofp-card').forEach(function(card) {
-            window._ofpSetPreviewImage(card, e.target.result);
+          document.querySelectorAll('.offer-image-placeholder').forEach(function(container) {
+            window._ofpSetPreviewImage(container, e.target.result);
           });
         }
       };
@@ -1137,8 +1137,8 @@
       ofpImgBtnText.textContent = 'Alege imagine';
       // Reset preview cards to business cover/logo fallback
       if (typeof window._ofpSetPreviewImage === 'function') {
-        document.querySelectorAll('.ofp-card').forEach(function(card) {
-          window._ofpSetPreviewImage(card, '');
+        document.querySelectorAll('.offer-image-placeholder').forEach(function(container) {
+          window._ofpSetPreviewImage(container, '');
         });
       }
     });
