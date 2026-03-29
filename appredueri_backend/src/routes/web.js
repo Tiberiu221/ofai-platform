@@ -1732,6 +1732,16 @@ router.get("/tools/svg-to-png", requireWebAuth, (req, res) => {
   });
 });
 
+router.get("/tools/qr-code", requireWebAuth, (req, res) => {
+  res.render("public/tools/qr-code", {
+    pageTitle: "Generator QR Code",
+    activePage: "portal",
+    webUser: req.webUser,
+    noIndex: true,
+    prefillUrl: req.query.url || '',
+  });
+});
+
 // Portal Dashboard — lista de business-uri
 router.get("/portal", requireWebAuth, async (req, res) => {
   try {

@@ -38,6 +38,7 @@
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
+    "qrious": "^4.0.2",
     "resend": "^6.9.1",
     "streamifier": "^0.1.1",
     "stripe": "^20.4.0"

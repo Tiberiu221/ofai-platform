@@ -957,11 +957,11 @@
 .tools-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 .tool-card {
-  display: flex; align-items: center; gap: 16px;
-  padding: 20px;
+  display: flex; flex-direction: column; gap: 16px;
+  padding: 28px 24px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -977,8 +977,7 @@
   box-shadow: 0 8px 24px rgba(251, 146, 60, 0.1);
 }
 .tool-card-icon {
-  flex-shrink: 0;
-  width: 52px; height: 52px;
+  width: 56px; height: 56px;
   border-radius: var(--radius-md);
   background: var(--accent-muted);
   display: flex; align-items: center; justify-content: center;
@@ -990,22 +989,22 @@
   color: #09090b;
   transform: scale(1.05);
 }
-.tool-card-body { flex: 1; min-width: 0; }
+.tool-card-body { flex: 1; }
 .tool-card-title {
-  font-size: 0.9375rem; font-weight: 600;
-  color: var(--text-primary); margin-bottom: 4px;
+  font-size: 1.0625rem; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 8px;
 }
 .tool-card-desc {
-  font-size: 0.8125rem; color: var(--text-secondary);
-  line-height: 1.4;
+  font-size: 0.875rem; color: var(--text-secondary);
+  line-height: 1.55;
 }
 .tool-card-action {
-  flex-shrink: 0;
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 0.8125rem; font-weight: 600;
   color: var(--accent);
   white-space: nowrap;
   transition: gap 0.2s;
+  margin-top: auto;
 }
 .tool-card:hover .tool-card-action { gap: 6px; }
 

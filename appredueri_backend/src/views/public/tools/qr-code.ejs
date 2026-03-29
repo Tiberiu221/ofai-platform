@@ -1,0 +1,447 @@
+<%- include('../partials/head', { pageTitle: 'Generator QR Code', activePage: 'portal', noIndex: true }) %>
+<%- include('../partials/navbar', { activePage: 'portal', webUser: webUser }) %>
+
+<style nonce="<%= cspNonce %>">
+  .tool-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 100px var(--container-px) 80px;
+  }
+  .tool-page-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.875rem; color: var(--text-secondary);
+    text-decoration: none; margin-bottom: 24px;
+    transition: color 0.2s;
+  }
+  .tool-page-back:hover { color: var(--accent); }
+  .tool-page-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin-bottom: 8px;
+  }
+  .tool-page-desc {
+    color: var(--text-secondary); font-size: 0.9375rem;
+    margin-bottom: 32px; line-height: 1.5;
+  }
+
+  /* Input section */
+  .qr-input-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .qr-input-label {
+    font-size: 0.8125rem; font-weight: 600;
+    color: var(--text-secondary); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 8px;
+  }
+  .qr-url-input {
+    width: 100%; padding: 12px 16px;
+    background: var(--bg-input, #18181b);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .qr-url-input:focus {
+    border-color: var(--accent);
+  }
+  .qr-url-input::placeholder { color: var(--text-muted, #52525b); }
+
+  /* Controls */
+  .qr-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .qr-control-group label {
+    display: block;
+    font-size: 0.75rem; font-weight: 600;
+    color: var(--text-secondary); text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 6px;
+  }
+  .qr-control-group select,
+  .qr-control-group input[type="color"] {
+    width: 100%; padding: 8px 12px;
+    background: var(--bg-input, #18181b);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .qr-control-group select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+  }
+  .qr-control-group select option { background: #18181b; }
+  .qr-color-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .qr-color-row input[type="color"] {
+    width: 36px; height: 36px;
+    padding: 2px; border-radius: 6px;
+    cursor: pointer; flex-shrink: 0;
+  }
+  .qr-color-row .qr-color-hex {
+    flex: 1;
+    padding: 8px 10px;
+    background: var(--bg-input, #18181b);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    font-family: monospace;
+    outline: none;
+    text-transform: uppercase;
+  }
+  .qr-color-row .qr-color-hex:focus { border-color: var(--accent); }
+
+  /* Preview */
+  .qr-preview-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-preview-placeholder {
+    color: var(--text-muted, #52525b);
+    font-size: 0.875rem;
+  }
+  .qr-preview-placeholder svg {
+    display: block; margin: 0 auto 12px;
+    opacity: 0.4;
+  }
+  #qr-canvas {
+    border-radius: var(--radius-md);
+    image-rendering: pixelated;
+  }
+  .qr-size-label {
+    font-size: 0.75rem; color: var(--text-secondary);
+    margin-top: 12px;
+  }
+
+  /* Download buttons */
+  .qr-download-row {
+    display: flex; gap: 12px;
+    margin-top: 20px;
+  }
+  .qr-download-btn {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .qr-download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .qr-download-btn:active { transform: translateY(0); }
+  .qr-download-btn:disabled {
+    opacity: 0.4; cursor: not-allowed;
+    transform: none !important; box-shadow: none !important;
+  }
+  .qr-btn-png {
+    background: var(--accent); color: #09090b;
+  }
+  .qr-btn-svg {
+    background: transparent; color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+  .qr-btn-svg:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .qr-controls { grid-template-columns: 1fr 1fr; }
+    .qr-download-row { flex-direction: column; }
+  }
+</style>
+
+<section class="tool-page">
+
+  <a href="javascript:history.back()" class="tool-page-back">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    Inapoi
+  </a>
+
+  <h1 class="tool-page-title text-gradient">Generator QR Code</h1>
+  <p class="tool-page-desc">
+    Genereaza un cod QR pentru pagina ta de business, oferte sau orice link.
+    Ideal pentru vitrine, meniuri, flyere sau materiale promotionale.
+  </p>
+
+  <!-- Input Section -->
+  <div class="qr-input-section">
+    <div class="qr-input-label">Link sau text</div>
+    <input type="url" id="qr-url" class="qr-url-input"
+           placeholder="https://ofai.ro/b/152"
+           value="<%= typeof prefillUrl !== 'undefined' && prefillUrl ? prefillUrl : '' %>"
+           autocomplete="off" spellcheck="false">
+
+    <div class="qr-controls">
+      <div class="qr-control-group">
+        <label>Dimensiune</label>
+        <select id="qr-size">
+          <option value="256">256 &times; 256 px</option>
+          <option value="512" selected>512 &times; 512 px</option>
+          <option value="1024">1024 &times; 1024 px</option>
+        </select>
+      </div>
+
+      <div class="qr-control-group">
+        <label>Corectie erori</label>
+        <select id="qr-ec">
+          <option value="L">Low (7%)</option>
+          <option value="M" selected>Medium (15%)</option>
+          <option value="Q">Quartile (25%)</option>
+          <option value="H">High (30%)</option>
+        </select>
+      </div>
+
+      <div class="qr-control-group">
+        <label>Culoare QR</label>
+        <div class="qr-color-row">
+          <input type="color" id="qr-fg-color" value="#ffffff">
+          <input type="text" class="qr-color-hex" id="qr-fg-hex" value="#FFFFFF" maxlength="7">
+        </div>
+      </div>
+
+      <div class="qr-control-group">
+        <label>Culoare fundal</label>
+        <div class="qr-color-row">
+          <input type="color" id="qr-bg-color" value="#09090b">
+          <input type="text" class="qr-color-hex" id="qr-bg-hex" value="#09090B" maxlength="7">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="qr-preview-section" id="qr-preview-area">
+    <div class="qr-preview-placeholder" id="qr-placeholder">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/>
+        <rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="2" height="2"/>
+        <rect x="20" y="16" width="2" height="2"/><rect x="16" y="20" width="2" height="2"/>
+        <rect x="20" y="20" width="2" height="2"/><rect x="10" y="2" width="4" height="2"/>
+        <rect x="10" y="6" width="4" height="2"/><rect x="2" y="10" width="2" height="4"/>
+        <rect x="6" y="10" width="2" height="4"/><rect x="10" y="10" width="4" height="4" rx="0.5"/>
+      </svg>
+      Introdu un link pentru a genera codul QR
+    </div>
+    <canvas id="qr-canvas" style="display: none;"></canvas>
+    <div class="qr-size-label" id="qr-size-label" style="display: none;"></div>
+
+    <div class="qr-download-row" id="qr-download-row" style="display: none;">
+      <button class="qr-download-btn qr-btn-png" id="qr-dl-png" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descarca PNG
+      </button>
+      <button class="qr-download-btn qr-btn-svg" id="qr-dl-svg" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descarca SVG
+      </button>
+    </div>
+  </div>
+
+</section>
+
+<%- include('../partials/footer') %>
+
+<script src="/js/vendor/qrious.min.js" nonce="<%= cspNonce %>"></script>
+
+<script nonce="<%= cspNonce %>">
+(function() {
+  'use strict';
+
+  var urlInput     = document.getElementById('qr-url');
+  var sizeSelect   = document.getElementById('qr-size');
+  var ecSelect     = document.getElementById('qr-ec');
+  var fgColor      = document.getElementById('qr-fg-color');
+  var bgColor      = document.getElementById('qr-bg-color');
+  var fgHex        = document.getElementById('qr-fg-hex');
+  var bgHex        = document.getElementById('qr-bg-hex');
+  var canvas       = document.getElementById('qr-canvas');
+  var placeholder  = document.getElementById('qr-placeholder');
+  var sizeLabel    = document.getElementById('qr-size-label');
+  var downloadRow  = document.getElementById('qr-download-row');
+  var dlPng        = document.getElementById('qr-dl-png');
+  var dlSvg        = document.getElementById('qr-dl-svg');
+
+  var debounceTimer = null;
+  var currentText   = '';
+  var qr = null; // QRious instance
+
+  // Sync color picker <-> hex input
+  fgColor.addEventListener('input', function() {
+    fgHex.value = this.value.toUpperCase();
+    scheduleRender();
+  });
+  bgColor.addEventListener('input', function() {
+    bgHex.value = this.value.toUpperCase();
+    scheduleRender();
+  });
+  fgHex.addEventListener('input', function() {
+    var v = this.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+      fgColor.value = v;
+      scheduleRender();
+    }
+  });
+  bgHex.addEventListener('input', function() {
+    var v = this.value.trim();
+    if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+      bgColor.value = v;
+      scheduleRender();
+    }
+  });
+
+  // Listen for changes
+  urlInput.addEventListener('input', function() { scheduleRender(); });
+  sizeSelect.addEventListener('change', function() { scheduleRender(); });
+  ecSelect.addEventListener('change', function() { scheduleRender(); });
+
+  function scheduleRender() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(renderQR, 200);
+  }
+
+  function renderQR() {
+    var text = urlInput.value.trim();
+    if (!text) {
+      canvas.style.display = 'none';
+      sizeLabel.style.display = 'none';
+      downloadRow.style.display = 'none';
+      placeholder.style.display = '';
+      dlPng.disabled = true;
+      dlSvg.disabled = true;
+      currentText = '';
+      return;
+    }
+
+    currentText = text;
+    var size = parseInt(sizeSelect.value);
+    var previewSize = Math.min(size, 400);
+
+    // QRious renders directly on the canvas element
+    qr = new QRious({
+      element: canvas,
+      value: text,
+      size: previewSize,
+      level: ecSelect.value,
+      foreground: fgColor.value,
+      background: bgColor.value,
+      padding: null, // auto padding
+    });
+
+    placeholder.style.display = 'none';
+    canvas.style.display = '';
+    sizeLabel.style.display = '';
+    sizeLabel.textContent = size + ' \u00d7 ' + size + ' px';
+    downloadRow.style.display = '';
+    dlPng.disabled = false;
+    dlSvg.disabled = false;
+  }
+
+  // Download PNG at full resolution
+  dlPng.addEventListener('click', function() {
+    if (!currentText) return;
+    var size = parseInt(sizeSelect.value);
+
+    // Create a temporary full-res QR
+    var tmpCanvas = document.createElement('canvas');
+    var tmpQr = new QRious({
+      element: tmpCanvas,
+      value: currentText,
+      size: size,
+      level: ecSelect.value,
+      foreground: fgColor.value,
+      background: bgColor.value,
+      padding: null,
+    });
+
+    tmpCanvas.toBlob(function(blob) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'qr-code-' + size + 'px.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }, 'image/png');
+  });
+
+  // Download SVG (generate manually from QR data)
+  dlSvg.addEventListener('click', function() {
+    if (!currentText) return;
+    var size = parseInt(sizeSelect.value);
+    var fg = fgColor.value;
+    var bg = bgColor.value;
+
+    // Generate a high-res PNG and embed in a simple SVG wrapper
+    // (QRious doesn't natively export SVG, but PNG embedded in SVG scales well)
+    var tmpCanvas = document.createElement('canvas');
+    var tmpQr = new QRious({
+      element: tmpCanvas,
+      value: currentText,
+      size: 1024, // high res for SVG embedding
+      level: ecSelect.value,
+      foreground: fg,
+      background: bg,
+      padding: null,
+    });
+
+    var dataUrl = tmpCanvas.toDataURL('image/png');
+    var svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+      'width="' + size + '" height="' + size + '" viewBox="0 0 1024 1024">\n' +
+      '  <image width="1024" height="1024" xlink:href="' + dataUrl + '"/>\n' +
+      '</svg>';
+
+    var blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'qr-code.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+  });
+
+  // Auto-render if pre-filled URL
+  if (urlInput.value.trim()) {
+    renderQR();
+  }
+
+  // Focus input on load if empty
+  if (!urlInput.value.trim()) {
+    urlInput.focus();
+  }
+})();
+</script>
