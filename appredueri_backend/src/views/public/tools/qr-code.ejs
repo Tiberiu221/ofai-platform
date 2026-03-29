@@ -55,7 +55,7 @@
   /* Controls */
   .qr-controls {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-top: 20px;
     padding-top: 20px;
@@ -175,8 +175,8 @@
   }
 
   /* Responsive */
-  @media (max-width: 640px) {
-    .qr-controls { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 480px) {
+    .qr-controls { grid-template-columns: 1fr; }
     .qr-download-row { flex-direction: column; }
   }
 </style>
