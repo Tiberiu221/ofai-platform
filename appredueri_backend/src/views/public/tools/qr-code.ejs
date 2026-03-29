@@ -272,7 +272,7 @@
 
 <%- include('../partials/footer') %>
 
-<script src="/js/vendor/qrious.min.js" nonce="<%= cspNonce %>"></script>
+<script src="/js/vendor/qrcode-generator.min.js" nonce="<%= cspNonce %>"></script>
 
 <script nonce="<%= cspNonce %>">
 (function() {
@@ -294,7 +294,39 @@
 
   var debounceTimer = null;
   var currentText   = '';
-  var qr = null; // QRious instance
+
+  // Draw QR code on a canvas at given pixel size
+  function drawQR(targetCanvas, text, pixelSize, ecLevel, fg, bg) {
+    var qr = qrcode(0, ecLevel);
+    qr.addData(text);
+    qr.make();
+
+    var moduleCount = qr.getModuleCount();
+    var cellSize = pixelSize / moduleCount;
+
+    targetCanvas.width = pixelSize;
+    targetCanvas.height = pixelSize;
+    var ctx = targetCanvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, pixelSize, pixelSize);
+
+    // Modules
+    ctx.fillStyle = fg;
+    for (var row = 0; row < moduleCount; row++) {
+      for (var col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          var x = Math.round(col * cellSize);
+          var y = Math.round(row * cellSize);
+          var w = Math.round((col + 1) * cellSize) - x;
+          var h = Math.round((row + 1) * cellSize) - y;
+          ctx.fillRect(x, y, w, h);
+        }
+      }
+    }
+    return qr;
+  }
 
   // Sync color picker <-> hex input
   fgColor.addEventListener('input', function() {
@@ -352,16 +384,7 @@
     var size = parseInt(sizeSelect.value);
     var previewSize = Math.min(size, 400);
 
-    // QRious renders directly on the canvas element
-    qr = new QRious({
-      element: canvas,
-      value: text,
-      size: previewSize,
-      level: ecSelect.value,
-      foreground: fgColor.value,
-      background: bgColor.value,
-      padding: null, // auto padding
-    });
+    drawQR(canvas, text, previewSize, ecSelect.value, fgColor.value, bgColor.value);
 
     placeholder.style.display = 'none';
     canvas.style.display = '';
@@ -377,17 +400,8 @@
     if (!currentText) return;
     var size = parseInt(sizeSelect.value);
 
-    // Create a temporary full-res QR
     var tmpCanvas = document.createElement('canvas');
-    var tmpQr = new QRious({
-      element: tmpCanvas,
-      value: currentText,
-      size: size,
-      level: ecSelect.value,
-      foreground: fgColor.value,
-      background: bgColor.value,
-      padding: null,
-    });
+    drawQR(tmpCanvas, currentText, size, ecSelect.value, fgColor.value, bgColor.value);
 
     tmpCanvas.toBlob(function(blob) {
       var url = URL.createObjectURL(blob);
@@ -401,31 +415,32 @@
     }, 'image/png');
   });
 
-  // Download SVG (generate manually from QR data)
+  // Download SVG (native vector, no embedded PNG)
   dlSvg.addEventListener('click', function() {
     if (!currentText) return;
     var size = parseInt(sizeSelect.value);
     var fg = fgColor.value;
     var bg = bgColor.value;
 
-    // Generate a high-res PNG and embed in a simple SVG wrapper
-    // (QRious doesn't natively export SVG, but PNG embedded in SVG scales well)
-    var tmpCanvas = document.createElement('canvas');
-    var tmpQr = new QRious({
-      element: tmpCanvas,
-      value: currentText,
-      size: 1024, // high res for SVG embedding
-      level: ecSelect.value,
-      foreground: fg,
-      background: bg,
-      padding: null,
-    });
+    var qr = qrcode(0, ecSelect.value);
+    qr.addData(currentText);
+    qr.make();
 
-    var dataUrl = tmpCanvas.toDataURL('image/png');
+    var moduleCount = qr.getModuleCount();
+    var rects = '';
+    for (var row = 0; row < moduleCount; row++) {
+      for (var col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          rects += '    <rect x="' + col + '" y="' + row + '" width="1" height="1"/>\n';
+        }
+      }
+    }
+
     var svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-      'width="' + size + '" height="' + size + '" viewBox="0 0 1024 1024">\n' +
-      '  <image width="1024" height="1024" xlink:href="' + dataUrl + '"/>\n' +
+      '<svg xmlns="http://www.w3.org/2000/svg" ' +
+      'width="' + size + '" height="' + size + '" viewBox="0 0 ' + moduleCount + ' ' + moduleCount + '">\n' +
+      '  <rect width="' + moduleCount + '" height="' + moduleCount + '" fill="' + bg + '"/>\n' +
+      '  <g fill="' + fg + '">\n' + rects + '  </g>\n' +
       '</svg>';
 
     var blob = new Blob([svgStr], { type: 'image/svg+xml' });

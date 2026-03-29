@@ -33,12 +33,13 @@
     "express": "~5.1.0",
     "express-rate-limit": "^8.2.1",
     "firebase-admin": "^13.6.1",
+    "google-auth-library": "^10.6.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
-    "qrious": "^4.0.2",
+
     "resend": "^6.9.1",
     "streamifier": "^0.1.1",
     "stripe": "^20.4.0"
@@ -47,7 +48,6 @@
     "nodemon": "^3.1.11",
     "playwright": "^1.58.2",
     "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "sharp": "^0.34.5"
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }
