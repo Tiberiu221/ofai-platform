@@ -135,6 +135,7 @@ async function getBusinessTier(pool, businessId) {
       sp.has_booking,
       sp.has_priority_support,
       sp.has_concierge,
+      sp.has_custom_offer_image,
       sp.badge_type,
       sp.sort_order
     FROM business_subscriptions bs
