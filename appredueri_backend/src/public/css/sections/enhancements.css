@@ -67,7 +67,7 @@
     gap: 12px;
   }
 
-  .bd-profile-top > div {
+  .bd-profile-top > div:not(.bd-avatar) {
     width: 100%;
   }
 
