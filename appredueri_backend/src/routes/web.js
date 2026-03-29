@@ -828,6 +828,11 @@ router.get("/oferta/:id", async (req, res) => {
       booking = { type: offerBookingType, phone: row.offer_booking_phone, whatsapp: row.offer_booking_whatsapp, url: row.offer_booking_url, instructions: row.offer_booking_instructions };
     }
 
+    // Profile fallbacks (defense in depth — covers cases where booking_* field is NULL but profile has data)
+    if (booking.type === 'phone' && !booking.phone) booking.phone = row.business_phone;
+    if (booking.type === 'whatsapp' && !booking.whatsapp) booking.whatsapp = row.business_phone;
+    if (booking.type === 'url' && !booking.url) booking.url = row.business_website;
+
     // Locations
     const linkRes = await pool.query("SELECT location_id FROM offer_locations WHERE offer_id = $1", [id]);
     const specificLocationIds = linkRes.rows.map(r => r.location_id);

@@ -971,7 +971,11 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
           booking_instructions = $12
         WHERE id = $13
       `, [name, sanitizedDesc, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
-          booking_type, booking_phone || null, booking_whatsapp || null, booking_url || null, booking_instructions || null, businessId]);
+          booking_type,
+          booking_phone || (booking_type === 'phone' ? phone : null) || null,
+          booking_whatsapp || (booking_type === 'whatsapp' ? phone : null) || null,
+          booking_url || (booking_type === 'url' ? website : null) || null,
+          booking_instructions || null, businessId]);
     }
 
     cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage');

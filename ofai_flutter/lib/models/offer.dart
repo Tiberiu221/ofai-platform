@@ -23,6 +23,7 @@ class Offer {
   final int? revealCount;
   final String? moderationStatus;
   final DateTime? flashExpiresAt;
+  final String? redemptionMethod;
 
   Offer({
     required this.id,
@@ -47,6 +48,7 @@ class Offer {
     this.revealCount,
     this.moderationStatus,
     this.flashExpiresAt,
+    this.redemptionMethod,
   });
 
   String get discountLabel {
@@ -92,6 +94,7 @@ class Offer {
       flashExpiresAt: json['flash_expires_at'] != null
           ? DateTime.tryParse(json['flash_expires_at'] as String)
           : null,
+      redemptionMethod: json['redemption_method'] as String?,
     );
   }
 
@@ -123,6 +126,8 @@ class OfferBusiness {
   final bool isVerified;
   final String? badgeType; // effective badge: null, 'verified', 'premium'
   final int? categoryId;
+  final String? phone;
+  final String? website;
 
   OfferBusiness({
     required this.id,
@@ -138,6 +143,8 @@ class OfferBusiness {
     this.isVerified = false,
     this.badgeType,
     this.categoryId,
+    this.phone,
+    this.website,
   });
 
   factory OfferBusiness.fromJson(Map<String, dynamic> json) {
@@ -158,6 +165,8 @@ class OfferBusiness {
           ?? json['subscription_badge_type'] as String?
           ?? (isVerified ? 'verified' : null),
       categoryId: json['category_id'] as int?,
+      phone: json['phone'] as String?,
+      website: json['website'] as String?,
     );
   }
 

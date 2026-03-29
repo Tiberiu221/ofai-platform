@@ -813,6 +813,11 @@ router.get("/:id", async (req, res) => {
       };
     }
 
+    // Profile fallbacks (defense in depth — covers cases where booking_* field is NULL but profile has data)
+    if (effectiveBooking.type === 'phone' && !effectiveBooking.phone) effectiveBooking.phone = row.business_phone;
+    if (effectiveBooking.type === 'whatsapp' && !effectiveBooking.whatsapp) effectiveBooking.whatsapp = row.business_phone;
+    if (effectiveBooking.type === 'url' && !effectiveBooking.url) effectiveBooking.url = row.business_website;
+
     // 3. Locațiile Valabile
     const linkRes = await pool.query(
       `SELECT location_id FROM offer_locations WHERE offer_id = $1`,

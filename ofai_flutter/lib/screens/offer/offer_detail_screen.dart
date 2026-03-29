@@ -355,27 +355,60 @@ class OfferDetailScreen extends ConsumerWidget {
                           Builder(builder: (_) {
                             String tipText;
                             IconData tipIcon;
-                            if (booking != null && booking.hasBooking) {
+
+                            // Redemption method map (predefined keys → messages)
+                            const redemptionMap = {
+                              'call': 'Sună și menționează oferta OFAI',
+                              'whatsapp': 'Scrie pe WhatsApp și menționează oferta OFAI',
+                              'online': 'Rezervă online și menționează oferta OFAI',
+                              'booking': 'Menționează oferta OFAI la rezervare',
+                              'appointment': 'Menționează oferta OFAI la programare',
+                              'order': 'Menționează oferta OFAI la comandă',
+                              'checkout': 'Aplică codul sau menționează oferta OFAI la checkout',
+                              'show_page': 'Arată această pagină pentru a beneficia de reducere',
+                            };
+                            const redemptionIcons = {
+                              'call': Icons.phone_in_talk,
+                              'whatsapp': Icons.message_outlined,
+                              'online': Icons.language,
+                              'booking': Icons.hotel_outlined,
+                              'appointment': Icons.content_cut,
+                              'order': Icons.restaurant_outlined,
+                              'checkout': Icons.shopping_cart_outlined,
+                              'show_page': Icons.smartphone,
+                            };
+
+                            final rm = offer.redemptionMethod;
+                            if (rm != null && redemptionMap.containsKey(rm)) {
+                              // Predefined key chosen by owner
+                              tipText = redemptionMap[rm]!;
+                              tipIcon = redemptionIcons[rm] ?? Icons.info_outline;
+                            } else if (rm != null) {
+                              // Custom text from owner
+                              tipText = rm;
+                              tipIcon = Icons.info_outline;
+                            } else if (booking != null && booking.hasBooking) {
+                              // Auto-detection fallback from booking type
                               switch (booking.type) {
                                 case 'phone':
-                                  tipText = 'Sună și menționează OFAI la rezervare';
+                                  tipText = 'Sună și menționează oferta OFAI';
                                   tipIcon = Icons.phone_in_talk;
                                   break;
                                 case 'whatsapp':
-                                  tipText = 'Scrie pe WhatsApp și menționează OFAI';
+                                  tipText = 'Scrie pe WhatsApp și menționează oferta OFAI';
                                   tipIcon = Icons.message_outlined;
                                   break;
                                 case 'url':
-                                  tipText = 'Rezervă online prin link-ul de rezervare';
+                                  tipText = 'Rezervă online și menționează oferta OFAI';
                                   tipIcon = Icons.language;
                                   break;
                                 default:
-                                  tipText = 'Arată această pagină la casă';
-                                  tipIcon = Icons.smartphone;
+                                  tipText = 'Menționează oferta OFAI pentru a beneficia de reducere';
+                                  tipIcon = Icons.info_outline;
                               }
                             } else {
-                              tipText = 'Arată această pagină la casă';
-                              tipIcon = Icons.smartphone;
+                              tipText = 'Menționează oferta OFAI pentru a beneficia de reducere';
+                              tipIcon = Icons.info_outline;
                             }
                             return Container(
                               width: double.infinity,
