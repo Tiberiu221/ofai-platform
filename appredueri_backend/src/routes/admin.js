@@ -2782,4 +2782,19 @@ router.post("/blog/:id/delete", async (req, res) => {
   }
 });
 
+// ============================================
+// Cron Test Endpoints (admin-only)
+// ============================================
+const { runReviewPromptCron } = require("../services/cronJobs");
+
+router.post("/test-cron/review-prompt", async (req, res) => {
+  try {
+    const result = await runReviewPromptCron();
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("[Admin] Test cron review-prompt error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;

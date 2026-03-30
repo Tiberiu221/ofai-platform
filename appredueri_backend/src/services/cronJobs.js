@@ -76,6 +76,51 @@ async function computeCategoryRankings() {
 }
 
 /**
+ * Post-redemption review prompt — sends push notification to users who
+ * redeemed an offer 24-48h ago and haven't reviewed yet.
+ * Extracted for admin test endpoint access.
+ * @returns {Promise<{found: number, sent: number}>}
+ */
+async function runReviewPromptCron() {
+  const { sendToUser } = require('./pushNotifications');
+
+  const { rows } = await pool.query(`
+    SELECT DISTINCT ON (cr.user_id, o.business_id)
+      cr.user_id, o.business_id, b.name AS business_name, o.title AS offer_title
+    FROM code_reveals cr
+    JOIN offers o ON o.id = cr.offer_id
+    JOIN businesses b ON b.id = o.business_id
+    WHERE cr.revealed_at BETWEEN NOW() - INTERVAL '48 hours' AND NOW() - INTERVAL '24 hours'
+      AND cr.user_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM reviews r
+        WHERE r.user_id = cr.user_id AND r.business_id = o.business_id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM notification_preferences np
+        WHERE np.user_id = cr.user_id AND np.pref_key = 'review_prompt' AND np.enabled = FALSE
+      )
+    LIMIT 50
+  `);
+
+  let sent = 0;
+  for (const row of rows) {
+    try {
+      await sendToUser(pool, row.user_id, {
+        title: `Cum a fost la ${row.business_name}?`,
+        body: `Ai folosit "${row.offer_title}". Lasă un review!`,
+        data: { type: 'review_prompt', deepLink: `/business/${row.business_id}` },
+      });
+      sent++;
+    } catch (e) {
+      console.error(`[Cron:ReviewPrompt] Push failed for user ${row.user_id}:`, e.message);
+    }
+  }
+  if (sent > 0) console.log(`[Cron:ReviewPrompt] Sent ${sent}/${rows.length} review prompts`);
+  return { found: rows.length, sent };
+}
+
+/**
  * Initializes all scheduled cleanup jobs.
  * Called once from index.js on server start.
  */
@@ -474,47 +519,7 @@ function initCronJobs() {
   });
 
   // 12. Post-redemption review prompt — Daily 10:00 UTC (12:00 Romania)
-  cron.schedule('0 10 * * *', async () => {
-    const { sendToUser } = require('./pushNotifications');
-
-    try {
-      const { rows } = await pool.query(`
-        SELECT DISTINCT ON (cr.user_id, o.business_id)
-          cr.user_id, o.business_id, b.name AS business_name, o.title AS offer_title
-        FROM code_reveals cr
-        JOIN offers o ON o.id = cr.offer_id
-        JOIN businesses b ON b.id = o.business_id
-        WHERE cr.revealed_at BETWEEN NOW() - INTERVAL '48 hours' AND NOW() - INTERVAL '24 hours'
-          AND cr.user_id IS NOT NULL
-          AND NOT EXISTS (
-            SELECT 1 FROM reviews r
-            WHERE r.user_id = cr.user_id AND r.business_id = o.business_id
-          )
-          AND NOT EXISTS (
-            SELECT 1 FROM notification_preferences np
-            WHERE np.user_id = cr.user_id AND np.pref_key = 'review_prompt' AND np.enabled = FALSE
-          )
-        LIMIT 50
-      `);
-
-      let sent = 0;
-      for (const row of rows) {
-        try {
-          await sendToUser(pool, row.user_id, {
-            title: `Cum a fost la ${row.business_name}?`,
-            body: `Ai folosit "${row.offer_title}". Lasă un review!`,
-            data: { type: 'review_prompt', deepLink: `/business/${row.business_id}` },
-          });
-          sent++;
-        } catch (e) {
-          console.error(`[Cron] Review prompt push failed for user ${row.user_id}:`, e.message);
-        }
-      }
-      if (sent > 0) console.log(`[Cron] Sent ${sent} post-redemption review prompts`);
-    } catch (err) {
-      console.error('[Cron] Review prompt cron error:', err.message);
-    }
-  });
+  cron.schedule('0 10 * * *', () => runReviewPromptCron());
 
   // 13. Weekly digest — Sunday 17:00 UTC (19:00 Romania) — push + email
   cron.schedule('0 17 * * 0', async () => {
@@ -849,4 +854,4 @@ function initCronJobs() {
   console.log('[Cron] All 18 scheduled jobs registered.');
 }
 
-module.exports = { initCronJobs };
+module.exports = { initCronJobs, computeCategoryRankings, runReviewPromptCron };
