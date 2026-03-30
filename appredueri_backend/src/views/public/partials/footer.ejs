@@ -7,37 +7,37 @@
           <img src="/images/ofai-wordmark.png" alt="OFAI" class="nav-logo-img" width="36" height="36" style="border-radius:8px">
         </a>
         <p class="footer-brand-desc">
-          Platforma ta de reduceri și oferte din România. Descoperă oferte exclusive de la business-uri locale din orașul tău.
+          <%= t('footer.brandDesc') %>
         </p>
       </div>
       <div>
-        <h4 class="footer-col-title">Platformă</h4>
+        <h4 class="footer-col-title"><%= t('footer.platform') %></h4>
         <div class="footer-links">
-          <a href="/oferte" class="footer-link">Oferte</a>
-          <a href="/business-uri" class="footer-link">Business-uri</a>
-          <a href="/categorii" class="footer-link">Categorii</a>
-          <a href="/orase" class="footer-link">Orașe</a>
-          <a href="/blog" class="footer-link">Blog</a>
+          <a href="/oferte" class="footer-link"><%= t('nav.offers') %></a>
+          <a href="/business-uri" class="footer-link"><%= t('nav.businesses') %></a>
+          <a href="/categorii" class="footer-link"><%= t('nav.categories') %></a>
+          <a href="/orase" class="footer-link"><%= t('nav.cities') %></a>
+          <a href="/blog" class="footer-link"><%= t('footer.blog') %></a>
         </div>
       </div>
       <div>
-        <h4 class="footer-col-title">Business</h4>
+        <h4 class="footer-col-title"><%= t('footer.business') %></h4>
         <div class="footer-links">
-          <a href="/pentru-business" class="footer-link">Adaugă business-ul tău</a>
-          <a href="/ajutor" class="footer-link">Ajutor & Suport</a>
+          <a href="/pentru-business" class="footer-link"><%= t('footer.addBusiness') %></a>
+          <a href="/ajutor" class="footer-link"><%= t('footer.helpSupport') %></a>
         </div>
       </div>
       <div>
-        <h4 class="footer-col-title">Legal</h4>
+        <h4 class="footer-col-title"><%= t('footer.legal') %></h4>
         <div class="footer-links">
-          <a href="/termeni" class="footer-link">Termeni și Condiții</a>
-          <a href="/confidentialitate" class="footer-link">Politica de Confidențialitate</a>
-          <a href="/ajutor" class="footer-link">Contact</a>
+          <a href="/termeni" class="footer-link"><%= t('footer.terms') %></a>
+          <a href="/confidentialitate" class="footer-link"><%= t('footer.privacy') %></a>
+          <a href="/ajutor" class="footer-link"><%= t('footer.contact') %></a>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; <%= new Date().getFullYear() %> OFAI. Toate drepturile rezervate.</span>
+      <span><%= t('footer.copyright', { year: new Date().getFullYear() }) %></span>
     </div>
   </div>
 </footer>
@@ -49,12 +49,12 @@
 <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; background:rgba(9,9,11,0.95); border-top:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); padding:16px 24px;">
   <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
     <p style="margin:0; font-size:13px; color:#a1a1aa; line-height:1.5;">
-      Folosim cookie-uri esen&#539;iale pentru func&#539;ionarea site-ului.
-      <a href="/confidentialitate" style="color:#fb923c; text-decoration:none;">Politic&#259; de Confiden&#539;ialitate</a>
+      <%= t('cookie.message') %>
+      <a href="/confidentialitate" style="color:#fb923c; text-decoration:none;"><%= t('cookie.privacyLink') %></a>
     </p>
     <div style="display:flex; gap:8px; flex-shrink:0;">
-      <button onclick="rejectCookies()" style="padding:8px 16px; background:transparent; color:#a1a1aa; border:1px solid rgba(255,255,255,0.12); border-radius:8px; font-size:13px; cursor:pointer; white-space:nowrap;">Refuz&#259;</button>
-      <button onclick="acceptCookies()" style="padding:8px 20px; background:#fb923c; color:#09090b; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">Accept</button>
+      <button onclick="rejectCookies()" style="padding:8px 16px; background:transparent; color:#a1a1aa; border:1px solid rgba(255,255,255,0.12); border-radius:8px; font-size:13px; cursor:pointer; white-space:nowrap;"><%= t('cookie.reject') %></button>
+      <button onclick="acceptCookies()" style="padding:8px 20px; background:#fb923c; color:#09090b; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;"><%= t('cookie.accept') %></button>
     </div>
   </div>
 </div>

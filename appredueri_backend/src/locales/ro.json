@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "home": "Acasă",
+    "offers": "Oferte",
+    "businesses": "Business-uri",
+    "categories": "Categorii",
+    "cities": "Orașe",
+    "myAccount": "Contul meu",
+    "myCollection": "Colecția mea",
+    "settings": "Setări",
+    "portal": "Business Portal",
+    "logout": "Deconectare",
+    "login": "Conectează-te",
+    "register": "Înregistrează-te",
+    "openMenu": "Deschide meniul utilizator",
+    "menu": "Meniu"
+  },
+  "footer": {
+    "brandDesc": "Platforma ta de reduceri și oferte din România. Descoperă oferte exclusive de la business-uri locale din orașul tău.",
+    "platform": "Platformă",
+    "blog": "Blog",
+    "business": "Business",
+    "addBusiness": "Adaugă business-ul tău",
+    "helpSupport": "Ajutor & Suport",
+    "legal": "Legal",
+    "terms": "Termeni și Condiții",
+    "privacy": "Politica de Confidențialitate",
+    "contact": "Contact",
+    "copyright": "© {{year}} OFAI. Toate drepturile rezervate."
+  },
+  "auth": {
+    "welcomeBack": "Bine ai revenit!",
+    "loginSubtitle": "Conectează-te la contul tău OFAI",
+    "email": "Email",
+    "password": "Parolă",
+    "showPassword": "Arată parola",
+    "enterPassword": "Introdu parola",
+    "forgotPassword": "Ai uitat parola?",
+    "loginButton": "Conectează-te",
+    "or": "sau",
+    "noAccount": "Nu ai cont?",
+    "registerLink": "Înregistrează-te",
+    "createAccount": "Creează un cont",
+    "registerSubtitle": "Descoperă oferte exclusive din orașul tău",
+    "firstName": "Prenume",
+    "lastName": "Nume",
+    "passwordHint": "Minim 8 caractere, cel puțin o cifră",
+    "gdprConsent": "Accept <a href=\"/termeni\" target=\"_blank\" class=\"auth-link\">Termenii și Condițiile</a> și <a href=\"/confidentialitate\" target=\"_blank\" class=\"auth-link\">Politica de Confidențialitate</a>",
+    "createButton": "Creează cont",
+    "hasAccount": "Ai deja cont?",
+    "loginLink": "Conectează-te",
+    "strengthWeak": "Slabă",
+    "strengthMedium": "Medie",
+    "strengthStrong": "Puternică"
+  },
+  "cookie": {
+    "message": "Folosim cookie-uri esențiale pentru funcționarea site-ului.",
+    "privacyLink": "Politică de Confidențialitate",
+    "accept": "Accept",
+    "reject": "Refuză"
+  },
+  "offline": {
+    "title": "Ești offline",
+    "subtitle": "Verifică conexiunea la internet.",
+    "retry": "Încearcă din nou"
+  }
+}

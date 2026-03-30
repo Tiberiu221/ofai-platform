@@ -1,0 +1,67 @@
+{
+  "nav": {
+    "home": "Home",
+    "offers": "Offers",
+    "businesses": "Businesses",
+    "categories": "Categories",
+    "cities": "Cities",
+    "myAccount": "My Account",
+    "myCollection": "My Collection",
+    "settings": "Settings",
+    "portal": "Business Portal",
+    "logout": "Log Out",
+    "login": "Log In",
+    "register": "Sign Up",
+    "openMenu": "Open user menu",
+    "menu": "Menu"
+  },
+  "footer": {
+    "brandDesc": "Your local deals & offers platform in Romania. Discover exclusive deals from local businesses in your city.",
+    "platform": "Platform",
+    "blog": "Blog",
+    "business": "Business",
+    "addBusiness": "Add your business",
+    "helpSupport": "Help & Support",
+    "legal": "Legal",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "contact": "Contact",
+    "copyright": "© {{year}} OFAI. All rights reserved."
+  },
+  "auth": {
+    "welcomeBack": "Welcome back!",
+    "loginSubtitle": "Sign in to your OFAI account",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "enterPassword": "Enter password",
+    "forgotPassword": "Forgot password?",
+    "loginButton": "Sign In",
+    "or": "or",
+    "noAccount": "Don't have an account?",
+    "registerLink": "Sign Up",
+    "createAccount": "Create an account",
+    "registerSubtitle": "Discover exclusive offers in your city",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "passwordHint": "At least 8 characters, at least one digit",
+    "gdprConsent": "I accept the <a href=\"/termeni\" target=\"_blank\" class=\"auth-link\">Terms & Conditions</a> and <a href=\"/confidentialitate\" target=\"_blank\" class=\"auth-link\">Privacy Policy</a>",
+    "createButton": "Create Account",
+    "hasAccount": "Already have an account?",
+    "loginLink": "Sign In",
+    "strengthWeak": "Weak",
+    "strengthMedium": "Medium",
+    "strengthStrong": "Strong"
+  },
+  "cookie": {
+    "message": "We use essential cookies for the site to function properly.",
+    "privacyLink": "Privacy Policy",
+    "accept": "Accept",
+    "reject": "Reject"
+  },
+  "offline": {
+    "title": "You're offline",
+    "subtitle": "Check your internet connection.",
+    "retry": "Try again"
+  }
+}

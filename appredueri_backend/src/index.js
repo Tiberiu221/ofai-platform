@@ -268,6 +268,15 @@ function csrfMiddleware(req, res, next) {
 
 app.use(csrfMiddleware);
 
+// i18n (language detection + translation function)
+const { i18next, i18nMiddleware } = require('./i18n');
+app.use(i18nMiddleware.handle(i18next));
+app.use((req, res, next) => {
+  res.locals.t = req.t;
+  res.locals.lng = req.language;
+  next();
+});
+
 // Sentry user context (după ce avem acces la req.user)
 app.use(sentryUserMiddleware);
 

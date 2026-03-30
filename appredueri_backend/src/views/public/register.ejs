@@ -13,8 +13,8 @@
     </div>
 
     <!-- Title -->
-    <h1 class="auth-title">Creeaz&#259; un cont</h1>
-    <p class="auth-subtitle">Descoper&#259; oferte exclusive din ora&#537;ul t&#259;u</p>
+    <h1 class="auth-title"><%= t('auth.createAccount') %></h1>
+    <p class="auth-subtitle"><%= t('auth.registerSubtitle') %></p>
 
     <!-- Error message -->
     <% if (typeof error !== 'undefined' && error) { %>
@@ -29,7 +29,7 @@
       <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <div class="auth-form-row">
         <div class="auth-form-group">
-          <label for="first_name" class="auth-label">Prenume</label>
+          <label for="first_name" class="auth-label"><%= t('auth.firstName') %></label>
           <input
             type="text"
             id="first_name"
@@ -42,7 +42,7 @@
         </div>
 
         <div class="auth-form-group">
-          <label for="last_name" class="auth-label">Nume</label>
+          <label for="last_name" class="auth-label"><%= t('auth.lastName') %></label>
           <input
             type="text"
             id="last_name"
@@ -56,7 +56,7 @@
       </div>
 
       <div class="auth-form-group">
-        <label for="email" class="auth-label">Email</label>
+        <label for="email" class="auth-label"><%= t('auth.email') %></label>
         <input
           type="email"
           id="email"
@@ -69,21 +69,21 @@
       </div>
 
       <div class="auth-form-group">
-        <label for="password" class="auth-label">Parol&#259;</label>
+        <label for="password" class="auth-label"><%= t('auth.password') %></label>
         <div style="position: relative;">
           <input
             type="password"
             id="password"
             name="password"
             class="auth-input"
-            placeholder="Minim 8 caractere, cel pu&#539;in o cifr&#259;"
+            placeholder="<%= t('auth.passwordHint') %>"
             required
             minlength="8"
             autocomplete="new-password"
             oninput="checkPasswordStrength(this.value)"
             style="padding-right: 44px;"
           >
-          <button type="button" onclick="togglePasswordVisibility('password', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;" aria-label="Arat&#259; parola">
+          <button type="button" onclick="togglePasswordVisibility('password', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;" aria-label="<%= t('auth.showPassword') %>">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
@@ -101,19 +101,19 @@
       <div class="auth-consent-group">
         <label class="auth-consent-label">
           <input type="checkbox" id="accept_gdpr" name="accept_gdpr" required>
-          <span>Accept <a href="/termeni" target="_blank" class="auth-link">Termenii și Condițiile</a> și <a href="/confidentialitate" target="_blank" class="auth-link">Politica de Confidențialitate</a></span>
+          <span><%- t('auth.gdprConsent') %></span>
         </label>
       </div>
 
       <button type="submit" class="btn btn-primary btn-lg auth-submit">
-        Creeaz&#259; cont
+        <%= t('auth.createButton') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </button>
     </form>
 
     <% if (typeof googleClientId !== 'undefined' && googleClientId) { %>
     <!-- Google Sign-In Divider -->
-    <div class="auth-divider"><span>sau</span></div>
+    <div class="auth-divider"><span><%= t('auth.or') %></span></div>
 
     <!-- Google button rendered here by GIS library -->
     <div class="google-btn-wrapper" id="google-btn-target"></div>
@@ -121,7 +121,7 @@
 
     <!-- Login link -->
     <div class="auth-footer-link">
-      Ai deja cont? <a href="/login" class="auth-link" id="login-link">Conecteaz&#259;-te</a>
+      <%= t('auth.hasAccount') %> <a href="/login" class="auth-link" id="login-link"><%= t('auth.loginLink') %></a>
     </div>
   </div>
 </div>
@@ -241,7 +241,7 @@ function checkPasswordStrength(val) {
   if (/\d/.test(val)) score++;
   if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
   var colors = ['#ef4444', '#f59e0b', '#22c55e'];
-  var labels = ['Slabă', 'Medie', 'Puternică'];
+  var labels = ['<%= t("auth.strengthWeak") %>', '<%= t("auth.strengthMedium") %>', '<%= t("auth.strengthStrong") %>'];
   for (var i = 1; i <= 3; i++) {
     document.getElementById('str-bar-' + i).style.background = i <= score ? colors[Math.min(score, 3) - 1] : 'var(--border)';
   }

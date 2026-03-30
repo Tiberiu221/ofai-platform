@@ -7,17 +7,17 @@
     </a>
 
     <div class="nav-links">
-      <a href="/" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'home' ? ' active' : '' %>">Acasă</a>
-      <a href="/oferte" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'oferte' ? ' active' : '' %>">Oferte</a>
-      <a href="/business-uri" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'business-uri' ? ' active' : '' %>">Business-uri</a>
-      <a href="/categorii" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'categorii' ? ' active' : '' %>">Categorii</a>
-      <a href="/orase" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'orase' ? ' active' : '' %>">Orașe</a>
+      <a href="/" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'home' ? ' active' : '' %>"><%= t('nav.home') %></a>
+      <a href="/oferte" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'oferte' ? ' active' : '' %>"><%= t('nav.offers') %></a>
+      <a href="/business-uri" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'business-uri' ? ' active' : '' %>"><%= t('nav.businesses') %></a>
+      <a href="/categorii" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'categorii' ? ' active' : '' %>"><%= t('nav.categories') %></a>
+      <a href="/orase" class="nav-link<%= typeof activePage !== 'undefined' && activePage === 'orase' ? ' active' : '' %>"><%= t('nav.cities') %></a>
     </div>
 
     <div class="nav-actions">
       <% if (_webUser) { %>
         <div class="user-menu-wrapper">
-          <button class="user-menu-trigger" onclick="document.querySelector('.user-menu-dropdown').classList.toggle('open')" aria-label="Deschide meniul utilizator">
+          <button class="user-menu-trigger" onclick="document.querySelector('.user-menu-dropdown').classList.toggle('open')" aria-label="<%= t('nav.openMenu') %>">
             <div class="user-menu-avatar">
               <% if (_webUser.profile_picture_url) { %>
                 <img src="<%= _webUser.profile_picture_url %>" alt="" width="32" height="32" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
@@ -34,34 +34,34 @@
             </div>
             <a href="/cont" class="user-menu-item">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Contul meu
+              <%= t('nav.myAccount') %>
             </a>
             <a href="/colectia-mea" class="user-menu-item">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-              Colecția mea
+              <%= t('nav.myCollection') %>
             </a>
             <a href="/setari" class="user-menu-item">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              Setări
+              <%= t('nav.settings') %>
             </a>
             <% if (_webUser && (_webUser.role === 'business_owner' || _webUser.role === 'admin')) { %>
               <a href="/portal" class="user-menu-item" style="color: var(--accent);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                Business Portal
+                <%= t('nav.portal') %>
               </a>
             <% } %>
             <div class="user-menu-divider"></div>
             <a href="/logout" class="user-menu-item" style="color: var(--text-tertiary);">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              Deconectare
+              <%= t('nav.logout') %>
             </a>
           </div>
         </div>
       <% } else { %>
-        <a href="/login" class="btn btn-ghost nav-auth-btn">Conectează-te</a>
-        <a href="/register" class="btn btn-primary nav-auth-btn">Înregistrează-te</a>
+        <a href="/login" class="btn btn-ghost nav-auth-btn"><%= t('nav.login') %></a>
+        <a href="/register" class="btn btn-primary nav-auth-btn"><%= t('nav.register') %></a>
       <% } %>
-      <button class="nav-menu-toggle" aria-label="Meniu">
+      <button class="nav-menu-toggle" aria-label="<%= t('nav.menu') %>">
         <div class="hamburger">
           <span></span>
           <span></span>
@@ -72,26 +72,32 @@
   </nav>
 </div>
 
+<!-- Language switcher -->
+<div style="position:fixed;bottom:16px;right:16px;z-index:999;display:flex;gap:4px;background:rgba(9,9,11,0.9);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:4px;">
+  <a href="?lang=ro" style="padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;color:<%= (typeof lng !== 'undefined' ? lng : 'ro') === 'ro' ? '#fb923c' : '#71717a' %>;background:<%= (typeof lng !== 'undefined' ? lng : 'ro') === 'ro' ? 'rgba(251,146,60,0.12)' : 'transparent' %>;">RO</a>
+  <a href="?lang=en" style="padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;color:<%= (typeof lng !== 'undefined' ? lng : 'ro') === 'en' ? '#fb923c' : '#71717a' %>;background:<%= (typeof lng !== 'undefined' ? lng : 'ro') === 'en' ? 'rgba(251,146,60,0.12)' : 'transparent' %>;">EN</a>
+</div>
+
 <!-- Mobile overlay -->
 <div class="nav-mobile-overlay">
-  <a href="/">Acasă</a>
-  <a href="/oferte">Oferte</a>
-  <a href="/business-uri">Business-uri</a>
-  <a href="/categorii">Categorii</a>
-  <a href="/orase">Orașe</a>
+  <a href="/"><%= t('nav.home') %></a>
+  <a href="/oferte"><%= t('nav.offers') %></a>
+  <a href="/business-uri"><%= t('nav.businesses') %></a>
+  <a href="/categorii"><%= t('nav.categories') %></a>
+  <a href="/orase"><%= t('nav.cities') %></a>
   <% if (_webUser) { %>
-    <a href="/cont">Contul meu</a>
-    <a href="/colectia-mea">Colecția mea</a>
+    <a href="/cont"><%= t('nav.myAccount') %></a>
+    <a href="/colectia-mea"><%= t('nav.myCollection') %></a>
     <% if (_webUser.role === 'business_owner' || _webUser.role === 'admin') { %>
-      <a href="/portal" style="color: var(--accent);">Business Portal</a>
+      <a href="/portal" style="color: var(--accent);"><%= t('nav.portal') %></a>
     <% } %>
     <div style="margin-top: 24px;">
-      <a href="/logout" class="btn btn-secondary btn-lg">Deconectare</a>
+      <a href="/logout" class="btn btn-secondary btn-lg"><%= t('nav.logout') %></a>
     </div>
   <% } else { %>
     <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px; align-items: center;">
-      <a href="/login" class="btn btn-secondary btn-lg" style="width: 200px; text-align: center;">Conectează-te</a>
-      <a href="/register" class="btn btn-primary btn-lg" style="width: 200px; text-align: center;">Înregistrează-te</a>
+      <a href="/login" class="btn btn-secondary btn-lg" style="width: 200px; text-align: center;"><%= t('nav.login') %></a>
+      <a href="/register" class="btn btn-primary btn-lg" style="width: 200px; text-align: center;"><%= t('nav.register') %></a>
     </div>
   <% } %>
 </div>

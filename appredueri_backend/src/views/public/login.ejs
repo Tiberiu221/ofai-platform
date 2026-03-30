@@ -13,8 +13,8 @@
     </div>
 
     <!-- Title -->
-    <h1 class="auth-title">Bine ai revenit!</h1>
-    <p class="auth-subtitle">Conecteaz&#259;-te la contul t&#259;u OFAI</p>
+    <h1 class="auth-title"><%= t('auth.welcomeBack') %></h1>
+    <p class="auth-subtitle"><%= t('auth.loginSubtitle') %></p>
 
     <!-- Error message -->
     <% if (typeof error !== 'undefined' && error) { %>
@@ -28,7 +28,7 @@
     <form class="auth-form" onsubmit="return false">
       <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <div class="auth-form-group">
-        <label for="email" class="auth-label">Email</label>
+        <label for="email" class="auth-label"><%= t('auth.email') %></label>
         <input
           type="email"
           id="email"
@@ -41,37 +41,37 @@
       </div>
 
       <div class="auth-form-group">
-        <label for="password" class="auth-label">Parol&#259;</label>
+        <label for="password" class="auth-label"><%= t('auth.password') %></label>
         <div style="position: relative;">
           <input
             type="password"
             id="password"
             name="password"
             class="auth-input"
-            placeholder="Introdu parola"
+            placeholder="<%= t('auth.enterPassword') %>"
             required
             autocomplete="current-password"
             style="padding-right: 44px;"
           >
-          <button type="button" onclick="togglePasswordVisibility('password', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;" aria-label="Arat&#259; parola">
+          <button type="button" onclick="togglePasswordVisibility('password', this)" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;" aria-label="<%= t('auth.showPassword') %>">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
       </div>
 
       <div class="auth-form-group" style="text-align: right; margin-top: -4px;">
-        <a href="/forgot-password" class="auth-link-inline">Ai uitat parola?</a>
+        <a href="/forgot-password" class="auth-link-inline"><%= t('auth.forgotPassword') %></a>
       </div>
 
       <button type="submit" class="btn btn-primary btn-lg auth-submit">
-        Conecteaz&#259;-te
+        <%= t('auth.loginButton') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </button>
     </form>
 
     <% if (typeof googleClientId !== 'undefined' && googleClientId) { %>
     <!-- Google Sign-In Divider -->
-    <div class="auth-divider"><span>sau</span></div>
+    <div class="auth-divider"><span><%= t('auth.or') %></span></div>
 
     <!-- Google button rendered here by GIS library -->
     <div class="google-btn-wrapper" id="google-btn-target"></div>
@@ -79,7 +79,7 @@
 
     <!-- Register link -->
     <div class="auth-footer-link">
-      Nu ai cont? <a href="/register" class="auth-link" id="register-link">&#206;nregistreaz&#259;-te</a>
+      <%= t('auth.noAccount') %> <a href="/register" class="auth-link" id="register-link"><%= t('auth.registerLink') %></a>
     </div>
   </div>
 </div>
