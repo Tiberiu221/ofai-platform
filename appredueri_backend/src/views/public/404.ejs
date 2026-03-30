@@ -1,4 +1,4 @@
-<%- include('partials/head', { pageTitle: t('errors.notFoundTitle'), activePage: null }) %>
+<%- include('partials/head', { pageTitle: t('errors.notFoundTitle'), activePage: null, noIndex: true }) %>
 <%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <section class="error-page">

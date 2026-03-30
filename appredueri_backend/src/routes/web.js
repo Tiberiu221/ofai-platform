@@ -513,7 +513,7 @@ router.get("/oferte", async (req, res) => {
       "SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"
     );
 
-    const selectedCityName = selectedCity ? (citiesResult.rows.find(c => c.id == selectedCity) || {}).name : null;
+    const selectedCityName = selectedCity ? (citiesResult.rows.find(c => c.id === parseInt(selectedCity, 10)) || {}).name : null;
 
     // Fetch user favorite IDs for card heart buttons
     let userFavoriteIds = [];
@@ -1543,6 +1543,7 @@ router.get("/cont", requireWebAuth, async (req, res) => {
 
     res.render("public/account", {
       activePage: "cont",
+      noIndex: true,
       webUser: req.webUser,
       userPoints,
       favCount: parseInt(favCount.rows[0].total),
@@ -1643,6 +1644,7 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
     const userFollowedIds = subscriptionsRes.rows.map(r => r.id);
 
     res.render("public/colectia-mea", {
+      noIndex: true,
       favorites: favoritesRes.rows,
       subscriptions: subscriptionsRes.rows,
       categories: categoriesRes.rows,
@@ -1682,6 +1684,7 @@ router.get("/setari", requireWebAuth, async (req, res) => {
 
     res.render("public/setari", {
       activePage: "setari",
+      noIndex: true,
       webUser: req.webUser,
       showPictureInReviews: userSettings.show_picture_in_reviews !== false,
       isGoogleUser: !!userSettings.google_id,
@@ -1707,6 +1710,7 @@ router.get("/preferinte", requireWebAuth, async (req, res) => {
 
     res.render("public/preferinte", {
       activePage: "preferinte",
+      noIndex: true,
       webUser: req.webUser,
       cities: cities.rows,
       categories: categories.rows,
@@ -2211,7 +2215,10 @@ router.get("/blog", async (req, res) => {
       pagination: { page, limit, total: data.total, totalPages },
       pageTitle: categorySlug ? `Blog — ${data.categories.find(c => c.slug === categorySlug)?.name || 'Articole'}` : 'Blog',
       pageDesc: 'Articole, ghiduri și noutăți despre reduceri, oferte și business-uri locale din România.',
-      canonicalUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : ''),
+      canonicalUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : '') + (page > 1 ? (categorySlug ? `&page=${page}` : `?page=${page}`) : ''),
+      ogTitle: categorySlug ? `Blog — ${data.categories.find(c => c.slug === categorySlug)?.name || 'Articole'} | OFAI` : 'Blog OFAI — Articole & Ghiduri',
+      ogDesc: 'Articole, ghiduri și noutăți despre reduceri, oferte și business-uri locale din România.',
+      ogUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : ''),
       seoPage: page,
       seoTotalPages: totalPages,
       seoBaseUrl: 'https://ofai.ro/blog' + (categorySlug ? `?categorie=${categorySlug}` : ''),

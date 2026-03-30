@@ -53,16 +53,16 @@ const REFRESH_COOKIE_OPTS = {
 // ═══════════════════════════════════════════════════════
 router.get("/login", (req, res) => {
   if (req.webUser) return res.redirect("/cont");
-  res.render("public/login", { activePage: null, webUser: null, googleClientId: process.env.GOOGLE_CLIENT_ID || "" });
+  res.render("public/login", { activePage: null, webUser: null, googleClientId: process.env.GOOGLE_CLIENT_ID || "", noIndex: true });
 });
 
 router.get("/register", (req, res) => {
   if (req.webUser) return res.redirect("/cont");
-  res.render("public/register", { activePage: null, webUser: null, googleClientId: process.env.GOOGLE_CLIENT_ID || "" });
+  res.render("public/register", { activePage: null, webUser: null, googleClientId: process.env.GOOGLE_CLIENT_ID || "", noIndex: true });
 });
 
 router.get("/forgot-password", (req, res) => {
-  res.render("public/forgot-password", { activePage: null, webUser: null });
+  res.render("public/forgot-password", { activePage: null, webUser: null, noIndex: true });
 });
 
 // POST /login

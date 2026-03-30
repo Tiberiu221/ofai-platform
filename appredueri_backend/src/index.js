@@ -385,7 +385,7 @@ app.get('/sitemap.xml', async (req, res) => {
       xml += `\n  <url>\n    <loc>${BASE}/oferta/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
     }
     for (const row of businesses.rows) {
-      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
     }
     for (const row of blogPosts.rows) {
       xml += `\n  <url>\n    <loc>${BASE}/blog/${row.slug}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
