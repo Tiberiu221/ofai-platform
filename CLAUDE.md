@@ -293,11 +293,22 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **i18n Flutter:** flutter_localizations + ARB files (~25 keys), localization delegates configured, nav labels localized
 - **Redis cache plan:** Documentation at `docs/plans/2026-03-23-redis-cache-plan.md`
 
+### Resolved Gaps (as of 30 Mar 2026)
+- **Fuzzy search:** ✅ pg_trgm + `buildFuzzySearch()` across 5 routes, trigram indexes, 0.15 threshold
+- **Backend testing:** ✅ Jest + Supertest — 19 tests across 3 suites (jwt, tiers, search)
+- **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
+- **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
+- **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
+- **i18n complete:** ✅ Backend 717 keys (26 namespaces) + Flutter 180 keys — all 25 pages + 26 screens
+- **Stripe config:** ✅ Env vars (`STRIPE_SECRET_KEY`), no hardcoded keys — swap to live when ready
+- **Gamification UI:** ✅ Hidden intentionally (backend active, UI disabled by design)
+
 ### Remaining Gaps
 - **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented — in-memory CacheService as interim
-- **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
-- **Stripe:** Still on test keys — go-live with real keys pending
-- **i18n providers/utils:** Provider files (auth_provider, api_exceptions, formatters) still have hardcoded Romanian error strings — these lack BuildContext and would need architectural refactoring to localize
+- **Rate limiter:** In-memory only, resets on deploy (Redis plan will address — same Redis instance)
+- **Stripe live keys:** Config ready, still on test keys — go-live pending
 - **Support WhatsApp:** Placeholder number `40700000000` — replace with real number before go-live
 - **Search distance filtering:** pg_trgm done but no PostGIS/distance-based filtering yet
-- **PWA icons:** Temporary copies of favicon — replace with properly sized 192x192 and 512x512 icons
+- **PWA icons:** Files exist but are 64x64 — need proper 192x192 and 512x512 icons
+- **GA4 conversion funnel:** Basic events tracked (promo_reveal, business_action), full funnel missing
+- **Backend test coverage:** Infrastructure exists but only helpers tested — no route/integration tests
