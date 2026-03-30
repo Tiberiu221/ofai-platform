@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -42,8 +43,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       await ref.read(authProvider.notifier).refreshUser();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Preferințe actualizate'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.prefUpdated),
             backgroundColor: AppColors.bgSecondary,
           ),
         );
@@ -71,7 +72,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Preferințe'),
+        title: Text(AppLocalizations.of(context)!.prefTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: SingleChildScrollView(
@@ -82,10 +83,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             const SizedBox(height: AppSpacing.lg),
 
             // City selector (multi-select)
-            Text('Orașele preferate', style: AppTypography.headlineSmall),
+            Text(AppLocalizations.of(context)!.prefCities, style: AppTypography.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Poți selecta mai multe orașe',
+              AppLocalizations.of(context)!.prefCitiesHelp,
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -121,16 +122,16 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 }).toList(),
               ),
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
-              error: (_, __) => Text('Nu s-au putut încărca orașele', style: AppTypography.bodySmall.copyWith(color: AppColors.danger)),
+              error: (_, __) => Text(AppLocalizations.of(context)!.prefErrorCities, style: AppTypography.bodySmall.copyWith(color: AppColors.danger)),
             ),
 
             const SizedBox(height: AppSpacing.xxxl),
 
             // Categories multi-select
-            Text('Categorii preferate', style: AppTypography.headlineSmall),
+            Text(AppLocalizations.of(context)!.prefCategories, style: AppTypography.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Selectează categoriile care te interesează',
+              AppLocalizations.of(context)!.prefCategoriesHelp,
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -166,16 +167,16 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                 }).toList(),
               ),
               loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
-              error: (_, __) => Text('Nu s-au putut încărca categoriile', style: AppTypography.bodySmall.copyWith(color: AppColors.danger)),
+              error: (_, __) => Text(AppLocalizations.of(context)!.prefErrorCategories, style: AppTypography.bodySmall.copyWith(color: AppColors.danger)),
             ),
 
             const SizedBox(height: AppSpacing.xxxl),
 
             // Notification preferences
-            Text('Notificări', style: AppTypography.headlineSmall),
+            Text(AppLocalizations.of(context)!.prefNotifications, style: AppTypography.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Alege ce notificări primești',
+              AppLocalizations.of(context)!.prefNotificationsHelp,
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -185,37 +186,37 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
               return Column(
                 children: [
                   _NotifToggle(
-                    label: 'Oferta Zilei',
+                    label: AppLocalizations.of(context)!.prefDealOfDay,
                     prefKey: 'deal_of_day',
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: 'Business-uri urmărite',
+                    label: AppLocalizations.of(context)!.prefFollowedBusiness,
                     prefKey: 'followed_business',
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: 'Oferte flash',
+                    label: AppLocalizations.of(context)!.prefFlashDeals,
                     prefKey: 'flash_deals',
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: 'Rezumat săptămânal',
+                    label: AppLocalizations.of(context)!.prefWeeklyDigest,
                     prefKey: 'weekly_digest',
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: 'Cerere recenzie',
+                    label: AppLocalizations.of(context)!.prefReviewPrompt,
                     prefKey: 'review_prompt',
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: 'Căutări salvate',
+                    label: AppLocalizations.of(context)!.prefSavedSearch,
                     prefKey: 'saved_search',
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: 'Marketing',
+                    label: AppLocalizations.of(context)!.prefMarketing,
                     prefKey: 'marketing',
                     prefs: prefs,
                   ),
@@ -238,7 +239,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                           color: AppColors.bgPrimary,
                         ),
                       )
-                    : const Text('Salvează preferințele'),
+                    : Text(AppLocalizations.of(context)!.prefSave),
               ),
             ),
 

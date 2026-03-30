@@ -8,6 +8,7 @@ import '../../core/network/api_exceptions.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../widgets/glass_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -49,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Eroare la autentificare');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.authLoginError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -67,7 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Eroare la autentificarea cu Google');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.authGoogleError);
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
@@ -104,12 +105,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     // Title
                     Text(
-                      'Bine ai revenit!',
+                      AppLocalizations.of(context)!.authWelcomeBack,
                       style: AppTypography.displayMedium,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Conectează-te pentru a continua',
+                      AppLocalizations.of(context)!.authLoginSubtitle,
                       style: AppTypography.bodyLarge.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -149,13 +150,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(context)!.authEmail,
                                     prefixIcon: Icon(Icons.email_outlined, size: 20),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Email obligatoriu';
-                                    if (!v.contains('@')) return 'Email invalid';
+                                    if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.authEmailRequired;
+                                    if (!v.contains('@')) return AppLocalizations.of(context)!.authEmailInvalid;
                                     return null;
                                   },
                                 ),
@@ -166,7 +167,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _submit(),
                                   decoration: InputDecoration(
-                                    labelText: 'Parolă',
+                                    labelText: AppLocalizations.of(context)!.authPassword,
                                     prefixIcon: const Icon(Icons.lock_outlined, size: 20),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -177,7 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) return 'Parolă obligatorie';
+                                    if (v == null || v.isEmpty) return AppLocalizations.of(context)!.authPasswordRequired;
                                     return null;
                                   },
                                 ),
@@ -189,7 +190,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   child: GestureDetector(
                                     onTap: () => context.push('/forgot-password'),
                                     child: Text(
-                                      'Ai uitat parola?',
+                                      AppLocalizations.of(context)!.authForgotPassword,
                                       style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
                                     ),
                                   ),
@@ -212,7 +213,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               color: AppColors.bgPrimary,
                                             ),
                                           )
-                                        : const Text('Conectează-te'),
+                                        : Text(AppLocalizations.of(context)!.authLoginButton),
                                   ),
                                 ),
                               ],
@@ -228,7 +229,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                                 child: Text(
-                                  'sau',
+                                  AppLocalizations.of(context)!.authOr,
                                   style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary),
                                 ),
                               ),
@@ -251,7 +252,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textPrimary),
                                     )
                                   : const Icon(Icons.g_mobiledata, size: 24),
-                              label: const Text('Continuă cu Google'),
+                              label: Text(AppLocalizations.of(context)!.authContinueGoogle),
                             ),
                           ),
 
@@ -262,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Nu ai cont? ',
+                                AppLocalizations.of(context)!.authNoAccount,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -270,7 +271,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               GestureDetector(
                                 onTap: () => context.push('/register'),
                                 child: Text(
-                                  'Înregistrează-te',
+                                  AppLocalizations.of(context)!.authRegister,
                                   style: AppTypography.labelLarge.copyWith(
                                     color: AppColors.accent,
                                   ),

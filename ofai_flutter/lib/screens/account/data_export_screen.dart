@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -45,31 +46,31 @@ class _DataExportScreenState extends State<DataExportScreen> {
     }
   }
 
-  Future<void> _shareJson() async {
+  Future<void> _shareJson(BuildContext context) async {
     if (_data == null) return;
     final jsonStr = const JsonEncoder.withIndent('  ').convert(_data);
-    await Share.share(jsonStr, subject: 'OFAI - Datele mele');
+    await Share.share(jsonStr, subject: AppLocalizations.of(context)!.myDataSubject);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Datele mele'),
+        title: Text(AppLocalizations.of(context)!.myData),
         backgroundColor: AppColors.bgPrimary,
         actions: [
           if (_data != null)
             IconButton(
               icon: const Icon(Icons.share),
-              onPressed: _shareJson,
+              onPressed: () => _shareJson(context),
             ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(context),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator(color: AppColors.accent));
     }
@@ -79,9 +80,9 @@ class _DataExportScreenState extends State<DataExportScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Eroare la export', style: AppTypography.headlineSmall),
+            Text(AppLocalizations.of(context)!.exportError, style: AppTypography.headlineSmall),
             const SizedBox(height: AppSpacing.md),
-            ElevatedButton(onPressed: _fetchExport, child: const Text('Reîncearcă')),
+            ElevatedButton(onPressed: _fetchExport, child: Text(AppLocalizations.of(context)!.retry)),
           ],
         ),
       );
@@ -109,7 +110,7 @@ class _DataExportScreenState extends State<DataExportScreen> {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Acestea sunt toate datele tale stocate pe platforma OFAI, conform GDPR.',
+                  AppLocalizations.of(context)!.gdprInfo,
                   style: AppTypography.bodySmall.copyWith(color: AppColors.accent),
                 ),
               ),
@@ -145,9 +146,9 @@ class _DataExportScreenState extends State<DataExportScreen> {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _shareJson,
+              onPressed: () => _shareJson(context),
               icon: const Icon(Icons.share),
-              label: const Text('Partajează datele'),
+              label: Text(AppLocalizations.of(context)!.shareData),
             ),
           ),
         ),

@@ -2,11 +2,11 @@
 <%- include('partials/navbar', { activePage, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <section class="blog-header">
-  <h1>Blog OFAI</h1>
-  <p>Articole, ghiduri și noutăți despre reduceri, oferte și business-uri locale din România.</p>
+  <h1><%= t('blog.title') %></h1>
+  <p><%= t('blog.subtitle') %></p>
 
   <div class="blog-categories-nav">
-    <a href="/blog" class="blog-cat-link<%= !currentCategory ? ' active' : '' %>">Toate</a>
+    <a href="/blog" class="blog-cat-link<%= !currentCategory ? ' active' : '' %>"><%= t('blog.all') %></a>
     <% categories.forEach(cat => { %>
       <a href="/blog?categorie=<%= cat.slug %>" class="blog-cat-link<%= currentCategory === cat.slug ? ' active' : '' %>"><%= cat.name %></a>
     <% }); %>
@@ -15,7 +15,7 @@
 
 <% if (posts.length === 0) { %>
   <section class="blog-empty">
-    <p>Niciun articol încă. Revino curând!</p>
+    <p><%= t('blog.noArticles') %></p>
   </section>
 <% } else { %>
   <div class="blog-grid">
@@ -36,15 +36,15 @@
               <span class="blog-card-category"><%= post.category_name %></span>
               <span>&middot;</span>
             <% } %>
-            <span><%= post.published_at ? new Date(post.published_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
+            <span><%= post.published_at ? new Date(post.published_at).toLocaleDateString(t('common.locale') || 'ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
           </div>
           <h2 class="blog-card-title"><%= post.title %></h2>
           <% if (post.excerpt) { %>
             <p class="blog-card-excerpt"><%= post.excerpt %></p>
           <% } %>
           <div class="blog-card-footer">
-            <span><%= Math.max(1, Math.round((post.content || '').replace(/<[^>]+>/g, '').split(/\s+/).length / 200)) %> min citire</span>
-            <span class="blog-card-read-more">Citește &rarr;</span>
+            <span><%= Math.max(1, Math.round((post.content || '').replace(/<[^>]+>/g, '').split(/\s+/).length / 200)) %> <%= t('blog.minRead') %></span>
+            <span class="blog-card-read-more"><%= t('blog.readMore') %> &rarr;</span>
           </div>
         </div>
       </a>
@@ -54,7 +54,7 @@
   <% if (pagination.totalPages > 1) { %>
     <div class="blog-pagination">
       <% if (pagination.page > 1) { %>
-        <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= pagination.page - 1 %>">&laquo; Anterior</a>
+        <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= pagination.page - 1 %>">&laquo; <%= t('blog.previous') %></a>
       <% } %>
       <% for (let i = 1; i <= pagination.totalPages; i++) { %>
         <% if (i === pagination.page) { %>
@@ -64,7 +64,7 @@
         <% } %>
       <% } %>
       <% if (pagination.page < pagination.totalPages) { %>
-        <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= pagination.page + 1 %>">Următor &raquo;</a>
+        <a href="/blog?<%= currentCategory ? 'categorie=' + currentCategory + '&' : '' %>page=<%= pagination.page + 1 %>"><%= t('blog.next') %> &raquo;</a>
       <% } %>
     </div>
   <% } %>

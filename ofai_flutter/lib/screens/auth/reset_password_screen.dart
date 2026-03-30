@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../widgets/particle_background.dart';
 import '../../widgets/glass_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -53,8 +54,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Parola a fost schimbată cu succes!'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.authResetSuccess),
             backgroundColor: AppColors.success,
           ),
         );
@@ -63,7 +64,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Eroare la resetarea parolei. Codul poate fi expirat.';
+          _error = AppLocalizations.of(context)!.authResetError;
           _isLoading = false;
         });
       }
@@ -104,10 +105,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     const SizedBox(height: AppSpacing.xxxl),
 
                     // Title
-                    Text('Parolă nouă', style: AppTypography.displayMedium),
+                    Text(AppLocalizations.of(context)!.authNewPassword, style: AppTypography.displayMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Alege o parolă nouă pentru contul tău.',
+                      AppLocalizations.of(context)!.authNewPasswordSubtitle,
                       style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
                     ),
 
@@ -146,7 +147,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   obscureText: _obscurePassword,
                                   textInputAction: TextInputAction.next,
                                   decoration: InputDecoration(
-                                    labelText: 'Parolă nouă',
+                                    labelText: AppLocalizations.of(context)!.authNewPasswordLabel,
                                     prefixIcon: const Icon(Icons.lock_outlined, size: 20),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -157,9 +158,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) return 'Parola este obligatorie';
-                                    if (v.length < 8) return 'Minim 8 caractere';
-                                    if (!RegExp(r'\d').hasMatch(v)) return 'Trebuie sa contina cel putin o cifra';
+                                    if (v == null || v.isEmpty) return AppLocalizations.of(context)!.authPasswordIsRequired;
+                                    if (v.length < 8) return AppLocalizations.of(context)!.authPasswordMin8;
+                                    if (!RegExp(r'\d').hasMatch(v)) return AppLocalizations.of(context)!.authPasswordNeedsDigit;
                                     return null;
                                   },
                                 ),
@@ -172,7 +173,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _submit(),
                                   decoration: InputDecoration(
-                                    labelText: 'Confirmă parola',
+                                    labelText: AppLocalizations.of(context)!.authConfirmPassword,
                                     prefixIcon: const Icon(Icons.lock_outlined, size: 20),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -183,8 +184,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) return 'Confirmarea este obligatorie';
-                                    if (v != _passwordController.text) return 'Parolele nu coincid';
+                                    if (v == null || v.isEmpty) return AppLocalizations.of(context)!.authConfirmRequired;
+                                    if (v != _passwordController.text) return AppLocalizations.of(context)!.authPasswordsMismatch;
                                     return null;
                                   },
                                 ),
@@ -201,7 +202,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                             width: 20, height: 20,
                                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary),
                                           )
-                                        : const Text('Resetează parola'),
+                                        : Text(AppLocalizations.of(context)!.authResetButton),
                                   ),
                                 ),
                               ],

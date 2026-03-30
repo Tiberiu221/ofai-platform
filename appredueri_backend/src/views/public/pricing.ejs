@@ -1,22 +1,22 @@
-<%- include('partials/head', { pageTitle: pageTitle, activePage: activePage }) %>
-<%- include('partials/navbar', { activePage: activePage, webUser: webUser }) %>
+<%- include('partials/head', { pageTitle: t('pricing.choosePlan'), activePage: activePage }) %>
+<%- include('partials/navbar', { activePage: activePage, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <main class="pricing-page">
   <div class="pricing-container">
 
     <!-- Header -->
     <div class="pricing-header">
-      <h1 class="pricing-title">Alege planul potrivit</h1>
-      <p class="pricing-subtitle">Creste-ti vizibilitatea si atrage mai multi clienti cu instrumentele potrivite.</p>
+      <h1 class="pricing-title"><%= t('pricing.choosePlan') %></h1>
+      <p class="pricing-subtitle"><%= t('pricing.subtitle') %></p>
 
       <!-- Billing Toggle -->
       <div class="billing-toggle">
-        <span class="billing-label" id="billing-monthly-label">Lunar</span>
-        <button class="billing-switch" id="billing-switch" onclick="toggleBilling()" aria-label="Comuta intre lunar si anual">
+        <span class="billing-label" id="billing-monthly-label"><%= t('pricing.monthly') %></span>
+        <button class="billing-switch" id="billing-switch" onclick="toggleBilling()" aria-label="<%= t('pricing.toggleBilling') %>">
           <span class="billing-switch-thumb" id="billing-thumb"></span>
         </button>
         <span class="billing-label" id="billing-yearly-label">
-          Anual
+          <%= t('pricing.yearly') %>
           <span class="billing-save-badge">-17%</span>
         </span>
       </div>
@@ -28,7 +28,7 @@
         <div class="pricing-card<%= plan.slug === 'premium' ? ' pricing-card--premium' : '' %><%= plan.slug === 'standard' ? ' pricing-card--popular' : '' %>" data-plan="<%= plan.slug %>">
 
           <% if (plan.slug === 'standard') { %>
-            <div class="pricing-popular-badge">Cel mai popular</div>
+            <div class="pricing-popular-badge"><%= t('pricing.mostPopular') %></div>
           <% } %>
           <% if (plan.slug === 'premium') { %>
             <div class="pricing-premium-badge">Premium</div>
@@ -44,12 +44,12 @@
               </span>
               <div class="pricing-price-meta">
                 <span class="pricing-currency">RON</span>
-                <span class="pricing-period">/luna</span>
+                <span class="pricing-period"><%= t('pricing.perMonth') %></span>
               </div>
             </div>
             <% if (plan.price_monthly > 0) { %>
               <p class="pricing-yearly-note" id="yearly-note-<%= plan.slug %>" style="display: none;">
-                Facturat <strong><%= (plan.price_yearly / 100).toFixed(0) %> RON</strong>/an
+                <%- t('pricing.billedYearly', { amount: (plan.price_yearly / 100).toFixed(0) }) %>
               </p>
             <% } %>
           </div>
@@ -59,53 +59,53 @@
             <ul class="pricing-features">
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><%= plan.max_active_offers === null ? 'Oferte nelimitate' : plan.max_active_offers + ' oferte active' %></span>
+                <span><%= plan.max_active_offers === null ? t('pricing.unlimitedOffers') : t('pricing.activeOffers', { count: plan.max_active_offers }) %></span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><%= plan.max_gallery_images === null ? 'Galerie nelimitata' : plan.max_gallery_images + ' imagini galerie' %></span>
+                <span><%= plan.max_gallery_images === null ? t('pricing.unlimitedGallery') : t('pricing.galleryImages', { count: plan.max_gallery_images }) %></span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><%= plan.max_locations === null ? 'Locatii nelimitate' : plan.max_locations + (plan.max_locations === 1 ? ' locatie' : ' locatii') %></span>
+                <span><%= plan.max_locations === null ? t('pricing.unlimitedLocations') : (plan.max_locations === 1 ? t('pricing.location_one', { count: plan.max_locations }) : t('pricing.location_other', { count: plan.max_locations })) %></span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><%= plan.max_promo_codes_per_offer === null ? 'Coduri promo nelimitate' : plan.max_promo_codes_per_offer + ' coduri promo/oferta' %></span>
+                <span><%= plan.max_promo_codes_per_offer === null ? t('pricing.unlimitedPromo') : t('pricing.promoPerOffer', { count: plan.max_promo_codes_per_offer }) %></span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Statistici (<%= plan.analytics_days %> zile)</span>
+                <span><%= t('pricing.statisticsDays', { days: plan.analytics_days }) %></span>
               </li>
               <% if (plan.badge_type) { %>
               <li class="pricing-feature">
                 <% if (plan.badge_type === 'premium') { %>
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span style="color: #a78bfa;">Badge Premium</span>
+                  <span style="color: #a78bfa;"><%= t('pricing.badgePremium') %></span>
                 <% } else { %>
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Badge Verificat</span>
+                  <span><%= t('pricing.badgeVerified') %></span>
                 <% } %>
               </li>
               <% } %>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Raspunsuri la recenzii</span>
+                <span><%= t('pricing.reviewResponses') %></span>
               </li>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Rezervari</span>
+                <span><%= t('pricing.bookings') %></span>
               </li>
               <% if (plan.has_concierge) { %>
               <li class="pricing-feature">
                 <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Configurare asistata de echipa</span>
+                <span><%= t('pricing.concierge') %></span>
               </li>
               <% } %>
               <% if (plan.has_priority_support) { %>
                 <li class="pricing-feature">
                   <svg class="pricing-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span style="color: #a78bfa;">Suport prioritar</span>
+                  <span style="color: #a78bfa;"><%= t('pricing.prioritySupport') %></span>
                 </li>
               <% } %>
             </ul>
@@ -114,14 +114,14 @@
           <!-- CTA Button -->
           <div class="pricing-card-footer">
             <% if (plan.slug === 'free') { %>
-              <a href="/pentru-business" class="pricing-cta pricing-cta--free">Incepe gratuit</a>
+              <a href="/pentru-business" class="pricing-cta pricing-cta--free"><%= t('pricing.startFree') %></a>
             <% } else if (plan.slug === 'standard') { %>
               <a href="#" onclick="choosePlan('standard'); return false;" class="pricing-cta pricing-cta--standard" data-plan-slug="standard">
-                Alege Standard
+                <%= t('pricing.chooseStandard') %>
               </a>
             <% } else { %>
               <a href="#" onclick="choosePlan('premium'); return false;" class="pricing-cta pricing-cta--premium" data-plan-slug="premium">
-                Alege Premium
+                <%= t('pricing.choosePremium') %>
               </a>
             <% } %>
           </div>
@@ -131,134 +131,134 @@
 
     <!-- Detailed Comparison Table -->
     <div class="pricing-comparison">
-      <h2 class="pricing-comparison-title">Comparatie detaliata</h2>
+      <h2 class="pricing-comparison-title"><%= t('pricing.detailedComparison') %></h2>
       <div class="pricing-comparison-table-wrapper">
         <table class="pricing-comparison-table">
           <thead>
             <tr>
-              <th class="pricing-comparison-feature-col">Functionalitate</th>
-              <th>Gratuit</th>
+              <th class="pricing-comparison-feature-col"><%= t('pricing.feature') %></th>
+              <th><%= t('pricing.free') %></th>
               <th class="pricing-col-standard">Standard</th>
               <th class="pricing-col-premium">Premium</th>
             </tr>
           </thead>
           <tbody>
             <tr class="pricing-comparison-category">
-              <td colspan="4">Limite</td>
+              <td colspan="4"><%= t('pricing.limits') %></td>
             </tr>
             <tr>
-              <td>Oferte active</td>
+              <td><%= t('pricing.activeOffersLabel') %></td>
               <td>2</td>
               <td>6</td>
-              <td>Nelimitate</td>
+              <td><%= t('pricing.unlimited') %></td>
             </tr>
             <tr>
-              <td>Imagini galerie</td>
+              <td><%= t('pricing.galleryImagesLabel') %></td>
               <td>8</td>
               <td>16</td>
-              <td>Nelimitate</td>
+              <td><%= t('pricing.unlimited') %></td>
             </tr>
             <tr>
-              <td>Locatii</td>
+              <td><%= t('pricing.locationsLabel') %></td>
               <td>1</td>
               <td>3</td>
-              <td>Nelimitate</td>
+              <td><%= t('pricing.unlimited') %></td>
             </tr>
             <tr>
-              <td>Coduri promo / oferta</td>
+              <td><%= t('pricing.promoCodesLabel') %></td>
               <td>1</td>
               <td>1</td>
-              <td>Nelimitate</td>
+              <td><%= t('pricing.unlimited') %></td>
             </tr>
             <tr>
-              <td>Perioada statistici</td>
-              <td>7 zile</td>
-              <td>30 zile</td>
-              <td>90 zile</td>
+              <td><%= t('pricing.statisticsPeriod') %></td>
+              <td>7 <%= t('pricing.days') %></td>
+              <td>30 <%= t('pricing.days') %></td>
+              <td>90 <%= t('pricing.days') %></td>
             </tr>
 
             <tr>
-              <td>Badge</td>
+              <td><%= t('pricing.badge') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
-              <td><span style="color: #fb923c;">Verificat</span></td>
+              <td><span style="color: #fb923c;"><%= t('pricing.verified') %></span></td>
               <td><span style="color: #a78bfa;">Premium</span></td>
             </tr>
 
             <tr class="pricing-comparison-category">
-              <td colspan="4">Interactiune clienti</td>
+              <td colspan="4"><%= t('pricing.customerInteraction') %></td>
             </tr>
             <tr>
-              <td>Raspunsuri la recenzii</td>
+              <td><%= t('pricing.reviewResponses') %></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
             <tr>
-              <td>Rezervari</td>
+              <td><%= t('pricing.bookings') %></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
 
             <tr class="pricing-comparison-category">
-              <td colspan="4">Notificari</td>
+              <td colspan="4"><%= t('pricing.notifications') %></td>
             </tr>
             <tr>
-              <td>Push la oferta noua</td>
+              <td><%= t('pricing.pushNewOffer') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
             <tr>
-              <td>Notificari push personalizate</td>
+              <td><%= t('pricing.customPush') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
 
             <tr class="pricing-comparison-category">
-              <td colspan="4">Statistici & Analize</td>
+              <td colspan="4"><%= t('pricing.statisticsAnalytics') %></td>
             </tr>
             <tr>
-              <td>Grafice statistici</td>
+              <td><%= t('pricing.statsCharts') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
             <tr>
-              <td>Export CSV statistici</td>
+              <td><%= t('pricing.csvExport') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
 
             <tr class="pricing-comparison-category">
-              <td colspan="4">Vizibilitate & Promovare</td>
+              <td colspan="4"><%= t('pricing.visibilityPromotion') %></td>
             </tr>
             <tr>
-              <td>Plasare promovata</td>
+              <td><%= t('pricing.promotedPlacement') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
             <tr>
-              <td>Prioritate in cautare</td>
+              <td><%= t('pricing.searchPriority') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
 
             <tr class="pricing-comparison-category">
-              <td colspan="4">Suport</td>
+              <td colspan="4"><%= t('pricing.support') %></td>
             </tr>
             <tr>
-              <td>Configurare asistata de echipa</td>
+              <td><%= t('pricing.concierge') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
               <td><svg class="cmp-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
             </tr>
             <tr>
-              <td>Suport prioritar</td>
+              <td><%= t('pricing.prioritySupport') %></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-x" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></td>
               <td><svg class="cmp-check cmp-check--premium" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></td>
@@ -270,48 +270,14 @@
 
     <!-- FAQ Section -->
     <div class="pricing-faq">
-      <h2 class="pricing-faq-title">Intrebari frecvente</h2>
+      <h2 class="pricing-faq-title"><%= t('pricing.faqTitle') %></h2>
       <div class="pricing-faq-grid">
+        <% for (var i = 1; i <= 10; i++) { %>
         <div class="pricing-faq-item">
-          <h3>Ce inseamna „plasare promovata"?</h3>
-          <p>Afacerea ta apare in pozitii vizibile pe pagina principala si in listele de oferte, inaintea celor fara promovare. Ideal pentru a atrage mai multi clienti rapid.</p>
+          <h3><%= t('pricing.faq' + i + 'q') %></h3>
+          <p><%= t('pricing.faq' + i + 'a') %></p>
         </div>
-        <div class="pricing-faq-item">
-          <h3>Ce inseamna „prioritate in cautare"?</h3>
-          <p>Cand un utilizator cauta oferte sau afaceri, rezultatele tale apar mai sus in lista. Cu cat esti mai vizibil, cu atat ai mai multe sanse de conversie.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce inseamna „export CSV statistici"?</h3>
-          <p>Poti descarca datele statistice (vizualizari, click-uri, conversii) intr-un fisier CSV pe care il poti deschide in Excel sau Google Sheets pentru analize proprii.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce sunt „analizele competitive"?</h3>
-          <p>Vezi cum se pozitioneaza afacerea ta fata de competitorii din aceeasi zona si categorie: comparatii de vizualizari, recenzii si activitate.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce sunt „raspunsurile sugerate AI"?</h3>
-          <p>Cand primesti o recenzie, AI-ul propune 3 variante de raspuns (profesional, prietenos, empatic) pe baza comentariului clientului. Tu alegi, editezi si trimiti — fara sa scrii de la zero.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce inseamna „configurare asistata de echipa"?</h3>
-          <p>Echipa noastra te ajuta sa iti configurezi profilul de business: completam informatiile, incarcam imaginile si optimizam prezentarea pentru tine.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce sunt notificarile push personalizate?</h3>
-          <p>Poti trimite notificari push direct catre utilizatorii care ti-au salvat afacerea in favorite, cu mesajul si oferta dorita, oricand vrei.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Ce se intampla cu datele mele la downgrade?</h3>
-          <p>Datele tale raman in siguranta. Nu stergem niciodata continutul existent. Doar optiunile noi vor fi limitate conform planului ales.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Pot schimba sau anula planul oricand?</h3>
-          <p>Da. La upgrade platesti diferenta pro-rata. Downgrade-ul se aplica imediat, iar urmatoarea factura va fi la pretul noului plan. Poti anula oricand din Business Portal — vei pastra accesul pana la sfarsitul perioadei platite.</p>
-        </div>
-        <div class="pricing-faq-item">
-          <h3>Pot plati anual in loc de lunar?</h3>
-          <p>Da. Din Business Portal, tab-ul Abonament, ai un toggle Lunar/Anual. La planul anual economisesti 17% fata de plata lunara. Poti trece de pe lunar pe anual oricand.</p>
-        </div>
+        <% } %>
       </div>
     </div>
 
@@ -323,8 +289,8 @@
     <div style="position: relative; margin: auto; top: 50%; transform: translateY(-50%); max-width: 520px; width: calc(100% - 32px); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4);">
       <div style="display: flex; align-items: center; justify-content: space-between; padding: 24px 28px; border-bottom: 1px solid var(--border);">
         <div>
-          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text-primary);">Alege business-ul</h3>
-          <p style="margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-tertiary);">Pentru care business vrei sa gestionezi abonamentul?</p>
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600; color: var(--text-primary);"><%= t('pricing.selectBusiness') %></h3>
+          <p style="margin: 4px 0 0; font-size: 0.8125rem; color: var(--text-tertiary);"><%= t('pricing.selectBusinessDesc') %></p>
         </div>
         <button onclick="closeBizModal()" style="background: none; border: none; color: var(--text-tertiary); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
       </div>

@@ -47,5 +47,434 @@
     }
   },
   "timeAgoRecent": "recent",
-  "user": "Utilizator"
+  "user": "Utilizator",
+
+  "authWelcomeBack": "Bine ai revenit!",
+  "authLoginSubtitle": "Conecteaza-te pentru a continua",
+  "authEmail": "Email",
+  "authPassword": "Parola",
+  "authEmailRequired": "Email obligatoriu",
+  "authEmailInvalid": "Email invalid",
+  "authPasswordRequired": "Parola obligatorie",
+  "authForgotPassword": "Ai uitat parola?",
+  "authLoginButton": "Conecteaza-te",
+  "authOr": "sau",
+  "authContinueGoogle": "Continua cu Google",
+  "authNoAccount": "Nu ai cont? ",
+  "authRegister": "Inregistreaza-te",
+  "authLoginError": "Eroare la autentificare",
+  "authGoogleError": "Eroare la autentificarea cu Google",
+
+  "authCreateAccount": "Creeaza cont",
+  "authRegisterSubtitle": "Completeaza datele pentru a te inregistra",
+  "authFirstName": "Prenume",
+  "authLastName": "Nume",
+  "authRequired": "Obligatoriu",
+  "authPasswordMin8": "Minim 8 caractere",
+  "authPasswordNeedsDigit": "Trebuie sa contina cel putin o cifra",
+  "authAccept": "Accept ",
+  "authTerms": "Termenii",
+  "authAnd": " si ",
+  "authPrivacyPolicy": "Politica de confidentialitate",
+  "authAcceptTermsError": "Trebuie sa accepti termenii si politica de confidentialitate.",
+  "authRegisterButton": "Creeaza cont",
+  "authRegisterError": "Eroare la inregistrare",
+  "authHasAccount": "Ai deja cont? ",
+
+  "authForgotTitle": "Ai uitat parola?",
+  "authForgotSubtitle": "Introdu adresa de email si iti vom trimite un cod de resetare.",
+  "authSendCode": "Trimite codul",
+  "authCodeSent": "Daca exista un cont cu acest email, vei primi un cod de resetare.",
+  "authSendCodeError": "Eroare la trimiterea codului. Incearca din nou.",
+  "authRememberPassword": "Ti-ai amintit parola? ",
+
+  "authVerifyTitle": "Verifica codul",
+  "authCodeSentTo": "Am trimis un cod de 6 cifre la {email}",
+  "@authCodeSentTo": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "authExpiresIn": "Expira in {time}",
+  "@authExpiresIn": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "authCodeExpired": "Cod expirat",
+  "authEnterAllDigits": "Introdu toate cele 6 cifre",
+  "authInvalidCode": "Cod invalid sau expirat",
+  "authVerifyButton": "Verifica",
+  "authNoCode": "Nu ai primit codul? ",
+  "authResend": "Retrimite",
+  "authResending": "Se trimite...",
+  "authNewCodeSent": "Cod nou trimis!",
+  "authResendError": "Eroare la retrimitere",
+
+  "authNewPassword": "Parola noua",
+  "authNewPasswordSubtitle": "Alege o parola noua pentru contul tau.",
+  "authNewPasswordLabel": "Parola noua",
+  "authConfirmPassword": "Confirma parola",
+  "authPasswordIsRequired": "Parola este obligatorie",
+  "authConfirmRequired": "Confirmarea este obligatorie",
+  "authPasswordsMismatch": "Parolele nu coincid",
+  "authResetButton": "Reseteaza parola",
+  "authResetSuccess": "Parola a fost schimbata cu succes!",
+  "authResetError": "Eroare la resetarea parolei. Codul poate fi expirat.",
+
+  "onboardingSkip": "Sari peste",
+  "onboardingContinue": "Continua",
+  "onboardingStart": "Incepe",
+  "onboardingTitle1": "Descopera oferte",
+  "onboardingDesc1": "Gaseste reduceri verificate de la frizerii, restaurante, fitness si 12+ categorii din orasul tau.",
+  "onboardingTrust1": "100% Gratuit",
+  "onboardingTrustDesc1": "Fara costuri ascunse, fara abonamente",
+  "onboardingTitle2": "Urmareste business-uri",
+  "onboardingDesc2": "Aboneaza-te la business-urile preferate si primeste notificari cand apar oferte noi.",
+  "onboardingTrust2": "Business-uri Verificate",
+  "onboardingTrustDesc2": "Echipa OFAI verifica fiecare partener",
+  "onboardingTitle3": "Economiseste mai mult",
+  "onboardingDesc3": "Salveaza ofertele la favorite, dezvaluie coduri promo si profita de reduceri exclusive.",
+  "onboardingTrust3": "Oferte Personalizate",
+  "onboardingTrustDesc3": "Bazate pe orasul si preferintele tale",
+
+  "homeSubtitle": "Cele mai bune oferte din orasul tau",
+  "searchHint": "Cauta oferte, business-uri...",
+  "categories": "Categorii",
+  "discoverCities": "Descopera orase",
+  "dealOfDay": "Oferta Zilei",
+  "flashOffers": "Oferte Flash",
+  "collections": "Colectii",
+  "offersCount": "{count} oferte",
+  "@offersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "recentlyViewed": "Vazute recent",
+  "forYou": "Pentru tine",
+  "popularOffers": "Oferte populare",
+  "noOffersAvailable": "Nicio oferta disponibila",
+  "checkBackLater": "Revino mai tarziu pentru oferte noi",
+  "errorLoadingOffers": "Nu s-au putut incarca ofertele",
+  "promotedOffers": "Oferte Promovate",
+  "partnerBusinesses": "Business-uri partenere",
+  "businesses": "Business-uri",
+  "noBusinessAvailable": "Niciun business disponibil",
+  "checkBackLaterShort": "Revino mai tarziu",
+  "errorLoadingBusinesses": "Nu s-au putut incarca business-urile",
+  "seeAll": "Vezi toate",
+
+  "explore": "Exploreaza",
+  "cityFilter": "Oras",
+  "categoryFilter": "Categorie",
+  "saveSearch": "Salveaza",
+  "resetFilters": "Reseteaza",
+  "offers": "Oferte",
+  "showingResults": "Afisand {count} din {total} {type}",
+  "@showingResults": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "total": { "type": "int" },
+      "type": { "type": "String" }
+    }
+  },
+  "noOfferFound": "Nicio oferta gasita",
+  "tryOtherFilters": "Incearca alte filtre sau cauta altceva",
+  "noBusinessFound": "Niciun business gasit",
+  "searchSaved": "Cautare salvata!",
+  "searchSaveError": "Eroare la salvare (max 10)",
+  "locationUnavailable": "Locatia nu este disponibila",
+  "locationError": "Nu s-a putut determina locatia",
+  "recentSearches": "Cautari recente",
+  "deleteAll": "Sterge tot",
+  "myPreferences": "Preferintele mele",
+  "chooseCity": "Alege orasul",
+  "allCities": "Toate orasele",
+  "chooseCategory": "Alege categoria",
+  "allCategories": "Toate categoriile",
+  "sorting": "Sortare",
+  "sortDefault": "Implicit",
+  "sortPopular": "Populare",
+  "sortDiscount": "Reducere maxima",
+  "sortEndingSoon": "Expira curand",
+  "sortDistance": "Distanta",
+
+  "loginToSaveOffers": "Conecteaza-te pentru a salva oferte",
+  "loginToSaveSubtitle": "Salveaza ofertele preferate si urmareste business-urile favorite",
+  "signIn": "Conecteaza-te",
+  "myCollection": "Colectia mea",
+  "searchInOffers": "Cauta in oferte...",
+  "searchInBusinesses": "Cauta in business-uri...",
+  "sortNameAZ": "Nume A-Z",
+  "sortRating": "Rating",
+  "sortDiscountShort": "Reducere",
+  "sortEndingSoonShort": "Expira curand",
+  "sortDistanceShort": "Distanta",
+  "loadingError": "Eroare la incarcare",
+  "retry": "Reincearca",
+  "noFavoriteOffers": "Nu ai oferte favorite",
+  "noFavoriteOffersSubtitle": "Salveaza oferte din pagina de explorare sau din detaliile unei oferte",
+  "noResults": "Niciun rezultat",
+  "noFavoriteOfferMatch": "Nicio oferta favorita nu corespunde cautarii",
+  "removedFromFavorites": "{name} eliminata din favorite",
+  "@removedFromFavorites": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "cancel": "Anuleaza",
+  "removeError": "Eroare la eliminare",
+  "noFollowedBusinesses": "Nu urmaresti niciun business",
+  "noFollowedBusinessesSubtitle": "Urmareste business-uri pentru a primi notificari despre ofertele lor",
+  "noFollowedBusinessMatch": "Niciun business urmarit nu corespunde cautarii",
+  "removedFromFollowed": "{name} eliminat din urmarite",
+  "@removedFromFollowed": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "shareOffer": "Distribuie oferta",
+  "reportOffer": "Raporteaza oferta",
+  "reportSent": "Raportul a fost trimis. Multumim!",
+  "report": "Raporteaza",
+  "flashOffer": "Oferta flash",
+  "offerTitle": "Titlu oferta: {title}",
+  "@offerTitle": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "trending": "Trending",
+  "saveCount": "{count} salvari",
+  "@saveCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "validPeriod": "Valabila: {start} - {end}",
+  "@validPeriod": {
+    "placeholders": {
+      "start": { "type": "String" },
+      "end": { "type": "String" }
+    }
+  },
+  "active": "Activa",
+  "expired": "Expirata",
+  "conditions": "Conditii",
+  "howToUseOffer": "Cum sa folosesti oferta",
+  "redemptionCall": "Suna si mentioneaza oferta OFAI",
+  "redemptionWhatsapp": "Scrie pe WhatsApp si mentioneaza oferta OFAI",
+  "redemptionOnline": "Rezerva online si mentioneaza oferta OFAI",
+  "redemptionBooking": "Mentioneaza oferta OFAI la rezervare",
+  "redemptionAppointment": "Mentioneaza oferta OFAI la programare",
+  "redemptionOrder": "Mentioneaza oferta OFAI la comanda",
+  "redemptionCheckout": "Aplica codul sau mentioneaza oferta OFAI la checkout",
+  "redemptionShowPage": "Arata aceasta pagina pentru a beneficia de reducere",
+  "redemptionDefault": "Mentioneaza oferta OFAI pentru a beneficia de reducere",
+  "codesExhausted": "Codurile s-au epuizat",
+  "codesRemaining": "Doar {count} coduri ramase!",
+  "@codesRemaining": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "business": "Business",
+  "locations": "Locatii",
+  "booking": "Rezervare",
+  "phone": "Telefon",
+  "online": "Online",
+  "similarOffers": "Oferte similare",
+  "galleryCount": "Galerie ({count})",
+  "@galleryCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "galleryImage": "Imagine galerie",
+  "callNow": "Suna acum",
+  "bookOnline": "Rezerva online",
+  "saved": "Salvata",
+  "save": "Salveaza",
+  "errorLoadingOffer": "Nu s-a putut incarca oferta",
+  "promoCode": "Cod Promotional",
+  "loginToSeeCode": "Conecteaza-te pentru a vedea codul",
+  "codeUnavailable": "Codul nu este disponibil",
+  "codeLoadError": "Nu s-a putut incarca codul",
+  "showCodeAtCheckout": "Arata acest cod la casa",
+  "codeCopied": "Cod copiat in clipboard",
+  "revealCode": "Dezvaluie codul",
+  "copyCode": "Copiaza codul",
+  "tapForFullscreen": "Apasa pentru ecran complet",
+  "tryAgain": "Incearca din nou",
+  "discountLabel": "Reducere {label}",
+  "@discountLabel": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+
+  "shareBusiness": "Distribuie business",
+  "reportBusiness": "Raporteaza business",
+  "thisIsYourBusiness": "Acesta este business-ul tau",
+  "manageOnWeb": "Gestioneaza pe Web",
+  "followersCount": "{count} urmaritori",
+  "@followersCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "reviewsCount": "({count} recenzii)",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "writeReview": "Scrie recenzie",
+  "reviewSummary": "Rezumat recenzii",
+  "contact": "Contact",
+  "activeOffers": "Oferte active",
+  "reviews": "Recenzii",
+  "noReviewsYet": "Nicio recenzie inca",
+  "beFirstToReview": "Fii primul care scrie o recenzie!",
+  "loadMoreReviews": "Incarca mai multe recenzii",
+  "followed": "Urmarit",
+  "follow": "Urmareste",
+  "errorLoadingBusiness": "Nu s-a putut incarca business-ul",
+  "premiumBusiness": "Business Premium",
+  "verifiedBusiness": "Business Verificat",
+  "premiumDescription": "Acest business are un abonament Premium OFAI. Beneficiaza de vizibilitate sporita, analize avansate si suport prioritar.",
+  "verifiedDescription": "Acest business a fost verificat de echipa OFAI. Verificam identitatea, locatia si calitatea serviciilor pentru a asigura o experienta de incredere.",
+  "writeAReview": "Scrie o recenzie",
+  "commentHint": "Scrie un comentariu (optional)...",
+  "submitReview": "Trimite recenzia",
+  "submitError": "Eroare la trimitere",
+  "deleteReviewTitle": "Sterge recenzia?",
+  "deleteReviewBody": "Recenzia si eventualul raspuns al business-ului vor fi sterse definitiv.",
+  "delete": "Sterge",
+  "reviewDeleted": "Recenzia a fost stearsa",
+  "reviewDeleteError": "Eroare la stergerea recenziei",
+  "ratingLabel": "Nota {rating} din 5, {count} recenzii",
+  "@ratingLabel": {
+    "placeholders": {
+      "rating": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+
+  "welcomeTitle": "Bine ai venit!",
+  "loginToAccessAccount": "Conecteaza-te pentru a accesa contul tau",
+  "createAccount": "Creeaza cont",
+  "favorites": "Favorite",
+  "following": "Urmariri",
+  "badgesEarned": "Insigne castigate",
+  "selectForReviews": "Selecteaza pentru recenzii",
+  "savedSearches": "Cautari salvate",
+  "preferences": "Preferinte",
+  "addBusiness": "Adauga business",
+  "terms": "Termeni",
+  "privacy": "Confidentialitate",
+  "exportData": "Exporta datele",
+  "deleteAccount": "Sterge contul",
+  "shareText": "Descopera ofertele din orasul tau pe OFAI! Foloseste link-ul meu: https://ofai.ro/r/{code}",
+  "@shareText": {
+    "placeholders": {
+      "code": { "type": "String" }
+    }
+  },
+
+  "prefTitle": "Preferinte",
+  "prefCities": "Orasele preferate",
+  "prefCitiesHelp": "Poti selecta mai multe orase",
+  "prefCategories": "Categorii preferate",
+  "prefCategoriesHelp": "Selecteaza categoriile care te intereseaza",
+  "prefNotifications": "Notificari",
+  "prefNotificationsHelp": "Alege ce notificari primesti",
+  "prefDealOfDay": "Oferta Zilei",
+  "prefFollowedBusiness": "Business-uri urmarite",
+  "prefFlashDeals": "Oferte flash",
+  "prefWeeklyDigest": "Rezumat saptamanal",
+  "prefReviewPrompt": "Cerere recenzie",
+  "prefSavedSearch": "Cautari salvate",
+  "prefMarketing": "Marketing",
+  "prefSave": "Salveaza preferintele",
+  "prefUpdated": "Preferinte actualizate",
+  "prefErrorCities": "Nu s-au putut incarca orasele",
+  "prefErrorCategories": "Nu s-au putut incarca categoriile",
+
+  "changePasswordTitle": "Schimba parola",
+  "currentPassword": "Parola curenta",
+  "currentPasswordHint": "Introdu parola curenta",
+  "currentPasswordRequired": "Parola curenta este obligatorie",
+  "newPassword": "Parola noua",
+  "newPasswordHint": "Minim 8 caractere, cel putin o cifra",
+  "newPasswordRequired": "Parola noua este obligatorie",
+  "minChars": "Minim 8 caractere",
+  "needsDigit": "Trebuie sa contina cel putin o cifra",
+  "confirmPassword": "Confirma parola",
+  "confirmPasswordHint": "Repeta parola noua",
+  "confirmRequired": "Confirmarea este obligatorie",
+  "passwordsMismatch": "Parolele nu se potrivesc",
+  "passwordChanged": "Parola a fost schimbata",
+
+  "editProfileTitle": "Editeaza profilul",
+  "firstName": "Prenume",
+  "firstNameHint": "Prenumele tau",
+  "firstNameRequired": "Prenumele este obligatoriu",
+  "lastName": "Nume",
+  "lastNameHint": "Numele tau",
+  "lastNameRequired": "Numele este obligatoriu",
+  "email": "Email",
+  "nameChangeLimit": "Numele poate fi schimbat o data la 30 de zile.",
+  "showPictureInReviews": "Arata poza in recenzii",
+  "profileUpdated": "Profil actualizat",
+  "saveError": "Eroare la salvare",
+
+  "deleteAccountTitle": "Sterge contul",
+  "deleteWarning": "Atentie!",
+  "deleteWarningBody": "Stergerea contului este ireversibila. Toate datele tale vor fi sterse permanent, inclusiv:",
+  "deleteItem1": "Profilul si datele personale",
+  "deleteItem2": "Recenziile scrise",
+  "deleteItem3": "Ofertele favorite",
+  "deleteItem4": "Abonamentele la business-uri",
+  "deleteItem5": "Istoricul activitatii",
+  "confirmWithPassword": "Confirma cu parola",
+  "enterAccountPassword": "Introdu parola contului",
+  "passwordRequiredForDelete": "Introdu parola pentru confirmare",
+  "googleDeleteInfo": "Contul tau este conectat prin Google. Apasa butonul de mai jos pentru a confirma stergerea.",
+  "deleteAccountButton": "Sterge contul definitiv",
+  "confirmDeleteTitle": "Confirmare stergere",
+  "confirmDeleteBody": "Esti sigur ca vrei sa-ti stergi contul? Aceasta actiune este ireversibila si toate datele tale vor fi sterse permanent.",
+  "cancelAction": "Anuleaza",
+  "deleteAccountAction": "Sterge contul",
+
+  "myData": "Datele mele",
+  "exportError": "Eroare la export",
+  "gdprInfo": "Acestea sunt toate datele tale stocate pe platforma OFAI, conform GDPR.",
+  "shareData": "Partajeaza datele",
+  "myDataSubject": "OFAI - Datele mele",
+
+  "errorGeneric": "Eroare: {message}",
+  "@errorGeneric": {
+    "placeholders": {
+      "message": { "type": "String" }
+    }
+  },
+
+  "unexpectedError": "A aparut o eroare neasteptata",
+  "errorOccurred": "A aparut o eroare",
+  "unfollowBusiness": "Nu mai urmari",
+  "businessResponse": "Raspuns business",
+  "newBadge": "Nou",
+  "removeFromFavorites": "Elimina din favorite",
+  "addToFavorites": "Adauga la favorite",
+  "promoted": "PROMOVAT",
+  "saveSingular": "1 salvare",
+  "savePlural": "{count} salvari",
+  "@savePlural": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  }
 }

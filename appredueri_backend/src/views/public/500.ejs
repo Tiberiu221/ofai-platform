@@ -1,19 +1,19 @@
-<%- include('partials/head', { pageTitle: 'Eroare Server', activePage: null, noIndex: true }) %>
+<%- include('partials/head', { pageTitle: t('errors.serverErrorTitle'), activePage: null, noIndex: true }) %>
 <%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <section class="error-page">
   <div class="error-page-glow"></div>
   <div class="error-page-content">
     <div class="error-code">500</div>
-    <h1 class="error-title">Ceva nu a mers bine</h1>
-    <p class="error-desc">Ne pare rău, a apărut o eroare pe server. Încearcă din nou sau revino mai târziu.</p>
+    <h1 class="error-title"><%= t('errors.serverErrorHeading') %></h1>
+    <p class="error-desc"><%= t('errors.serverErrorDesc') %></p>
     <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-      <a href="/" class="btn btn-primary btn-lg">Acasă</a>
-      <a href="/ajutor" class="btn btn-secondary btn-lg">Ajutor & Suport</a>
+      <a href="/" class="btn btn-primary btn-lg"><%= t('errors.home') %></a>
+      <a href="/ajutor" class="btn btn-secondary btn-lg"><%= t('errors.helpSupport') %></a>
     </div>
     <% if (typeof errorStack !== 'undefined' && errorStack) { %>
       <details style="margin-top: 32px; text-align: left; max-width: 700px; width: 100%;">
-        <summary style="cursor: pointer; color: var(--text-tertiary); font-size: 0.85rem;">Detalii eroare (dev)</summary>
+        <summary style="cursor: pointer; color: var(--text-tertiary); font-size: 0.85rem;"><%= t('errors.errorDetails') %></summary>
         <pre style="margin-top: 12px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; overflow-x: auto; font-size: 0.8rem; color: var(--text-secondary); white-space: pre-wrap; word-break: break-all;"><%= typeof errorMessage !== 'undefined' ? errorMessage : '' %>
 
 <%= errorStack %></pre>

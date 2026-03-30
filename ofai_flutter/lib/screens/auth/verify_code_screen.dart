@@ -9,6 +9,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../widgets/particle_background.dart';
 import '../../widgets/glass_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   final String email;
@@ -101,7 +102,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   Future<void> _verify() async {
     final code = _code;
     if (code.length != 6) {
-      setState(() => _error = 'Introdu toate cele 6 cifre');
+      setState(() => _error = AppLocalizations.of(context)!.authEnterAllDigits);
       return;
     }
 
@@ -122,7 +123,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Cod invalid sau expirat';
+          _error = AppLocalizations.of(context)!.authInvalidCode;
           _isLoading = false;
         });
       }
@@ -149,8 +150,8 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
         setState(() => _isResending = false);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cod nou trimis!'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.authNewCodeSent),
             backgroundColor: AppColors.success,
           ),
         );
@@ -158,7 +159,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error = 'Eroare la retrimitere';
+          _error = AppLocalizations.of(context)!.authResendError;
           _isResending = false;
         });
       }
@@ -199,10 +200,10 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                     const SizedBox(height: AppSpacing.xxxl),
 
                     // Title
-                    Text('Verifică codul', style: AppTypography.displayMedium),
+                    Text(AppLocalizations.of(context)!.authVerifyTitle, style: AppTypography.displayMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Am trimis un cod de 6 cifre la ${widget.email}',
+                      AppLocalizations.of(context)!.authCodeSentTo(widget.email),
                       style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
                     ),
 
@@ -233,7 +234,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _secondsLeft > 0 ? 'Expiră în $_timerText' : 'Cod expirat',
+                                    _secondsLeft > 0 ? AppLocalizations.of(context)!.authExpiresIn(_timerText) : AppLocalizations.of(context)!.authCodeExpired,
                                     style: AppTypography.labelMedium.copyWith(
                                       color: _secondsLeft > 0 ? AppColors.textSecondary : AppColors.danger,
                                     ),
@@ -317,7 +318,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                                       width: 20, height: 20,
                                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary),
                                     )
-                                  : const Text('Verifică'),
+                                  : Text(AppLocalizations.of(context)!.authVerifyButton),
                             ),
                           ),
 
@@ -328,13 +329,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Nu ai primit codul? ',
+                                AppLocalizations.of(context)!.authNoCode,
                                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                               ),
                               GestureDetector(
                                 onTap: _isResending ? null : _resend,
                                 child: Text(
-                                  _isResending ? 'Se trimite...' : 'Retrimite',
+                                  _isResending ? AppLocalizations.of(context)!.authResending : AppLocalizations.of(context)!.authResend,
                                   style: AppTypography.labelLarge.copyWith(
                                     color: _isResending ? AppColors.textTertiary : AppColors.accent,
                                   ),

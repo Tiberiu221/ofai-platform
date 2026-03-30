@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/storage/preferences.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../app.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,33 +20,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pageController = PageController();
   int _currentPage = 0;
 
-  static const _pages = [
+  List<_OnboardingPage> _getPages(AppLocalizations l10n) => [
     _OnboardingPage(
       icon: Icons.local_offer_outlined,
-      title: 'Descoperă oferte',
-      description:
-          'Găsește reduceri verificate de la frizerii, restaurante, fitness și 12+ categorii din orașul tău.',
+      title: l10n.onboardingTitle1,
+      description: l10n.onboardingDesc1,
       trustIcon: Icons.shield_outlined,
-      trustTitle: '100% Gratuit',
-      trustDesc: 'Fără costuri ascunse, fără abonamente',
+      trustTitle: l10n.onboardingTrust1,
+      trustDesc: l10n.onboardingTrustDesc1,
     ),
     _OnboardingPage(
       icon: Icons.store_outlined,
-      title: 'Urmărește business-uri',
-      description:
-          'Abonează-te la business-urile preferate și primește notificări când apar oferte noi.',
+      title: l10n.onboardingTitle2,
+      description: l10n.onboardingDesc2,
       trustIcon: Icons.verified_outlined,
-      trustTitle: 'Business-uri Verificate',
-      trustDesc: 'Echipa OFAI verifică fiecare partener',
+      trustTitle: l10n.onboardingTrust2,
+      trustDesc: l10n.onboardingTrustDesc2,
     ),
     _OnboardingPage(
       icon: Icons.savings_outlined,
-      title: 'Economisește mai mult',
-      description:
-          'Salvează ofertele la favorite, dezvăluie coduri promo și profită de reduceri exclusive.',
+      title: l10n.onboardingTitle3,
+      description: l10n.onboardingDesc3,
       trustIcon: Icons.auto_awesome_outlined,
-      trustTitle: 'Oferte Personalizate',
-      trustDesc: 'Bazate pe orașul și preferințele tale',
+      trustTitle: l10n.onboardingTrust3,
+      trustDesc: l10n.onboardingTrustDesc3,
     ),
   ];
 
@@ -65,6 +63,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final pages = _getPages(l10n);
     return Scaffold(
       body: Stack(
         children: [
@@ -84,7 +84,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: GestureDetector(
                   onTap: _complete,
                   child: Text(
-                    'Sari peste',
+                    l10n.onboardingSkip,
                     style: AppTypography.labelMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -97,10 +97,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                itemCount: _pages.length,
+                itemCount: pages.length,
                 onPageChanged: (i) => setState(() => _currentPage = i),
                 itemBuilder: (_, i) {
-                  final page = _pages[i];
+                  final page = pages[i];
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.xxl,
@@ -210,7 +210,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_pages.length, (i) {
+                children: List.generate(pages.length, (i) {
                   final isActive = i == _currentPage;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -249,7 +249,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                   ),
                   onPressed: () {
-                    if (_currentPage < _pages.length - 1) {
+                    if (_currentPage < pages.length - 1) {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
@@ -259,7 +259,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     }
                   },
                   child: Text(
-                    _currentPage < _pages.length - 1 ? 'Continuă' : 'Începe',
+                    _currentPage < pages.length - 1 ? l10n.onboardingContinue : l10n.onboardingStart,
                   ),
                 ),
               ),

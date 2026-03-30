@@ -23,6 +23,7 @@ import '../../widgets/subscription_badge.dart';
 import '../../services/analytics_service.dart';
 import '../../widgets/report_dialog.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BusinessDetailScreen extends ConsumerWidget {
   final int businessId;
@@ -63,7 +64,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                     backgroundColor: AppColors.bgPrimary,
                     actions: [
                       Semantics(
-                        label: 'Distribuie business',
+                        label: AppLocalizations.of(context)!.shareBusiness,
                         button: true,
                         child: IconButton(
                           icon: const Icon(Icons.share_outlined),
@@ -75,7 +76,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                       ),
                       if (isLoggedIn)
                         Semantics(
-                          label: 'Raporteaza business',
+                          label: AppLocalizations.of(context)!.reportBusiness,
                           button: true,
                           child: PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert),
@@ -88,19 +89,19 @@ class BusinessDetailScreen extends ConsumerWidget {
                               );
                               if (sent && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Raportul a fost trimis. Multumim!')),
+                                  SnackBar(content: Text(AppLocalizations.of(context)!.reportSent)),
                                 );
                               }
                             }
                           },
                           itemBuilder: (ctx) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'report',
                               child: Row(
                                 children: [
-                                  Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
-                                  SizedBox(width: 8),
-                                  Text('Raporteaza'),
+                                  const Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
+                                  const SizedBox(width: 8),
+                                  Text(AppLocalizations.of(ctx)!.report),
                                 ],
                               ),
                             ),
@@ -194,12 +195,12 @@ class BusinessDetailScreen extends ConsumerWidget {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            'Acesta este business-ul tau',
+                                            AppLocalizations.of(context)!.thisIsYourBusiness,
                                             style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
                                           ),
                                           const SizedBox(height: 2),
                                           Text(
-                                            'Gestioneaza pe Web',
+                                            AppLocalizations.of(context)!.manageOnWeb,
                                             style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
                                           ),
                                         ],
@@ -250,7 +251,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 Icon(Icons.people_outline, size: 14, color: AppColors.textTertiary),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '${business.followerCount} urmăritori',
+                                  AppLocalizations.of(context)!.followersCount(business.followerCount!),
                                   style: AppTypography.caption,
                                 ),
                               ],
@@ -262,7 +263,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                           // Rating row
                           if (business.rating != null && business.rating! > 0) ...[
                             Semantics(
-                              label: 'Nota ${business.rating!.toStringAsFixed(1)} din 5, ${business.ratingCount ?? 0} recenzii',
+                              label: AppLocalizations.of(context)!.ratingLabel(business.rating!.toStringAsFixed(1), business.ratingCount ?? 0),
                               child: Row(
                               children: [
                                 ...List.generate(5, (i) => Icon(
@@ -277,7 +278,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 ),
                                 if (business.ratingCount != null)
                                   Text(
-                                    ' (${business.ratingCount} recenzii)',
+                                    ' ${AppLocalizations.of(context)!.reviewsCount(business.ratingCount!)}',
                                     style: AppTypography.caption,
                                   ),
                                 const Spacer(),
@@ -291,7 +292,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                         borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
                                       ),
                                       child: Text(
-                                        'Scrie recenzie',
+                                        AppLocalizations.of(context)!.writeReview,
                                         style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
                                       ),
                                     ),
@@ -318,7 +319,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                     children: [
                                       Icon(Icons.auto_awesome, size: 16, color: AppColors.accent),
                                       const SizedBox(width: 6),
-                                      Text('Rezumat recenzii', style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
+                                      Text(AppLocalizations.of(context)!.reviewSummary, style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
                                     ],
                                   ),
                                   const SizedBox(height: AppSpacing.sm),
@@ -344,7 +345,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Contact', style: AppTypography.headlineSmall),
+                                  Text(AppLocalizations.of(context)!.contact, style: AppTypography.headlineSmall),
                                   const SizedBox(height: AppSpacing.sm),
                                   if (business.address != null)
                                     _InfoTile(
@@ -384,7 +385,7 @@ class BusinessDetailScreen extends ConsumerWidget {
 
                           // Locations
                           if (business.locations != null && business.locations!.length > 1) ...[
-                            Text('Locații', style: AppTypography.headlineSmall),
+                            Text(AppLocalizations.of(context)!.locations, style: AppTypography.headlineSmall),
                             const SizedBox(height: AppSpacing.sm),
                             ...business.locations!.map((loc) {
                               // Check if location has its own booking different from main
@@ -435,7 +436,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                             if (loc.bookingPhone != null)
                                               _BookingChip(
                                                 icon: Icons.phone,
-                                                label: 'Telefon',
+                                                label: AppLocalizations.of(context)!.phone,
                                                 onTap: () {
                                                   Launchers.call(loc.bookingPhone!);
                                                   AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
@@ -453,7 +454,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                             if (loc.bookingUrl != null)
                                               _BookingChip(
                                                 icon: Icons.language,
-                                                label: 'Online',
+                                                label: AppLocalizations.of(context)!.online,
                                                 onTap: () {
                                                   Launchers.website(loc.bookingUrl!);
                                                   AnalyticsService.trackClick(businessId: business.id, actionType: 'booking_url');
@@ -472,7 +473,7 @@ class BusinessDetailScreen extends ConsumerWidget {
 
                           // Booking
                           if (business.booking != null && business.booking!.hasBooking) ...[
-                            Text('Rezervare', style: AppTypography.headlineSmall),
+                            Text(AppLocalizations.of(context)!.booking, style: AppTypography.headlineSmall),
                             const SizedBox(height: AppSpacing.sm),
                             Wrap(
                               spacing: AppSpacing.sm,
@@ -481,7 +482,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 if (business.booking!.phone != null)
                                   _BookingChip(
                                     icon: Icons.phone,
-                                    label: 'Telefon',
+                                    label: AppLocalizations.of(context)!.phone,
                                     onTap: () {
                                       Launchers.call(business.booking!.phone!);
                                       AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
@@ -499,7 +500,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                                 if (business.booking!.url != null)
                                   _BookingChip(
                                     icon: Icons.language,
-                                    label: 'Online',
+                                    label: AppLocalizations.of(context)!.online,
                                     onTap: () {
                                       Launchers.website(business.booking!.url!);
                                       AnalyticsService.trackClick(businessId: business.id, actionType: 'booking_url');
@@ -525,7 +526,7 @@ class BusinessDetailScreen extends ConsumerWidget {
 
                           // Active offers have priority over pinch card — mutually exclusive
                           if (business.activeOffers != null && business.activeOffers!.isNotEmpty) ...[
-                            Text('Oferte active', style: AppTypography.headlineSmall),
+                            Text(AppLocalizations.of(context)!.activeOffers, style: AppTypography.headlineSmall),
                             const SizedBox(height: AppSpacing.sm),
                             ...business.activeOffers!.map((offer) => Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -583,7 +584,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                           // Images gallery
                           if (business.images != null && business.images!.isNotEmpty) ...[
                             Text(
-                              'Galerie (${business.images!.length})',
+                              AppLocalizations.of(context)!.galleryCount(business.images!.length),
                               style: AppTypography.headlineSmall,
                             ),
                             const SizedBox(height: AppSpacing.sm),
@@ -603,8 +604,8 @@ class BusinessDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
                           itemCount: business.images!.length,
                           separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) => Semantics(
-                            label: 'Imagine galerie',
+                          itemBuilder: (ctx, i) => Semantics(
+                            label: AppLocalizations.of(ctx)!.galleryImage,
                             image: true,
                             child: GestureDetector(
                               onTap: () {
@@ -640,7 +641,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                         children: [
                           if (business.images != null && business.images!.isNotEmpty)
                             const SizedBox(height: 40),
-                          Semantics(label: 'Recenzii', header: true, child: Text('Recenzii', style: AppTypography.headlineSmall)),
+                          Semantics(label: AppLocalizations.of(context)!.reviews, header: true, child: Text(AppLocalizations.of(context)!.reviews, style: AppTypography.headlineSmall)),
                           if (business.ratingDistribution != null && (business.ratingCount ?? 0) >= 3) ...[
                             const SizedBox(height: AppSpacing.sm),
                             _RatingBreakdown(distribution: business.ratingDistribution!, total: business.ratingCount ?? 0),
@@ -659,11 +660,13 @@ class BusinessDetailScreen extends ConsumerWidget {
                       ),
                     )
                   else if (reviewsState.reviews.isEmpty)
-                    const SliverToBoxAdapter(
-                      child: EmptyState(
-                        icon: Icons.rate_review_outlined,
-                        title: 'Nicio recenzie inca',
-                        subtitle: 'Fii primul care scrie o recenzie!',
+                    SliverToBoxAdapter(
+                      child: Builder(
+                        builder: (context) => EmptyState(
+                          icon: Icons.rate_review_outlined,
+                          title: AppLocalizations.of(context)!.noReviewsYet,
+                          subtitle: AppLocalizations.of(context)!.beFirstToReview,
+                        ),
                       ),
                     )
                   else
@@ -691,7 +694,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                           child: TextButton(
                             onPressed: () => ref.read(businessReviewsProvider(businessId).notifier).loadMore(),
                             child: Text(
-                              'Încarcă mai multe recenzii',
+                              AppLocalizations.of(context)!.loadMoreReviews,
                               style: AppTypography.labelMedium.copyWith(color: AppColors.accent),
                             ),
                           ),
@@ -715,8 +718,8 @@ class BusinessDetailScreen extends ConsumerWidget {
                     onTap: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(business.id),
                     activeIcon: Icons.notifications_active,
                     inactiveIcon: Icons.notifications_none,
-                    activeLabel: 'Urmarit',
-                    inactiveLabel: 'Urmareste',
+                    activeLabel: AppLocalizations.of(context)!.followed,
+                    inactiveLabel: AppLocalizations.of(context)!.follow,
                   ),
                 ),
             ],
@@ -726,7 +729,7 @@ class BusinessDetailScreen extends ConsumerWidget {
         error: (err, _) => Scaffold(
           appBar: AppBar(backgroundColor: AppColors.bgPrimary),
           body: w.ErrorState(
-            message: 'Nu s-a putut încărca business-ul',
+            message: AppLocalizations.of(context)!.errorLoadingBusiness,
             onRetry: () => ref.invalidate(businessDetailProvider(businessId)),
           ),
         ),
@@ -737,10 +740,9 @@ class BusinessDetailScreen extends ConsumerWidget {
   void _showBadgeInfo(BuildContext context, String badgeType) {
     final isPremium = badgeType == 'premium';
     final badgeColor = isPremium ? AppColors.premiumPurple : AppColors.accent;
-    final title = isPremium ? 'Business Premium' : 'Business Verificat';
-    final description = isPremium
-        ? 'Acest business are un abonament Premium OFAI. Beneficiază de vizibilitate sporită, analize avansate și suport prioritar.'
-        : 'Acest business a fost verificat de echipa OFAI. Verificăm identitatea, locația și calitatea serviciilor pentru a asigura o experiență de încredere.';
+    final l10n = AppLocalizations.of(context)!;
+    final title = isPremium ? l10n.premiumBusiness : l10n.verifiedBusiness;
+    final description = isPremium ? l10n.premiumDescription : l10n.verifiedDescription;
 
     showModalBottomSheet(
       context: context,
@@ -821,7 +823,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text('Scrie o recenzie', style: AppTypography.headlineSmall),
+              Text(AppLocalizations.of(context)!.writeAReview, style: AppTypography.headlineSmall),
               const SizedBox(height: AppSpacing.lg),
 
               // Stars
@@ -848,7 +850,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                 maxLength: 2000,
                 style: AppTypography.bodyMedium,
                 decoration: InputDecoration(
-                  hintText: 'Scrie un comentariu (opțional)...',
+                  hintText: AppLocalizations.of(context)!.commentHint,
                   hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
                   filled: true,
                   fillColor: AppColors.bgSecondary,
@@ -878,8 +880,8 @@ class BusinessDetailScreen extends ConsumerWidget {
                       if (success) {
                         _showSuccessOverlay(context);
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Eroare la trimitere'),
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(AppLocalizations.of(context)!.submitError),
                           backgroundColor: AppColors.danger,
                         ));
                       }
@@ -887,7 +889,7 @@ class BusinessDetailScreen extends ConsumerWidget {
                   },
                   child: isSubmitting
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary))
-                      : const Text('Trimite recenzia'),
+                      : Text(AppLocalizations.of(context)!.submitReview),
                 ),
               ),
             ],
@@ -924,15 +926,15 @@ void _confirmDeleteReview(BuildContext context, WidgetRef ref, int businessId, i
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.bgCard,
-      title: Text('Sterge recenzia?', style: AppTypography.headlineSmall),
+      title: Text(AppLocalizations.of(ctx)!.deleteReviewTitle, style: AppTypography.headlineSmall),
       content: Text(
-        'Recenzia si eventualul raspuns al business-ului vor fi sterse definitiv.',
+        AppLocalizations.of(ctx)!.deleteReviewBody,
         style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: Text('Anuleaza', style: AppTypography.labelMedium.copyWith(color: AppColors.textSecondary)),
+          child: Text(AppLocalizations.of(ctx)!.cancel, style: AppTypography.labelMedium.copyWith(color: AppColors.textSecondary)),
         ),
         TextButton(
           onPressed: () async {
@@ -941,13 +943,13 @@ void _confirmDeleteReview(BuildContext context, WidgetRef ref, int businessId, i
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(success ? 'Recenzia a fost stearsa' : 'Eroare la stergerea recenziei'),
+                  content: Text(success ? AppLocalizations.of(context)!.reviewDeleted : AppLocalizations.of(context)!.reviewDeleteError),
                   backgroundColor: success ? AppColors.success : AppColors.danger,
                 ),
               );
             }
           },
-          child: Text('Sterge', style: AppTypography.labelMedium.copyWith(color: AppColors.danger)),
+          child: Text(AppLocalizations.of(ctx)!.delete, style: AppTypography.labelMedium.copyWith(color: AppColors.danger)),
         ),
       ],
     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
@@ -74,7 +75,7 @@ class ReviewCard extends StatelessWidget {
                   color: AppColors.danger,
                   constraints: const BoxConstraints(),
                   padding: EdgeInsets.zero,
-                  tooltip: 'Sterge recenzia',
+                  tooltip: AppLocalizations.of(context)!.delete,
                   onPressed: onDelete,
                 ),
             ],
@@ -112,7 +113,7 @@ class ReviewCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Răspuns business', style: AppTypography.labelSmall.copyWith(color: AppColors.accent)),
+                  Text(AppLocalizations.of(context)!.businessResponse, style: AppTypography.labelSmall.copyWith(color: AppColors.accent)),
                   const SizedBox(height: 4),
                   Text(
                     review.response!.text,

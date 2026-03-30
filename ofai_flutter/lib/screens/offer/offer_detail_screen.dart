@@ -27,6 +27,7 @@ import '../../providers/recently_viewed_provider.dart';
 import '../../widgets/report_dialog.dart';
 import '../../widgets/flash_countdown_badge.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class OfferDetailScreen extends ConsumerWidget {
   final int offerId;
@@ -74,7 +75,7 @@ class OfferDetailScreen extends ConsumerWidget {
                     stretch: true,
                     actions: [
                       Semantics(
-                        label: 'Distribuie oferta',
+                        label: AppLocalizations.of(context)!.shareOffer,
                         button: true,
                         child: IconButton(
                           icon: const Icon(Icons.share_outlined),
@@ -89,7 +90,7 @@ class OfferDetailScreen extends ConsumerWidget {
                       ),
                       if (isLoggedIn)
                         Semantics(
-                          label: 'Raporteaza oferta',
+                          label: AppLocalizations.of(context)!.reportOffer,
                           button: true,
                           child: PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert),
@@ -102,19 +103,19 @@ class OfferDetailScreen extends ConsumerWidget {
                               );
                               if (sent && context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Raportul a fost trimis. Multumim!')),
+                                  SnackBar(content: Text(AppLocalizations.of(context)!.reportSent)),
                                 );
                               }
                             }
                           },
                           itemBuilder: (ctx) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'report',
                               child: Row(
                                 children: [
-                                  Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
-                                  SizedBox(width: 8),
-                                  Text('Raporteaza'),
+                                  const Icon(Icons.flag_outlined, size: 20, color: AppColors.textSecondary),
+                                  const SizedBox(width: 8),
+                                  Text(AppLocalizations.of(ctx)!.report),
                                 ],
                               ),
                             ),
@@ -169,7 +170,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                     top: 80,
                                     right: 16,
                                     child: Semantics(
-                                      label: 'Reducere ${offer.discountLabel}',
+                                      label: AppLocalizations.of(context)!.discountLabel(offer.discountLabel),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                         decoration: BoxDecoration(
@@ -224,7 +225,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                   Icon(Icons.bolt, size: 18, color: AppColors.accent),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Oferta flash',
+                                    AppLocalizations.of(context)!.flashOffer,
                                     style: AppTypography.labelMedium.copyWith(
                                       color: AppColors.accent,
                                       fontWeight: FontWeight.w600,
@@ -240,7 +241,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Title
                           Semantics(
-                            label: 'Titlu oferta: ${offer.title}',
+                            label: AppLocalizations.of(context)!.offerTitle(offer.title),
                             header: true,
                             child: Text(offer.title, style: AppTypography.headlineLarge),
                           ),
@@ -256,13 +257,13 @@ class OfferDetailScreen extends ConsumerWidget {
                                 if (offer.isTrending)
                                   _ActivityPill(
                                     icon: Icons.local_fire_department,
-                                    label: 'Trending',
+                                    label: AppLocalizations.of(context)!.trending,
                                     color: AppColors.accent,
                                   ),
                                 if (offer.saveCount != null && offer.saveCount! >= 3)
                                   _ActivityPill(
                                     icon: Icons.bookmark,
-                                    label: '${offer.saveCount} salvari',
+                                    label: AppLocalizations.of(context)!.saveCount(offer.saveCount!),
                                     color: AppColors.textTertiary,
                                   ),
                               ],
@@ -289,7 +290,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                       const SizedBox(width: AppSpacing.xs),
                                       Expanded(
                                         child: Text(
-                                          'Valabila: ${Formatters.date(startDate)} - ${Formatters.date(endDate)}',
+                                          AppLocalizations.of(context)!.validPeriod(Formatters.date(startDate), Formatters.date(endDate)),
                                           style: AppTypography.caption,
                                         ),
                                       ),
@@ -303,7 +304,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
-                                          offer.isActive ? 'Activa' : 'Expirata',
+                                          offer.isActive ? AppLocalizations.of(context)!.active : AppLocalizations.of(context)!.expired,
                                           style: AppTypography.labelSmall.copyWith(
                                             color: offer.isActive ? AppColors.success : AppColors.danger,
                                           ),
@@ -333,7 +334,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Conditions
                           if (offer.conditions != null && offer.conditions!.isNotEmpty) ...[
-                            _SectionTitle('Condiții'),
+                            _SectionTitle(AppLocalizations.of(context)!.conditions),
                             const SizedBox(height: AppSpacing.sm),
                             Container(
                               width: double.infinity,
@@ -352,20 +353,21 @@ class OfferDetailScreen extends ConsumerWidget {
                           ],
 
                           // How to use the offer
-                          Builder(builder: (_) {
+                          Builder(builder: (context) {
                             String tipText;
                             IconData tipIcon;
 
                             // Redemption method map (predefined keys → messages)
-                            const redemptionMap = {
-                              'call': 'Sună și menționează oferta OFAI',
-                              'whatsapp': 'Scrie pe WhatsApp și menționează oferta OFAI',
-                              'online': 'Rezervă online și menționează oferta OFAI',
-                              'booking': 'Menționează oferta OFAI la rezervare',
-                              'appointment': 'Menționează oferta OFAI la programare',
-                              'order': 'Menționează oferta OFAI la comandă',
-                              'checkout': 'Aplică codul sau menționează oferta OFAI la checkout',
-                              'show_page': 'Arată această pagină pentru a beneficia de reducere',
+                            final l10n = AppLocalizations.of(context)!;
+                            final redemptionMap = {
+                              'call': l10n.redemptionCall,
+                              'whatsapp': l10n.redemptionWhatsapp,
+                              'online': l10n.redemptionOnline,
+                              'booking': l10n.redemptionBooking,
+                              'appointment': l10n.redemptionAppointment,
+                              'order': l10n.redemptionOrder,
+                              'checkout': l10n.redemptionCheckout,
+                              'show_page': l10n.redemptionShowPage,
                             };
                             const redemptionIcons = {
                               'call': Icons.phone_in_talk,
@@ -391,23 +393,23 @@ class OfferDetailScreen extends ConsumerWidget {
                               // Auto-detection fallback from booking type
                               switch (booking.type) {
                                 case 'phone':
-                                  tipText = 'Sună și menționează oferta OFAI';
+                                  tipText = l10n.redemptionCall;
                                   tipIcon = Icons.phone_in_talk;
                                   break;
                                 case 'whatsapp':
-                                  tipText = 'Scrie pe WhatsApp și menționează oferta OFAI';
+                                  tipText = l10n.redemptionWhatsapp;
                                   tipIcon = Icons.message_outlined;
                                   break;
                                 case 'url':
-                                  tipText = 'Rezervă online și menționează oferta OFAI';
+                                  tipText = l10n.redemptionOnline;
                                   tipIcon = Icons.language;
                                   break;
                                 default:
-                                  tipText = 'Menționează oferta OFAI pentru a beneficia de reducere';
+                                  tipText = l10n.redemptionDefault;
                                   tipIcon = Icons.info_outline;
                               }
                             } else {
-                              tipText = 'Menționează oferta OFAI pentru a beneficia de reducere';
+                              tipText = l10n.redemptionDefault;
                               tipIcon = Icons.info_outline;
                             }
                             return Container(
@@ -426,7 +428,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Cum să folosești oferta', style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
+                                        Text(l10n.howToUseOffer, style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
                                         const SizedBox(height: 2),
                                         Text(tipText, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
                                       ],
@@ -483,8 +485,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                         Expanded(
                                           child: Text(
                                             isExhausted
-                                                ? 'Codurile s-au epuizat'
-                                                : 'Doar $remaining coduri ramase!',
+                                                ? AppLocalizations.of(context)!.codesExhausted
+                                                : AppLocalizations.of(context)!.codesRemaining(remaining),
                                             style: AppTypography.labelSmall.copyWith(
                                               color: isExhausted
                                                   ? AppColors.danger
@@ -505,7 +507,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Business info
                           if (offer.business != null) ...[
-                            _SectionTitle('Business'),
+                            _SectionTitle(AppLocalizations.of(context)!.business),
                             const SizedBox(height: AppSpacing.sm),
                             Builder(builder: (_) {
                               final biz = offer.business!;
@@ -594,7 +596,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Locations
                           if (offer.locations != null && offer.locations!.isNotEmpty) ...[
-                            _SectionTitle('Locații'),
+                            _SectionTitle(AppLocalizations.of(context)!.locations),
                             const SizedBox(height: AppSpacing.sm),
                             ...offer.locations!.map((loc) => Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -640,7 +642,7 @@ class OfferDetailScreen extends ConsumerWidget {
 
                           // Booking
                           if (booking != null && booking.hasBooking) ...[
-                            _SectionTitle('Rezervare'),
+                            _SectionTitle(AppLocalizations.of(context)!.booking),
                             const SizedBox(height: AppSpacing.sm),
                             if (booking.instructions != null && booking.instructions!.isNotEmpty) ...[
                               Text(
@@ -656,7 +658,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                 if (booking.phone != null)
                                   _ActionChip(
                                     icon: Icons.phone,
-                                    label: 'Telefon',
+                                    label: AppLocalizations.of(context)!.phone,
                                     onTap: () {
                                       Launchers.call(booking.phone!);
                                       final biz = offer.business;
@@ -676,7 +678,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                 if (booking.url != null)
                                   _ActionChip(
                                     icon: Icons.language,
-                                    label: 'Online',
+                                    label: AppLocalizations.of(context)!.online,
                                     onTap: () {
                                       Launchers.website(booking.url!);
                                       final biz = offer.business;
@@ -698,7 +700,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                   return Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Semantics(label: 'Oferte similare', header: true, child: Text('Oferte similare', style: AppTypography.headlineSmall)),
+                                      Semantics(label: AppLocalizations.of(context)!.similarOffers, header: true, child: Text(AppLocalizations.of(context)!.similarOffers, style: AppTypography.headlineSmall)),
                                       const SizedBox(height: AppSpacing.sm),
                                       SizedBox(
                                         height: 288,
@@ -725,7 +727,7 @@ class OfferDetailScreen extends ConsumerWidget {
                           // Gallery
                           if (offer.gallery != null && offer.gallery!.isNotEmpty) ...[
                             Text(
-                              'Galerie (${offer.gallery!.length})',
+                              AppLocalizations.of(context)!.galleryCount(offer.gallery!.length),
                               style: AppTypography.headlineSmall,
                             ),
                             const SizedBox(height: AppSpacing.sm),
@@ -746,7 +748,7 @@ class OfferDetailScreen extends ConsumerWidget {
                           itemCount: offer.gallery!.length,
                           separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
                           itemBuilder: (_, i) => Semantics(
-                            label: 'Imagine galerie',
+                            label: AppLocalizations.of(context)!.galleryImage,
                             image: true,
                             child: GestureDetector(
                               onTap: () {
@@ -830,8 +832,8 @@ class OfferDetailScreen extends ConsumerWidget {
                     onTap: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
                     activeIcon: Icons.bookmark,
                     inactiveIcon: Icons.bookmark_border,
-                    activeLabel: 'Salvata',
-                    inactiveLabel: 'Salveaza',
+                    activeLabel: AppLocalizations.of(context)!.saved,
+                    inactiveLabel: AppLocalizations.of(context)!.save,
                   ),
                 ),
             ],
@@ -841,7 +843,7 @@ class OfferDetailScreen extends ConsumerWidget {
         error: (err, _) => Scaffold(
           appBar: AppBar(backgroundColor: AppColors.bgPrimary),
           body: w.ErrorState(
-            message: 'Nu s-a putut încărca oferta',
+            message: AppLocalizations.of(context)!.errorLoadingOffer,
             onRetry: () => ref.invalidate(offerDetailProvider(offerId)),
           ),
         ),
@@ -925,7 +927,7 @@ class _BookingCTA extends StatelessWidget {
 
     if (booking.phone != null) {
       icon = Icons.phone;
-      label = 'Suna acum';
+      label = AppLocalizations.of(context)!.callNow;
       onTap = () {
         Launchers.call(booking.phone!);
         if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'phone');
@@ -939,7 +941,7 @@ class _BookingCTA extends StatelessWidget {
       };
     } else if (booking.url != null) {
       icon = Icons.language;
-      label = 'Rezerva online';
+      label = AppLocalizations.of(context)!.bookOnline;
       onTap = () {
         Launchers.website(booking.url!);
         if (businessId != null) AnalyticsService.trackClick(businessId: businessId!, offerId: offerId, actionType: 'booking_url');
@@ -1057,14 +1059,14 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
         });
       } else if (mounted) {
         setState(() {
-          _error = 'Codul nu este disponibil';
+          _error = AppLocalizations.of(context)!.codeUnavailable;
           _loading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Nu s-a putut încărca codul';
+          _error = AppLocalizations.of(context)!.codeLoadError;
           _loading = false;
         });
       }
@@ -1083,7 +1085,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Cod Promoțional',
+                AppLocalizations.of(context)!.promoCode,
                 style: AppTypography.headlineSmall.copyWith(color: const Color(0xFF06060A)),
               ),
               const SizedBox(height: 8),
@@ -1112,7 +1114,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Arată acest cod la casă',
+                AppLocalizations.of(context)!.showCodeAtCheckout,
                 style: AppTypography.bodySmall.copyWith(color: Colors.grey[600]),
               ),
             ],
@@ -1130,7 +1132,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Cod copiat în clipboard'),
+          content: Text(AppLocalizations.of(context)!.codeCopied),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
@@ -1166,7 +1168,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Cod Promoțional',
+            AppLocalizations.of(context)!.promoCode,
             style: AppTypography.headlineSmall,
             textAlign: TextAlign.center,
           ),
@@ -1175,7 +1177,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
           if (!widget.isLoggedIn) ...[
             // Not logged in state
             Text(
-              'Conectează-te pentru a vedea codul',
+              AppLocalizations.of(context)!.loginToSeeCode,
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -1202,7 +1204,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                     Icon(Icons.refresh, size: 20, color: AppColors.bgPrimary),
                     const SizedBox(width: 8),
                     Text(
-                      'Încearcă din nou',
+                      AppLocalizations.of(context)!.tryAgain,
                       style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
                     ),
                   ],
@@ -1253,7 +1255,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                           Icon(Icons.visibility, size: 20, color: AppColors.bgPrimary),
                           const SizedBox(width: 8),
                           Text(
-                            'Dezvăluie codul',
+                            AppLocalizations.of(context)!.revealCode,
                             style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
                           ),
                         ],
@@ -1294,7 +1296,7 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                     Icon(Icons.copy, size: 20, color: AppColors.bgPrimary),
                     const SizedBox(width: 8),
                     Text(
-                      'Copiază codul',
+                      AppLocalizations.of(context)!.copyCode,
                       style: AppTypography.labelLarge.copyWith(color: AppColors.bgPrimary),
                     ),
                   ],
@@ -1329,13 +1331,13 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Apasă pentru ecran complet',
+              AppLocalizations.of(context)!.tapForFullscreen,
               style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
             ),
           ] else ...[
             // Fallback: revealed but no code available
             Text(
-              'Codul nu este disponibil',
+              AppLocalizations.of(context)!.codeUnavailable,
               style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),

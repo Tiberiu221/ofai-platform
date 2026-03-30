@@ -27,6 +27,7 @@ import '../../providers/saved_searches_provider.dart';
 import '../../core/utils/distance.dart';
 import '../../models/offer.dart';
 import '../../widgets/location_banner.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -187,7 +188,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
             // Title
             Padding(
               padding: AppSpacing.pageH,
-              child: Text('Explorează', style: AppTypography.displaySmall),
+              child: Text(AppLocalizations.of(context)!.explore, style: AppTypography.displaySmall),
             ),
 
             const SizedBox(height: AppSpacing.md),
@@ -203,7 +204,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                     onChanged: _onSearchChanged,
                     style: AppTypography.bodyMedium,
                     decoration: InputDecoration(
-                      hintText: 'Cauta oferte, business-uri...',
+                      hintText: AppLocalizations.of(context)!.searchHint,
                       hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
                       prefixIcon: const Icon(Icons.search, size: 20),
                       suffixIcon: _searchController.text.isNotEmpty
@@ -287,7 +288,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                   ],
                   // City dropdown
                   _FilterChip(
-                    label: _selectedCityName(citiesAsync, offersState.cityId ?? businessesState.cityId) ?? 'Oraș',
+                    label: _selectedCityName(citiesAsync, offersState.cityId ?? businessesState.cityId) ?? AppLocalizations.of(context)!.cityFilter,
                     isActive: (offersState.cityId ?? businessesState.cityId) != null,
                     onTap: () => _showCityPicker(citiesAsync),
                     semanticsLabel: 'Filtreaza dupa oras',
@@ -295,7 +296,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                   const SizedBox(width: AppSpacing.sm),
                   // Category dropdown
                   _FilterChip(
-                    label: _selectedCategoryName(categoriesAsync, offersState.categoryId ?? businessesState.categoryId) ?? 'Categorie',
+                    label: _selectedCategoryName(categoriesAsync, offersState.categoryId ?? businessesState.categoryId) ?? AppLocalizations.of(context)!.categoryFilter,
                     isActive: (offersState.categoryId ?? businessesState.categoryId) != null,
                     onTap: () => _showCategoryPicker(categoriesAsync),
                     semanticsLabel: 'Filtreaza dupa categorie',
@@ -317,7 +318,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                        (offersState.categoryId ?? businessesState.categoryId) != null)) ...[
                     const SizedBox(width: AppSpacing.sm),
                     _FilterChip(
-                      label: 'Salvează',
+                      label: AppLocalizations.of(context)!.saveSearch,
                       isActive: false,
                       icon: Icons.bookmark_add_outlined,
                       onTap: () => _saveCurrentSearch(offersState, businessesState),
@@ -330,7 +331,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                       !offersState.prefsActive) ...[
                     const SizedBox(width: AppSpacing.sm),
                     _FilterChip(
-                      label: 'Resetează',
+                      label: AppLocalizations.of(context)!.resetFilters,
                       isActive: false,
                       icon: Icons.close,
                       onTap: _clearFilters,
@@ -365,9 +366,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                   unselectedLabelColor: AppColors.textSecondary,
                   labelStyle: AppTypography.labelMedium,
                   unselectedLabelStyle: AppTypography.labelMedium,
-                  tabs: const [
-                    Tab(text: 'Oferte'),
-                    Tab(text: 'Business-uri'),
+                  tabs: [
+                    Tab(text: AppLocalizations.of(context)!.offers),
+                    Tab(text: AppLocalizations.of(context)!.businesses),
                   ],
                 ),
               ),
@@ -385,7 +386,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               return Padding(
                 padding: AppSpacing.pageH,
                 child: Text(
-                  'Afișând $count din $total ${isOffers ? 'oferte' : 'business-uri'}',
+                  AppLocalizations.of(context)!.showingResults(count, total, isOffers ? AppLocalizations.of(context)!.offers.toLowerCase() : AppLocalizations.of(context)!.businesses.toLowerCase()),
                   style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
                 ),
               );
@@ -426,16 +427,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     }
     if (state.error != null) {
       return w.ErrorState(
-        message: 'Nu s-au putut încărca ofertele',
+        message: AppLocalizations.of(context)!.errorLoadingOffers,
         onRetry: () => ref.read(offersListProvider.notifier).fetch(),
       );
     }
     if (state.offers.isEmpty) {
       return EmptyState(
         icon: Icons.local_offer_outlined,
-        title: 'Nicio ofertă găsită',
-        subtitle: 'Încearcă alte filtre sau caută altceva',
-        actionLabel: 'Reseteaza filtrele',
+        title: AppLocalizations.of(context)!.noOfferFound,
+        subtitle: AppLocalizations.of(context)!.tryOtherFilters,
+        actionLabel: AppLocalizations.of(context)!.resetFilters,
         onAction: _clearFilters,
       );
     }
@@ -482,16 +483,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     }
     if (state.error != null) {
       return w.ErrorState(
-        message: 'Nu s-au putut încărca business-urile',
+        message: AppLocalizations.of(context)!.errorLoadingBusinesses,
         onRetry: () => ref.read(businessesListProvider.notifier).fetch(),
       );
     }
     if (state.businesses.isEmpty) {
       return EmptyState(
         icon: Icons.store_outlined,
-        title: 'Niciun business găsit',
-        subtitle: 'Încearcă alte filtre sau caută altceva',
-        actionLabel: 'Reseteaza filtrele',
+        title: AppLocalizations.of(context)!.noBusinessFound,
+        subtitle: AppLocalizations.of(context)!.tryOtherFilters,
+        actionLabel: AppLocalizations.of(context)!.resetFilters,
         onAction: _clearFilters,
       );
     }
@@ -542,16 +543,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   Position? _userPosition;
 
   String _sortLabel(String? sort) {
-    if (_isDistanceSort) return '📍 Distanță';
+    final l = AppLocalizations.of(context)!;
+    if (_isDistanceSort) return '📍 ${l.sortDistance}';
     switch (sort) {
       case 'popular':
-        return '🔥 Populare';
+        return '🔥 ${l.sortPopular}';
       case 'discount_desc':
-        return '↓% Reducere';
+        return '↓% ${l.sortDiscountShort}';
       case 'ending_soon':
-        return '⏰ Expiră';
+        return '⏰ ${l.sortEndingSoon}';
       default:
-        return '🕐 Sortare';
+        return '🕐 ${l.sorting}';
     }
   }
 
@@ -567,9 +569,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     );
 
     if (!mounted) return;
+    final l = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(success ? 'Căutare salvată!' : 'Eroare la salvare (max 10)'),
+        content: Text(success ? l.searchSaved : l.searchSaveError),
         backgroundColor: success ? AppColors.bgSecondary : AppColors.danger,
       ),
     );
@@ -612,11 +615,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     final cities = citiesAsync.valueOrNull;
     if (cities == null) return;
 
+    final l = AppLocalizations.of(context)!;
     _showGlassBottomSheet(
       child: _PickerSheet(
-        title: 'Alege orașul',
+        title: l.chooseCity,
         items: [
-          _PickerItem(label: 'Toate orașele', value: null),
+          _PickerItem(label: l.allCities, value: null),
           ...cities.map((c) => _PickerItem(label: c.name, value: c.id)),
         ],
         onSelected: (value) {
@@ -640,11 +644,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     final categories = categoriesAsync.valueOrNull;
     if (categories == null) return;
 
+    final l = AppLocalizations.of(context)!;
     _showGlassBottomSheet(
       child: _PickerSheet(
-        title: 'Alege categoria',
+        title: l.chooseCategory,
         items: [
-          _PickerItem(label: 'Toate categoriile', value: null),
+          _PickerItem(label: l.allCategories, value: null),
           ...categories.map((c) => _PickerItem(label: c.name, value: c.id)),
         ],
         onSelected: (value) {
@@ -665,15 +670,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   }
 
   void _showSortPicker() {
+    final l = AppLocalizations.of(context)!;
     _showGlassBottomSheet(
       child: _PickerSheet(
-        title: 'Sortare',
+        title: l.sorting,
         items: [
-          _PickerItem(label: '🕐 Implicit', value: null),
-          _PickerItem(label: '🔥 Populare', value: 'popular'),
-          _PickerItem(label: '↓% Reducere maximă', value: 'discount_desc'),
-          _PickerItem(label: '⏰ Expiră curând', value: 'ending_soon'),
-          _PickerItem(label: '📍 Distanță', value: 'distance'),
+          _PickerItem(label: '🕐 ${l.sortDefault}', value: null),
+          _PickerItem(label: '🔥 ${l.sortPopular}', value: 'popular'),
+          _PickerItem(label: '↓% ${l.sortDiscount}', value: 'discount_desc'),
+          _PickerItem(label: '⏰ ${l.sortEndingSoon}', value: 'ending_soon'),
+          _PickerItem(label: '📍 ${l.sortDistance}', value: 'distance'),
         ],
         onSelected: (value) {
           Navigator.pop(context);
@@ -702,7 +708,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       if (permission == LocationPermission.denied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Locatia nu este disponibila')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.locationUnavailable)),
           );
         }
         return;
@@ -720,7 +726,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nu s-a putut determina locatia')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.locationError)),
         );
       }
     }
@@ -790,7 +796,7 @@ class _SearchHistoryDropdown extends ConsumerWidget {
                 Icon(Icons.history, size: 14, color: AppColors.textTertiary),
                 const SizedBox(width: 6),
                 Text(
-                  'Căutări recente',
+                  AppLocalizations.of(context)!.recentSearches,
                   style: AppTypography.labelSmall.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -803,7 +809,7 @@ class _SearchHistoryDropdown extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Text(
-                      'Șterge tot',
+                      AppLocalizations.of(context)!.deleteAll,
                       style: AppTypography.labelSmall.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -900,7 +906,7 @@ class _PrefsFilterChip extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                'Preferințele mele',
+                AppLocalizations.of(context)!.myPreferences,
                 style: AppTypography.labelMedium.copyWith(
                   color: isActive
                       ? AppColors.accent

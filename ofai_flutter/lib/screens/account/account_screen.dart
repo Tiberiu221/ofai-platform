@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -45,7 +46,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Eroare la incarcarea codului de referral')),
+          SnackBar(content: Text(AppLocalizations.of(context)!.referralError)),
         );
       }
       return;
@@ -56,7 +57,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     final totalPoints = stats?['total_points_earned'] ?? 0;
     final referrals = (stats?['referrals'] as List?) ?? [];
 
-    final shareText = 'Descopera ofertele din orasul tau pe OFAI! Foloseste link-ul meu: https://ofai.ro/r/$referralCode';
+    final shareText = AppLocalizations.of(context)!.shareText(referralCode);
 
     showModalBottomSheet(
       context: context,
@@ -75,10 +76,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               const SizedBox(height: AppSpacing.xxl),
               const Icon(Icons.card_giftcard, color: AppColors.accent, size: 48),
               const SizedBox(height: AppSpacing.lg),
-              Text('Invita prieteni', style: AppTypography.headlineSmall),
+              Text(AppLocalizations.of(context)!.inviteFriends, style: AppTypography.headlineSmall),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Trimite link-ul tau prietenilor si descopera impreuna cele mai bune oferte!',
+                AppLocalizations.of(context)!.inviteSubtitle,
                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -88,9 +89,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _StatChip(icon: Icons.people, label: '$totalReferrals invitati'),
+                    _StatChip(icon: Icons.people, label: AppLocalizations.of(context)!.invitedCount(totalReferrals as int)),
                     const SizedBox(width: AppSpacing.md),
-                    _StatChip(icon: Icons.star, label: '$totalPoints puncte'),
+                    _StatChip(icon: Icons.star, label: AppLocalizations.of(context)!.pointsCount(totalPoints as int)),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -104,9 +105,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                       separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
                       itemBuilder: (_, i) {
                         final r = referrals[i];
-                        final name = r['first_name'] ?? 'Utilizator';
+                        final name = r['first_name'] ?? AppLocalizations.of(context)!.user;
                         final date = DateTime.tryParse(r['created_at'] ?? '');
-                        final ago = date != null ? _timeAgo(date) : '';
+                        final ago = date != null ? _timeAgo(context, date) : '';
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Row(
@@ -154,7 +155,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                     Navigator.pop(context);
                   },
                   icon: const Icon(Icons.share, size: 20),
-                  label: const Text('Trimite invitatia'),
+                  label: Text(AppLocalizations.of(context)!.sendInvite),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -165,12 +166,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     );
   }
 
-  String _timeAgo(DateTime date) {
+  String _timeAgo(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final diff = DateTime.now().difference(date);
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()} luni';
-    if (diff.inDays > 0) return '${diff.inDays} zile';
-    if (diff.inHours > 0) return '${diff.inHours} ore';
-    return 'recent';
+    if (diff.inDays > 30) return l10n.timeAgoMonths((diff.inDays / 30).floor());
+    if (diff.inDays > 0) return l10n.timeAgoDays(diff.inDays);
+    if (diff.inHours > 0) return l10n.timeAgoHours(diff.inHours);
+    return l10n.timeAgoRecent;
   }
 
   void _tryFetch() {
@@ -217,12 +219,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     Text(
-                      'Bine ai venit!',
+                      AppLocalizations.of(context)!.welcomeTitle,
                       style: AppTypography.displaySmall,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Conecteaza-te pentru a accesa contul tau',
+                      AppLocalizations.of(context)!.loginToAccessAccount,
                       style: AppTypography.bodyLarge.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -233,7 +235,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () => context.push('/login'),
-                        child: const Text('Conecteaza-te'),
+                        child: Text(AppLocalizations.of(context)!.login),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -241,7 +243,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () => context.push('/register'),
-                        child: const Text('Creeaza cont'),
+                        child: Text(AppLocalizations.of(context)!.createAccount),
                       ),
                     ),
                   ],
@@ -327,7 +329,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                     child: _StatCard(
                       icon: Icons.bookmark_outline,
                       value: '${favState.favoriteIds.length}',
-                      label: 'Favorite',
+                      label: AppLocalizations.of(context)!.favorites,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -335,7 +337,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                     child: _StatCard(
                       icon: Icons.notifications_none,
                       value: '${subState.followedIds.length}',
-                      label: 'Urmariri',
+                      label: AppLocalizations.of(context)!.following,
                     ),
                   ),
                 ],
@@ -377,7 +379,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                             child: Row(
                               children: [
-                                Text('Insigne câștigate', style: AppTypography.labelLarge),
+                                Text(AppLocalizations.of(context)!.badgesEarned, style: AppTypography.labelLarge),
                                 const Spacer(),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -398,7 +400,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                            child: Text('Selectează pentru recenzii', style: AppTypography.captionMuted),
+                            child: Text(AppLocalizations.of(context)!.selectForReviews, style: AppTypography.captionMuted),
                           ),
                           // Badge strip
                           SizedBox(
@@ -450,38 +452,38 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               // Menu items
               _MenuItem(
                 icon: Icons.person_outline,
-                label: 'Profilul meu',
+                label: AppLocalizations.of(context)!.myProfile,
                 onTap: () => context.push('/account/edit-profile'),
               ),
               _MenuItem(
                 icon: Icons.tune_outlined,
-                label: 'Preferinte',
+                label: AppLocalizations.of(context)!.preferences,
                 onTap: () => context.push('/account/preferences'),
               ),
               _MenuItem(
                 icon: Icons.saved_search,
-                label: 'Cautari salvate',
+                label: AppLocalizations.of(context)!.savedSearches,
                 onTap: () => context.push('/account/saved-searches'),
               ),
               _MenuItem(
                 icon: Icons.flag_outlined,
-                label: 'Rapoartele mele',
+                label: AppLocalizations.of(context)!.myReports,
                 onTap: () => context.push('/account/my-reports'),
               ),
               if (user?.hasPassword ?? true)
                 _MenuItem(
                   icon: Icons.lock_outline,
-                  label: 'Schimba parola',
+                  label: AppLocalizations.of(context)!.changePassword,
                   onTap: () => context.push('/account/change-password'),
                 ),
               _MenuItem(
                 icon: Icons.card_giftcard,
-                label: 'Invita prieteni',
+                label: AppLocalizations.of(context)!.inviteFriends,
                 onTap: () => _showReferralSheet(context),
               ),
               _MenuItem(
                 icon: Icons.help_outline,
-                label: 'Ajutor',
+                label: AppLocalizations.of(context)!.help,
                 onTap: () => context.push('/help'),
               ),
 
@@ -491,7 +493,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
               _MenuItem(
                 icon: Icons.logout,
-                label: 'Deconectare',
+                label: AppLocalizations.of(context)!.logout,
                 onTap: () {
                   ref.read(authProvider.notifier).logout();
                 },
@@ -505,17 +507,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 runSpacing: AppSpacing.xs,
                 children: [
                   _FooterLink(
-                    label: 'Termeni',
+                    label: AppLocalizations.of(context)!.terms,
                     onTap: () => context.push('/terms'),
                   ),
                   Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
                   _FooterLink(
-                    label: 'Confidentialitate',
+                    label: AppLocalizations.of(context)!.privacy,
                     onTap: () => context.push('/privacy'),
                   ),
                   Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
                   _FooterLink(
-                    label: 'Adauga business',
+                    label: AppLocalizations.of(context)!.addBusiness,
                     onTap: () => launchUrl(Uri.parse('https://ofai.ro/pentru-business'), mode: LaunchMode.externalApplication),
                   ),
                 ],
@@ -526,14 +528,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 spacing: AppSpacing.md,
                 children: [
                   _FooterLink(
-                    label: 'Exporta datele',
+                    label: AppLocalizations.of(context)!.exportData,
                     onTap: () => context.push('/account/data-export'),
                   ),
                   Text('·', style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted)),
                   GestureDetector(
                     onTap: () => context.push('/account/delete-account'),
                     child: Text(
-                      'Sterge contul',
+                      AppLocalizations.of(context)!.deleteAccount,
                       style: AppTypography.labelSmall.copyWith(
                         color: AppColors.danger.withValues(alpha: 0.5),
                       ),

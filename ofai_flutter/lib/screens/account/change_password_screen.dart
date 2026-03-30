@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -42,8 +43,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Parola a fost schimbată'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.passwordChanged),
             backgroundColor: AppColors.bgSecondary,
           ),
         );
@@ -67,7 +68,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Schimbă parola'),
+        title: Text(AppLocalizations.of(context)!.changePasswordTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: SingleChildScrollView(
@@ -79,13 +80,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             children: [
               const SizedBox(height: AppSpacing.lg),
 
-              Text('Parola curentă', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.currentPassword, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _currentCtrl,
                 obscureText: _obscureCurrent,
                 decoration: InputDecoration(
-                  hintText: 'Introdu parola curentă',
+                  hintText: AppLocalizations.of(context)!.currentPasswordHint,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureCurrent ? Icons.visibility_off : Icons.visibility,
@@ -95,18 +96,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
                 validator: (v) =>
-                    v == null || v.isEmpty ? 'Parola curentă este obligatorie' : null,
+                    v == null || v.isEmpty ? AppLocalizations.of(context)!.currentPasswordRequired : null,
               ),
 
               const SizedBox(height: AppSpacing.xxl),
 
-              Text('Parola nouă', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.newPassword, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _newCtrl,
                 obscureText: _obscureNew,
                 decoration: InputDecoration(
-                  hintText: 'Minim 8 caractere, cel putin o cifra',
+                  hintText: AppLocalizations.of(context)!.newPasswordHint,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureNew ? Icons.visibility_off : Icons.visibility,
@@ -116,22 +117,22 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Parola nouă este obligatorie';
-                  if (v.length < 8) return 'Minim 8 caractere';
-                  if (!RegExp(r'\d').hasMatch(v)) return 'Trebuie sa contina cel putin o cifra';
+                  if (v == null || v.isEmpty) return AppLocalizations.of(context)!.newPasswordRequired;
+                  if (v.length < 8) return AppLocalizations.of(context)!.minChars;
+                  if (!RegExp(r'\d').hasMatch(v)) return AppLocalizations.of(context)!.needsDigit;
                   return null;
                 },
               ),
 
               const SizedBox(height: AppSpacing.xxl),
 
-              Text('Confirmă parola', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.confirmPassword, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _confirmCtrl,
                 obscureText: _obscureConfirm,
                 decoration: InputDecoration(
-                  hintText: 'Repetă parola nouă',
+                  hintText: AppLocalizations.of(context)!.confirmPasswordHint,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirm ? Icons.visibility_off : Icons.visibility,
@@ -141,8 +142,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Confirmarea este obligatorie';
-                  if (v != _newCtrl.text) return 'Parolele nu se potrivesc';
+                  if (v == null || v.isEmpty) return AppLocalizations.of(context)!.confirmRequired;
+                  if (v != _newCtrl.text) return AppLocalizations.of(context)!.passwordsMismatch;
                   return null;
                 },
               ),
@@ -162,7 +163,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             color: AppColors.bgPrimary,
                           ),
                         )
-                      : const Text('Schimbă parola'),
+                      : Text(AppLocalizations.of(context)!.changePasswordTitle),
                 ),
               ),
             ],

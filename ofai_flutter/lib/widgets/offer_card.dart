@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
@@ -119,13 +120,13 @@ class OfferCard extends ConsumerWidget {
                       // Favorite bookmark (top left)
                       _buildFavoriteIcon(context, ref),
                       // Promoted badge (top left, next to fav)
-                      _buildPromotedBadge(),
+                      _buildPromotedBadge(context),
                       // Expiry countdown (bottom left)
                       _buildCountdown(),
                       // Rating badge (bottom right) — only when not trending
                       _buildRatingBadge(),
                       // Trending badge (bottom right) — overrides rating position
-                      _buildTrendingBadge(),
+                      _buildTrendingBadge(context),
                     ],
                   ),
                 ),
@@ -173,7 +174,7 @@ class OfferCard extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.xs),
 
                       // Location + category row
-                      _buildLocationRow(ref),
+                      _buildLocationRow(context, ref),
                     ],
                   ],
                 ),
@@ -241,10 +242,10 @@ class OfferCard extends ConsumerWidget {
                       child: _buildBadge(),
                     ),
                   _buildFavoriteIcon(context, ref),
-                  _buildPromotedBadge(),
+                  _buildPromotedBadge(context),
                   _buildCountdown(),
                   _buildRatingBadge(),
-                  _buildTrendingBadge(),
+                  _buildTrendingBadge(context),
                 ],
               ),
             ),
@@ -277,7 +278,7 @@ class OfferCard extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.xs),
 
                     // Location + category row
-                    _buildLocationRow(ref),
+                    _buildLocationRow(context, ref),
                   ],
                 ],
               ),
@@ -313,7 +314,8 @@ class OfferCard extends ConsumerWidget {
   }
 
   /// Location + category row: [icon] distance/city . category ... [bookmark] saves
-  Widget _buildLocationRow(WidgetRef ref) {
+  Widget _buildLocationRow(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final biz = offer.business;
     if (biz == null) return const SizedBox.shrink();
     final dist = _distanceText(ref);
@@ -371,8 +373,8 @@ class OfferCard extends ConsumerWidget {
               border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
             ),
             child: Text(
-              'Nou',
-              style: TextStyle(
+              l10n.newBadge,
+              style: const TextStyle(
                 color: AppColors.accent,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
@@ -382,10 +384,12 @@ class OfferCard extends ConsumerWidget {
         ],
         if (hasSaves) ...[
           const Spacer(),
-          Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
+          const Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
           const SizedBox(width: 2),
           Text(
-            '${offer.saveCount} ${offer.saveCount == 1 ? 'salvare' : 'salvari'}',
+            offer.saveCount == 1
+                ? l10n.saveSingular
+                : l10n.savePlural(offer.saveCount!),
             style: AppTypography.captionMuted,
           ),
         ],
@@ -460,11 +464,12 @@ class OfferCard extends ConsumerWidget {
             favoritesProvider.select((s) => s.favoriteIds.contains(offer.id)))
         : false;
 
+    final l10n = AppLocalizations.of(context)!;
     return Positioned(
       top: 12,
       left: 12,
       child: Semantics(
-        label: isFav ? 'Elimina din favorite' : 'Adauga la favorite',
+        label: isFav ? l10n.removeFromFavorites : l10n.addToFavorites,
         button: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -597,7 +602,7 @@ class OfferCard extends ConsumerWidget {
   }
 
   /// Promoted badge — shown at bottom left of image when offer is promoted.
-  Widget _buildPromotedBadge() {
+  Widget _buildPromotedBadge(BuildContext context) {
     if (!offer.isPromoted) return const SizedBox.shrink();
 
     return Positioned(
@@ -611,8 +616,8 @@ class OfferCard extends ConsumerWidget {
           border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
         ),
         child: Text(
-          'PROMOVAT',
-          style: TextStyle(
+          AppLocalizations.of(context)!.promoted,
+          style: const TextStyle(
             color: AppColors.accent,
             fontSize: 10,
             fontWeight: FontWeight.w600,
@@ -624,7 +629,7 @@ class OfferCard extends ConsumerWidget {
   }
 
   /// Trending badge — shown at bottom right when offer.isTrending is true.
-  Widget _buildTrendingBadge() {
+  Widget _buildTrendingBadge(BuildContext context) {
     if (!offer.isTrending) return const SizedBox.shrink();
 
     return Positioned(
@@ -642,7 +647,7 @@ class OfferCard extends ConsumerWidget {
             const Text('\u{1F525}', style: TextStyle(fontSize: 10)),
             const SizedBox(width: 3),
             Text(
-              'Trending',
+              AppLocalizations.of(context)!.trending,
               style:
                   AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
             ),

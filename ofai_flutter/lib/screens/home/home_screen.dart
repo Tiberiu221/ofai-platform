@@ -23,6 +23,7 @@ import '../../providers/recently_viewed_provider.dart';
 import '../../providers/collections_provider.dart';
 import '../../providers/category_feed_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -118,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'Cele mai bune oferte din orașul tău',
+                          AppLocalizations.of(context)!.homeSubtitle,
                           style: AppTypography.bodyLarge.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -144,7 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                       textInputAction: TextInputAction.search,
                       style: AppTypography.bodyMedium,
                       decoration: InputDecoration(
-                        hintText: 'Cauta oferte, business-uri...',
+                        hintText: AppLocalizations.of(context)!.searchHint,
                         hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
                         prefixIcon: const Icon(Icons.search, size: 20),
                         suffixIcon: ValueListenableBuilder<TextEditingValue>(
@@ -189,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SectionHeader(
-                        title: 'Categorii',
+                        title: AppLocalizations.of(context)!.categories,
                         onViewAll: () => context.push('/categories'),
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -228,7 +229,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SectionHeader(
-                        title: 'Descopera orase',
+                        title: AppLocalizations.of(context)!.discoverCities,
                         onViewAll: () => context.push('/cities'),
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -287,7 +288,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SectionHeader(title: 'Oferta Zilei'),
+                          SectionHeader(title: AppLocalizations.of(context)!.dealOfDay),
                           const SizedBox(height: AppSpacing.md),
                           Padding(
                             padding: AppSpacing.pageH,
@@ -315,7 +316,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SectionHeader(title: 'Oferte Flash'),
+                            SectionHeader(title: AppLocalizations.of(context)!.flashOffers),
                             const SizedBox(height: AppSpacing.md),
                             SizedBox(
                               height: 288,
@@ -355,7 +356,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SectionHeader(title: 'Colectii'),
+                            SectionHeader(title: AppLocalizations.of(context)!.collections),
                             const SizedBox(height: AppSpacing.md),
                             SizedBox(
                               height: 160,
@@ -408,7 +409,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                                 ),
                                                 const SizedBox(height: 4),
                                                 Text(
-                                                  '${coll.offerCount} oferte',
+                                                  AppLocalizations.of(context)!.offersCount(coll.offerCount),
                                                   style: AppTypography.caption.copyWith(
                                                     color: Colors.white70,
                                                   ),
@@ -445,7 +446,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SectionHeader(title: 'Vazute recent'),
+                            SectionHeader(title: AppLocalizations.of(context)!.recentlyViewed),
                             const SizedBox(height: AppSpacing.md),
                             SizedBox(
                               height: 288,
@@ -485,17 +486,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SectionHeader(
-                        title: isLoggedIn ? 'Pentru tine' : 'Oferte populare',
+                        title: isLoggedIn ? AppLocalizations.of(context)!.forYou : AppLocalizations.of(context)!.popularOffers,
                         onViewAll: () => context.go('/explore'),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       offersAsync.when(
                         data: (offers) {
                           if (offers.isEmpty) {
-                            return const EmptyState(
+                            return EmptyState(
                               icon: Icons.local_offer_outlined,
-                              title: 'Nicio oferta disponibila',
-                              subtitle: 'Revino mai tarziu pentru oferte noi',
+                              title: AppLocalizations.of(context)!.noOffersAvailable,
+                              subtitle: AppLocalizations.of(context)!.checkBackLater,
                             );
                           }
                           return SizedBox(
@@ -516,7 +517,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         error: (err, _) => Padding(
                           padding: AppSpacing.pageH,
                           child: w.ErrorState(
-                            message: 'Nu s-au putut incarca ofertele',
+                            message: AppLocalizations.of(context)!.errorLoadingOffers,
                             onRetry: () {
                               ref.invalidate(feedProvider);
                               ref.invalidate(popularOffersProvider);
@@ -542,7 +543,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SectionHeader(title: 'Oferte Promovate'),
+                            SectionHeader(title: AppLocalizations.of(context)!.promotedOffers),
                             const SizedBox(height: AppSpacing.md),
                             SizedBox(
                               height: 288,
@@ -655,7 +656,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                         Padding(
                           padding: AppSpacing.pageH,
                           child: Text(
-                            'Business-uri partenere',
+                            AppLocalizations.of(context)!.partnerBusinesses,
                             style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
                           ),
                         ),
@@ -675,7 +676,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 child: FadeInItem(
                   index: 7,
                   child: SectionHeader(
-                    title: 'Business-uri',
+                    title: AppLocalizations.of(context)!.businesses,
                     onViewAll: () => context.go('/explore'),
                   ),
                 ),
@@ -687,11 +688,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               businessesAsync.when(
                 data: (businesses) {
                   if (businesses.isEmpty) {
-                    return const SliverToBoxAdapter(
+                    return SliverToBoxAdapter(
                       child: EmptyState(
                         icon: Icons.store_outlined,
-                        title: 'Niciun business disponibil',
-                        subtitle: 'Revino mai tarziu',
+                        title: AppLocalizations.of(context)!.noBusinessAvailable,
+                        subtitle: AppLocalizations.of(context)!.checkBackLaterShort,
                       ),
                     );
                   }
@@ -717,7 +718,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                   child: Padding(
                     padding: AppSpacing.pageH,
                     child: w.ErrorState(
-                      message: 'Nu s-au putut incarca business-urile',
+                      message: AppLocalizations.of(context)!.errorLoadingBusinesses,
                       onRetry: () => ref.invalidate(homeBusinessesProvider),
                     ),
                   ),
@@ -889,14 +890,14 @@ class _SeeAllCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Vezi toate',
+                  AppLocalizations.of(context)!.seeAll,
                   style: AppTypography.labelLarge.copyWith(
                     color: AppColors.accent,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  '$offerCount oferte',
+                  AppLocalizations.of(context)!.offersCount(offerCount),
                   style: AppTypography.captionMuted,
                 ),
               ],

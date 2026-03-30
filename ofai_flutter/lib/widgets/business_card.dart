@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
@@ -21,6 +22,7 @@ class BusinessCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final hasCover = business.coverImage != null && business.coverImage!.isNotEmpty;
 
     return Semantics(
@@ -150,7 +152,7 @@ class BusinessCard extends ConsumerWidget {
                               Icon(Icons.local_offer_outlined, size: 12, color: AppColors.textTertiary),
                               const SizedBox(width: 2),
                               Text(
-                                '${business.activeOffersCount} oferte',
+                                '${business.activeOffersCount} ${l10n.offers.toLowerCase()}',
                                 style: AppTypography.captionMuted,
                               ),
                             ],
@@ -190,11 +192,12 @@ class BusinessCard extends ConsumerWidget {
         ? ref.watch(followedBusinessesProvider.select((s) => s.followedIds.contains(business.id)))
         : false;
 
+    final l10n = AppLocalizations.of(context)!;
     return Positioned(
       top: 8,
       left: 8,
       child: Semantics(
-        label: isFollowing ? 'Nu mai urmări' : 'Urmărește',
+        label: isFollowing ? l10n.unfollowBusiness : l10n.follow,
         button: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

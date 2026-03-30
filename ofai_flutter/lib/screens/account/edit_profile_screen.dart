@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:dio/dio.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -49,8 +50,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       await ref.read(authProvider.notifier).refreshUser();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profil actualizat'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.profileUpdated),
             backgroundColor: AppColors.bgSecondary,
           ),
         );
@@ -58,7 +59,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Eroare la salvare';
+        String errorMessage = AppLocalizations.of(context)!.saveError;
         if (e is DioException && e.response?.statusCode == 429) {
           final data = e.response?.data;
           if (data is Map) {
@@ -83,7 +84,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Editează profilul'),
+        title: Text(AppLocalizations.of(context)!.editProfileTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: SingleChildScrollView(
@@ -94,29 +95,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: AppSpacing.lg),
-              Text('Prenume', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.firstName, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _firstNameCtrl,
-                decoration: const InputDecoration(hintText: 'Prenumele tău'),
+                decoration: InputDecoration(hintText: AppLocalizations.of(context)!.firstNameHint),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Prenumele este obligatoriu' : null,
+                    v == null || v.trim().isEmpty ? AppLocalizations.of(context)!.firstNameRequired : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: AppSpacing.xxl),
-              Text('Nume', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.lastName, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _lastNameCtrl,
-                decoration: const InputDecoration(hintText: 'Numele tău'),
+                decoration: InputDecoration(hintText: AppLocalizations.of(context)!.lastNameHint),
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Numele este obligatoriu' : null,
+                    v == null || v.trim().isEmpty ? AppLocalizations.of(context)!.lastNameRequired : null,
                 textCapitalization: TextCapitalization.words,
               ),
               const SizedBox(height: AppSpacing.xxl),
 
               // Email (read-only)
-              Text('Email', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.email, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               Container(
                 width: double.infinity,
@@ -133,7 +134,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
               const SizedBox(height: AppSpacing.md),
               Text(
-                'Numele poate fi schimbat o dată la 30 de zile.',
+                AppLocalizations.of(context)!.nameChangeLimit,
                 style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
               ),
 
@@ -145,7 +146,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   const Icon(Icons.face_outlined, color: AppColors.textSecondary, size: 20),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: Text('Arată poza în recenzii', style: AppTypography.bodyMedium),
+                    child: Text(AppLocalizations.of(context)!.showPictureInReviews, style: AppTypography.bodyMedium),
                   ),
                   Switch(
                     value: ref.watch(authProvider).user?.showPictureInReviews ?? true,
@@ -156,7 +157,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       } catch (_) {
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Eroare la salvare'), backgroundColor: AppColors.danger),
+                          SnackBar(content: Text(AppLocalizations.of(context)!.saveError), backgroundColor: AppColors.danger),
                         );
                       }
                     },
@@ -179,7 +180,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             color: AppColors.bgPrimary,
                           ),
                         )
-                      : const Text('Salvează'),
+                      : Text(AppLocalizations.of(context)!.save),
                 ),
               ),
             ],

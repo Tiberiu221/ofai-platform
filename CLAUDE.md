@@ -234,7 +234,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Backend Testing:** Jest + Supertest infrastructure with 19 tests (jwt helpers, tier normalization, search helper). `npm test` / `npm run test:coverage`. App exports via `require.main === module` guard.
 - **Referral Dashboard:** `GET /users/me/referral-stats` API returns total referrals, points, recent list. Flutter bottom sheet enhanced with stat chips + referral history.
 - **PWA Support:** Web app manifest (`/manifest.json`), service worker (`/sw.js`) with cache strategies (static=cache-first, HTML=network-first, API=network-only), offline fallback page, apple-touch-icon, theme-color meta.
-- **i18n Infrastructure:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~60 keys), 4 core templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~25 keys), localization delegates, nav labels localized.
+- **i18n Complete:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~717 keys, 26 namespaces), ALL 25 consumer EJS templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~180 keys), ALL 26 screens + 5 widgets localized. Provider/utility error strings remain hardcoded (no BuildContext available).
 - **Admin Cron Testing:** `POST /admin/test-cron/review-prompt` endpoint to manually trigger post-redemption review cron.
 - **Offer Detail Booking Button:** Actionable CTA (phone/whatsapp/url) in "Cum profiți de ofertă?" section — previously only showed text
 - **Booking Type Normalization:** Migration 071 fixes `link`→`url` (20 businesses) + `NONE`→`none` (2 locations). Route handlers normalize at read time as defense in depth.
@@ -297,7 +297,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented — in-memory CacheService as interim
 - **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
 - **Stripe:** Still on test keys — go-live with real keys pending
-- **i18n remaining pages:** Only navbar, footer, login, register migrated — remaining 20+ EJS templates + Flutter screens still hardcoded Romanian
+- **i18n providers/utils:** Provider files (auth_provider, api_exceptions, formatters) still have hardcoded Romanian error strings — these lack BuildContext and would need architectural refactoring to localize
 - **Support WhatsApp:** Placeholder number `40700000000` — replace with real number before go-live
 - **Search distance filtering:** pg_trgm done but no PostGIS/distance-based filtering yet
 - **PWA icons:** Temporary copies of favicon — replace with properly sized 192x192 and 512x512 icons

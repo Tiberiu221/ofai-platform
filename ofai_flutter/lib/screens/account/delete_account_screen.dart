@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
@@ -37,8 +38,8 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Future<void> _deleteAccount() async {
     if (_needsPassword && _passwordCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Introdu parola pentru confirmare'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.passwordRequiredForDelete),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -56,18 +57,18 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
             side: const BorderSide(color: AppColors.borderLight, width: 0.5),
           ),
-          title: const Text('Confirmare ștergere'),
-          content: const Text(
-            'Ești sigur că vrei să-ți ștergi contul? Această acțiune este ireversibilă și toate datele tale vor fi șterse permanent.',
+          title: Text(AppLocalizations.of(context)!.confirmDeleteTitle),
+          content: Text(
+            AppLocalizations.of(context)!.confirmDeleteBody,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Anulează'),
+              child: Text(AppLocalizations.of(context)!.cancelAction),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text('Șterge contul', style: TextStyle(color: AppColors.danger)),
+              child: Text(AppLocalizations.of(context)!.deleteAccountAction, style: TextStyle(color: AppColors.danger)),
             ),
           ],
         ),
@@ -105,7 +106,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Șterge contul'),
+        title: Text(AppLocalizations.of(context)!.deleteAccountTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: SingleChildScrollView(
@@ -129,12 +130,12 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 48),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Atenție!',
+                    AppLocalizations.of(context)!.deleteWarning,
                     style: AppTypography.headlineSmall.copyWith(color: AppColors.danger),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Ștergerea contului este ireversibilă. Toate datele tale vor fi șterse permanent, inclusiv:',
+                    AppLocalizations.of(context)!.deleteWarningBody,
                     style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                     textAlign: TextAlign.center,
                   ),
@@ -145,23 +146,23 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
             const SizedBox(height: AppSpacing.xxl),
 
             // What gets deleted
-            _DeleteItem('Profilul și datele personale'),
-            _DeleteItem('Recenziile scrise'),
-            _DeleteItem('Ofertele favorite'),
-            _DeleteItem('Abonamentele la business-uri'),
-            _DeleteItem('Istoricul activității'),
+            _DeleteItem(AppLocalizations.of(context)!.deleteItem1),
+            _DeleteItem(AppLocalizations.of(context)!.deleteItem2),
+            _DeleteItem(AppLocalizations.of(context)!.deleteItem3),
+            _DeleteItem(AppLocalizations.of(context)!.deleteItem4),
+            _DeleteItem(AppLocalizations.of(context)!.deleteItem5),
 
             const SizedBox(height: AppSpacing.xxxl),
 
             // Password confirmation (or Google info)
             if (_needsPassword) ...[
-              Text('Confirmă cu parola', style: AppTypography.labelMedium),
+              Text(AppLocalizations.of(context)!.confirmWithPassword, style: AppTypography.labelMedium),
               const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _passwordCtrl,
                 obscureText: _obscure,
                 decoration: InputDecoration(
-                  hintText: 'Introdu parola contului',
+                  hintText: AppLocalizations.of(context)!.enterAccountPassword,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscure ? Icons.visibility_off : Icons.visibility,
@@ -173,7 +174,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               ),
             ] else ...[
               Text(
-                'Contul tău este conectat prin Google. Apasă butonul de mai jos pentru a confirma ștergerea.',
+                AppLocalizations.of(context)!.googleDeleteInfo,
                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
               ),
             ],
@@ -196,7 +197,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Șterge contul definitiv'),
+                    : Text(AppLocalizations.of(context)!.deleteAccountButton),
               ),
             ),
           ],

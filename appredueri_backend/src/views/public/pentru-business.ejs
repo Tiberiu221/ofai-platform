@@ -1,4 +1,4 @@
-<%- include('partials/head', { pageTitle: 'Pentru Business', activePage: null, pageDesc: 'Adaugă business-ul tău pe OFAI și atrage clienți noi cu oferte și reduceri exclusive.' }) %>
+<%- include('partials/head', { pageTitle: t('forBusiness.pageTitle'), activePage: null, pageDesc: t('forBusiness.pageDesc') }) %>
 <%- include('partials/navbar', { activePage: null, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <section class="hero" style="min-height: auto; padding: 120px var(--container-px) 80px;">
@@ -7,20 +7,20 @@
   <div class="hero-content">
     <div class="hero-pill">
       <span class="hero-pill-dot"></span>
-      <span>Platformă pentru business-uri locale</span>
+      <span><%= t('forBusiness.heroPill') %></span>
     </div>
     <h1 class="hero-title text-gradient">
-      Crește-ți afacerea cu <span class="accent">OFAI</span>
+      <%- t('forBusiness.heroTitle') %>
     </h1>
     <p class="hero-subtitle">
-      Ajunge la mii de clienți noi din orașul tău. Publică oferte, primește recenzii și construiește-ți comunitatea de clienți fideli.
+      <%= t('forBusiness.heroSubtitle') %>
     </p>
     <div class="hero-ctas">
       <a href="#adauga-business" class="btn btn-primary btn-lg">
-        Adaugă business-ul tău
+        <%= t('forBusiness.addYourBusiness') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
-      <a href="mailto:business@ofai.ro" class="btn btn-secondary btn-lg">Contactează-ne</a>
+      <a href="mailto:business@ofai.ro" class="btn btn-secondary btn-lg"><%= t('forBusiness.contactUs') %></a>
     </div>
   </div>
 </section>
@@ -29,30 +29,30 @@
 <section class="section">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label">De ce OFAI</div>
-      <h2 class="section-title">Beneficii pentru afacerea ta</h2>
+      <div class="section-label"><%= t('forBusiness.whyOfai') %></div>
+      <h2 class="section-title"><%= t('forBusiness.benefitsTitle') %></h2>
     </div>
     <div class="steps-grid">
       <div class="step-card reveal reveal-delay-1">
         <div class="step-number">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <div class="step-title">Clienți noi</div>
-        <div class="step-desc">Ajunge la mii de utilizatori activi din orașul tău care caută oferte și reduceri.</div>
+        <div class="step-title"><%= t('forBusiness.benefit1Title') %></div>
+        <div class="step-desc"><%= t('forBusiness.benefit1Desc') %></div>
       </div>
       <div class="step-card reveal reveal-delay-2">
         <div class="step-number">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         </div>
-        <div class="step-title">Recenzii & Rating</div>
-        <div class="step-desc">Primește recenzii autentice de la clienți și construiește-ți reputația online.</div>
+        <div class="step-title"><%= t('forBusiness.benefit2Title') %></div>
+        <div class="step-desc"><%= t('forBusiness.benefit2Desc') %></div>
       </div>
       <div class="step-card reveal reveal-delay-3">
         <div class="step-number">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
         </div>
-        <div class="step-title">Dashboard complet</div>
-        <div class="step-desc">Gestionează ofertele, locațiile și informațiile business-ului tău dintr-un singur loc.</div>
+        <div class="step-title"><%= t('forBusiness.benefit3Title') %></div>
+        <div class="step-desc"><%= t('forBusiness.benefit3Desc') %></div>
       </div>
     </div>
   </div>
@@ -62,24 +62,24 @@
 <section class="section" style="background: var(--bg-secondary);">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label">Cum funcționează</div>
-      <h2 class="section-title">3 pași simpli</h2>
+      <div class="section-label"><%= t('forBusiness.howItWorks') %></div>
+      <h2 class="section-title"><%= t('forBusiness.threeSteps') %></h2>
     </div>
     <div class="steps-grid">
       <div class="step-card reveal reveal-delay-1">
         <div class="step-number">1</div>
-        <div class="step-title">Creează un cont</div>
-        <div class="step-desc">Înregistrează-te gratuit pe platformă și configurează profilul afacerii tale.</div>
+        <div class="step-title"><%= t('forBusiness.step1Title') %></div>
+        <div class="step-desc"><%= t('forBusiness.step1Desc') %></div>
       </div>
       <div class="step-card reveal reveal-delay-2">
         <div class="step-number">2</div>
-        <div class="step-title">Publică oferte</div>
-        <div class="step-desc">Adaugă oferte și reduceri cu imagini, descrieri și condiții de utilizare.</div>
+        <div class="step-title"><%= t('forBusiness.step2Title') %></div>
+        <div class="step-desc"><%= t('forBusiness.step2Desc') %></div>
       </div>
       <div class="step-card reveal reveal-delay-3">
         <div class="step-number">3</div>
-        <div class="step-title">Atrage clienți</div>
-        <div class="step-desc">Clienții descoperă ofertele tale, fac rezervări și lasă recenzii.</div>
+        <div class="step-title"><%= t('forBusiness.step3Title') %></div>
+        <div class="step-desc"><%= t('forBusiness.step3Desc') %></div>
       </div>
     </div>
   </div>
@@ -89,8 +89,8 @@
 <section class="section" id="adauga-business">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label">Adaugă-ți business-ul</div>
-      <h2 class="section-title">Trimite o cerere</h2>
+      <div class="section-label"><%= t('forBusiness.addBusinessLabel') %></div>
+      <h2 class="section-title"><%= t('forBusiness.submitRequest') %></h2>
     </div>
 
     <% if (!webUser) { %>
@@ -100,13 +100,13 @@
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
         <circle cx="12" cy="7" r="4"/>
       </svg>
-      <h3 style="color: var(--text-primary); font-size: 20px; margin-bottom: 8px;">Trebuie să fii autentificat</h3>
+      <h3 style="color: var(--text-primary); font-size: 20px; margin-bottom: 8px;"><%= t('forBusiness.mustBeLoggedIn') %></h3>
       <p style="color: var(--text-secondary); margin-bottom: 24px;">
-        Creează un cont gratuit sau conectează-te pentru a adăuga business-ul tău pe platformă.
+        <%= t('forBusiness.loginPrompt') %>
       </p>
       <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-        <a href="/register" class="btn btn-primary btn-lg">Creează cont gratuit</a>
-        <a href="/login" class="btn btn-secondary btn-lg">Conectează-te</a>
+        <a href="/register" class="btn btn-primary btn-lg"><%= t('forBusiness.createFreeAccount') %></a>
+        <a href="/login" class="btn btn-secondary btn-lg"><%= t('forBusiness.login') %></a>
       </div>
     </div>
     <% } else { %>
@@ -118,13 +118,13 @@
       <form id="biz-request-form" class="biz-form">
         <div class="biz-form-row">
           <div class="biz-form-group">
-            <label for="biz_name" class="biz-label">Numele business-ului *</label>
-            <input type="text" id="biz_name" class="biz-input" placeholder="ex: Salon Bella" required maxlength="200">
+            <label for="biz_name" class="biz-label"><%= t('forBusiness.businessName') %></label>
+            <input type="text" id="biz_name" class="biz-input" placeholder="<%= t('forBusiness.businessNamePlaceholder') %>" required maxlength="200">
           </div>
           <div class="biz-form-group">
-            <label for="biz_category" class="biz-label">Categorie</label>
+            <label for="biz_category" class="biz-label"><%= t('forBusiness.category') %></label>
             <select id="biz_category" class="biz-input biz-select">
-              <option value="">Alege o categorie...</option>
+              <option value=""><%= t('forBusiness.chooseCategory') %></option>
               <% if (typeof categories !== 'undefined' && categories) { %>
                 <% categories.forEach(function(cat) { %>
                   <option value="<%= cat.id %>"><%= cat.name %></option>
@@ -136,9 +136,9 @@
 
         <div class="biz-form-row">
           <div class="biz-form-group">
-            <label for="biz_city" class="biz-label">Oraș *</label>
+            <label for="biz_city" class="biz-label"><%= t('forBusiness.city') %></label>
             <select id="biz_city" class="biz-input biz-select" required>
-              <option value="">Alege orașul...</option>
+              <option value=""><%= t('forBusiness.chooseCity') %></option>
               <% if (typeof cities !== 'undefined' && cities) { %>
                 <% cities.forEach(function(city) { %>
                   <option value="<%= city.id %>"><%= city.name %></option>
@@ -147,32 +147,32 @@
             </select>
           </div>
           <div class="biz-form-group">
-            <label for="biz_phone" class="biz-label">Telefon</label>
+            <label for="biz_phone" class="biz-label"><%= t('forBusiness.phone') %></label>
             <input type="tel" id="biz_phone" class="biz-input" placeholder="ex: 0712 345 678" maxlength="50">
           </div>
         </div>
 
         <div class="biz-form-group">
-          <label for="biz_address" class="biz-label">Adresă</label>
+          <label for="biz_address" class="biz-label"><%= t('forBusiness.address') %></label>
           <input type="text" id="biz_address" class="biz-input" placeholder="ex: Str. Victoriei nr. 10, Cluj-Napoca" maxlength="500">
         </div>
 
         <div class="biz-form-group">
-          <label for="biz_website" class="biz-label">Website</label>
+          <label for="biz_website" class="biz-label"><%= t('forBusiness.website') %></label>
           <input type="text" id="biz_website" class="biz-input" placeholder="ex: www.salonbella.ro" maxlength="500">
         </div>
 
         <div class="biz-form-group">
-          <label for="biz_description" class="biz-label">Descriere business</label>
-          <textarea id="biz_description" class="biz-input biz-textarea" placeholder="Descrie pe scurt business-ul tău, serviciile oferite..." maxlength="2000" rows="4"></textarea>
-          <span class="biz-hint">Câmpurile marcate cu * sunt obligatorii</span>
+          <label for="biz_description" class="biz-label"><%= t('forBusiness.description') %></label>
+          <textarea id="biz_description" class="biz-input biz-textarea" placeholder="<%= t('forBusiness.descriptionPlaceholder') %>" maxlength="2000" rows="4"></textarea>
+          <span class="biz-hint"><%= t('forBusiness.requiredFields') %></span>
         </div>
 
         <div id="biz-form-error" class="biz-error" style="display: none;"></div>
         <div id="biz-form-success" class="biz-success" style="display: none;"></div>
 
         <button type="submit" id="biz-submit-btn" class="btn btn-primary btn-lg biz-submit">
-          Trimite cererea
+          <%= t('forBusiness.submitRequestBtn') %>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </button>
       </form>
@@ -469,6 +469,29 @@
 
 <% if (webUser) { %>
 <script nonce="<%= cspNonce %>">
+var i18n = {
+  yourRequests: '<%= t("forBusiness.yourRequests") %>',
+  statusPending: '<%= t("forBusiness.statusPending") %>',
+  pendingMsg: '<%= t("forBusiness.pendingMsg") %>',
+  abandonRequest: '<%= t("forBusiness.abandonRequest") %>',
+  statusApproved: '<%= t("forBusiness.statusApproved") %>',
+  approvedMsg: '<%= t("forBusiness.approvedMsg") %>',
+  manageBusiness: '<%= t("forBusiness.manageBusiness") %>',
+  statusRejected: '<%= t("forBusiness.statusRejected") %>',
+  rejectionReason: '<%= t("forBusiness.rejectionReason") %>',
+  rejectedMsg: '<%= t("forBusiness.rejectedMsg") %>',
+  retryProcess: '<%= t("forBusiness.retryProcess") %>',
+  confirmAbandon: '<%= t("forBusiness.confirmAbandon") %>',
+  abandonError: '<%= t("forBusiness.abandonError") %>',
+  networkError: '<%= t("forBusiness.networkError") %>',
+  fillRequired: '<%= t("forBusiness.fillRequired") %>',
+  sending: '<%= t("forBusiness.sending") %>',
+  submitError: '<%= t("forBusiness.submitError") %>',
+  requestSentDefault: '<%= t("forBusiness.requestSentDefault") %>',
+  requestSent: '<%= t("forBusiness.requestSent") %>',
+  submitRequestBtn: '<%= t("forBusiness.submitRequestBtn") %>',
+  networkErrorRetry: '<%= t("forBusiness.networkErrorRetry") %>'
+};
 // Load existing requests and show tracker
 async function loadMyRequests() {
   try {
@@ -485,19 +508,19 @@ async function loadMyRequests() {
     var rejected = requests.find(function(r) { return r.status === 'rejected'; });
     var approved = requests.find(function(r) { return r.status === 'approved'; });
 
-    var html = '<h3 style="color: var(--text-primary); font-size: 16px; margin-bottom: 16px;">Cererile tale</h3>';
+    var html = '<h3 style="color: var(--text-primary); font-size: 16px; margin-bottom: 16px;">' + i18n.yourRequests + '</h3>';
 
     if (pending) {
       html += '<div class="biz-request-card card-pending">';
       html += '  <div class="biz-request-header">';
       html += '    <span class="biz-request-name">' + escapeHtml(pending.name) + '</span>';
-      html += '    <span class="biz-request-status biz-status-pending"><span class="pulse-dot"></span> In asteptare</span>';
+      html += '    <span class="biz-request-status biz-status-pending"><span class="pulse-dot"></span> ' + i18n.statusPending + '</span>';
       html += '  </div>';
-      html += '  <p class="biz-request-msg">Cererea ta este in curs de verificare. Vei primi un email cand este procesata.</p>';
+      html += '  <p class="biz-request-msg">' + i18n.pendingMsg + '</p>';
       html += '  <div class="biz-request-actions">';
       html += '    <button type="button" class="biz-btn-abandon" onclick="abandonRequest(' + pending.id + ')">';
       html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-      html += '      Renunta la adaugare';
+      html += '      ' + i18n.abandonRequest;
       html += '    </button>';
       html += '  </div>';
       html += '</div>';
@@ -507,13 +530,13 @@ async function loadMyRequests() {
       html += '<div class="biz-request-card card-approved">';
       html += '  <div class="biz-request-header">';
       html += '    <span class="biz-request-name">' + escapeHtml(approved.name) + '</span>';
-      html += '    <span class="biz-request-status biz-status-approved">&#10003; Aprobat</span>';
+      html += '    <span class="biz-request-status biz-status-approved">&#10003; ' + i18n.statusApproved + '</span>';
       html += '  </div>';
-      html += '  <p class="biz-request-msg">Business-ul tau este acum pe platforma!</p>';
+      html += '  <p class="biz-request-msg">' + i18n.approvedMsg + '</p>';
       html += '  <div class="biz-request-actions">';
       html += '    <a href="/portal" class="biz-btn-manage">';
       html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>';
-      html += '      Gestioneaza business-ul';
+      html += '      ' + i18n.manageBusiness;
       html += '    </a>';
       html += '  </div>';
       html += '</div>';
@@ -523,15 +546,15 @@ async function loadMyRequests() {
       html += '<div class="biz-request-card card-rejected">';
       html += '  <div class="biz-request-header">';
       html += '    <span class="biz-request-name">' + escapeHtml(rejected.name) + '</span>';
-      html += '    <span class="biz-request-status biz-status-rejected">&#10007; Respins</span>';
+      html += '    <span class="biz-request-status biz-status-rejected">&#10007; ' + i18n.statusRejected + '</span>';
       html += '  </div>';
       if (rejected.admin_notes) {
         html += '  <div class="biz-request-reason">';
-        html += '    <strong>Motivul respingerii</strong>';
+        html += '    <strong>' + i18n.rejectionReason + '</strong>';
         html += '    ' + escapeHtml(rejected.admin_notes);
         html += '  </div>';
       }
-      html += '  <p class="biz-request-msg">Poti corecta datele si trimite o noua cerere.</p>';
+      html += '  <p class="biz-request-msg">' + i18n.rejectedMsg + '</p>';
       // Only show retry if no pending request exists
       if (!pending) {
         // Store rejected data globally so the button can access it
@@ -539,11 +562,11 @@ async function loadMyRequests() {
         html += '  <div class="biz-request-actions">';
         html += '    <button type="button" class="biz-btn-retry" onclick="prefillFromRejected()">';
         html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
-        html += '      Reia procesul';
+        html += '      ' + i18n.retryProcess;
         html += '    </button>';
         html += '    <button type="button" class="biz-btn-abandon" onclick="abandonRequest(' + rejected.id + ')">';
         html += '      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-        html += '      Renunta la adaugare';
+        html += '      ' + i18n.abandonRequest;
         html += '    </button>';
         html += '  </div>';
       }
@@ -584,7 +607,7 @@ function enableForm() {
   inputs.forEach(function(el) { el.disabled = false; });
   // Reset button state
   var submitBtn = document.getElementById('biz-submit-btn');
-  submitBtn.innerHTML = 'Trimite cererea <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+  submitBtn.innerHTML = i18n.submitRequestBtn + ' <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
   submitBtn.style.opacity = '1';
   // Hide messages
   document.getElementById('biz-form-error').style.display = 'none';
@@ -617,7 +640,7 @@ function prefillFromRejected() {
 }
 
 async function abandonRequest(requestId) {
-  if (!confirm('Esti sigur ca vrei sa renunti? Cererea va fi stearsa definitiv.')) return;
+  if (!confirm(i18n.confirmAbandon)) return;
 
   try {
     var csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -631,7 +654,7 @@ async function abandonRequest(requestId) {
 
     var data = await res.json();
     if (!res.ok || !data.success) {
-      var msg = (data.errors && data.errors.length > 0) ? data.errors.join(' ') : 'Eroare la stergerea cererii.';
+      var msg = (data.errors && data.errors.length > 0) ? data.errors.join(' ') : i18n.abandonError;
       alert(msg);
       return;
     }
@@ -650,7 +673,7 @@ async function abandonRequest(requestId) {
     loadMyRequests();
   } catch (err) {
     console.error('Error abandoning request:', err);
-    alert('Eroare de retea. Incearca din nou.');
+    alert(i18n.networkError);
   }
 }
 
@@ -668,13 +691,13 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
   var cityId = document.getElementById('biz_city').value;
 
   if (!name || !cityId) {
-    errorDiv.textContent = 'Completeaza cel putin numele si orasul.';
+    errorDiv.textContent = i18n.fillRequired;
     errorDiv.style.display = 'block';
     return;
   }
 
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;"></span> Se trimite...';
+  submitBtn.innerHTML = '<span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite;"></span> ' + i18n.sending;
 
   try {
     var body = {
@@ -702,30 +725,30 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
     var data = await res.json();
 
     if (!res.ok || !data.success) {
-      var msg = (data.errors && data.errors.length > 0) ? data.errors.join(' ') : 'Eroare la trimiterea cererii.';
+      var msg = (data.errors && data.errors.length > 0) ? data.errors.join(' ') : i18n.submitError;
       errorDiv.textContent = msg;
       errorDiv.style.display = 'block';
       submitBtn.disabled = false;
-      submitBtn.innerHTML = 'Trimite cererea <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+      submitBtn.innerHTML = i18n.submitRequestBtn + ' <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
       return;
     }
 
     // Success
-    successDiv.textContent = data.message || 'Cererea a fost trimisa cu succes!';
+    successDiv.textContent = data.message || i18n.requestSentDefault;
     successDiv.style.display = 'block';
 
     // Disable form
-    submitBtn.innerHTML = 'Cerere trimisa &#10003;';
+    submitBtn.innerHTML = i18n.requestSent + ' &#10003;';
     submitBtn.disabled = true;
     submitBtn.style.opacity = '0.6';
     var inputs = e.target.querySelectorAll('input, select, textarea');
     inputs.forEach(function(el) { el.disabled = true; });
 
   } catch (err) {
-    errorDiv.textContent = 'Eroare de retea. Verifica conexiunea si incearca din nou.';
+    errorDiv.textContent = i18n.networkErrorRetry;
     errorDiv.style.display = 'block';
     submitBtn.disabled = false;
-    submitBtn.innerHTML = 'Trimite cererea <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
+    submitBtn.innerHTML = i18n.submitRequestBtn + ' <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>';
   }
 });
 </script>
@@ -738,13 +761,13 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
 <section class="section" id="preturi" style="background: var(--bg-secondary);">
   <div class="container">
     <div class="section-header reveal" style="margin-bottom: 0;">
-      <div class="section-label">Planuri & Prețuri</div>
-      <h2 class="section-title">Crește-ți vizibilitatea</h2>
+      <div class="section-label"><%= t('forBusiness.plansAndPricing') %></div>
+      <h2 class="section-title"><%= t('forBusiness.boostVisibility') %></h2>
       <p style="color: var(--text-muted); font-size: 1.0625rem; max-width: 480px; margin: 0 auto 32px; text-align: center;">
-        Descoperă planurile noastre și alege instrumentele potrivite pentru a atrage mai mulți clienți.
+        <%= t('forBusiness.boostDesc') %>
       </p>
       <a href="/preturi" class="btn btn-primary btn-lg">
-        Vezi planurile disponibile
+        <%= t('forBusiness.viewPlans') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
     </div>
@@ -756,9 +779,9 @@ document.getElementById('biz-request-form').addEventListener('submit', async fun
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-box-glow"></div>
-      <h2 class="cta-title">Ai întrebări?</h2>
-      <p class="cta-subtitle">Contactează-ne și te ajutăm cu orice nelămurire despre platformă.</p>
-      <a href="mailto:business@ofai.ro" class="btn btn-primary btn-lg" style="position: relative; z-index: 1;">Contactează-ne</a>
+      <h2 class="cta-title"><%= t('forBusiness.questionsTitle') %></h2>
+      <p class="cta-subtitle"><%= t('forBusiness.questionsDesc') %></p>
+      <a href="mailto:business@ofai.ro" class="btn btn-primary btn-lg" style="position: relative; z-index: 1;"><%= t('forBusiness.contactUs') %></a>
     </div>
   </div>
 </section>

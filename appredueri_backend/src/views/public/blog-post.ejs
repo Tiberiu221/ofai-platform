@@ -2,9 +2,9 @@
 <%- include('partials/navbar', { activePage, webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <nav class="blog-breadcrumb">
-  <a href="/">Acasă</a>
+  <a href="/"><%= t('blog.breadcrumbHome') %></a>
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
-  <a href="/blog">Blog</a>
+  <a href="/blog"><%= t('blog.breadcrumbBlog') %></a>
   <% if (post.category_name) { %>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
     <a href="/blog?categorie=<%= post.category_slug %>"><%= post.category_name %></a>
@@ -24,13 +24,13 @@
     <% } %>
     <h1 class="blog-article-title"><%= post.title %></h1>
     <div class="blog-article-meta">
-      <span><%= post.author_name || 'Echipa OFAI' %></span>
+      <span><%= post.author_name || t('blog.authorDefault') %></span>
       <span>&middot;</span>
-      <span><%= post.published_at ? new Date(post.published_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
+      <span><%= post.published_at ? new Date(post.published_at).toLocaleDateString(t('common.locale') || 'ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
       <span>&middot;</span>
       <span class="blog-article-meta-reading">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <%= Math.max(1, Math.round((post.content || '').replace(/<[^>]+>/g, '').split(/\s+/).length / 200)) %> min citire
+        <%= Math.max(1, Math.round((post.content || '').replace(/<[^>]+>/g, '').split(/\s+/).length / 200)) %> <%= t('blog.minRead') %>
       </span>
     </div>
   </header>
@@ -40,14 +40,14 @@
   </div>
 
   <div class="blog-article-cta">
-    <h3>Descoperă ofertele din orașul tău</h3>
-    <p>Explorează sute de reduceri verificate de la business-uri locale pe OFAI.</p>
-    <a href="/oferte">Vezi ofertele &rarr;</a>
+    <h3><%= t('blog.ctaTitle') %></h3>
+    <p><%= t('blog.ctaDesc') %></p>
+    <a href="/oferte"><%= t('blog.ctaLink') %> &rarr;</a>
   </div>
 
   <% if (related && related.length > 0) { %>
     <section class="blog-related">
-      <h2>Articole similare</h2>
+      <h2><%= t('blog.relatedArticles') %></h2>
       <div class="blog-related-grid">
         <% related.forEach(r => { %>
           <a href="/blog/<%= r.slug %>" class="blog-card">
@@ -66,7 +66,7 @@
                   <span class="blog-card-category"><%= r.category_name %></span>
                   <span>&middot;</span>
                 <% } %>
-                <span><%= r.published_at ? new Date(r.published_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
+                <span><%= r.published_at ? new Date(r.published_at).toLocaleDateString(t('common.locale') || 'ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) : '' %></span>
               </div>
               <h3 class="blog-card-title"><%= r.title %></h3>
             </div>

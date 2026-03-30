@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
@@ -122,9 +123,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
         body: SafeArea(
           child: EmptyState(
             icon: Icons.bookmark_outline,
-            title: 'Conectează-te pentru a salva oferte',
-            subtitle: 'Salvează ofertele preferate și urmărește business-urile favorite',
-            actionLabel: 'Conectează-te',
+            title: AppLocalizations.of(context)!.loginToSaveOffers,
+            subtitle: AppLocalizations.of(context)!.loginToSaveSubtitle,
+            actionLabel: AppLocalizations.of(context)!.signIn,
             onAction: () => context.push('/login'),
           ),
         ),
@@ -144,7 +145,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
             const SizedBox(height: AppSpacing.xxl),
             Padding(
               padding: AppSpacing.pageH,
-              child: Text('Colecția mea', style: AppTypography.displaySmall),
+              child: Text(AppLocalizations.of(context)!.myCollection, style: AppTypography.displaySmall),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -156,7 +157,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                 onChanged: (v) => setState(() => _searchQuery = v.trim().toLowerCase()),
                 style: AppTypography.bodyMedium,
                 decoration: InputDecoration(
-                  hintText: _tabController.index == 0 ? 'Caută în oferte...' : 'Caută în business-uri...',
+                  hintText: _tabController.index == 0 ? AppLocalizations.of(context)!.searchInOffers : AppLocalizations.of(context)!.searchInBusinesses,
                   hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
                   prefixIcon: const Icon(Icons.search, size: 20),
                   suffixIcon: _searchController.text.isNotEmpty
@@ -198,13 +199,13 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                   children: [
                     // Common sort chips for both tabs
                     _CollectionSortChip(
-                      label: 'Nume A-Z',
+                      label: AppLocalizations.of(context)!.sortNameAZ,
                       isActive: _sortMode == 'name_asc',
                       onTap: () => setState(() => _sortMode = _sortMode == 'name_asc' ? null : 'name_asc'),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     _CollectionSortChip(
-                      label: 'Rating',
+                      label: AppLocalizations.of(context)!.sortRating,
                       isActive: _sortMode == 'rating_desc',
                       onTap: () => setState(() => _sortMode = _sortMode == 'rating_desc' ? null : 'rating_desc'),
                     ),
@@ -212,20 +213,20 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                     // Favorites-only sort chips
                     if (_tabController.index == 0) ...[
                       _CollectionSortChip(
-                        label: 'Reducere',
+                        label: AppLocalizations.of(context)!.sortDiscountShort,
                         isActive: _sortMode == 'discount_desc',
                         onTap: () => setState(() => _sortMode = _sortMode == 'discount_desc' ? null : 'discount_desc'),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       _CollectionSortChip(
-                        label: 'Expiră curând',
+                        label: AppLocalizations.of(context)!.sortEndingSoonShort,
                         isActive: _sortMode == 'ending_soon',
                         onTap: () => setState(() => _sortMode = _sortMode == 'ending_soon' ? null : 'ending_soon'),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                     ],
                     _CollectionSortChip(
-                      label: 'Distanță',
+                      label: AppLocalizations.of(context)!.sortDistanceShort,
                       isActive: _sortMode == 'distance',
                       onTap: () {
                         if (_sortMode == 'distance') {
@@ -262,9 +263,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                 unselectedLabelColor: AppColors.textSecondary,
                 labelStyle: AppTypography.labelMedium,
                 dividerHeight: 0,
-                tabs: const [
-                  Tab(text: 'Oferte'),
-                  Tab(text: 'Business-uri'),
+                tabs: [
+                  Tab(text: AppLocalizations.of(context)!.offers),
+                  Tab(text: AppLocalizations.of(context)!.businesses),
                 ],
               ),
             ),
@@ -312,11 +313,11 @@ class _FavoritesTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Eroare la încărcare', style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary)),
+            Text(AppLocalizations.of(context)!.loadingError, style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton(
               onPressed: () => ref.read(favoritesProvider.notifier).fetch(),
-              child: const Text('Reîncearcă'),
+              child: Text(AppLocalizations.of(context)!.retry),
             ),
           ],
         ),
@@ -324,10 +325,10 @@ class _FavoritesTab extends ConsumerWidget {
     }
 
     if (state.offers.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.bookmark_outline,
-        title: 'Nu ai oferte favorite',
-        subtitle: 'Salvează oferte din pagina de explorare sau din detaliile unei oferte',
+        title: AppLocalizations.of(context)!.noFavoriteOffers,
+        subtitle: AppLocalizations.of(context)!.noFavoriteOffersSubtitle,
       );
     }
 
@@ -370,10 +371,10 @@ class _FavoritesTab extends ConsumerWidget {
     }
 
     if (filtered.isEmpty && searchQuery.isNotEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.search_off,
-        title: 'Niciun rezultat',
-        subtitle: 'Nicio ofertă favorită nu corespunde căutării',
+        title: AppLocalizations.of(context)!.noResults,
+        subtitle: AppLocalizations.of(context)!.noFavoriteOfferMatch,
       );
     }
 
@@ -413,10 +414,10 @@ class _FavoritesTab extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${offer.title} eliminata din favorite'),
+                      content: Text(AppLocalizations.of(context)!.removedFromFavorites(offer.title)),
                       backgroundColor: AppColors.bgSecondary,
                       action: SnackBarAction(
-                        label: 'Anuleaza',
+                        label: AppLocalizations.of(context)!.cancel,
                         textColor: AppColors.accent,
                         onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
                       ),
@@ -426,7 +427,7 @@ class _FavoritesTab extends ConsumerWidget {
               } catch (_) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Eroare la eliminare'), backgroundColor: AppColors.danger),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
                   );
                 }
               }
@@ -464,11 +465,11 @@ class _SubscriptionsTab extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Eroare la încărcare', style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary)),
+            Text(AppLocalizations.of(context)!.loadingError, style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: AppSpacing.md),
             ElevatedButton(
               onPressed: () => ref.read(followedBusinessesProvider.notifier).fetch(),
-              child: const Text('Reîncearcă'),
+              child: Text(AppLocalizations.of(context)!.retry),
             ),
           ],
         ),
@@ -476,10 +477,10 @@ class _SubscriptionsTab extends ConsumerWidget {
     }
 
     if (state.businesses.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.store_outlined,
-        title: 'Nu urmărești niciun business',
-        subtitle: 'Urmărește business-uri pentru a primi notificări despre ofertele lor',
+        title: AppLocalizations.of(context)!.noFollowedBusinesses,
+        subtitle: AppLocalizations.of(context)!.noFollowedBusinessesSubtitle,
       );
     }
 
@@ -509,10 +510,10 @@ class _SubscriptionsTab extends ConsumerWidget {
     }
 
     if (filtered.isEmpty && searchQuery.isNotEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.search_off,
-        title: 'Niciun rezultat',
-        subtitle: 'Niciun business urmărit nu corespunde căutării',
+        title: AppLocalizations.of(context)!.noResults,
+        subtitle: AppLocalizations.of(context)!.noFollowedBusinessMatch,
       );
     }
 
@@ -552,10 +553,10 @@ class _SubscriptionsTab extends ConsumerWidget {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('${biz.name} eliminat din urmarite'),
+                      content: Text(AppLocalizations.of(context)!.removedFromFollowed(biz.name)),
                       backgroundColor: AppColors.bgSecondary,
                       action: SnackBarAction(
-                        label: 'Anuleaza',
+                        label: AppLocalizations.of(context)!.cancel,
                         textColor: AppColors.accent,
                         onPressed: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id),
                       ),
@@ -565,7 +566,7 @@ class _SubscriptionsTab extends ConsumerWidget {
               } catch (_) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Eroare la eliminare'), backgroundColor: AppColors.danger),
+                    SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
                   );
                 }
               }

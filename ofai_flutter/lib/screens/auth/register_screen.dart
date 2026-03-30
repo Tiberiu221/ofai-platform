@@ -9,6 +9,7 @@ import '../../core/network/api_exceptions.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../widgets/glass_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   final String? referralCode;
@@ -42,7 +43,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_acceptAll) {
-      setState(() => _error = 'Trebuie sa accepti termenii si politica de confidentialitate.');
+      setState(() => _error = AppLocalizations.of(context)!.authAcceptTermsError);
       return;
     }
 
@@ -67,7 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       setState(() => _error = e.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Eroare la înregistrare');
+      setState(() => _error = AppLocalizations.of(context)!.authRegisterError);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -85,7 +86,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Eroare la autentificarea cu Google');
+      if (mounted) setState(() => _error = AppLocalizations.of(context)!.authGoogleError);
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }
@@ -120,12 +121,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // Title
                     Text(
-                      'Creează cont',
+                      AppLocalizations.of(context)!.authCreateAccount,
                       style: AppTypography.displayMedium,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Completează datele pentru a te înregistra',
+                      AppLocalizations.of(context)!.authRegisterSubtitle,
                       style: AppTypography.bodyLarge.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -167,9 +168,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       child: TextFormField(
                                         controller: _firstNameController,
                                         textInputAction: TextInputAction.next,
-                                        decoration: const InputDecoration(labelText: 'Prenume'),
+                                        decoration: InputDecoration(labelText: AppLocalizations.of(context)!.authFirstName),
                                         validator: (v) =>
-                                            v == null || v.trim().isEmpty ? 'Obligatoriu' : null,
+                                            v == null || v.trim().isEmpty ? AppLocalizations.of(context)!.authRequired : null,
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.md),
@@ -177,9 +178,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       child: TextFormField(
                                         controller: _lastNameController,
                                         textInputAction: TextInputAction.next,
-                                        decoration: const InputDecoration(labelText: 'Nume'),
+                                        decoration: InputDecoration(labelText: AppLocalizations.of(context)!.authLastName),
                                         validator: (v) =>
-                                            v == null || v.trim().isEmpty ? 'Obligatoriu' : null,
+                                            v == null || v.trim().isEmpty ? AppLocalizations.of(context)!.authRequired : null,
                                       ),
                                     ),
                                   ],
@@ -189,13 +190,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   controller: _emailController,
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.next,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
-                                    prefixIcon: Icon(Icons.email_outlined, size: 20),
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(context)!.authEmail,
+                                    prefixIcon: const Icon(Icons.email_outlined, size: 20),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Email obligatoriu';
-                                    if (!v.contains('@')) return 'Email invalid';
+                                    if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.authEmailRequired;
+                                    if (!v.contains('@')) return AppLocalizations.of(context)!.authEmailInvalid;
                                     return null;
                                   },
                                 ),
@@ -205,7 +206,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   obscureText: _obscurePassword,
                                   textInputAction: TextInputAction.done,
                                   decoration: InputDecoration(
-                                    labelText: 'Parolă',
+                                    labelText: AppLocalizations.of(context)!.authPassword,
                                     prefixIcon: const Icon(Icons.lock_outlined, size: 20),
                                     suffixIcon: IconButton(
                                       icon: Icon(
@@ -217,9 +218,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.isEmpty) return 'Parolă obligatorie';
-                                    if (v.length < 8) return 'Minim 8 caractere';
-                                    if (!RegExp(r'\d').hasMatch(v)) return 'Trebuie sa contina cel putin o cifra';
+                                    if (v == null || v.isEmpty) return AppLocalizations.of(context)!.authPasswordRequired;
+                                    if (v.length < 8) return AppLocalizations.of(context)!.authPasswordMin8;
+                                    if (!RegExp(r'\d').hasMatch(v)) return AppLocalizations.of(context)!.authPasswordNeedsDigit;
                                     return null;
                                   },
                                 ),
@@ -253,9 +254,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                               color: AppColors.textSecondary,
                                             ),
                                             children: [
-                                              const TextSpan(text: 'Accept '),
+                                              TextSpan(text: AppLocalizations.of(context)!.authAccept),
                                               TextSpan(
-                                                text: 'Termenii',
+                                                text: AppLocalizations.of(context)!.authTerms,
                                                 style: AppTypography.bodySmall.copyWith(
                                                   color: AppColors.accent,
                                                   decoration: TextDecoration.underline,
@@ -264,9 +265,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                 recognizer: TapGestureRecognizer()
                                                   ..onTap = () => context.push('/terms'),
                                               ),
-                                              const TextSpan(text: ' si '),
+                                              TextSpan(text: AppLocalizations.of(context)!.authAnd),
                                               TextSpan(
-                                                text: 'Politica de confidentialitate',
+                                                text: AppLocalizations.of(context)!.authPrivacyPolicy,
                                                 style: AppTypography.bodySmall.copyWith(
                                                   color: AppColors.accent,
                                                   decoration: TextDecoration.underline,
@@ -300,7 +301,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                               color: AppColors.bgPrimary,
                                             ),
                                           )
-                                        : const Text('Creează cont'),
+                                        : Text(AppLocalizations.of(context)!.authRegisterButton),
                                   ),
                                 ),
                               ],
@@ -316,7 +317,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                                 child: Text(
-                                  'sau',
+                                  AppLocalizations.of(context)!.authOr,
                                   style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary),
                                 ),
                               ),
@@ -339,7 +340,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textPrimary),
                                     )
                                   : const Icon(Icons.g_mobiledata, size: 24),
-                              label: const Text('Continuă cu Google'),
+                              label: Text(AppLocalizations.of(context)!.authContinueGoogle),
                             ),
                           ),
 
@@ -350,7 +351,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Ai deja cont? ',
+                                AppLocalizations.of(context)!.authHasAccount,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -358,7 +359,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               GestureDetector(
                                 onTap: () => context.push('/login'),
                                 child: Text(
-                                  'Conectează-te',
+                                  AppLocalizations.of(context)!.authLoginButton,
                                   style: AppTypography.labelLarge.copyWith(
                                     color: AppColors.accent,
                                   ),

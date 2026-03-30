@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../widgets/particle_background.dart';
 import '../../widgets/glass_card.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -46,7 +47,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       if (mounted) {
         setState(() {
-          _success = 'Dacă există un cont cu acest email, vei primi un cod de resetare.';
+          _success = AppLocalizations.of(context)!.authCodeSent;
           _isLoading = false;
         });
 
@@ -60,7 +61,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Eroare la trimiterea codului. Încearcă din nou.';
+          _error = AppLocalizations.of(context)!.authSendCodeError;
           _isLoading = false;
         });
       }
@@ -101,10 +102,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     const SizedBox(height: AppSpacing.xxxl),
 
                     // Title
-                    Text('Ai uitat parola?', style: AppTypography.displayMedium),
+                    Text(AppLocalizations.of(context)!.authForgotTitle, style: AppTypography.displayMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Introdu adresa de email și îți vom trimite un cod de resetare.',
+                      AppLocalizations.of(context)!.authForgotSubtitle,
                       style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
                     ),
 
@@ -161,13 +162,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   keyboardType: TextInputType.emailAddress,
                                   textInputAction: TextInputAction.done,
                                   onFieldSubmitted: (_) => _submit(),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Email',
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(context)!.authEmail,
                                     prefixIcon: Icon(Icons.email_outlined, size: 20),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Email obligatoriu';
-                                    if (!v.contains('@')) return 'Email invalid';
+                                    if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.authEmailRequired;
+                                    if (!v.contains('@')) return AppLocalizations.of(context)!.authEmailInvalid;
                                     return null;
                                   },
                                 ),
@@ -184,7 +185,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                             width: 20, height: 20,
                                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPrimary),
                                           )
-                                        : const Text('Trimite codul'),
+                                        : Text(AppLocalizations.of(context)!.authSendCode),
                                   ),
                                 ),
                               ],
@@ -198,13 +199,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                'Ți-ai amintit parola? ',
+                                AppLocalizations.of(context)!.authRememberPassword,
                                 style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                               ),
                               GestureDetector(
                                 onTap: () => context.go('/login'),
                                 child: Text(
-                                  'Conectează-te',
+                                  AppLocalizations.of(context)!.authLoginButton,
                                   style: AppTypography.labelLarge.copyWith(color: AppColors.accent),
                                 ),
                               ),
