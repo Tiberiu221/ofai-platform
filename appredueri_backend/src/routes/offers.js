@@ -813,6 +813,9 @@ router.get("/:id", async (req, res) => {
       };
     }
 
+    // Normalize legacy values (link→url, case normalization)
+    effectiveBooking.type = (effectiveBooking.type || 'none').toLowerCase().replace('link', 'url');
+
     // Profile fallbacks (defense in depth — covers cases where booking_* field is NULL but profile has data)
     if (effectiveBooking.type === 'phone' && !effectiveBooking.phone) effectiveBooking.phone = row.business_phone;
     if (effectiveBooking.type === 'whatsapp' && !effectiveBooking.whatsapp) effectiveBooking.whatsapp = row.business_phone;
@@ -914,7 +917,7 @@ router.get("/:id", async (req, res) => {
         lng: l.lng,
         phone: l.phone,
         cityName: l.city_name,
-        booking_type: l.booking_type || 'none',
+        booking_type: (l.booking_type || 'none').toLowerCase().replace('link', 'url'),
         booking_phone: l.booking_phone,
         booking_whatsapp: l.booking_whatsapp,
         booking_url: makeAbsoluteUrl(req, l.booking_url),

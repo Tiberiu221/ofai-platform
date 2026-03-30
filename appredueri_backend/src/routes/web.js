@@ -827,6 +827,8 @@ router.get("/oferta/:id", async (req, res) => {
     } else {
       booking = { type: offerBookingType, phone: row.offer_booking_phone, whatsapp: row.offer_booking_whatsapp, url: row.offer_booking_url, instructions: row.offer_booking_instructions };
     }
+    // Normalize legacy values (link→url, case normalization)
+    booking.type = (booking.type || 'none').toLowerCase().replace('link', 'url');
 
     // Profile fallbacks (defense in depth — covers cases where booking_* field is NULL but profile has data)
     if (booking.type === 'phone' && !booking.phone) booking.phone = row.business_phone;
@@ -896,7 +898,7 @@ router.get("/oferta/:id", async (req, res) => {
       },
       locations: locations.map(l => ({
         id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, cityName: l.city_name,
-        booking_type: l.booking_type || 'none',
+        booking_type: (l.booking_type || 'none').toLowerCase().replace('link', 'url'),
         booking_phone: l.booking_phone, booking_whatsapp: l.booking_whatsapp,
         booking_url: l.booking_url, booking_instructions: l.booking_instructions,
       })),
@@ -1180,7 +1182,7 @@ router.get("/business/:id", async (req, res) => {
         id: row.id, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
         maps_url: row.maps_url || null,
         city: { id: row.city_id, name: row.city_name },
-        booking_type: row.booking_type || 'none',
+        booking_type: (row.booking_type || 'none').toLowerCase().replace('link', 'url'),
         booking_phone: row.booking_phone, booking_whatsapp: row.booking_whatsapp,
         booking_url: row.booking_url, booking_instructions: row.booking_instructions,
         hours: hoursMap[row.id] || [],
@@ -1363,7 +1365,7 @@ router.get("/business/:id", async (req, res) => {
       images,
       locations,
       booking: {
-        type: b.booking_type || 'none',
+        type: (b.booking_type || 'none').toLowerCase().replace('link', 'url'),
         phone: b.booking_phone, whatsapp: b.booking_whatsapp,
         url: b.booking_url, instructions: b.booking_instructions,
       },
