@@ -351,6 +351,37 @@ router.get("/me/referral-code", auth, async (req, res) => {
   }
 });
 
+// GET /users/me/referral-stats — Referral dashboard stats
+router.get("/me/referral-stats", auth, async (req, res) => {
+  try {
+    const [statsRes, referralsRes] = await Promise.all([
+      pool.query(`
+        SELECT COUNT(*) as total_referrals,
+               COALESCE(SUM(rr.points_awarded), 0) as total_points_earned
+        FROM referral_rewards rr
+        WHERE rr.referrer_id = $1
+      `, [req.user.id]),
+      pool.query(`
+        SELECT u.first_name, rr.points_awarded, rr.reward_type, rr.created_at
+        FROM referral_rewards rr
+        JOIN users u ON u.id = rr.referee_id
+        WHERE rr.referrer_id = $1
+        ORDER BY rr.created_at DESC
+        LIMIT 50
+      `, [req.user.id]),
+    ]);
+
+    res.json({
+      total_referrals: parseInt(statsRes.rows[0].total_referrals),
+      total_points_earned: parseInt(statsRes.rows[0].total_points_earned),
+      referrals: referralsRes.rows,
+    });
+  } catch (err) {
+    console.error("[Users] Referral stats error:", err);
+    res.status(500).json({ message: "Eroare server" });
+  }
+});
+
 // ============================================
 // PROFILE PICTURE (Mobile upload / delete)
 // ============================================

@@ -61,6 +61,7 @@ class ApiEndpoints {
   static const String userProfilePicture = '/users/me/profile-picture';
   static const String notificationPreferences = '/users/me/notification-preferences';
   static const String referralCode = '/users/me/referral-code';
+  static const String referralStats = '/users/me/referral-stats';
 
   // Push
   static const String pushTokens = '/push-tokens';

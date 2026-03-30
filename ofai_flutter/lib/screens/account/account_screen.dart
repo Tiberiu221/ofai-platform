@@ -34,9 +34,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
   Future<void> _showReferralSheet(BuildContext context) async {
     String? code;
+    Map<String, dynamic>? stats;
     try {
-      final response = await ApiClient().dio.get(ApiEndpoints.referralCode);
-      code = response.data['referral_code'] as String?;
+      final results = await Future.wait([
+        ApiClient().dio.get(ApiEndpoints.referralCode),
+        ApiClient().dio.get(ApiEndpoints.referralStats),
+      ]);
+      code = results[0].data['referral_code'] as String?;
+      stats = results[1].data as Map<String, dynamic>?;
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -46,13 +51,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       return;
     }
     if (code == null || !context.mounted) return;
-    final referralCode = code; // promote to non-null for builder
+    final referralCode = code;
+    final totalReferrals = stats?['total_referrals'] ?? 0;
+    final totalPoints = stats?['total_points_earned'] ?? 0;
+    final referrals = (stats?['referrals'] as List?) ?? [];
 
     final shareText = 'Descopera ofertele din orasul tau pe OFAI! Foloseste link-ul meu: https://ofai.ro/r/$referralCode';
 
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgSecondary,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -74,6 +83,47 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.xxl),
+              // Referral stats
+              if (totalReferrals > 0) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _StatChip(icon: Icons.people, label: '$totalReferrals invitati'),
+                    const SizedBox(width: AppSpacing.md),
+                    _StatChip(icon: Icons.star, label: '$totalPoints puncte'),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Recent referrals list
+                if (referrals.isNotEmpty)
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 120),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: referrals.length > 5 ? 5 : referrals.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+                      itemBuilder: (_, i) {
+                        final r = referrals[i];
+                        final name = r['first_name'] ?? 'Utilizator';
+                        final date = DateTime.tryParse(r['created_at'] ?? '');
+                        final ago = date != null ? _timeAgo(date) : '';
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person_add, size: 16, color: AppColors.accent),
+                              const SizedBox(width: 8),
+                              Text(name, style: AppTypography.bodySmall),
+                              const Spacer(),
+                              Text(ago, style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
@@ -113,6 +163,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
         ),
       ),
     );
+  }
+
+  String _timeAgo(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()} luni';
+    if (diff.inDays > 0) return '${diff.inDays} zile';
+    if (diff.inHours > 0) return '${diff.inHours} ore';
+    return 'recent';
   }
 
   void _tryFetch() {
@@ -822,6 +880,33 @@ class _FooterLink extends StatelessWidget {
         style: AppTypography.labelSmall.copyWith(
           color: AppColors.textTertiary,
         ),
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _StatChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.accent),
+          const SizedBox(width: 6),
+          Text(label, style: AppTypography.bodySmall),
+        ],
       ),
     );
   }

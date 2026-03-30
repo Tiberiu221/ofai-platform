@@ -278,7 +278,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
 - **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
 - **Stripe:** Still on test keys — go-live with real keys pending
-- **Testing:** Zero automated tests (no unit, integration, or e2e) — risk for regressions
+- **Testing:** Flutter has 7 test files (models, widgets, utils); backend has zero automated tests — risk for regressions
 - **Referral dashboard:** Backend tracks referrals but user can't see their invite stats
 - **Post-redemption review cron:** Implemented but not tested in production
 - **Offline/PWA:** Connectivity indicator exists but no service worker or local caching
