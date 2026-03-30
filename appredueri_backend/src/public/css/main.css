@@ -1,10 +1,10 @@
 /* OFAI.ro — CSS Module Loader
    Split from monolith main.css for maintainability. */
 
-@import url('./sections/base.css');
-@import url('./sections/layout.css');
-@import url('./sections/home.css');
-@import url('./sections/listings.css');
-@import url('./sections/detail-pages.css');
-@import url('./sections/account.css');
-@import url('./sections/enhancements.css');
+@import url('./sections/base.css?v=20260330');
+@import url('./sections/layout.css?v=20260330');
+@import url('./sections/home.css?v=20260330');
+@import url('./sections/listings.css?v=20260330');
+@import url('./sections/detail-pages.css?v=20260330');
+@import url('./sections/account.css?v=20260330');
+@import url('./sections/enhancements.css?v=20260330');
