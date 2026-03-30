@@ -1086,13 +1086,13 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
             children: [
               Text(
                 AppLocalizations.of(context)!.promoCode,
-                style: AppTypography.headlineSmall.copyWith(color: const Color(0xFF06060A)),
+                style: AppTypography.headlineSmall.copyWith(color: const AppColors.bgPrimary),
               ),
               const SizedBox(height: 8),
               Text(
                 code,
                 style: AppTypography.labelLarge.copyWith(
-                  color: const Color(0xFF06060A),
+                  color: const AppColors.bgPrimary,
                   fontFamily: 'monospace',
                   letterSpacing: 2,
                 ),
@@ -1105,11 +1105,11 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                 backgroundColor: Colors.white,
                 eyeStyle: const QrEyeStyle(
                   eyeShape: QrEyeShape.square,
-                  color: Color(0xFF06060A),
+                  color: AppColors.bgPrimary,
                 ),
                 dataModuleStyle: const QrDataModuleStyle(
                   dataModuleShape: QrDataModuleShape.square,
-                  color: Color(0xFF06060A),
+                  color: AppColors.bgPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -1320,11 +1320,11 @@ class _PromoCodeCardState extends ConsumerState<_PromoCodeCard> {
                   backgroundColor: Colors.white,
                   eyeStyle: const QrEyeStyle(
                     eyeShape: QrEyeShape.square,
-                    color: Color(0xFF06060A),
+                    color: AppColors.bgPrimary,
                   ),
                   dataModuleStyle: const QrDataModuleStyle(
                     dataModuleShape: QrDataModuleShape.square,
-                    color: Color(0xFF06060A),
+                    color: AppColors.bgPrimary,
                   ),
                 ),
               ),

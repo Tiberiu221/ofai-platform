@@ -6,7 +6,6 @@ const multer = require("multer");
 const { businessAuth, businessUserAuth } = require("../middleware/businessAuth");
 const { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } = require("../services/cloudinary");
 const { triggerWebhook } = require("../services/n8n");
-const pushService = require("../services/pushNotifications");
 const offerService = require("../services/offerService");
 const { validateOfferData } = require("../services/llm/offerValidation");
 const { parsePagination, paginatedResponse, sanitizeString, createImageFilter } = require("../helpers/validate");

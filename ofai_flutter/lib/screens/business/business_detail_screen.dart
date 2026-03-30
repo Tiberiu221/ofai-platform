@@ -779,7 +779,7 @@ class BusinessDetailScreen extends ConsumerWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black54,
+      barrierColor: AppColors.overlay,
       builder: (_) => const _SuccessOverlay(),
     );
   }
