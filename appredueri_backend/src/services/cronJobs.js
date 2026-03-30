@@ -832,7 +832,21 @@ function initCronJobs() {
     }
   });
 
-  console.log('[Cron] All 17 scheduled jobs registered.');
+  // ── 18. Cloudinary orphaned image cleanup (weekly, Sunday 05:00 UTC) ──
+  cron.schedule('0 5 * * 0', async () => {
+    console.log('[Cron] Starting Cloudinary orphaned image cleanup...');
+    try {
+      const { cleanupOrphanedImages } = require('./cloudinary');
+      // Dry run by default — set CLOUDINARY_CLEANUP_DELETE=true to actually delete
+      const dryRun = process.env.CLOUDINARY_CLEANUP_DELETE !== 'true';
+      const result = await cleanupOrphanedImages(pool, dryRun);
+      console.log(`[Cron] Cloudinary cleanup done: ${result.checked} checked, ${result.orphaned} orphaned, ${result.deleted} deleted${dryRun ? ' (DRY RUN)' : ''}`);
+    } catch (err) {
+      console.error('[Cron] Cloudinary cleanup error:', err.message);
+    }
+  });
+
+  console.log('[Cron] All 18 scheduled jobs registered.');
 }
 
 module.exports = { initCronJobs };

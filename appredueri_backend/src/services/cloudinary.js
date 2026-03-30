@@ -297,12 +297,74 @@ function uploadRawToCloudinary(buffer, originalFilename) {
   });
 }
 
+/**
+ * Find orphaned Cloudinary images not referenced in any DB table.
+ * @param {Object} pool - PG pool instance
+ * @param {boolean} dryRun - If true, only log (don't delete)
+ * @returns {Promise<{checked: number, orphaned: number, deleted: number}>}
+ */
+async function cleanupOrphanedImages(pool, dryRun = true) {
+  try {
+    // 1. Collect all referenced Cloudinary URLs from DB
+    const queries = [
+      "SELECT image_url AS url FROM business_images WHERE image_url LIKE '%cloudinary%'",
+      "SELECT logo_url AS url FROM businesses WHERE logo_url LIKE '%cloudinary%'",
+      "SELECT cover_image_url AS url FROM businesses WHERE cover_image_url LIKE '%cloudinary%'",
+      "SELECT logo_url AS url FROM offers WHERE logo_url LIKE '%cloudinary%'",
+    ];
+    const referencedIds = new Set();
+    for (const q of queries) {
+      const res = await pool.query(q);
+      res.rows.forEach(r => {
+        const pid = getPublicIdFromUrl(r.url);
+        if (pid) referencedIds.add(pid);
+      });
+    }
+
+    // 2. List all images in Cloudinary ofai/ folder
+    let allCloudinary = [];
+    let nextCursor = null;
+    do {
+      const opts = { type: 'upload', prefix: 'ofai/', max_results: 500 };
+      if (nextCursor) opts.next_cursor = nextCursor;
+      const result = await cloudinary.api.resources(opts);
+      allCloudinary = allCloudinary.concat(result.resources.map(r => r.public_id));
+      nextCursor = result.next_cursor;
+    } while (nextCursor);
+
+    // 3. Find orphans
+    const orphaned = allCloudinary.filter(pid => !referencedIds.has(pid));
+
+    console.log(`[Cloudinary Cleanup] Checked: ${allCloudinary.length}, Referenced: ${referencedIds.size}, Orphaned: ${orphaned.length}`);
+
+    // 4. Delete orphans (unless dry run)
+    let deleted = 0;
+    if (!dryRun && orphaned.length > 0) {
+      // Delete in batches of 100 (Cloudinary API limit)
+      for (let i = 0; i < orphaned.length; i += 100) {
+        const batch = orphaned.slice(i, i + 100);
+        await cloudinary.api.delete_resources(batch);
+        deleted += batch.length;
+      }
+      console.log(`[Cloudinary Cleanup] Deleted ${deleted} orphaned images`);
+    } else if (orphaned.length > 0) {
+      console.log(`[Cloudinary Cleanup] DRY RUN — would delete:`, orphaned.slice(0, 10), orphaned.length > 10 ? `... and ${orphaned.length - 10} more` : '');
+    }
+
+    return { checked: allCloudinary.length, orphaned: orphaned.length, deleted };
+  } catch (err) {
+    console.error('[Cloudinary Cleanup] Error:', err.message);
+    return { checked: 0, orphaned: 0, deleted: 0 };
+  }
+}
+
 module.exports = {
   uploadToCloudinary,
   uploadRawToCloudinary,
   deleteFromCloudinary,
   getPublicIdFromUrl,
   getTransformedUrl,
+  cleanupOrphanedImages,
   cloudinary,
   IMAGE_CONFIGS,
 };
