@@ -123,7 +123,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Portal JS scope:** All functions inside IIFE `(function() { ... })()`. Functions called from inline `onclick` MUST be on `window`
 - **Portal CSS classes:** Use `form-input`, `form-select`, `form-textarea` (NOT `form-control`); buttons: `btn-accent`, `btn-secondary-portal`
 - **`concierge-section` uses class** (not id) because it appears in multiple tabs → `querySelectorAll` in `applyTierGating()`
-- **CSS split:** `main.css` is now just an import loader; actual styles in `css/sections/` (7 files). Portal/admin/onboarding have separate CSS files
+- **CSS split:** `main.css` is now just an import loader with `?v=YYYYMMDD` cache-busting on all `@import` URLs; actual styles in `css/sections/` (7 files). Portal/admin/onboarding have separate CSS files. `<link>` tag uses `cacheBust = Date.now()` from server start. Update `?v=` param in main.css after CSS changes.
 - **web.js split:** Split into 4 sub-routers: `web.js`, `web-auth.js`, `web-account-api.js`, `web-portal-api.js` + `web-shared.js` utility
 - **LLM services:** AI validation/moderation in `services/llm/` (5 files). Uses Anthropic Claude API via `anthropicClient.js`
 - **LLM prompt injection:** All user-supplied text in LLM prompts must be wrapped in `[USER_INPUT]...[/USER_INPUT]` fencing tags to prevent prompt injection
