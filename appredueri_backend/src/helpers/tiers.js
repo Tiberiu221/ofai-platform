@@ -289,6 +289,7 @@ module.exports = {
   hasFeature,
   checkLimit,
   invalidateCache,
+  normalisePlan,
   countActiveOffers,
   countGalleryImages,
   countPromoCodesForOffer,

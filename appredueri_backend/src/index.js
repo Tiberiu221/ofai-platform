@@ -518,19 +518,23 @@ app.use((req, res) => {
 // ============================================
 // PORNIRE SERVER
 // ============================================
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server OFAI pornit!`);
-  console.log(`   Port: ${PORT}`);
-  console.log(`   Environment: ${isProduction ? "PRODUCTION" : "DEVELOPMENT"}`);
-  console.log(`   Uploads: ${uploadsPath}`);
-  if (!isProduction) {
-    console.log(`   Local: http://localhost:${PORT}`);
-  }
-  console.log("");
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Server OFAI pornit!`);
+    console.log(`   Port: ${PORT}`);
+    console.log(`   Environment: ${isProduction ? "PRODUCTION" : "DEVELOPMENT"}`);
+    console.log(`   Uploads: ${uploadsPath}`);
+    if (!isProduction) {
+      console.log(`   Local: http://localhost:${PORT}`);
+    }
+    console.log("");
 
-  // Initialize scheduled cleanup jobs
-  initCronJobs();
-});
+    // Initialize scheduled cleanup jobs
+    initCronJobs();
+  });
+}
+
+module.exports = app;
 
 // ============================================
 // GLOBAL ERROR HANDLERS
