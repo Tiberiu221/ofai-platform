@@ -199,7 +199,11 @@
             <% business.images.forEach((img) => { %>
               <div class="gallery-upload-item" data-image-id="<%= img.id %>">
                 <img src="<%= img.url %>" alt="Galerie" width="120" height="80" loading="lazy">
-                <button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(<%= img.id %>, this)" title="Șterge imaginea" aria-label="Șterge imaginea">&times;</button>
+                <div class="gallery-item-controls">
+                  <button type="button" class="gallery-move-btn" onclick="moveGalleryImage(this, -1)" title="Mută la stânga">&#8592;</button>
+                  <button type="button" class="gallery-delete-btn" onclick="deleteGalleryImage(<%= img.id %>, this)" title="Șterge imaginea">&times;</button>
+                  <button type="button" class="gallery-move-btn" onclick="moveGalleryImage(this, 1)" title="Mută la dreapta">&#8594;</button>
+                </div>
               </div>
             <% }); %>
           <% } %>

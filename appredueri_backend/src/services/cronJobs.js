@@ -284,7 +284,11 @@ function initCronJobs() {
 
       if (staleStripeResult.rows.length > 0) {
         for (const row of staleStripeResult.rows) {
-          await syncBadgeType(pool, row.business_id, freeBadgeType);
+          try {
+            await syncBadgeType(pool, row.business_id, freeBadgeType);
+          } catch (badgeErr) {
+            console.error(`[Cron] Safety net badge sync failed for business ${row.business_id}:`, badgeErr.message);
+          }
         }
         console.log(`[Cron] Safety net: ${staleStripeResult.rows.length} stale Stripe subs downgraded (missed webhooks)`);
       }

@@ -746,8 +746,24 @@
     transition: opacity 0.2s;
     line-height: 1;
   }
-  .gallery-upload-item:hover .gallery-delete-btn {
+  .gallery-upload-item:hover .gallery-delete-btn,
+  .gallery-upload-item:hover .gallery-item-controls {
     opacity: 1;
+  }
+  .gallery-item-controls {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 4px; padding: 4px;
+    background: rgba(0,0,0,0.6); opacity: 0; transition: opacity 0.2s;
+  }
+  .gallery-move-btn {
+    width: 24px; height: 24px; border-radius: 4px;
+    background: rgba(255,255,255,0.15); border: none;
+    color: #fff; font-size: 0.75rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gallery-move-btn:hover { background: var(--accent); color: #09090b; }
+  .gallery-item-controls .gallery-delete-btn {
+    position: static; opacity: 1; width: 24px; height: 24px;
   }
   .gallery-upload-add {
     aspect-ratio: 4 / 3;

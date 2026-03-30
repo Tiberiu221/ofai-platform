@@ -161,6 +161,25 @@ router.post("/api/web/portal/:businessId/gallery", requireBusinessOwner, require
   }
 });
 
+// Reorder gallery images
+router.put("/api/web/portal/:businessId/gallery/reorder", requireBusinessOwner, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    const { order } = req.body; // [{id, sort_order}]
+    if (!Array.isArray(order) || order.length === 0) return res.status(400).json({ message: "Date lipsă" });
+    const values = order.map((item, i) => `(${parseInt(item.id)}, ${i + 1})`).join(',');
+    await pool.query(`
+      UPDATE business_images SET sort_order = v.new_order
+      FROM (VALUES ${values}) AS v(img_id, new_order)
+      WHERE business_images.id = v.img_id AND business_images.business_id = $1
+    `, [businessId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Web API] Gallery reorder error:", err);
+    res.status(500).json({ message: "Eroare la reordonare" });
+  }
+});
+
 // Delete gallery image
 router.delete("/api/web/portal/:businessId/gallery/:imageId", requireBusinessOwner, async (req, res) => {
   try {

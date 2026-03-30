@@ -637,6 +637,24 @@
     });
   };
 
+  window.moveGalleryImage = function(btn, direction) {
+    var item = btn.closest('.gallery-upload-item');
+    var grid = document.getElementById('gallery-grid');
+    var items = Array.from(grid.querySelectorAll('.gallery-upload-item'));
+    var idx = items.indexOf(item);
+    var targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+    // Swap DOM elements
+    if (direction === -1) grid.insertBefore(item, items[targetIdx]);
+    else grid.insertBefore(items[targetIdx], item);
+    // Save new order to backend
+    var newItems = Array.from(grid.querySelectorAll('.gallery-upload-item'));
+    var order = newItems.map(function(el, i) { return { id: parseInt(el.dataset.imageId), sort_order: i + 1 }; });
+    apiFetch('/api/web/portal/' + businessId + '/gallery/reorder', {
+      method: 'PUT', body: JSON.stringify({ order: order })
+    }).catch(function() { showToast('Eroare la reordonare', 'error'); });
+  };
+
   /* ════════════════════════════════
      LOCATION MANAGEMENT
      ════════════════════════════════ */
