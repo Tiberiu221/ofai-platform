@@ -199,21 +199,29 @@
 
     <!-- Pagination -->
     <% if (totalPages > 1) { %>
-      <div style="display: flex; justify-content: center; gap: 8px; padding: 48px 0 80px;">
-        <% for (let p = 1; p <= Math.min(totalPages, 10); p++) { %>
-          <a href="/oferte?page=<%= p %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %><%= selectedSort && selectedSort !== 'newest' ? '&sort=' + selectedSort : '' %>"
-             class="filter-pill<%= currentPage == p ? ' active' : '' %>"
-             style="min-width: 40px; justify-content: center;">
-            <%= p %>
-          </a>
+      <%
+        var _pBase = '/oferte?' + (selectedCategory ? 'category=' + selectedCategory + '&' : '') + (selectedCity ? 'city=' + selectedCity + '&' : '') + (query ? 'q=' + encodeURIComponent(query) + '&' : '') + (selectedSort && selectedSort !== 'newest' ? 'sort=' + selectedSort + '&' : '');
+        var _pWinStart = Math.max(1, currentPage - 2);
+        var _pWinEnd = Math.min(totalPages, currentPage + 2);
+        if (_pWinEnd - _pWinStart < 4 && totalPages >= 5) { if (_pWinStart === 1) _pWinEnd = Math.min(5, totalPages); else _pWinStart = Math.max(1, _pWinEnd - 4); }
+      %>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 6px; padding: 48px 0 80px; flex-wrap: wrap;">
+        <% if (currentPage > 1) { %>
+          <a href="<%= _pBase %>page=<%= currentPage - 1 %>" class="filter-pill" style="min-width: 40px; justify-content: center;" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8592;</a>
         <% } %>
-        <% if (totalPages > 10) { %>
-          <span class="filter-pill" style="cursor: default;">...</span>
-          <a href="/oferte?page=<%= totalPages %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
-             class="filter-pill<%= currentPage == totalPages ? ' active' : '' %>"
-             style="min-width: 40px; justify-content: center;">
-            <%= totalPages %>
-          </a>
+        <% if (_pWinStart > 1) { %>
+          <a href="<%= _pBase %>page=1" class="filter-pill<%= currentPage == 1 ? ' active' : '' %>" style="min-width: 40px; justify-content: center;" onclick="window.scrollTo({top:0,behavior:'smooth'})">1</a>
+          <% if (_pWinStart > 2) { %><span class="filter-pill" style="cursor: default; opacity: 0.5;">...</span><% } %>
+        <% } %>
+        <% for (let p = _pWinStart; p <= _pWinEnd; p++) { %>
+          <a href="<%= _pBase %>page=<%= p %>" class="filter-pill<%= currentPage == p ? ' active' : '' %>" style="min-width: 40px; justify-content: center;" onclick="window.scrollTo({top:0,behavior:'smooth'})"><%= p %></a>
+        <% } %>
+        <% if (_pWinEnd < totalPages) { %>
+          <% if (_pWinEnd < totalPages - 1) { %><span class="filter-pill" style="cursor: default; opacity: 0.5;">...</span><% } %>
+          <a href="<%= _pBase %>page=<%= totalPages %>" class="filter-pill<%= currentPage == totalPages ? ' active' : '' %>" style="min-width: 40px; justify-content: center;" onclick="window.scrollTo({top:0,behavior:'smooth'})"><%= totalPages %></a>
+        <% } %>
+        <% if (currentPage < totalPages) { %>
+          <a href="<%= _pBase %>page=<%= currentPage + 1 %>" class="filter-pill" style="min-width: 40px; justify-content: center;" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8594;</a>
         <% } %>
       </div>
     <% } %>

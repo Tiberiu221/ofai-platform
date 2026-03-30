@@ -211,13 +211,16 @@ async function sendWelcomeEmail(to, firstName) {
 
     if (error) {
       console.error("[Email] Welcome email error:", error);
+      logEmail({ to, type: 'welcome', subject: `Bine ai venit în ${APP_NAME}!`, status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Welcome email sent to ${to}`);
+    logEmail({ to, type: 'welcome', subject: `Bine ai venit în ${APP_NAME}!`, resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Welcome email exception:", err);
+    logEmail({ to, type: 'welcome', subject: `Bine ai venit în ${APP_NAME}!`, status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
@@ -283,13 +286,16 @@ async function sendPasswordResetEmail(to, resetCode, firstName) {
 
     if (error) {
       console.error("[Email] Password reset email error:", error);
+      logEmail({ to, type: 'password_reset', subject: 'Resetare parolă', status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Password reset email sent to ${to}`);
+    logEmail({ to, type: 'password_reset', subject: 'Resetare parolă', resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Password reset email exception:", err);
+    logEmail({ to, type: 'password_reset', subject: 'Resetare parolă', status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
@@ -314,14 +320,16 @@ async function sendEmail({ to, subject, html, text }) {
 
     if (error) {
       console.error("[Email] Send error:", error);
+      logEmail({ to: Array.isArray(to) ? to[0] : to, type: 'generic', subject, status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Email sent to ${to}`);
+    logEmail({ to: Array.isArray(to) ? to[0] : to, type: 'generic', subject, resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Send exception:", err);
-    return { success: false, error: err.message };
+    logEmail({ to: Array.isArray(to) ? to[0] : to, type: 'generic', subject, status: 'failed', error: err.message });
   }
 }
 
@@ -385,13 +393,16 @@ async function sendBusinessApprovedEmail(to, firstName, businessName) {
 
     if (error) {
       console.error("[Email] Business approved email error:", error);
+      logEmail({ to, type: 'business_approved', subject: 'Business-ul tău a fost aprobat!', status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Business approved email sent to ${to}`);
+    logEmail({ to, type: 'business_approved', subject: 'Business-ul tău a fost aprobat!', resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Business approved email exception:", err);
+    logEmail({ to, type: 'business_approved', status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
@@ -469,13 +480,16 @@ async function sendBusinessRejectedEmail(to, firstName, businessName, reason) {
 
     if (error) {
       console.error("[Email] Business rejected email error:", error);
+      logEmail({ to, type: 'business_rejected', subject: 'Actualizare cerere business', status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Business rejected email sent to ${to}`);
+    logEmail({ to, type: 'business_rejected', subject: 'Actualizare cerere business', resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Business rejected email exception:", err);
+    logEmail({ to, type: 'business_rejected', status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
@@ -539,13 +553,16 @@ async function sendOfferApprovedEmail(to, firstName, offerTitle, businessName) {
 
     if (error) {
       console.error("[Email] Offer approved email error:", error);
+      logEmail({ to, type: 'offer_approved', subject: 'Oferta ta a fost aprobată!', status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Offer approved email sent to ${to}`);
+    logEmail({ to, type: 'offer_approved', subject: 'Oferta ta a fost aprobată!', resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Offer approved email exception:", err);
+    logEmail({ to, type: 'offer_approved', status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
@@ -622,13 +639,16 @@ async function sendOfferRejectedEmail(to, firstName, offerTitle, businessName, r
 
     if (error) {
       console.error("[Email] Offer rejected email error:", error);
+      logEmail({ to, type: 'offer_rejected', subject: 'Actualizare ofertă', status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
 
     console.log(`[Email] Offer rejected email sent to ${to}`);
+    logEmail({ to, type: 'offer_rejected', subject: 'Actualizare ofertă', resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error("[Email] Offer rejected email exception:", err);
+    logEmail({ to, type: 'offer_rejected', status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
@@ -704,13 +724,15 @@ async function sendPremiumSupportWelcome(to, firstName, businessName) {
 
     if (error) {
       console.error('[Email] Premium support welcome error:', error);
+      logEmail({ to, type: 'premium_support_welcome', subject: 'Bine ai venit în Premium!', status: 'failed', error: JSON.stringify(error) });
       return { success: false, error };
     }
     console.log(`[Email] Premium support welcome sent to ${to}`);
+    logEmail({ to, type: 'premium_support_welcome', subject: 'Bine ai venit în Premium!', resendId: data?.id, status: 'sent' });
     return { success: true, data };
   } catch (err) {
     console.error('[Email] Premium support welcome exception:', err);
-    return { success: false, error: err.message };
+    logEmail({ to, type: 'premium_support_welcome', status: 'failed', error: err.message });
   }
 }
 
@@ -747,12 +769,15 @@ async function sendAdminOnboardingEmail(businessId, businessName, requestType, m
 
     if (error) {
       console.error('[Email] Admin onboarding email error:', error);
+      logEmail({ to: adminEmail, type: 'admin_onboarding', subject: `Cerere configurare: ${businessName}`, status: 'failed', error: JSON.stringify(error) });
       return { success: false, error: error.message };
     }
     console.log(`[Email] Admin onboarding email sent: ${data?.id}`);
+    logEmail({ to: adminEmail, type: 'admin_onboarding', subject: `Cerere configurare: ${businessName}`, resendId: data?.id, status: 'sent' });
     return { success: true, emailId: data?.id };
   } catch (err) {
     console.error('[Email] Admin onboarding email exception:', err);
+    logEmail({ to: adminEmail, type: 'admin_onboarding', status: 'failed', error: err.message });
     return { success: false, error: err.message };
   }
 }
