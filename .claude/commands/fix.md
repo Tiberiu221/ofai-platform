@@ -26,7 +26,7 @@ Descrie bug-ul, eroarea, sau issue-ul. Exemple:
 | Flutter, dart, screen, provider | Flutter | ofai_flutter/lib/ |
 | migration, SQL, table, column | Database | src/migrations/, src/db.js |
 | CSS, style, layout, responsive | Frontend CSS | src/public/css/ |
-| cron, schedule, job | Cron Jobs | src/services/cronJobs.js |
+| cron, schedule, job | Cron Jobs | src/services/cronJobs.js (18 jobs) |
 | stripe, billing, payment | Billing | src/routes/billing.js, src/services/stripe.js |
 | tier, subscription, plan | Subscriptions | src/helpers/tiers.js, src/middleware/tierAuth.js |
 
@@ -87,7 +87,9 @@ WHY:
 
 ## Step 5: Verify — Confirma ca fix-ul functioneaza
 
-### Backend fix
+### Backend fix — preview verification
+Porneste serverul cu preview_start si verifica vizual ca fix-ul functioneaza (snapshot/eval/screenshot). Nu te baza doar pe "server starts clean".
+
 ```bash
 cd appredueri_backend
 # Server starts clean

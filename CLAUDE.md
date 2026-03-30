@@ -40,7 +40,7 @@ appredueri_backend/
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
       llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, reviewSuggestions, prompts)
-    migrations/     # SQL migration files (006-068)
+    migrations/     # SQL migration files (006-071)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
       public/portal/partials/           # 8 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support, _tab-tools)
@@ -140,11 +140,11 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (27 March 2026)
+## Current State (30 March 2026)
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~256 endpoints, 20 providers, 68 migrations, 26 screens, 13 models, 24 widgets
+- 23 route files, ~256 endpoints, 20 providers, 71 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -226,6 +226,17 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Portal Hint Texts:** Explanatory hints on booking section ("va apărea un card pe pagina business-ului"), opening hours ("va fi afișat cu status Deschis/Închis"), and image uploads (format + resolution recommendations)
 - **Pricing Page Cleanup:** Removed AI-sensitive features (Rezumat AI, Răspunsuri sugerate AI, Analize competitive) from public /preturi — visible only in portal subscription tab. Removed strikethrough/X items from Free card. Rezervări shows check for all tiers.
 - **Analytics Tier Gating:** Period buttons (7/30/90 zile) now respect tier's `analytics_days` limit. Default period matches tier max (was hardcoded 30 for all). Backend already enforced via Math.min cap.
+- **Offer Detail Booking Button:** Actionable CTA (phone/whatsapp/url) in "Cum profiți de ofertă?" section — previously only showed text
+- **Booking Type Normalization:** Migration 071 fixes `link`→`url` (20 businesses) + `NONE`→`none` (2 locations). Route handlers normalize at read time as defense in depth.
+- **Pagination UX:** Sliding window (shows pages around current), prev/next arrows, scroll-to-top on both /oferte and /business-uri
+- **Portal Tab Persistence:** localStorage fallback when URL hash missing (key: `portal_tab_{businessId}`)
+- **Portal Offer Deletion:** Delete button + confirm dialog on offers tab (backend endpoint existed, UI was missing)
+- **Gallery Reorder:** Arrow buttons (←→) on hover + PUT endpoint `/api/web/portal/:businessId/gallery/reorder`
+- **Password UX:** Strength indicator (3-bar) on register, show/hide toggle on login + register
+- **Cookie Banner:** "Refuză" button + GA4 disable on rejection
+- **Email Audit Logging:** All 12 email types now use `logEmail()` for admin dashboard visibility
+- **LLM Prompt Injection:** Complete `[USER_INPUT]` fencing on all 5 LLM services (~20 fields)
+- **Onboarding UX:** Explanatory subtitles on city/category selection steps
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
@@ -235,11 +246,11 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Engagement (3):** Weekly digest email, trial expiration warning (3 days before), re-engagement (14+ days inactive)
 - Service: Resend API with graceful fallback
 - `email_logs` table tracks ALL sent emails (admin visible at `/admin/emails`)
-- `logEmail()` helper for audit trail on new engagement emails
+- `logEmail()` on ALL 12 email types (transactional + engagement) for full audit trail
 - Rate limiting: 150ms delay between batch sends in cron jobs
 - ENV toggles: `ENABLE_WEEKLY_DIGEST`, `ENABLE_TRIAL_WARNING`, `ENABLE_REENGAGEMENT` (set `=false` to disable)
 
-### Cron Jobs (17 total)
+### Cron Jobs (18 total)
 - Token cleanup (daily 03:00), push log cleanup (daily 03:15)
 - Category rankings (every 2 days), weekly digest push+email (Sunday 19:00 RO)
 - Flash deal expiration (every 5min), review summary batch (daily 08:00 UTC), business deletion (soft delete)
@@ -248,9 +259,11 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - Saved search alerts (daily 11:00 UTC)
 - **Trial expiration warning email** (daily 09:00 UTC — 3 days before trial ends)
 - **Re-engagement email** (Tuesday 10:00 UTC — users inactive 14-90 days, max 1/30 days)
+- **Cloudinary orphaned image cleanup** (Sunday 05:00 UTC — dry-run by default, `CLOUDINARY_CLEANUP_DELETE=true` to delete)
 
 ### Monitoring & Error Handling
 - Sentry error tracking (production)
+- **Global error handlers:** `process.on('unhandledRejection')` + `process.on('uncaughtException')` with Sentry capture
 - Click/offer/reveal tracking (internal analytics)
 - Google Analytics 4 — controlled by `GA_MEASUREMENT_ID` env var, custom events on favorites/follows/promo reveals/booking actions
 - 404 + 500 error pages
@@ -262,7 +275,6 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Remaining Gaps
 - **Search:** Basic keyword matching only — no full-text (pg_trgm), no fuzzy/typo tolerance, no distance-based filtering
-- **Email engagement logging:** `logEmail()` only on 3 new engagement emails — existing 9 transactional emails not yet logged to `email_logs` table
 - **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
 - **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
 - **Stripe:** Still on test keys — go-live with real keys pending
@@ -271,3 +283,4 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Post-redemption review cron:** Implemented but not tested in production
 - **Offline/PWA:** Connectivity indicator exists but no service worker or local caching
 - **i18n:** All strings hardcoded in Romanian — no multi-language support
+- **Support WhatsApp:** Placeholder number `40700000000` — replace with real number before go-live
