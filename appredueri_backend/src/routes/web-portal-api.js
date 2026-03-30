@@ -2205,6 +2205,7 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
     const escaped = q.replace(/[%_\\]/g, '\\$&');
     const searchTerm = `%${escaped}%`;
 
+    const rawQuery = q;
     const [offersRes, businessesRes] = await Promise.all([
       pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value,
@@ -2214,18 +2215,24 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         JOIN businesses b ON o.business_id = b.id
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND o.moderation_status IN ('approved', 'auto_approved')
-          AND (o.title ILIKE $1 OR o.description ILIKE $1 OR b.name ILIKE $1)
-        ORDER BY CASE WHEN o.title ILIKE $1 THEN 0 ELSE 1 END, o.discount_value DESC
+          AND (o.title ILIKE $1 OR o.description ILIKE $1 OR b.name ILIKE $1
+               OR similarity(o.title, $2) > 0.15 OR similarity(b.name, $2) > 0.15)
+        ORDER BY CASE WHEN (o.title ILIKE $1 OR b.name ILIKE $1) THEN 0 ELSE 1 END,
+                 GREATEST(similarity(o.title, $2), similarity(b.name, $2)) DESC,
+                 o.discount_value DESC
         LIMIT 5
-      `, [searchTerm]),
+      `, [searchTerm, rawQuery]),
       pool.query(`
         SELECT b.id, b.name, b.logo_url, b.subscription_badge_type, b.is_verified, cat.name as category_name
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
-        WHERE (b.name ILIKE $1 OR cat.name ILIKE $1)
-        ORDER BY b.name
+        WHERE (b.name ILIKE $1 OR cat.name ILIKE $1
+               OR similarity(b.name, $2) > 0.15)
+        ORDER BY CASE WHEN b.name ILIKE $1 THEN 0 ELSE 1 END,
+                 similarity(b.name, $2) DESC,
+                 b.name
         LIMIT 3
-      `, [searchTerm]),
+      `, [searchTerm, rawQuery]),
     ]);
 
     res.json({ offers: offersRes.rows, businesses: businessesRes.rows });

@@ -102,10 +102,18 @@ router.get("/", optionalAuth, async (req, res) => {
       values.push(parseInt(req.query.exclude));
     }
 
+    let searchOrderClause = null;
     if (q && q.trim()) {
-      filters.push(`(o.title ILIKE $${idx} OR o.description ILIKE $${idx} OR b.name ILIKE $${idx})`);
-      values.push(`%${q.trim()}%`);
-      idx++;
+      const { buildFuzzySearch } = require("../helpers/search");
+      const fuzzy = buildFuzzySearch([
+        { col: 'o.title', ilike: true, similarity: true },
+        { col: 'o.description', ilike: true, similarity: false },
+        { col: 'b.name', ilike: true, similarity: true },
+      ], idx);
+      filters.push(fuzzy.condition);
+      values.push(...fuzzy.params(q.trim()));
+      idx += fuzzy.paramCount;
+      searchOrderClause = fuzzy.orderClause;
     }
 
     // Filter to promoted offers only (for Premium businesses)
@@ -220,7 +228,7 @@ router.get("/", optionalAuth, async (req, res) => {
       ) locs ON true
 
       ${whereClause}
-      ORDER BY ${orderBy}
+      ORDER BY ${searchOrderClause ? searchOrderClause + ', ' : ''}${orderBy}
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
     values.push(limit, offset);

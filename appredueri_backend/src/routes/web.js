@@ -362,10 +362,18 @@ router.get("/oferte", async (req, res) => {
     const params = [];
     let paramIdx = 1;
 
+    let searchOrderClause = null;
     if (query) {
-      conditions.push(`(o.title ILIKE $${paramIdx} OR o.description ILIKE $${paramIdx} OR b.name ILIKE $${paramIdx})`);
-      params.push(`%${query}%`);
-      paramIdx++;
+      const { buildFuzzySearch } = require("../helpers/search");
+      const fuzzy = buildFuzzySearch([
+        { col: 'o.title', ilike: true, similarity: true },
+        { col: 'o.description', ilike: true, similarity: false },
+        { col: 'b.name', ilike: true, similarity: true },
+      ], paramIdx);
+      conditions.push(fuzzy.condition);
+      params.push(...fuzzy.params(query));
+      paramIdx += fuzzy.paramCount;
+      searchOrderClause = fuzzy.orderClause;
     }
 
     if (selectedCategory) {
@@ -470,7 +478,7 @@ router.get("/oferte", async (req, res) => {
                 o.business_id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                 b.is_verified, b.subscription_badge_type,
                 ci.name, cat.name, o.logo_url, splan.slug, splan.has_promoted_placement
-       ORDER BY ${orderBy}
+       ORDER BY ${searchOrderClause ? searchOrderClause + ', ' : ''}${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
     );
@@ -585,10 +593,16 @@ router.get("/business-uri", async (req, res) => {
     const params = [];
     let paramIdx = 1;
 
+    let searchOrderClauseBiz = null;
     if (query) {
-      conditions.push(`b.name ILIKE $${paramIdx}`);
-      params.push(`%${query}%`);
-      paramIdx++;
+      const { buildFuzzySearch } = require("../helpers/search");
+      const fuzzy = buildFuzzySearch([
+        { col: 'b.name', ilike: true, similarity: true },
+      ], paramIdx);
+      conditions.push(fuzzy.condition);
+      params.push(...fuzzy.params(query));
+      paramIdx += fuzzy.paramCount;
+      searchOrderClauseBiz = fuzzy.orderClause;
     }
 
     if (selectedCategory) {
@@ -682,7 +696,7 @@ router.get("/business-uri", async (req, res) => {
          ON splan.id = bsub.plan_id
        ${whereClause}
        GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
-       ORDER BY ${orderBy}
+       ORDER BY ${searchOrderClauseBiz ? searchOrderClauseBiz + ', ' : ''}${orderBy}
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
       [...params, limit, offset]
     );

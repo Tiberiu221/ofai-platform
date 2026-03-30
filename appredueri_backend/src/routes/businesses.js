@@ -71,12 +71,18 @@ router.get("/", optionalAuth, async (req, res) => {
       }
     }
 
+    let searchOrderClause = null;
     if (q && q.trim()) {
-      filters.push(
-        `(b.name ILIKE $${idx} OR c.name ILIKE $${idx} OR cat.name ILIKE $${idx})`
-      );
-      values.push(`%${q.trim()}%`);
-      idx++;
+      const { buildFuzzySearch } = require("../helpers/search");
+      const fuzzy = buildFuzzySearch([
+        { col: 'b.name', ilike: true, similarity: true },
+        { col: 'c.name', ilike: true, similarity: false },
+        { col: 'cat.name', ilike: true, similarity: true },
+      ], idx);
+      filters.push(fuzzy.condition);
+      values.push(...fuzzy.params(q.trim()));
+      idx += fuzzy.paramCount;
+      searchOrderClause = fuzzy.orderClause;
     }
 
     const whereClause = filters.length
@@ -129,6 +135,7 @@ router.get("/", optionalAuth, async (req, res) => {
         ON splan.id = bsub.plan_id
       ${whereClause}
       ORDER BY
+        ${searchOrderClause ? searchOrderClause + ',' : ''}
         CASE WHEN COALESCE(splan.has_search_priority, FALSE) OR COALESCE(splan.has_promoted_placement, FALSE) THEN 0 ELSE 1 END,
         c.name, cat.name, b.name
       LIMIT $${idx} OFFSET $${idx + 1}
