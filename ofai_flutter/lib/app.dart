@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
@@ -50,12 +52,15 @@ class _ShellScreen extends StatefulWidget {
 }
 
 class _ShellScreenState extends State<_ShellScreen> {
-  static const _items = [
-    _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Acasa'),
-    _NavItem(icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Exploreaza'),
-    _NavItem(icon: Icons.bookmark_outline, activeIcon: Icons.bookmark, label: 'Colectia mea'),
-    _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: 'Cont'),
-  ];
+  List<_NavItem> _items(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return [
+      _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home, label: l.navHome),
+      _NavItem(icon: Icons.explore_outlined, activeIcon: Icons.explore, label: l.navExplore),
+      _NavItem(icon: Icons.bookmark_outline, activeIcon: Icons.bookmark, label: l.navCollection),
+      _NavItem(icon: Icons.person_outline, activeIcon: Icons.person, label: l.navAccount),
+    ];
+  }
 
   static const _routes = ['/', '/explore', '/collection', '/account'];
 
@@ -125,8 +130,8 @@ class _ShellScreenState extends State<_ShellScreen> {
                     padding: EdgeInsets.only(bottom: bottomPadding),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: List.generate(_items.length, (i) {
-                        final item = _items[i];
+                      children: List.generate(_items(context).length, (i) {
+                        final item = _items(context)[i];
                         final isActive = i == widget.currentIndex;
                         return Expanded(
                           child: Semantics(
@@ -486,6 +491,14 @@ class OFAIApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       routerConfig: router,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('ro'),
     );
   }
 }

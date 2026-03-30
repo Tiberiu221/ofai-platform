@@ -1,0 +1,51 @@
+{
+  "@@locale": "ro",
+  "navHome": "Acasa",
+  "navExplore": "Exploreaza",
+  "navCollection": "Colectia mea",
+  "navAccount": "Cont",
+  "inviteFriends": "Invita prieteni",
+  "inviteSubtitle": "Trimite link-ul tau prietenilor si descopera impreuna cele mai bune oferte!",
+  "invitedCount": "{count} invitati",
+  "@invitedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "pointsCount": "{count} puncte",
+  "@pointsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "sendInvite": "Trimite invitatia",
+  "referralError": "Eroare la incarcarea codului de referral",
+  "myProfile": "Profilul meu",
+  "myReports": "Rapoartele mele",
+  "settings": "Setari",
+  "changePassword": "Schimba parola",
+  "help": "Ajutor",
+  "logout": "Deconectare",
+  "login": "Conecteaza-te",
+  "offlineMessage": "Esti offline",
+  "timeAgoMonths": "{count} luni",
+  "@timeAgoMonths": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeAgoDays": "{count} zile",
+  "@timeAgoDays": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeAgoHours": "{count} ore",
+  "@timeAgoHours": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "timeAgoRecent": "recent",
+  "user": "Utilizator"
+}
