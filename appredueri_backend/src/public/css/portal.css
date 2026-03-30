@@ -333,6 +333,8 @@
 
   .offer-edit-link { color: var(--text-tertiary); transition: color 0.2s; }
   .offer-edit-link:hover { color: var(--accent); }
+  .offer-delete-btn { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; transition: color 0.2s; }
+  .offer-delete-btn:hover { color: #ef4444; }
 
   /* ── Empty State ── */
   .empty-state {

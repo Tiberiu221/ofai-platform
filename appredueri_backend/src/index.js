@@ -531,3 +531,17 @@ app.listen(PORT, () => {
   // Initialize scheduled cleanup jobs
   initCronJobs();
 });
+
+// ============================================
+// GLOBAL ERROR HANDLERS
+// ============================================
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled promise rejection:', reason);
+  try { require('@sentry/node').captureException(reason); } catch (_) { /* Sentry not init */ }
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  try { require('@sentry/node').captureException(err); } catch (_) { /* Sentry not init */ }
+  process.exit(1);
+});

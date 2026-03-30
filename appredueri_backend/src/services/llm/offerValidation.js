@@ -130,14 +130,14 @@ Flags posibile: spam_content, category_mismatch, unrealistic_offer, low_quality_
   const userMessage = `Date ofertă:
 - Titlu: [USER_INPUT]${safe(offerData.title, 200)}[/USER_INPUT]
 - Descriere: [USER_INPUT]${safe(offerData.description)}[/USER_INPUT]
-- Tip discount: ${safe(offerData.discountType, 50)}
-- Valoare discount: ${safe(offerData.discountValue, 50)}
+- Tip discount: [USER_INPUT]${safe(offerData.discountType, 50)}[/USER_INPUT]
+- Valoare discount: [USER_INPUT]${safe(offerData.discountValue, 50)}[/USER_INPUT]
 - Condiții: [USER_INPUT]${safe(offerData.conditions, 300)}[/USER_INPUT]
-- Perioadă: ${offerData.startDate || "?"} - ${offerData.endDate || "?"}
+- Perioadă: [USER_INPUT]${safe(offerData.startDate, 30)}[/USER_INPUT] - [USER_INPUT]${safe(offerData.endDate, 30)}[/USER_INPUT]
 
 Business:
 - Nume: [USER_INPUT]${safe(businessData.name, 200)}[/USER_INPUT]
-- Categorie: ${safe(businessData.categoryName, 100)}
+- Categorie: [USER_INPUT]${safe(businessData.categoryName, 100)}[/USER_INPUT]
 
 Verificări automate:
 - Lungime titlu: ${pass1Results.checks.titleLength} caractere

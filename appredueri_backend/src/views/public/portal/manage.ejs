@@ -2056,15 +2056,22 @@
       loadSubscription();
     }
 
-    // Update URL hash
+    // Update URL hash + persist to localStorage
     history.replaceState(null, '', '#' + tabName);
+    try { localStorage.setItem('portal_tab_' + businessId, tabName); } catch (_) {}
   };
 
-  // Restore tab from hash on load
+  // Restore tab from hash on load (hash > localStorage > default)
   (function() {
+    var validTabs = ['info', 'oferte', 'catalog', 'recenzii', 'statistici', 'support', 'tools', 'subscription'];
     var hash = window.location.hash.replace('#', '');
-    if (['info', 'oferte', 'catalog', 'recenzii', 'statistici', 'support', 'subscription'].indexOf(hash) !== -1) {
+    if (validTabs.indexOf(hash) !== -1) {
       switchTab(hash);
+    } else {
+      try {
+        var saved = localStorage.getItem('portal_tab_' + businessId);
+        if (saved && validTabs.indexOf(saved) !== -1) switchTab(saved);
+      } catch (_) {}
     }
   })();
 
@@ -2214,6 +2221,21 @@
     })
     .catch(function(err) {
       if (err.message !== 'Unauthorized') showToast('Eroare de rețea', 'error');
+    });
+  };
+
+  window.deleteOffer = function(offerId, btn) {
+    if (!confirm('Ești sigur că vrei să ștergi această ofertă? Acțiunea este ireversibilă.')) return;
+    btn.disabled = true;
+    apiFetch('/api/web/portal/' + businessId + '/offers/' + offerId, { method: 'DELETE' })
+    .then(function() {
+      var card = btn.closest('.portal-offer-card');
+      if (card) card.remove();
+      showToast('Oferta a fost ștearsă', 'success');
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      if (err.message !== 'Unauthorized') showToast('Eroare la ștergere', 'error');
     });
   };
 
