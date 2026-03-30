@@ -102,5 +102,12 @@ window.trackClick = function(businessId, actionType, offerId) {
 
 <!-- JavaScript -->
 <script src="/js/main.js?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '8' %>"></script>
+
+<!-- Service Worker -->
+<script nonce="<%= cspNonce %>">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function() {});
+}
+</script>
 </body>
 </html>

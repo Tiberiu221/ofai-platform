@@ -147,6 +147,7 @@ app.use((req, res, next) => {
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         connectSrc: ["'self'", "https://accounts.google.com", "https://www.google-analytics.com", "https://analytics.google.com", "https://*.google-analytics.com", "https://*.analytics.google.com"],
         frameSrc: ["https://accounts.google.com"],
+        workerSrc: ["'self'"],
       },
     },
     crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, // Required for Google Identity Services popup to postMessage back
