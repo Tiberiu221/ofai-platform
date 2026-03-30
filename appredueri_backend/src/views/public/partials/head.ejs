@@ -64,10 +64,10 @@
   <% if (typeof structuredData !== 'undefined' && structuredData) { %>
     <% if (Array.isArray(structuredData)) { %>
       <% structuredData.forEach(function(sd) { %>
-  <script type="application/ld+json"><%- JSON.stringify(sd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %></script>
+  <script type="application/ld+json" nonce="<%= cspNonce %>"><%- JSON.stringify(sd).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %></script>
       <% }); %>
     <% } else { %>
-  <script type="application/ld+json"><%- JSON.stringify(structuredData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %></script>
+  <script type="application/ld+json" nonce="<%= cspNonce %>"><%- JSON.stringify(structuredData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %></script>
     <% } %>
   <% } %>
   <% if (typeof loadChartJs !== 'undefined' && loadChartJs) { %>

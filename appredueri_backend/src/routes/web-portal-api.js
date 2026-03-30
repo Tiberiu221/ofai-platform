@@ -167,7 +167,12 @@ router.put("/api/web/portal/:businessId/gallery/reorder", requireBusinessOwner, 
     const businessId = req.businessId;
     const { order } = req.body; // [{id, sort_order}]
     if (!Array.isArray(order) || order.length === 0) return res.status(400).json({ message: "Date lipsă" });
-    const values = order.map((item, i) => `(${parseInt(item.id)}, ${i + 1})`).join(',');
+    if (order.length > 100) return res.status(400).json({ message: "Prea multe elemente" });
+    const ids = order.map(item => parseInt(item.id, 10));
+    if (ids.some(id => !Number.isInteger(id) || id <= 0)) {
+      return res.status(400).json({ message: "ID-uri invalide" });
+    }
+    const values = ids.map((id, i) => `(${id}, ${i + 1})`).join(',');
     await pool.query(`
       UPDATE business_images SET sort_order = v.new_order
       FROM (VALUES ${values}) AS v(img_id, new_order)

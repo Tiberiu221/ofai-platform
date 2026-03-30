@@ -106,13 +106,13 @@ function createUpdateSummarizationPrompt(existingSummary, newReviews) {
   const formattedNewReviews = newReviews
     .map((review, index) => {
       const stars = '⭐'.repeat(review.rating);
-      return `${index + 1}. ${stars} ${review.rating}/5\n   "${review.comment}"`;
+      return `${index + 1}. ${stars} ${review.rating}/5\n   "[USER_INPUT]${review.comment}[/USER_INPUT]"`;
     })
     .join('\n\n');
-  
+
   return `Ai generat anterior următorul rezumat de recenzii:
 
-"${existingSummary}"
+"[USER_INPUT]${existingSummary}[/USER_INPUT]"
 
 Au apărut ${newReviews.length} recenzii noi:
 

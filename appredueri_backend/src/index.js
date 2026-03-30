@@ -82,15 +82,17 @@ const allowedOrigins = [
   "https://ofai.ro",
   "https://www.ofai.ro",
   "https://api.ofai.ro",
-  "https://ofai-eight.vercel.app",
-  // Development
-  "http://localhost:8081",
-  "http://localhost:19006",
-  "http://localhost:3000",
-  "http://localhost:4000",
-  // Expo development
-  "http://192.168.0.30:8081",
-  "http://192.168.0.30:19006",
+  // Dev/staging origins from env only
+  ...(process.env.EXTRA_CORS_ORIGINS ? process.env.EXTRA_CORS_ORIGINS.split(',') : []),
+  // Local development (non-production only)
+  ...(!isProduction ? [
+    "http://localhost:8081",
+    "http://localhost:19006",
+    "http://localhost:3000",
+    "http://localhost:4000",
+    "http://192.168.0.30:8081",
+    "http://192.168.0.30:19006",
+  ] : []),
 ];
 
 const corsOptions = {
@@ -206,6 +208,10 @@ app.use((req, res, next) => {
 // CSRF PROTECTION (Web routes only)
 // ============================================
 if (!process.env.CSRF_SECRET) {
+  if (isProduction) {
+    console.error('[SECURITY] CSRF_SECRET must be set in production. Exiting.');
+    process.exit(1);
+  }
   console.warn('[SECURITY] CSRF_SECRET not set — falling back to JWT_SECRET. Set a unique CSRF_SECRET in production.');
 }
 
