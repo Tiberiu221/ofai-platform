@@ -1,11 +1,11 @@
-<%- include('partials/head', { pageTitle: 'Preferințe', activePage: 'preferinte' }) %>
+<%- include('partials/head', { pageTitle: t('preferences.pageTitle'), activePage: 'preferinte' }) %>
 <%- include('partials/navbar', { activePage: 'preferinte', webUser: webUser }) %>
 
 <section class="page-header" style="padding-bottom: 24px;">
   <div class="page-header-glow"></div>
   <div class="container">
-    <h1 class="page-title text-gradient">Preferințe</h1>
-    <p class="page-subtitle">Alege orașele și categoriile tale preferate pentru oferte personalizate</p>
+    <h1 class="page-title text-gradient"><%= t('preferences.pageTitle') %></h1>
+    <p class="page-subtitle"><%= t('preferences.subtitle') %></p>
   </div>
 </section>
 
@@ -16,14 +16,14 @@
 
       <!-- City Selection (multi-select) -->
       <div class="settings-section reveal">
-        <h2 class="settings-section-title">Orașele tale</h2>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Poți selecta mai multe orașe</p>
+        <h2 class="settings-section-title"><%= t('preferences.yourCities') %></h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;"><%= t('preferences.citiesHint') %></p>
         <div class="preferences-pills" id="city-pills">
           <%
             const selectedCities = Array.isArray(preferredCityIds) ? preferredCityIds.map(Number) : [];
           %>
           <button type="button" class="preference-pill<%= selectedCities.length === 0 ? ' active' : '' %>" data-city-id="0" onclick="selectAllCities(this)">
-            Toate
+            <%= t('preferences.all') %>
           </button>
           <% cities.forEach(function(city) { %>
             <button type="button" class="preference-pill<%= selectedCities.includes(city.id) ? ' active' : '' %>" data-city-id="<%= city.id %>" onclick="toggleCity(this)">
@@ -35,14 +35,14 @@
 
       <!-- Category Selection (multi-select) -->
       <div class="settings-section reveal">
-        <h2 class="settings-section-title">Categorii preferate</h2>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Poți selecta mai multe categorii</p>
+        <h2 class="settings-section-title"><%= t('preferences.favoriteCategories') %></h2>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;"><%= t('preferences.categoriesHint') %></p>
         <div class="preferences-pills" id="category-pills">
           <%
             const selectedCats = Array.isArray(preferredCategoryIds) ? preferredCategoryIds.map(Number) : [];
           %>
           <button type="button" class="preference-pill<%= selectedCats.length === 0 ? ' active' : '' %>" data-category-id="0" onclick="selectAllCategories(this)">
-            Toate
+            <%= t('preferences.all') %>
           </button>
           <% categories.forEach(function(cat) { %>
             <button type="button" class="preference-pill<%= selectedCats.includes(cat.id) ? ' active' : '' %>" data-category-id="<%= cat.id %>" onclick="toggleCategory(this)">
@@ -54,14 +54,18 @@
 
       <div id="pref-success" style="display: none; color: var(--success); font-size: 0.875rem; margin-bottom: 12px; text-align: center;"></div>
 
-      <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">Salvează preferințele</button>
+      <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;"><%= t('preferences.savePreferences') %></button>
 
     </form>
 
-    <a href="/cont" class="btn btn-ghost" style="width: 100%; margin-top: 12px; text-align: center;">Înapoi la cont</a>
+    <a href="/cont" class="btn btn-ghost" style="width: 100%; margin-top: 12px; text-align: center;"><%= t('preferences.backToAccount') %></a>
 
   </div>
 </section>
+
+<script nonce="<%= cspNonce %>">
+  var i18n = { preferencesSaved: '<%= t("preferences.preferencesSaved") %>' };
+</script>
 
 <script nonce="<%= cspNonce %>">
   let selectedCityIds = [<%= Array.isArray(preferredCityIds) ? preferredCityIds.join(',') : '' %>];
@@ -138,9 +142,9 @@
           const separator = returnTo.includes('?') ? '&' : '?';
           window.location.href = returnTo + separator + 'prefs=1';
         } else {
-          succEl.textContent = 'Preferințele au fost salvate!';
+          succEl.textContent = i18n.preferencesSaved;
           succEl.style.display = '';
-          if (typeof showToast === 'function') showToast('Preferințele au fost salvate!', 'success');
+          if (typeof showToast === 'function') showToast(i18n.preferencesSaved, 'success');
         }
       }
     } catch(err) { console.error(err); }

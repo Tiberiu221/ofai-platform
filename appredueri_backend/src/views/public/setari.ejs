@@ -1,10 +1,10 @@
-<%- include('partials/head', { pageTitle: 'Setări', activePage: 'setari' }) %>
+<%- include('partials/head', { pageTitle: t('settings.pageTitle'), activePage: 'setari' }) %>
 <%- include('partials/navbar', { activePage: 'setari', webUser: webUser }) %>
 
 <section class="page-header" style="padding-bottom: 24px;">
   <div class="page-header-glow"></div>
   <div class="container">
-    <h1 class="page-title text-gradient">Setări</h1>
+    <h1 class="page-title text-gradient"><%= t('settings.pageTitle') %></h1>
   </div>
 </section>
 
@@ -19,26 +19,26 @@
     %>
     <div class="settings-section reveal">
       <div class="badges-header" style="margin-bottom: 4px;">
-        <h2 class="settings-section-title" style="margin: 0;">Insignele mele</h2>
+        <h2 class="settings-section-title" style="margin: 0;"><%= t('settings.myBadges') %></h2>
         <span class="badges-count"><%= earnedBadges.length %>/<%= allBadgesDef.length %></span>
         <div class="badges-nav">
-          <button class="badges-nav-btn" id="badges-prev" aria-label="Anterior" disabled>
+          <button class="badges-nav-btn" id="badges-prev" aria-label="<%= t('settings.previous') %>" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <button class="badges-nav-btn" id="badges-next" aria-label="Următor">
+          <button class="badges-nav-btn" id="badges-next" aria-label="<%= t('settings.next') %>">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
           </button>
         </div>
       </div>
-      <p class="badges-subtitle">Selectează o insignă câștigată pentru recenzii</p>
+      <p class="badges-subtitle"><%= t('settings.selectBadge') %></p>
       <div class="badges-strip-wrapper" id="badges-strip-wrapper">
         <div class="badges-strip" id="badges-strip">
           <!-- "Niciuna" option -->
-          <div class="badge-item<%= !webUser.display_badge_id ? ' badge-selected' : '' %>" title="Fără insignă" onclick="selectDisplayBadge(null)" data-badge-id="none">
+          <div class="badge-item<%= !webUser.display_badge_id ? ' badge-selected' : '' %>" title="<%= t('settings.noBadge') %>" onclick="selectDisplayBadge(null)" data-badge-id="none">
             <div class="badge-icon" style="background: var(--bg-surface); border-color: var(--border); color: var(--text-muted); --badge-color: var(--accent);">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </div>
-            <span class="badge-name">Niciuna</span>
+            <span class="badge-name"><%= t('settings.none') %></span>
           </div>
           <!-- All badges: earned = selectable, locked = greyed out -->
           <% allBadgesDef.forEach(function(badge) {
@@ -145,28 +145,28 @@
     <!-- Change Password (hidden for Google OAuth users) -->
     <% if (typeof isGoogleUser !== 'undefined' && isGoogleUser) { %>
     <div class="settings-section reveal">
-      <h2 class="settings-section-title">Autentificare</h2>
-      <p style="color: var(--text-secondary); font-size: 0.875rem;">Contul tău folosește <strong style="color: var(--accent);">Google Sign-In</strong>. Parola este gestionată de Google.</p>
+      <h2 class="settings-section-title"><%= t('settings.authentication') %></h2>
+      <p style="color: var(--text-secondary); font-size: 0.875rem;"><%- t('settings.googleSignIn') %></p>
     </div>
     <% } else { %>
     <div class="settings-section reveal">
-      <h2 class="settings-section-title">Schimbă parola</h2>
+      <h2 class="settings-section-title"><%= t('settings.changePassword') %></h2>
       <form id="change-password-form" onsubmit="return changePassword(event)">
         <div class="auth-form-group">
-          <label class="auth-label">Parola curentă</label>
+          <label class="auth-label"><%= t('settings.currentPassword') %></label>
           <input type="password" name="currentPassword" class="auth-input" required minlength="8">
         </div>
         <div class="auth-form-group">
-          <label class="auth-label">Parola nouă</label>
+          <label class="auth-label"><%= t('settings.newPassword') %></label>
           <input type="password" name="newPassword" class="auth-input" required minlength="8">
         </div>
         <div class="auth-form-group">
-          <label class="auth-label">Confirmă parola nouă</label>
+          <label class="auth-label"><%= t('settings.confirmPassword') %></label>
           <input type="password" name="confirmPassword" class="auth-input" required minlength="8">
         </div>
         <div id="password-error" class="auth-error" style="display: none;"></div>
         <div id="password-success" style="display: none; color: var(--success); font-size: 0.875rem; margin-bottom: 12px;"></div>
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Schimbă parola</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%;"><%= t('settings.changePasswordBtn') %></button>
       </form>
     </div>
     <% } %>
@@ -175,33 +175,33 @@
     <div class="settings-section reveal">
       <a href="/preferinte" class="account-menu-item">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Preferințe oraș & categorii</span>
+        <span><%= t('settings.preferencesLink') %></span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       </a>
     </div>
 
     <!-- Privacy -->
     <div class="settings-section" style="margin-bottom: 20px;">
-      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px;">Confidentialitate</h3>
+      <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px;"><%= t('settings.privacy') %></h3>
       <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 12px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;">
         <input type="checkbox" id="show-picture-toggle" <%= webUser.show_picture_in_reviews !== false ? 'checked' : '' %> onchange="togglePictureVisibility(this.checked)" style="accent-color: var(--accent); width: 18px; height: 18px;">
         <div>
-          <span style="font-weight: 600; font-size: 0.9rem;">Afiseaza poza de profil in recenzii</span>
-          <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 2px;">Cand este activ, poza ta de profil va fi vizibila in recenziile tale</p>
+          <span style="font-weight: 600; font-size: 0.9rem;"><%= t('settings.showPhotoInReviews') %></span>
+          <p style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 2px;"><%= t('settings.showPhotoHint') %></p>
         </div>
       </label>
     </div>
 
     <!-- Logout -->
     <div class="settings-section reveal">
-      <a href="/logout" class="btn btn-secondary" style="width: 100%;">Deconectare</a>
+      <a href="/logout" class="btn btn-secondary" style="width: 100%;"><%= t('settings.logout') %></a>
     </div>
 
     <!-- Delete Account -->
     <div class="settings-section settings-danger reveal">
-      <h2 class="settings-section-title" style="color: var(--danger);">Zonă periculoasă</h2>
-      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;">Ștergerea contului este permanentă. Toate datele, favoritele și recenziile tale vor fi eliminate.</p>
-      <button class="btn btn-ghost" style="color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); width: 100%;" onclick="document.getElementById('delete-modal').style.display='flex'">Șterge contul</button>
+      <h2 class="settings-section-title" style="color: var(--danger);"><%= t('settings.dangerZone') %></h2>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 16px;"><%= t('settings.deleteAccountWarning') %></p>
+      <button class="btn btn-ghost" style="color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); width: 100%;" onclick="document.getElementById('delete-modal').style.display='flex'"><%= t('settings.deleteAccount') %></button>
     </div>
 
   </div>
@@ -210,34 +210,47 @@
 <!-- Delete Account Modal -->
 <div class="settings-modal" id="delete-modal" style="display: none;">
   <div class="settings-modal-content">
-    <h3>Ești sigur?</h3>
+    <h3><%= t('settings.areYouSure') %></h3>
     <% if (typeof isGoogleUser !== 'undefined' && isGoogleUser) { %>
-    <p style="color: var(--text-secondary); margin-bottom: 16px;">Această acțiune este ireversibilă. Introdu adresa ta de email pentru confirmare.</p>
+    <p style="color: var(--text-secondary); margin-bottom: 16px;"><%= t('settings.irreversibleEmail') %></p>
     <form onsubmit="return deleteAccount(event)">
       <div class="auth-form-group">
         <input type="email" name="deleteEmail" class="auth-input" placeholder="<%= webUser.email %>" required>
       </div>
       <div id="delete-error" class="auth-error" style="display: none;"></div>
       <div style="display: flex; gap: 12px;">
-        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('delete-modal').style.display='none'">Anulează</button>
-        <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;">Șterge contul</button>
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('delete-modal').style.display='none'"><%= t('settings.cancel') %></button>
+        <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;"><%= t('settings.deleteAccount') %></button>
       </div>
     </form>
     <% } else { %>
-    <p style="color: var(--text-secondary); margin-bottom: 16px;">Această acțiune este ireversibilă. Introdu parola pentru confirmare.</p>
+    <p style="color: var(--text-secondary); margin-bottom: 16px;"><%= t('settings.irreversiblePassword') %></p>
     <form onsubmit="return deleteAccount(event)">
       <div class="auth-form-group">
-        <input type="password" name="deletePassword" class="auth-input" placeholder="Parola ta" required>
+        <input type="password" name="deletePassword" class="auth-input" placeholder="<%= t('settings.yourPassword') %>" required>
       </div>
       <div id="delete-error" class="auth-error" style="display: none;"></div>
       <div style="display: flex; gap: 12px;">
-        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('delete-modal').style.display='none'">Anulează</button>
-        <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;">Șterge contul</button>
+        <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('delete-modal').style.display='none'"><%= t('settings.cancel') %></button>
+        <button type="submit" class="btn" style="flex: 1; background: var(--danger); color: white;"><%= t('settings.deleteAccount') %></button>
       </div>
     </form>
     <% } %>
   </div>
 </div>
+
+<script nonce="<%= cspNonce %>">
+  var i18n = {
+    passwordsDontMatch: '<%= t("settings.passwordsDontMatch") %>',
+    passwordChanged: '<%= t("settings.passwordChanged") %>',
+    networkError: '<%= t("settings.networkError") %>',
+    emailMismatch: '<%= t("settings.emailMismatch") %>',
+    saveError: '<%= t("settings.saveError") %>',
+    photoVisible: '<%= t("settings.photoVisible") %>',
+    photoHidden: '<%= t("settings.photoHidden") %>',
+    error: '<%= t("account.error") %>'
+  };
+</script>
 
 <script nonce="<%= cspNonce %>">
   async function changePassword(e) {
@@ -252,7 +265,7 @@
     succEl.style.display = 'none';
 
     if (newPass !== confirm) {
-      errEl.textContent = 'Parolele nu coincid';
+      errEl.textContent = i18n.passwordsDontMatch;
       errEl.style.display = '';
       return false;
     }
@@ -268,11 +281,11 @@
         body: JSON.stringify({ currentPassword: data.get('currentPassword'), newPassword: newPass })
       });
       const json = await res.json();
-      if (!res.ok) { errEl.textContent = json.message || 'Eroare'; errEl.style.display = ''; return false; }
-      succEl.textContent = 'Parola a fost schimbată cu succes!';
+      if (!res.ok) { errEl.textContent = json.message || i18n.saveError; errEl.style.display = ''; return false; }
+      succEl.textContent = i18n.passwordChanged;
       succEl.style.display = '';
       form.reset();
-    } catch(err) { errEl.textContent = 'Eroare de rețea'; errEl.style.display = ''; }
+    } catch(err) { errEl.textContent = i18n.networkError; errEl.style.display = ''; }
     return false;
   }
 
@@ -287,7 +300,7 @@
     if (isGoogle) {
       const email = form.deleteEmail.value;
       if (email !== '<%= webUser.email %>') {
-        errEl.textContent = 'Email-ul nu corespunde contului tău';
+        errEl.textContent = i18n.emailMismatch;
         errEl.style.display = '';
         return false;
       }
@@ -307,9 +320,9 @@
         body: JSON.stringify(bodyData)
       });
       const json = await res.json();
-      if (!res.ok) { errEl.textContent = json.message || 'Eroare'; errEl.style.display = ''; return false; }
+      if (!res.ok) { errEl.textContent = json.message || i18n.saveError; errEl.style.display = ''; return false; }
       window.location.href = '/';
-    } catch(err) { errEl.textContent = 'Eroare de rețea'; errEl.style.display = ''; }
+    } catch(err) { errEl.textContent = i18n.networkError; errEl.style.display = ''; }
     return false;
   }
 </script>
@@ -325,10 +338,10 @@ async function togglePictureVisibility(show) {
     });
     const data = await res.json();
     if (data.success || res.ok) {
-      if (typeof showToast === 'function') showToast(show ? 'Poza vizibila in recenzii' : 'Poza ascunsa din recenzii', 'success');
+      if (typeof showToast === 'function') showToast(show ? i18n.photoVisible : i18n.photoHidden, 'success');
     }
   } catch (e) {
-    if (typeof showToast === 'function') showToast('Eroare', 'error');
+    if (typeof showToast === 'function') showToast(i18n.error, 'error');
   }
 }
 </script>
