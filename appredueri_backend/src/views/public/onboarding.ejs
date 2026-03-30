@@ -1,4 +1,4 @@
-<%- include('partials/head', { pageTitle: 'Bun venit', activePage: null }) %>
+<%- include('partials/head', { pageTitle: t('onboarding.pageTitle'), activePage: null }) %>
 
 <!-- ═══════════════════════════════════════════════════════
      ONBOARDING — 2-Step Preference Selection
@@ -16,9 +16,9 @@
   <!-- ─── Step 1: Cities ─── -->
   <div class="onboarding-step active" id="step-1">
     <div class="onboarding-card">
-      <h1 class="onboarding-title">Bun venit, <%= webUser.first_name || 'acolo' %>!</h1>
-      <p class="onboarding-subtitle">Alege ora&#537;ele tale</p>
-      <p class="onboarding-hint">&#206;&#539;i vom ar&#259;ta oferte din ora&#537;ele selectate</p>
+      <h1 class="onboarding-title"><%= t('onboarding.welcome', { name: webUser.first_name || 'acolo' }) %></h1>
+      <p class="onboarding-subtitle"><%= t('onboarding.chooseCities') %></p>
+      <p class="onboarding-hint"><%= t('onboarding.citiesHint') %></p>
 
       <div class="onboarding-pills" id="city-pills">
         <% cities.forEach(function(city, i) { %>
@@ -34,10 +34,10 @@
 
       <div class="onboarding-actions">
         <button type="button" class="btn btn-primary btn-lg onboarding-next" onclick="goToStep(2)">
-          Continu&#259;
+          <%= t('onboarding.continue') %>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </button>
-        <button type="button" class="btn btn-ghost onboarding-skip" onclick="goToStep(2)">Sari peste</button>
+        <button type="button" class="btn btn-ghost onboarding-skip" onclick="goToStep(2)"><%= t('onboarding.skip') %></button>
       </div>
     </div>
   </div>
@@ -45,9 +45,9 @@
   <!-- ─── Step 2: Categories ─── -->
   <div class="onboarding-step" id="step-2">
     <div class="onboarding-card">
-      <h1 class="onboarding-title">Ce te intereseaz&#259;?</h1>
-      <p class="onboarding-subtitle">Alege categoriile preferate</p>
-      <p class="onboarding-hint">Vei primi notific&#259;ri &#537;i recomand&#259;ri pentru categoriile alese</p>
+      <h1 class="onboarding-title"><%= t('onboarding.whatInterests') %></h1>
+      <p class="onboarding-subtitle"><%= t('onboarding.chooseCategories') %></p>
+      <p class="onboarding-hint"><%= t('onboarding.categoriesHint') %></p>
 
       <%
         const catIcons = {
@@ -76,7 +76,7 @@
           id="cat-toate"
           onclick="selectAllOnboardingCategories(this)"
           style="animation-delay: 0ms">
-          Toate
+          <%= t('onboarding.all') %>
         </button>
         <% categories.forEach(function(cat, i) { %>
           <button type="button"
@@ -92,10 +92,10 @@
 
       <div class="onboarding-actions">
         <button type="button" class="btn btn-primary btn-lg onboarding-next" onclick="finishOnboarding()">
-          Finalizeaz&#259;
+          <%= t('onboarding.finish') %>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
-        <button type="button" class="btn btn-ghost onboarding-skip" onclick="finishOnboarding()">Sari peste</button>
+        <button type="button" class="btn btn-ghost onboarding-skip" onclick="finishOnboarding()"><%= t('onboarding.skip') %></button>
       </div>
     </div>
   </div>

@@ -1,4 +1,4 @@
-<%- include('partials/head', { pageTitle: 'Reduceri & Oferte din România', activePage: 'home', pageDesc: 'Descoperă cele mai bune reduceri și oferte de la business-urile din orașul tău. Restaurante, beauty, fitness și multe altele.', canonicalUrl: 'https://ofai.ro', ogUrl: 'https://ofai.ro' }) %>
+<%- include('partials/head', { pageTitle: t('home.pageTitle'), activePage: 'home', pageDesc: t('home.pageDesc'), canonicalUrl: 'https://ofai.ro', ogUrl: 'https://ofai.ro' }) %>
 <%- include('partials/navbar', { activePage: 'home', webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -13,20 +13,20 @@
   <div class="hero-content">
     <div class="hero-pill">
       <span class="hero-pill-dot"></span>
-      <span><strong><%= stats.newOffers %>+</strong> oferte noi săptămâna aceasta</span>
+      <span><strong><%= stats.newOffers %>+</strong> <%= t('home.heroPill') %></span>
     </div>
 
     <h1 class="hero-title text-gradient">
-      Cele mai bune oferte din <span class="accent">orașul tău</span>
+      <%= t('home.heroTitle') %> <span class="accent"><%= t('home.heroTitleAccent') %></span>
     </h1>
 
     <p class="hero-subtitle">
-      Descoperă reduceri verificate la frizerii, restaurante, fitness și 12+ categorii. Gratuit. Fără reclame. Fără catch.
+      <%= t('home.heroSubtitle') %>
     </p>
 
     <div class="search-wrapper" style="margin-bottom: 40px;">
       <form action="/oferte" method="GET">
-        <input type="text" name="q" class="search-bar" placeholder="Caută oferte, business-uri, categorii...">
+        <input type="text" name="q" class="search-bar" placeholder="<%= t('common.searchPlaceholder') %>">
         <div class="search-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </div>
@@ -35,11 +35,11 @@
 
     <div class="hero-ctas">
       <a href="/oferte" class="btn btn-primary btn-lg">
-        Explorează oferte
+        <%= t('home.exploreOffers') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
       <a href="/pentru-business" class="btn btn-secondary btn-lg">
-        Pentru Business
+        <%= t('home.forBusiness') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </a>
     </div>
@@ -49,22 +49,22 @@
       <div class="trust-pill">
         <div class="trust-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
         <div class="trust-pill-text">
-          <div class="trust-pill-title">100% Gratuit</div>
-          <div class="trust-pill-desc">Fără costuri ascunse, fără abonamente</div>
+          <div class="trust-pill-title"><%= t('home.trustFree') %></div>
+          <div class="trust-pill-desc"><%= t('home.trustFreeDesc') %></div>
         </div>
       </div>
       <div class="trust-pill">
         <div class="trust-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
         <div class="trust-pill-text">
-          <div class="trust-pill-title">Business-uri Verificate</div>
-          <div class="trust-pill-desc">Echipa OFAI verifică fiecare partener</div>
+          <div class="trust-pill-title"><%= t('home.trustVerified') %></div>
+          <div class="trust-pill-desc"><%= t('home.trustVerifiedDesc') %></div>
         </div>
       </div>
       <div class="trust-pill">
         <div class="trust-pill-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
         <div class="trust-pill-text">
-          <div class="trust-pill-title">Oferte Personalizate</div>
-          <div class="trust-pill-desc">Bazate pe orașul și preferințele tale</div>
+          <div class="trust-pill-title"><%= t('home.trustPersonalized') %></div>
+          <div class="trust-pill-desc"><%= t('home.trustPersonalizedDesc') %></div>
         </div>
       </div>
     </div>
@@ -72,15 +72,15 @@
     <div class="hero-stats">
       <div class="hero-stat">
         <div class="hero-stat-value" data-count="<%= stats.totalBusinesses %>" data-suffix="+"><%= stats.totalBusinesses %>+</div>
-        <div class="hero-stat-label">Business-uri</div>
+        <div class="hero-stat-label"><%= t('home.statBusinesses') %></div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-value" data-count="<%= stats.totalOffers %>" data-suffix="+"><%= stats.totalOffers %>+</div>
-        <div class="hero-stat-label">Oferte active</div>
+        <div class="hero-stat-label"><%= t('home.statOffers') %></div>
       </div>
       <div class="hero-stat">
         <div class="hero-stat-value" data-count="<%= stats.totalCities %>"><%= stats.totalCities %></div>
-        <div class="hero-stat-label">Orașe</div>
+        <div class="hero-stat-label"><%= t('home.statCities') %></div>
       </div>
     </div>
   </div>
@@ -90,7 +90,7 @@
      MARQUEE — Business-uri partenere
      ═══════════════════════════════════════════════════════ -->
 <section class="marquee-section">
-  <div class="marquee-label">Business-uri partenere pe platformă</div>
+  <div class="marquee-label"><%= t('home.marqueeLabel') %></div>
   <div class="marquee-track">
     <% const marqueeItems = featuredBusinesses.concat(featuredBusinesses); %>
     <% marqueeItems.forEach(biz => { %>
@@ -108,33 +108,33 @@
 <section class="section" id="how-it-works">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg> Simplu</div>
-      <h2 class="section-title text-gradient">Cum funcționează?</h2>
-      <p class="section-subtitle">Trei pași simpli pentru a accesa cele mai bune oferte</p>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg> <%= t('home.howLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('home.howTitle') %></h2>
+      <p class="section-subtitle"><%= t('home.howSubtitle') %></p>
     </div>
 
     <div class="steps-grid">
       <div class="step-card reveal reveal-delay-1">
         <div class="step-number">1</div>
-        <h3 class="step-title">Alege orașul și categoriile</h3>
-        <p class="step-desc">Setează preferințele tale în 30 de secunde. Primești doar oferte relevante pentru tine.</p>
+        <h3 class="step-title"><%= t('home.step1Title') %></h3>
+        <p class="step-desc"><%= t('home.step1Desc') %></p>
       </div>
       <div class="step-card reveal reveal-delay-2">
         <div class="step-number">2</div>
-        <h3 class="step-title">Salvează și urmărește</h3>
-        <p class="step-desc">Adaugă ofertele la favorite. Urmărește business-urile preferate și primești notificări când apar reduceri noi.</p>
+        <h3 class="step-title"><%= t('home.step2Title') %></h3>
+        <p class="step-desc"><%= t('home.step2Desc') %></p>
       </div>
       <div class="step-card reveal reveal-delay-3">
         <div class="step-number">3</div>
-        <h3 class="step-title">Folosește reducerea</h3>
-        <p class="step-desc">Mergi la business, arată codul promo sau menționează oferta. Atât de simplu!</p>
+        <h3 class="step-title"><%= t('home.step3Title') %></h3>
+        <p class="step-desc"><%= t('home.step3Desc') %></p>
       </div>
     </div>
 
     <% if (!webUser) { %>
     <div style="text-align: center; margin-top: 40px;" class="reveal reveal-delay-4">
       <a href="/register" class="btn btn-secondary btn-lg">
-        Creează cont gratuit
+        <%= t('home.createFreeAccount') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
       </a>
     </div>
@@ -151,15 +151,15 @@
     <% if (typeof hasPreferences !== 'undefined' && hasPreferences && preferredCityName) { %>
     <div class="preferences-banner reveal" style="display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.2); border-radius: var(--radius-lg); margin-bottom: 24px;">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span style="color: var(--text-secondary); font-size: 0.875rem;">Oferte din <strong style="color: var(--text-primary);"><%= preferredCityName %></strong></span>
-      <a href="/preferinte" style="color: var(--accent); font-size: 0.875rem; margin-left: auto; text-decoration: none;">Schimbă</a>
+      <span style="color: var(--text-secondary); font-size: 0.875rem;"><%= t('common.offerFrom') %> <strong style="color: var(--text-primary);"><%= preferredCityName %></strong></span>
+      <a href="/preferinte" style="color: var(--accent); font-size: 0.875rem; margin-left: auto; text-decoration: none;"><%= t('common.change') %></a>
     </div>
     <% } %>
 
     <% if (dealOfDay) { %>
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Recomandat</div>
-      <h2 class="section-title text-gradient">Oferta Zilei</h2>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <%= t('home.recommendedLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('common.dealOfDay') %></h2>
     </div>
     <div class="reveal" style="margin-bottom: 40px;">
       <a href="/oferta/<%= dealOfDay.id %>" class="offer-card featured" style="display: block;">
@@ -180,7 +180,7 @@
               <% } %>
             </div>
           <% } %>
-          <div style="position: absolute; top: 12px; left: 52px; background: var(--accent); color: #000; font-size: 0.625rem; font-weight: 700; padding: 3px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; z-index: 2;">Oferta Zilei</div>
+          <div style="position: absolute; top: 12px; left: 52px; background: var(--accent); color: #000; font-size: 0.625rem; font-weight: 700; padding: 3px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; z-index: 2;"><%= t('common.dealOfDay') %></div>
           <% if (dealOfDay.end_date) { %>
             <div class="countdown-overlay" data-end-date="<%= new Date(dealOfDay.end_date).toISOString() %>"></div>
           <% } %>
@@ -205,17 +205,17 @@
     <% } %>
 
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Populare</div>
-      <h2 class="section-title text-gradient">Oferte de top</h2>
-      <p class="section-subtitle">Cele mai căutate reduceri din această săptămână</p>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> <%= t('home.popularLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('home.topOffers') %></h2>
+      <p class="section-subtitle"><%= t('home.topOffersSubtitle') %></p>
     </div>
 
     <!-- Geo Banner -->
     <div id="geo-banner" class="geo-banner" style="display:none;">
       <div class="geo-banner-content">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span id="geo-banner-text">Activează locația pentru a vedea distanța</span>
-        <button class="btn btn-primary" id="geo-activate-btn">Activează locația</button>
+        <span id="geo-banner-text"><%= t('common.geoEnable') %></span>
+        <button class="btn btn-primary" id="geo-activate-btn"><%= t('common.geoButton') %></button>
       </div>
     </div>
 
@@ -235,7 +235,7 @@
               </div>
             <% } %>
             <% if (offer.is_trending) { %>
-              <div class="trending-badge">Trending</div>
+              <div class="trending-badge"><%= t('common.trending') %></div>
             <% } %>
             <div class="offer-badge">
               <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
@@ -277,7 +277,7 @@
               <% if (parseInt(offer.favorite_count) >= 5) { %>
                 <span class="offer-meta-item offer-social-proof">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                  <%= offer.favorite_count %> salvari
+                  <%= offer.favorite_count %> <%= t('common.saves') %>
                 </span>
               <% } %>
               <span class="offer-meta-item">
@@ -292,7 +292,7 @@
 
     <div style="text-align: center; margin-top: 48px;" class="reveal">
       <a href="/oferte" class="btn btn-secondary btn-lg">
-        Vezi toate ofertele
+        <%= t('home.seeAllOffers') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
     </div>
@@ -306,9 +306,9 @@
 <section class="section">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Parteneri</div>
-      <h2 class="section-title text-gradient">Oferte Promovate</h2>
-      <p class="section-subtitle">De la business-urile noastre partenere</p>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <%= t('home.partnersLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('home.promotedOffers') %></h2>
+      <p class="section-subtitle"><%= t('home.promotedSubtitle') %></p>
     </div>
 
     <div class="offers-bento promoted-grid">
@@ -326,7 +326,7 @@
                 <span class="offer-placeholder-letter"><%= (offer.business_name || 'O').charAt(0) %></span>
               </div>
             <% } %>
-            <span class="promoted-badge">Promovat</span>
+            <span class="promoted-badge"><%= t('common.promoted') %></span>
             <% if (offer.discount_value) { %>
               <div class="offer-badge">
                 <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
@@ -376,9 +376,9 @@
 <section class="section">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> Business-uri</div>
-      <h2 class="section-title text-gradient">Business-uri populare</h2>
-      <p class="section-subtitle">Descoperă cele mai active business-uri de pe platformă</p>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg> <%= t('home.businessesLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('home.popularBusinesses') %></h2>
+      <p class="section-subtitle"><%= t('home.popularBusinessesSubtitle') %></p>
     </div>
 
     <div class="businesses-grid">
@@ -415,7 +415,7 @@
               <% } %>
             </div>
             <div class="biz-card-bottom">
-              <span class="biz-card-offers"><%= biz.offer_count %> oferte active</span>
+              <span class="biz-card-offers"><%= biz.offer_count %> <%= t('common.activeOffers') %></span>
               <span class="offer-distance biz-card-distance" data-lat="<%= biz.lat || '' %>" data-lng="<%= biz.lng || '' %>" style="display:none;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                 <span class="offer-distance-text"></span>
@@ -435,9 +435,9 @@
 <section class="section" id="categories">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Categorii</div>
-      <h2 class="section-title text-gradient">Ce te interesează?</h2>
-      <p class="section-subtitle">Explorează oferte din categoriile care te pasionează</p>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> <%= t('home.categoriesLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('home.categoriesTitle') %></h2>
+      <p class="section-subtitle"><%= t('home.categoriesSubtitle') %></p>
     </div>
 
     <div class="categories-grid">
@@ -464,7 +464,7 @@
         <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= Math.min(i % 5 + 1, 5) %>">
           <div class="category-icon"><%- Object.prototype.hasOwnProperty.call(catIcons, cat.name) ? catIcons[cat.name] : defaultCatIcon %></div>
           <div class="category-name"><%= cat.name %></div>
-          <div class="category-count"><%= cat.offer_count || 0 %> oferte</div>
+          <div class="category-count"><%= cat.offer_count || 0 %> <%= t('common.offers') %></div>
         </a>
       <% }); %>
     </div>
@@ -478,8 +478,8 @@
 <section class="section" style="padding-top: 48px; padding-bottom: 48px;">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> Pentru tine</div>
-      <h2 class="section-title" style="font-size: 1.5rem;">Noutăți de la business-urile tale</h2>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> <%= t('home.forYouLabel') %></div>
+      <h2 class="section-title" style="font-size: 1.5rem;"><%= t('home.followedTitle') %></h2>
     </div>
     <div class="offers-grid offers-grid-auto">
       <% followedOffers.forEach((fo, i) => { %>
@@ -521,9 +521,9 @@
 <section class="section" style="background: var(--bg-secondary);">
   <div class="container">
     <div class="section-header reveal">
-      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> Orașe</div>
-      <h2 class="section-title text-gradient">Disponibil în orașul tău</h2>
-      <p class="section-subtitle">Oferte locale din cele mai mari orașe din România</p>
+      <div class="section-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> <%= t('home.citiesLabel') %></div>
+      <h2 class="section-title text-gradient"><%= t('home.citiesTitle') %></h2>
+      <p class="section-subtitle"><%= t('home.citiesSubtitle') %></p>
     </div>
 
     <div class="scroll-container">
@@ -553,7 +553,7 @@
             <div class="city-card-bg" style="background-image: url('<%= cityImages[city.name] || '' %>');"></div>
             <div class="city-card-content">
               <div class="city-card-name"><%= city.name %></div>
-              <div class="city-card-count"><%= city.business_count || 0 %> business-uri</div>
+              <div class="city-card-count"><%= city.business_count || 0 %> <%= t('common.businessesCount') %></div>
             </div>
           </a>
         <% }); %>
@@ -572,27 +572,27 @@
   <div class="container">
     <div class="cta-box reveal">
       <div class="cta-box-glow"></div>
-      <h2 class="cta-title text-gradient">Ai un business? Listează-te gratuit</h2>
+      <h2 class="cta-title text-gradient"><%= t('home.ctaTitle') %></h2>
       <p class="cta-subtitle">
-        Crește-ți vizibilitatea și atrage clienți noi cu reduceri atractive.
+        <%= t('home.ctaSubtitle') %>
       </p>
       <div class="cta-benefits">
         <div class="cta-benefit">
           <span class="cta-benefit-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span>
-          <span>Dashboard propriu</span>
+          <span><%= t('home.ctaDashboard') %></span>
         </div>
         <div class="cta-benefit">
           <span class="cta-benefit-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
-          <span>Recenzii de la clienți</span>
+          <span><%= t('home.ctaReviews') %></span>
         </div>
         <div class="cta-benefit">
           <span class="cta-benefit-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-          <span>Statistici de audiență</span>
+          <span><%= t('home.ctaStats') %></span>
         </div>
       </div>
-      <p class="cta-guarantee">Fără comisioane · Fără contracte · Anulează oricând</p>
+      <p class="cta-guarantee"><%= t('home.ctaGuarantee') %></p>
       <a href="/pentru-business" class="btn btn-primary btn-lg">
-        Înscrie-ți afacerea
+        <%= t('home.ctaButton') %>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
     </div>

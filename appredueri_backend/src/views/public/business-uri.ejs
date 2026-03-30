@@ -1,4 +1,4 @@
-<%- include('partials/head') %>
+<%- include('partials/head', { pageTitle: t('businesses.pageTitle'), activePage: 'business-uri', pageDesc: t('businesses.pageTitle') }) %>
 <%- include('partials/navbar', { activePage: 'business-uri', webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <!-- ═══════════════════════════════════════════════════════
@@ -7,8 +7,8 @@
 <div class="page-header">
   <div class="page-header-glow"></div>
   <div class="container">
-    <h1 class="page-title text-gradient">Business-uri</h1>
-    <p class="page-subtitle"><%= totalBusinesses.toLocaleString('ro-RO') %> business-uri in <%= totalCities %> orase</p>
+    <h1 class="page-title text-gradient"><%= t('businesses.pageTitle') %></h1>
+    <p class="page-subtitle"><%= t('businesses.subtitle', { count: totalBusinesses.toLocaleString('ro-RO'), cities: totalCities }) %></p>
 
     <div class="search-wrapper" style="margin-top: 32px;">
       <form action="/business-uri" method="GET" id="searchForm">
@@ -16,7 +16,7 @@
           type="text"
           name="q"
           class="search-bar"
-          placeholder="Cauta business-uri..."
+          placeholder="<%= t('common.searchBusinessesPlaceholder') %>"
           value="<%= typeof query !== 'undefined' ? query : '' %>"
         >
         <div class="search-icon">
@@ -38,7 +38,7 @@
      ═══════════════════════════════════════════════════════ -->
 <div class="container">
   <div class="scroll-container">
-    <button class="scroll-arrow scroll-arrow-left" aria-label="Scroll stânga">
+    <button class="scroll-arrow scroll-arrow-left" aria-label="<%= t('common.scrollLeft') %>">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     </button>
     <div class="filter-bar">
@@ -48,18 +48,18 @@
            class="filter-pill filter-pill-prefs<%= (typeof prefsActive !== 'undefined' && prefsActive) ? ' active' : '' %>"
            title="<%= (typeof userPrefsCityNames !== 'undefined' ? userPrefsCityNames : []).concat(typeof userPrefsCategoryNames !== 'undefined' ? userPrefsCategoryNames : []).join(', ') %>">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Preferințele mele
+          <%= t('common.myPreferences') %>
         </a>
       <% } else { %>
         <a href="/preferinte?returnTo=<%= encodeURIComponent('/business-uri' + (typeof query !== 'undefined' && query ? '?q=' + encodeURIComponent(query) : '')) %>"
            class="filter-pill filter-pill-prefs filter-pill-disabled"
-           title="Setează preferințele din Cont">
+           title="<%= t('common.setPreferences') %>">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Preferințele mele
+          <%= t('common.myPreferences') %>
         </a>
       <% } %>
     <% } %>
-    <a href="/business-uri" class="filter-pill<%= !selectedCategory && !(typeof prefsActive !== 'undefined' && prefsActive) ? ' active' : '' %>">Toate</a>
+    <a href="/business-uri" class="filter-pill<%= !selectedCategory && !(typeof prefsActive !== 'undefined' && prefsActive) ? ' active' : '' %>"><%= t('common.all') %></a>
     <% categories.forEach(cat => { %>
       <a href="/business-uri?category=<%= cat.id %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
          class="filter-pill<%= selectedCategory == cat.id ? ' active' : '' %>">
@@ -67,20 +67,20 @@
       </a>
     <% }); %>
     </div>
-    <button class="scroll-arrow scroll-arrow-right" aria-label="Scroll dreapta">
+    <button class="scroll-arrow scroll-arrow-right" aria-label="<%= t('common.scrollRight') %>">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </button>
   </div>
 
   <% if (cities && cities.length > 0) { %>
     <div class="scroll-container">
-      <button class="scroll-arrow scroll-arrow-left" aria-label="Scroll stânga">
+      <button class="scroll-arrow scroll-arrow-left" aria-label="<%= t('common.scrollLeft') %>">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="filter-bar" style="padding-top: 0;">
-        <span class="sort-bar-label">Oras:</span>
+        <span class="sort-bar-label"><%= t('sort.city') %></span>
         <a href="/business-uri?<%= selectedCategory ? 'category=' + selectedCategory + '&' : '' %><%= query ? 'q=' + encodeURIComponent(query) : '' %>"
-           class="filter-pill<%= !selectedCity && !(typeof prefsActive !== 'undefined' && prefsActive) ? ' active' : '' %>">Toate</a>
+           class="filter-pill<%= !selectedCity && !(typeof prefsActive !== 'undefined' && prefsActive) ? ' active' : '' %>"><%= t('common.all') %></a>
         <% cities.forEach(city => { %>
           <a href="/business-uri?city=<%= city.id %><%= selectedCategory ? '&category=' + selectedCategory : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
              class="filter-pill<%= selectedCity == city.id ? ' active' : '' %>">
@@ -88,7 +88,7 @@
           </a>
         <% }); %>
       </div>
-      <button class="scroll-arrow scroll-arrow-right" aria-label="Scroll dreapta">
+      <button class="scroll-arrow scroll-arrow-right" aria-label="<%= t('common.scrollRight') %>">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </button>
     </div>
@@ -98,27 +98,27 @@
        SORT BAR
        ═══════════════════════════════════════════════════════ -->
   <div class="sort-bar">
-    <span class="sort-bar-label">Sortare:</span>
+    <span class="sort-bar-label"><%= t('sort.label') %></span>
     <a href="/business-uri?sort=popular<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
-       class="filter-pill<%= selectedSort === 'popular' ? ' active' : '' %>">Populare</a>
+       class="filter-pill<%= selectedSort === 'popular' ? ' active' : '' %>"><%= t('sort.popular') %></a>
     <a href="/business-uri?sort=rating<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
-       class="filter-pill<%= selectedSort === 'rating' ? ' active' : '' %>">Rating</a>
+       class="filter-pill<%= selectedSort === 'rating' ? ' active' : '' %>"><%= t('sort.rating') %></a>
     <a href="/business-uri?sort=newest<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
-       class="filter-pill<%= selectedSort === 'newest' ? ' active' : '' %>">Cele mai noi</a>
+       class="filter-pill<%= selectedSort === 'newest' ? ' active' : '' %>"><%= t('sort.latestAdded') %></a>
     <a href="/business-uri?sort=offers<%= selectedCategory ? '&category=' + selectedCategory : '' %><%= selectedCity ? '&city=' + selectedCity : '' %><%= query ? '&q=' + encodeURIComponent(query) : '' %>"
-       class="filter-pill<%= selectedSort === 'offers' ? ' active' : '' %>">Cele mai multe oferte</a>
+       class="filter-pill<%= selectedSort === 'offers' ? ' active' : '' %>"><%= t('sort.mostOffers') %></a>
   </div>
   <!-- Geo Banner -->
   <div id="geo-banner" class="geo-banner" style="display:none;">
     <div class="geo-banner-content">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span id="geo-banner-text">Activează locația pentru a vedea distanța</span>
-      <button class="btn btn-primary" id="geo-activate-btn">Activează locația</button>
+      <span id="geo-banner-text"><%= t('common.geoEnable') %></span>
+      <button class="btn btn-primary" id="geo-activate-btn"><%= t('common.geoButton') %></button>
     </div>
   </div>
 
   <% if (businesses.length > 0) { %>
-    <p class="results-count">Afișând <%= businesses.length %> din <%= totalBusinesses.toLocaleString('ro-RO') %> business-uri</p>
+    <p class="results-count"><%= t('common.showingOf', { count: businesses.length, total: totalBusinesses.toLocaleString('ro-RO') }) %></p>
   <% } %>
 
   <!-- ═══════════════════════════════════════════════════════
@@ -127,9 +127,9 @@
   <% if (businesses.length === 0) { %>
     <div style="text-align: center; padding: 80px 0;">
       <div style="font-size: 3rem; margin-bottom: 16px;">🔍</div>
-      <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Niciun business g&#259;sit</h3>
-      <p style="color: var(--text-secondary);">Incearca alte filtre sau cauta altceva.</p>
-      <a href="/business-uri" class="btn btn-secondary" style="margin-top: 24px;">Reseteaza filtrele</a>
+      <h3 style="font-size: 1.25rem; margin-bottom: 8px;"><%= t('businesses.noResults') %></h3>
+      <p style="color: var(--text-secondary);"><%= t('businesses.noResultsHint') %></p>
+      <a href="/business-uri" class="btn btn-secondary" style="margin-top: 24px;"><%= t('common.resetFilters') %></a>
     </div>
   <% } else { %>
     <div class="businesses-grid">
@@ -140,9 +140,9 @@
               <img src="<%= biz.cover_image_url %>" alt="<%= biz.name %>" loading="lazy" width="400" height="200">
             <% } %>
             <% if (biz.is_promoted) { %>
-              <span class="promoted-badge">Promovat</span>
+              <span class="promoted-badge"><%= t('common.promoted') %></span>
             <% } %>
-            <div class="card-heart-btn<%= (userFollowedIds || []).includes(biz.id) ? ' is-active' : '' %>" data-business-id="<%= biz.id %>" onclick="window.toggleCardFollow(<%= biz.id %>, event)" role="button" tabindex="0" aria-label="Urmărește"><svg class="heart-outline" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><svg class="heart-filled" width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+            <div class="card-heart-btn<%= (userFollowedIds || []).includes(biz.id) ? ' is-active' : '' %>" data-business-id="<%= biz.id %>" onclick="window.toggleCardFollow(<%= biz.id %>, event)" role="button" tabindex="0" aria-label="<%= t('common.follow') %>"><svg class="heart-outline" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><svg class="heart-filled" width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
           </div>
           <div class="biz-card-avatar">
             <% if (biz.logo_url) { %>
@@ -169,7 +169,7 @@
               <% } %>
             </div>
             <div class="biz-card-bottom">
-              <span class="biz-card-offers"><%= biz.offer_count %> oferte active</span>
+              <span class="biz-card-offers"><%= biz.offer_count %> <%= t('common.activeOffers') %></span>
               <span class="offer-distance biz-card-distance" data-lat="<%= biz.lat || '' %>" data-lng="<%= biz.lng || '' %>" style="display:none;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                 <span class="offer-distance-text"></span>

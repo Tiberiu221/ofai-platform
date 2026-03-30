@@ -1,8 +1,8 @@
 <%- include('partials/head', {
   pageTitle: business.name,
-  pageDesc: 'Descoperă ofertele și reducerile de la ' + business.name + (business.city ? ' din ' + business.city.name : '') + ' pe OFAI.',
+  pageDesc: t('businessDetail.pageDesc', { name: business.name }),
   ogTitle: business.name + ' \— OFAI',
-  ogDesc: 'Oferte și reduceri de la ' + business.name + (business.city ? ' în ' + business.city.name : ''),
+  ogDesc: t('businessDetail.ogDesc', { name: business.name }),
   ogImage: business.cover_image || null,
   ogType: 'business.business',
   canonicalUrl: 'https://ofai.ro/business/' + business.id,
@@ -15,9 +15,9 @@
      ═══════════════════════════════════════════════════════ -->
 <div class="container">
   <nav class="bd-breadcrumb">
-    <a href="/">Acasă</a>
+    <a href="/"><%= t('businessDetail.breadcrumbHome') %></a>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-    <a href="/business-uri">Business-uri</a>
+    <a href="/business-uri"><%= t('businessDetail.breadcrumbBusinesses') %></a>
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     <span><%= business.name %></span>
   </nav>
@@ -111,19 +111,19 @@
           >
             <% if (isFollowing) { %>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              Urmărești
+              <%= t('businessDetail.following') %>
             <% } else { %>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              Urmărește
+              <%= t('businessDetail.follow') %>
             <% } %>
           </button>
           <% if (parseInt(business.follower_count) >= 3) { %>
-            <span style="font-size: 0.8125rem; color: var(--text-secondary);"><%= business.follower_count %> urmăritori</span>
+            <span style="font-size: 0.8125rem; color: var(--text-secondary);"><%= business.follower_count %> <%= t('businessDetail.followers') %></span>
           <% } %>
         </div>
-        <button class="bd-share-btn btn btn-secondary" data-share-name="<%= business.name %>" data-track-bid="<%= business.id %>" aria-label="Distribuie business-ul">
+        <button class="bd-share-btn btn btn-secondary" data-share-name="<%= business.name %>" data-track-bid="<%= business.id %>" aria-label="<%= t('businessDetail.shareBusiness') %>">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          Distribuie
+          <%= t('businessDetail.share') %>
         </button>
       </div>
     </div>
@@ -133,7 +133,7 @@
     <% if (business.phone) { %>
       <a href="tel:<%= business.phone %>" class="bd-action-btn" onclick="trackClick(<%= business.id %>,'phone')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Sună
+        <%= t('businessDetail.call') %>
       </a>
     <% } %>
     <% if (business.website) { %>
@@ -162,7 +162,7 @@
     <% if (navUrl) { %>
       <a href="<%= navUrl %>" target="_blank" rel="noopener noreferrer" class="bd-action-btn" onclick="trackClick(<%= business.id %>,'navigate')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-        Navighează
+        <%= t('businessDetail.navigate') %>
       </a>
     <% } %>
   </div>
@@ -186,18 +186,18 @@
       <% if (_bkType === 'phone' && _bkPhone) { %>
         <a href="tel:<%= _bkPhone %>" class="btn btn-primary bc-booking-btn" onclick="trackClick(<%= business.id %>,'phone')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          Rezervă telefonic: <%= _bkPhone %>
+          <%= t('businessDetail.bookByPhone') %> <%= _bkPhone %>
         </a>
       <% } else if (_bkType === 'whatsapp' && _bkWhatsapp) { %>
         <a href="https://wa.me/<%= _bkWhatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-booking-btn bc-whatsapp-btn" onclick="trackClick(<%= business.id %>,'whatsapp')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-          Rezervă pe WhatsApp
+          <%= t('businessDetail.bookWhatsapp') %>
         </a>
       <% } else if (_bkType === 'url' && _bkUrl) { %>
         <% var safeBookingUrl = (_bkUrl || '').match(/^https?:\/\//) ? _bkUrl : '#'; %>
         <a href="<%= safeBookingUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-booking-btn" onclick="trackClick(<%= business.id %>,'booking_url')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-          Rezervă online
+          <%= t('businessDetail.bookOnline') %>
         </a>
       <% } %>
       <% if (_bk.instructions) { %>
@@ -213,8 +213,8 @@
   <div id="geo-banner" class="geo-banner" style="display:none;">
     <div class="geo-banner-content">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span id="geo-banner-text">Activează locația pentru a vedea distanța</span>
-      <button class="btn btn-primary" id="geo-activate-btn">Activează locația</button>
+      <span id="geo-banner-text"><%= t('common.geoEnable') %></span>
+      <button class="btn btn-primary" id="geo-activate-btn"><%= t('common.geoButton') %></button>
     </div>
   </div>
 </div>
@@ -235,7 +235,7 @@
     if (hasLocationRestrictions && locs.length > 0) {
       // Only add "Oferte active" tab if there are unrestricted offers
       if (globalOffers.length > 0) {
-        offerTabs.push({ id: 'all', label: 'Oferte active', offers: globalOffers });
+        offerTabs.push({ id: 'all', label: t('businessDetail.activeOffers'), offers: globalOffers });
       }
       // Tab per location — offers that include this location
       locs.forEach(function(loc) {
@@ -248,12 +248,12 @@
       });
       // Safety: if no tabs were generated (data mismatch), fall back to all offers
       if (offerTabs.length === 0) {
-        offerTabs.push({ id: 'all', label: 'Oferte active', offers: offers });
+        offerTabs.push({ id: 'all', label: t('businessDetail.activeOffers'), offers: offers });
         hasLocationRestrictions = false;
       }
     } else {
       // No location restrictions or no real locations — single flat list
-      offerTabs.push({ id: 'all', label: 'Oferte active', offers: offers });
+      offerTabs.push({ id: 'all', label: t('businessDetail.activeOffers'), offers: offers });
     }
   }
 %>
@@ -262,29 +262,29 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" x2="7.01" y1="7" y2="7"/></svg>
-      <span>Oferte active</span>
-      <span class="detail-card-badge"><%= offers.length %> <%= offers.length === 1 ? 'ofertă' : 'oferte' %></span>
+      <span><%= t('businessDetail.activeOffers') %></span>
+      <span class="detail-card-badge"><%= offers.length %> <%= offers.length === 1 ? t('businessDetail.offer_one') : t('businessDetail.offer_other') %></span>
     </div>
 
     <% if (showPinch) { %>
       <div class="pinch-request-section" style="margin-bottom: 24px;">
         <div class="pinch-card" style="background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.15); border-radius: 12px; padding: 16px 20px; text-align: center;">
           <% if (requestCount > 0) { %>
-            <p class="pinch-count" style="margin: 0 0 12px; font-size: 13px; color: var(--text-secondary);"><%= requestCount %> <%= requestCount === 1 ? 'persoană a cerut' : 'persoane au cerut' %> deja o ofertă</p>
+            <p class="pinch-count" style="margin: 0 0 12px; font-size: 13px; color: var(--text-secondary);"><%= requestCount === 1 ? t('businessDetail.personRequested_one', { count: requestCount }) : t('businessDetail.personRequested_other', { count: requestCount }) %></p>
           <% } %>
           <% if (typeof webUser !== 'undefined' && webUser) { %>
             <% if (userRequested) { %>
               <button class="pinch-btn pinch-btn-done" disabled style="padding: 10px 20px; background: rgba(82, 82, 91, 0.3); color: var(--text-secondary); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: not-allowed;">
-                ✓ Cerere trimisă
+                ✓ <%= t('businessDetail.requestSent') %>
               </button>
             <% } else { %>
               <button class="pinch-btn" onclick="requestOffer(<%= business.id %>)" style="padding: 10px 20px; background: var(--accent); color: #09090b; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> Cere mai multe oferte
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> <%= t('businessDetail.requestMoreOffers') %>
               </button>
             <% } %>
           <% } else { %>
             <a href="/login?returnTo=/business/<%= business.id %>" class="pinch-btn pinch-btn-login" style="display: inline-block; padding: 10px 20px; background: var(--accent); color: #09090b; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.2s;">
-              Conectează-te pentru a cere o ofertă
+              <%= t('businessDetail.loginToRequest') %>
             </a>
           <% } %>
         </div>
@@ -362,7 +362,7 @@
           </a>
         <% }); %>
         <% if (tab.offers.length === 0) { %>
-          <p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 16px 0;">Nicio ofertă pentru această locație.</p>
+          <p style="color: var(--text-secondary); font-size: 0.875rem; text-align: center; padding: 16px 0;"><%= t('businessDetail.noOffersForLocation') %></p>
         <% } %>
       </div>
     <% }); %>
@@ -374,32 +374,32 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" x2="7.01" y1="7" y2="7"/></svg>
-      <span>Oferte</span>
+      <span><%= t('businessDetail.offers') %></span>
     </div>
 
     <div class="pinch-request-section">
       <div class="pinch-card pinch-card-empty" style="background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(251, 146, 60, 0.05) 100%); border: 2px solid rgba(251, 146, 60, 0.2); border-radius: 16px; padding: 40px 24px; text-align: center; max-width: 500px; margin: 0 auto;">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; opacity: 0.6;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-        <h3 style="margin: 0 0 8px; font-size: 18px; color: var(--text-primary);">Momentan nu există oferte active</h3>
-        <p style="margin: 0 0 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.5;">Cere o ofertă nouă și te vom notifica când business-ul adaugă una!</p>
+        <h3 style="margin: 0 0 8px; font-size: 18px; color: var(--text-primary);"><%= t('businessDetail.noActiveOffers') %></h3>
+        <p style="margin: 0 0 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.5;"><%= t('businessDetail.noActiveOffersHint') %></p>
 
         <% if (requestCount > 0) { %>
-          <p class="pinch-count" style="margin: 0 0 16px; font-size: 13px; color: var(--accent); font-weight: 600;"><%= requestCount %> <%= requestCount === 1 ? 'persoană a cerut' : 'persoane au cerut' %> deja o ofertă</p>
+          <p class="pinch-count" style="margin: 0 0 16px; font-size: 13px; color: var(--accent); font-weight: 600;"><%= requestCount === 1 ? t('businessDetail.personRequested_one', { count: requestCount }) : t('businessDetail.personRequested_other', { count: requestCount }) %></p>
         <% } %>
 
         <% if (typeof webUser !== 'undefined' && webUser) { %>
           <% if (userRequested) { %>
             <button class="pinch-btn pinch-btn-done" disabled style="padding: 12px 28px; background: rgba(82, 82, 91, 0.3); color: var(--text-secondary); border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: not-allowed;">
-              ✓ Cerere trimisă
+              ✓ <%= t('businessDetail.requestSent') %>
             </button>
           <% } else { %>
             <button class="pinch-btn" onclick="requestOffer(<%= business.id %>)" style="padding: 12px 28px; background: var(--accent); color: #09090b; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> Vreau o ofertă!
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> <%= t('businessDetail.wantOffer') %>
             </button>
           <% } %>
         <% } else { %>
           <a href="/login?returnTo=/business/<%= business.id %>" class="pinch-btn pinch-btn-login" style="display: inline-block; padding: 12px 28px; background: var(--accent); color: #09090b; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);">
-            Conectează-te pentru a cere o ofertă
+            <%= t('businessDetail.loginToRequest') %>
           </a>
         <% } %>
       </div>
@@ -416,8 +416,8 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span>Locații</span>
-      <span class="detail-card-badge"><%= business.locations.length %> <%= business.locations.length === 1 ? 'locație' : 'locații' %></span>
+      <span><%= t('businessDetail.locations') %></span>
+      <span class="detail-card-badge"><%= business.locations.length %> <%= business.locations.length === 1 ? t('businessDetail.location_one') : t('businessDetail.location_other') %></span>
     </div>
 
     <div class="bd-locations-grid">
@@ -445,24 +445,24 @@
             <% if (locNavUrl) { %>
               <a href="<%= locNavUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary bc-action-btn" onclick="trackClick(<%= business.id %>,'navigate')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                Navigheaz&#259;
+                <%= t('businessDetail.navigate') %>
               </a>
             <% } %>
             <% if (loc.booking_type === 'phone' && loc.booking_phone) { %>
               <a href="tel:<%= loc.booking_phone %>" class="btn btn-primary bc-action-btn" onclick="trackClick(<%= business.id %>,'phone')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                Rezerv&#259;: <%= loc.booking_phone %>
+                <%= t('businessDetail.bookByPhone') %> <%= loc.booking_phone %>
               </a>
             <% } else if (loc.booking_type === 'whatsapp' && loc.booking_whatsapp) { %>
               <a href="https://wa.me/<%= loc.booking_whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener noreferrer" class="btn bc-action-btn bc-whatsapp-btn" onclick="trackClick(<%= business.id %>,'whatsapp')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-                Rezerv&#259; pe WhatsApp
+                <%= t('businessDetail.bookWhatsapp') %>
               </a>
             <% } else if (loc.booking_type === 'url' && loc.booking_url) { %>
               <% var safeLocBooking = (loc.booking_url || '').match(/^https?:\/\//) ? loc.booking_url : '#'; %>
               <a href="<%= safeLocBooking %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-action-btn" onclick="trackClick(<%= business.id %>,'booking_url')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-                Rezerv&#259; online
+                <%= t('businessDetail.bookOnline') %>
               </a>
             <% } %>
           </div>
@@ -490,11 +490,11 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span>Program de lucru</span>
+      <span><%= t('businessDetail.workingHours') %></span>
     </div>
 
     <%
-      var dayNames = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'];
+      var dayNames = [t('businessDetail.monday'), t('businessDetail.tuesday'), t('businessDetail.wednesday'), t('businessDetail.thursday'), t('businessDetail.friday'), t('businessDetail.saturday'), t('businessDetail.sunday')];
       /* Server runs UTC — convert to Romania time for correct day + hour */
       var nowRO = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }));
       var jsDay = nowRO.getDay(); // 0=Sun … 6=Sat
@@ -519,7 +519,7 @@
           <div class="bd-hours-row<%= isToday ? ' bd-hours-today' : '' %>">
             <span class="bd-hours-day"><%= dayNames[d] %><%= isToday ? ' ·' : '' %></span>
             <% if (isClosed) { %>
-              <span class="bd-hours-time bd-hours-closed">Închis</span>
+              <span class="bd-hours-time bd-hours-closed"><%= t('businessDetail.closed') %></span>
             <% } else { %>
               <span class="bd-hours-time"><%= entry.open_time %> – <%= entry.close_time %></span>
             <% } %>
@@ -535,9 +535,9 @@
                 if (closeMins === 0) closeMins = 1440; // 00:00 = midnight = end of day
                 var isOpen = nowMins >= openMins && nowMins < closeMins;
               %>
-              <span class="bd-hours-badge <%= isOpen ? 'bd-hours-open' : 'bd-hours-shut' %>"><%= isOpen ? 'Deschis acum' : 'Închis acum' %></span>
+              <span class="bd-hours-badge <%= isOpen ? 'bd-hours-open' : 'bd-hours-shut' %>"><%= isOpen ? t('businessDetail.openNow') : t('businessDetail.closedNow') %></span>
             <% } else if (isToday && isClosed) { %>
-              <span class="bd-hours-badge bd-hours-shut">Închis azi</span>
+              <span class="bd-hours-badge bd-hours-shut"><%= t('businessDetail.closedToday') %></span>
             <% } %>
           </div>
         <% } %>
@@ -555,14 +555,14 @@
   /* Flatten all items to compute total count */
   var totalItems = 0;
   catalog.forEach(function(cat) { totalItems += cat.items.length; });
-  var typeLabels = { service: 'Serviciu', product: 'Produs', menu_item: 'Meniu' };
+  var typeLabels = { service: t('businessDetail.typeService'), product: t('businessDetail.typeProduct'), menu_item: t('businessDetail.typeMenu') };
 %>
 <div class="bd-content">
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
-      <span>Servicii & Produse</span>
-      <span class="detail-card-badge"><%= totalItems %> <%= totalItems === 1 ? 'articol' : 'articole' %></span>
+      <span><%= t('businessDetail.catalogTitle') %></span>
+      <span class="detail-card-badge"><%= totalItems %> <%= totalItems === 1 ? t('businessDetail.item_one') : t('businessDetail.item_other') %></span>
     </div>
 
     <% if (catalog.length > 1) { %>
@@ -595,7 +595,7 @@
           <% if (item.price_display) { %>
             <span class="bd-catalog-price"><%= item.price_display %></span>
           <% } else { %>
-            <span class="bd-catalog-price bd-catalog-price-ask">La cerere</span>
+            <span class="bd-catalog-price bd-catalog-price-ask"><%= t('businessDetail.priceOnRequest') %></span>
           <% } %>
         </div>
         <% if (item.description) { %>
@@ -605,7 +605,7 @@
       <% }); %>
       <% if (cat.items.length > 5) { %>
       <button class="bd-catalog-expand" data-cat-expand="<%= ci %>" onclick="bdCatalogExpand(<%= ci %>)">
-        Arată toate (<%= cat.items.length %> articole)
+        <%= t('businessDetail.showMore', { count: cat.items.length }) %>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </button>
       <% } %>
@@ -623,12 +623,12 @@
   <div class="detail-card" style="background: rgba(251, 146, 60, 0.04);">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.912 5.813a2 2 0 0 0 1.275 1.275L21 12l-5.813 1.912a2 2 0 0 0-1.275 1.275L12 21l-1.912-5.813a2 2 0 0 0-1.275-1.275L3 12l5.813-1.912a2 2 0 0 0 1.275-1.275L12 3z"/></svg>
-      <span>Ce spun clienții</span>
-      <span class="detail-card-badge">AI &mdash; <%= reviewSummary.review_count %> recenzii</span>
+      <span><%= t('businessDetail.aiSummaryTitle') %></span>
+      <span class="detail-card-badge"><%= t('businessDetail.aiSummaryBadge', { count: reviewSummary.review_count }) %></span>
     </div>
     <p class="ai-summary-text" style="margin: 0 0 12px;"><%= reviewSummary.text %></p>
     <a href="#reviews-section" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--accent); text-decoration: none; font-weight: 500; transition: opacity 0.2s;">
-      Adaugă recenzia ta
+      <%= t('businessDetail.addYourReview') %>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
     </a>
   </div>
@@ -643,7 +643,7 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-      <span>Despre <%= business.name %></span>
+      <span><%= t('businessDetail.about', { name: business.name }) %></span>
     </div>
     <div class="bd-description"><%= business.description %></div>
   </div>
@@ -658,8 +658,8 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <span>Galerie</span>
-      <span class="detail-card-badge"><%= business.images.length %> <%= business.images.length === 1 ? 'imagine' : 'imagini' %></span>
+      <span><%= t('businessDetail.gallery') %></span>
+      <span class="detail-card-badge"><%= business.images.length %> <%= business.images.length === 1 ? t('businessDetail.image_one') : t('businessDetail.image_other') %></span>
     </div>
     <div class="bd-gallery-strip">
       <% business.images.forEach((img, i) => { %>
@@ -697,17 +697,17 @@
   <div class="detail-card">
     <div class="detail-card-header">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-      <span>Recenzii</span>
-      <span class="detail-card-badge"><%= reviews.length %> <%= reviews.length === 1 ? 'recenzie' : 'recenzii' %></span>
+      <span><%= t('businessDetail.reviews') %></span>
+      <span class="detail-card-badge"><%= reviews.length %> <%= reviews.length === 1 ? t('businessDetail.review_one') : t('businessDetail.review_other') %></span>
       <% if (webUser) { %>
         <button class="btn btn-primary" id="toggle-review-form" style="margin-left: auto; font-size: 0.8125rem; padding: 8px 16px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Scrie o recenzie
+          <%= t('businessDetail.writeReview') %>
         </button>
       <% } else { %>
         <a href="/login?returnTo=/business/<%= business.id %>#reviews-section" class="btn btn-secondary" style="margin-left: auto; font-size: 0.8125rem; padding: 8px 16px; text-decoration: none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Scrie o recenzie
+          <%= t('businessDetail.loginToReview') %>
         </a>
       <% } %>
     </div>
@@ -749,9 +749,9 @@
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#52525b" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           </span>
         </div>
-        <textarea class="rf-textarea" id="review-comment" placeholder="Scrie recenzia ta..." rows="4"></textarea>
+        <textarea class="rf-textarea" id="review-comment" placeholder="<%= t('businessDetail.reviewPlaceholder') %>" rows="4"></textarea>
         <button class="btn btn-primary" id="submit-review" data-business-id="<%= business.id %>">
-          Trimite recenzia
+          <%= t('businessDetail.submitReview') %>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </button>
       </div>
@@ -770,7 +770,7 @@
                 <% } %>
               </div>
               <div class="rc-meta">
-                <div class="rc-name"><%= review.first_name ? (review.first_name + ' ' + (review.last_name ? review.last_name.charAt(0) + '.' : '')) : 'Utilizator anonim' %><% if (review.display_badge_color) { %> <svg class="rc-badge-star" width="14" height="14" viewBox="0 0 24 24" fill="<%= review.display_badge_color %>" style="vertical-align: middle; margin-left: 4px;"><title><%= review.display_badge_name %></title><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><% } %></div>
+                <div class="rc-name"><%= review.first_name ? (review.first_name + ' ' + (review.last_name ? review.last_name.charAt(0) + '.' : '')) : t('businessDetail.anonymousUser') %><% if (review.display_badge_color) { %> <svg class="rc-badge-star" width="14" height="14" viewBox="0 0 24 24" fill="<%= review.display_badge_color %>" style="vertical-align: middle; margin-left: 4px;"><title><%= review.display_badge_name %></title><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg><% } %></div>
                 <div class="rc-date-stars">
                   <div class="rc-stars">
                     <% for (let s = 1; s <= 5; s++) { %>
@@ -792,7 +792,7 @@
               <div class="rc-response">
                 <div class="rc-response-label">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></svg>
-                  Răspuns de la business
+                  <%= t('businessDetail.responseFromBusiness') %>
                 </div>
                 <p class="rc-response-text"><%= review.response_text %></p>
               </div>
@@ -801,7 +801,7 @@
         <% }); %>
       <% } else { %>
         <div class="bd-empty-state">
-          <p>Nicio recenzie încă. Fii primul care lasă o recenzie!</p>
+          <p><%= t('businessDetail.noReviews') %> <%= t('businessDetail.noReviewsHint') %></p>
         </div>
       <% } %>
     </div>
@@ -813,6 +813,22 @@
      PAGE SCRIPTS
      ═══════════════════════════════════════════════════════ -->
 <script nonce="<%= cspNonce %>">
+var i18n = {
+  following: '<%= t("businessDetail.following") %>',
+  writeReview: '<%= t("businessDetail.writeReview") %>',
+  cancel: '<%= t("businessDetail.cancel") %>',
+  selectRating: '<%= t("businessDetail.selectRating") %>',
+  genericError: '<%= t("businessDetail.genericError") %>',
+  retryError: '<%= t("businessDetail.retryError") %>',
+  requestSent: '<%= t("businessDetail.requestSent") %>',
+  requestMoreOffers: '<%= t("businessDetail.requestMoreOffers") %>',
+  pinchSending: '<%= t("businessDetail.pinchSending") %>',
+  pinchSuccess: '<%= t("businessDetail.pinchSuccess") %>',
+  pinchRateLimit: '<%= t("businessDetail.pinchRateLimit") %>',
+  pinchError: '<%= t("businessDetail.pinchError") %>',
+  personRequested_one: '<%= t("businessDetail.personRequested_one", { count: "__COUNT__" }) %>',
+  personRequested_other: '<%= t("businessDetail.personRequested_other", { count: "__COUNT__" }) %>'
+};
 document.addEventListener('DOMContentLoaded', function() {
   /* ─── Share button (safe — uses dataset instead of inline JS) ── */
   var shareBtn = document.querySelector('.bd-share-btn[data-share-name]');
@@ -833,7 +849,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var isHidden = reviewForm.style.display === 'none';
       reviewForm.style.display = isHidden ? 'flex' : 'none';
       var penSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> ';
-      toggleBtn.innerHTML = isHidden ? 'Anulează' : (penSvg + 'Scrie o recenzie');
+      toggleBtn.innerHTML = isHidden ? i18n.cancel : (penSvg + i18n.writeReview);
     });
   }
 
@@ -890,7 +906,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var comment = document.getElementById('review-comment').value.trim();
 
       if (!selectedRating) {
-        alert('Te rugăm să selectezi un rating.');
+        alert(i18n.selectRating);
         return;
       }
 
@@ -912,11 +928,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.success) {
           window.location.reload();
         } else {
-          alert(data.message || 'A apărut o eroare.');
+          alert(data.message || i18n.genericError);
         }
       })
       .catch(function() {
-        alert('A apărut o eroare. Încearcă din nou.');
+        alert(i18n.retryError);
       });
     });
   }
@@ -927,7 +943,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!btn) return;
 
     const originalText = btn.textContent;
-    btn.textContent = 'Se trimite...';
+    btn.textContent = i18n.pinchSending;
     btn.disabled = true;
 
     try {
@@ -944,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (data.success) {
         // Update button to done state
-        btn.textContent = '✓ Cerere trimisă';
+        btn.textContent = '✓ ' + i18n.requestSent;
         btn.classList.add('pinch-btn-done');
         btn.style.background = 'rgba(82, 82, 91, 0.3)';
         btn.style.color = 'var(--text-secondary)';
@@ -955,14 +971,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const countEl = document.querySelector('.pinch-count');
         if (countEl) {
           const total = data.total || 1;
-          countEl.textContent = total + (total === 1 ? ' persoană a cerut' : ' persoane au cerut') + ' deja o ofertă';
+          countEl.textContent = (total === 1 ? i18n.personRequested_one : i18n.personRequested_other).replace('__COUNT__', total);
         } else if (data.total) {
           // Create count element if it doesn't exist
           const card = document.querySelector('.pinch-card');
           const count = document.createElement('p');
           count.className = 'pinch-count';
           count.style.cssText = 'margin: 0 0 16px; font-size: 13px; color: var(--accent); font-weight: 600;';
-          count.textContent = data.total + (data.total === 1 ? ' persoană a cerut' : ' persoane au cerut') + ' deja o ofertă';
+          count.textContent = (data.total === 1 ? i18n.personRequested_one : i18n.personRequested_other).replace('__COUNT__', data.total);
           btn.parentElement.insertBefore(count, btn);
         }
 
@@ -972,32 +988,32 @@ document.addEventListener('DOMContentLoaded', function() {
           if (followBtn && followBtn.dataset.following !== 'true') {
             followBtn.dataset.following = 'true';
             followBtn.classList.add('following');
-            followBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Urmărești';
+            followBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> ' + i18n.following;
           }
         }
 
         if (window.showToast) {
-          window.showToast('Cerere trimisă! Te vom notifica când apar oferte noi.', 'success');
+          window.showToast(i18n.pinchSuccess, 'success');
         }
       } else if (res.status === 429) {
         btn.textContent = originalText;
         btn.disabled = false;
         if (window.showToast) {
-          window.showToast(data.message || 'Ai trimis deja o cerere recentă. Încearcă din nou mai târziu.', 'error');
+          window.showToast(data.message || i18n.pinchRateLimit, 'error');
         } else {
-          alert(data.message || 'Ai trimis deja o cerere recentă.');
+          alert(data.message || i18n.pinchRateLimit);
         }
       } else {
-        throw new Error(data.message || 'Eroare la trimiterea cererii');
+        throw new Error(data.message || i18n.pinchError);
       }
     } catch (err) {
       console.error('Pinch error:', err);
       btn.textContent = originalText;
       btn.disabled = false;
       if (window.showToast) {
-        window.showToast(err.message || 'A apărut o eroare. Încearcă din nou.', 'error');
+        window.showToast(err.message || i18n.retryError, 'error');
       } else {
-        alert('A apărut o eroare. Încearcă din nou.');
+        alert(i18n.retryError);
       }
     }
   };

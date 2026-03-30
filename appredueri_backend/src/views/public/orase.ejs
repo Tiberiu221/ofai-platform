@@ -1,11 +1,11 @@
-<%- include('partials/head', { pageTitle: 'Orașe', activePage: 'orase', pageDesc: 'Descoperă oferte și reduceri din cele mai populare orașe din România.' }) %>
+<%- include('partials/head', { pageTitle: t('cities.pageTitle'), activePage: 'orase', pageDesc: t('cities.pageDesc') }) %>
 <%- include('partials/navbar', { activePage: 'orase', webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <section class="page-header">
   <div class="page-header-glow"></div>
   <div class="container">
-    <h1 class="page-title text-gradient">Orașe</h1>
-    <p class="page-subtitle">Descoperă oferte din <%= cities.length %> orașe din România</p>
+    <h1 class="page-title text-gradient"><%= t('cities.pageTitle') %></h1>
+    <p class="page-subtitle"><%= t('cities.subtitle', { count: cities.length }) %></p>
   </div>
 </section>
 
@@ -20,7 +20,7 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
             <h3 class="city-page-card-name"><%= city.name %></h3>
-            <span class="city-page-card-count"><%= city.business_count || 0 %> business-uri</span>
+            <span class="city-page-card-count"><%= city.business_count || 0 %> <%= t('common.businessesCount') %></span>
           </div>
         </a>
       <% }); %>

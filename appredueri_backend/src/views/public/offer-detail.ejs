@@ -692,9 +692,9 @@
      BREADCRUMB
      ═══════════════════════════════════════════════════════ -->
 <nav class="breadcrumb container">
-  <a href="/">Acasa</a>
+  <a href="/"><%= t('offerDetail.breadcrumbHome') %></a>
   <span class="breadcrumb-sep">/</span>
-  <a href="/oferte">Oferte</a>
+  <a href="/oferte"><%= t('offerDetail.breadcrumbOffers') %></a>
   <span class="breadcrumb-sep">/</span>
   <span class="breadcrumb-current"><%= offer.title %></span>
 </nav>
@@ -724,7 +724,7 @@
         data-offer-id="<%= offer.id %>"
         data-favorited="<%= isFavorite ? 'true' : 'false' %>"
         onclick="window.toggleFavorite(<%= offer.id %>)"
-        aria-label="Adaugă la favorite"
+        aria-label="<%= t('offerDetail.addToFavorites') %>"
       >
         <span class="heart-outline">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
@@ -733,7 +733,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </span>
       </button>
-      <button class="share-btn" data-share-title="<%= offer.title %>" data-share-biz="<%= offer.business.name %>" data-track-bid="<%= offer.business.id %>" data-track-oid="<%= offer.id %>" aria-label="Distribuie oferta">
+      <button class="share-btn" data-share-title="<%= offer.title %>" data-share-biz="<%= offer.business.name %>" data-track-bid="<%= offer.business.id %>" data-track-oid="<%= offer.id %>" aria-label="<%= t('offerDetail.shareOffer') %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
     </div>
@@ -769,7 +769,7 @@
         <% if (offer.save_count >= 3) { %>
           <span class="activity-pill saves">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            <%= offer.save_count %> salvari
+            <%= offer.save_count %> <%= t('common.saves') %>
           </span>
         <% } %>
       </div>
@@ -800,13 +800,13 @@
     <div class="detail-card">
       <div class="detail-card-header">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Perioadă
+        <%= t('offerDetail.period') %>
         <% if (_validEnd) { %>
           <% var _daysLeft = Math.ceil((new Date(offer.end_date) - new Date()) / 86400000); %>
           <% if (_daysLeft > 0) { %>
-            <span class="detail-card-badge">Activă</span>
+            <span class="detail-card-badge"><%= t('offerDetail.active') %></span>
           <% } else { %>
-            <span class="detail-card-badge" style="background: rgba(239,68,68,0.12); color: #ef4444; border-color: rgba(239,68,68,0.2);">Expirată</span>
+            <span class="detail-card-badge" style="background: rgba(239,68,68,0.12); color: #ef4444; border-color: rgba(239,68,68,0.2);"><%= t('offerDetail.expired') %></span>
           <% } %>
         <% } %>
       </div>
@@ -816,9 +816,9 @@
           —
           <strong style="color: var(--text-primary);"><%= _endD.toLocaleDateString('ro-RO', _dateOpts) %></strong>
         <% } else if (_validEnd) { %>
-          Până la <strong style="color: var(--text-primary);"><%= _endD.toLocaleDateString('ro-RO', _dateOpts) %></strong>
+          <%= t('offerDetail.untilDate') %> <strong style="color: var(--text-primary);"><%= _endD.toLocaleDateString('ro-RO', _dateOpts) %></strong>
         <% } else { %>
-          Din <strong style="color: var(--text-primary);"><%= _startD.toLocaleDateString('ro-RO', _dateOpts) %></strong>
+          <%= t('offerDetail.fromDate') %> <strong style="color: var(--text-primary);"><%= _startD.toLocaleDateString('ro-RO', _dateOpts) %></strong>
         <% } %>
       </div>
       <% if (_validStart && _validEnd) { %>
@@ -826,7 +826,7 @@
         <div class="detail-period-bar"><div class="detail-period-bar-fill" style="width: <%= _pct %>%;"></div></div>
         <% var _dLeft = Math.ceil((_endD - new Date()) / 86400000); %>
         <% if (_dLeft > 0) { %>
-          <div class="detail-period-text">Expiră în <%= _dLeft %> zile</div>
+          <div class="detail-period-text"><%= t('offerDetail.expiresInDays', { days: _dLeft }) %></div>
         <% } %>
       <% } %>
     </div>
@@ -845,14 +845,14 @@
     <%
       // Redemption method mapping (predefined keys → display messages)
       var _REDEMPTION_MAP = {
-        'call': 'Sună și menționează oferta OFAI',
-        'whatsapp': 'Scrie pe WhatsApp și menționează oferta OFAI',
-        'online': 'Rezervă online și menționează oferta OFAI',
-        'booking': 'Menționează oferta OFAI la rezervare',
-        'appointment': 'Menționează oferta OFAI la programare',
-        'order': 'Menționează oferta OFAI la comandă',
-        'checkout': 'Aplică codul sau menționează oferta OFAI la checkout',
-        'show_page': 'Arată această pagină pentru a beneficia de reducere'
+        'call': t('offerDetail.redemptionCall'),
+        'whatsapp': t('offerDetail.redemptionWhatsapp'),
+        'online': t('offerDetail.redemptionOnline'),
+        'booking': t('offerDetail.redemptionBooking'),
+        'appointment': t('offerDetail.redemptionAppointment'),
+        'order': t('offerDetail.redemptionOrder'),
+        'checkout': t('offerDetail.redemptionCheckout'),
+        'show_page': t('offerDetail.redemptionShowPage')
       };
 
       // Booking efectiv (deja calculat cu inherit logic in web.js)
@@ -885,29 +885,29 @@
       } else {
         // Auto-detection fallback (booking type + category)
         if (_bkType === 'phone' && _bkPhone) {
-          _redemptionMsg = 'Sună și menționează oferta OFAI';
+          _redemptionMsg = t('offerDetail.redemptionCall');
           _redemptionIcon = 'phone';
         } else if (_bkType === 'whatsapp' && _bkWhatsapp) {
-          _redemptionMsg = 'Scrie pe WhatsApp și menționează oferta OFAI';
+          _redemptionMsg = t('offerDetail.redemptionWhatsapp');
           _redemptionIcon = 'whatsapp';
         } else if (_bkType === 'url' && _bkUrl) {
-          _redemptionMsg = 'Rezervă online și menționează oferta OFAI';
+          _redemptionMsg = t('offerDetail.redemptionOnline');
           _redemptionIcon = 'link';
         } else {
           // Category-based smart default
           var _catLower = ((offer.business.category && offer.business.category.name) || '').toLowerCase();
-          _redemptionMsg = 'Menționează oferta OFAI pentru a beneficia de reducere';
+          _redemptionMsg = t('offerDetail.redemptionDefault');
           if (['hotel', 'cazare', 'retreat', 'pensiune', 'vila', 'camping'].some(function(k) { return _catLower.includes(k); })) {
-            _redemptionMsg = 'Menționează oferta OFAI la rezervare';
+            _redemptionMsg = t('offerDetail.redemptionBooking');
             _redemptionIcon = 'bed';
           } else if (['salon', 'frizerie', 'spa', 'beauty', 'cosmet'].some(function(k) { return _catLower.includes(k); })) {
-            _redemptionMsg = 'Menționează oferta OFAI la programare';
+            _redemptionMsg = t('offerDetail.redemptionAppointment');
             _redemptionIcon = 'scissors';
           } else if (['restaurant', 'cafenea', 'bar', 'fast food', 'patiserie', 'cofet'].some(function(k) { return _catLower.includes(k); })) {
-            _redemptionMsg = 'Menționează oferta OFAI la comandă';
+            _redemptionMsg = t('offerDetail.redemptionOrder');
             _redemptionIcon = 'utensils';
           } else if (_catLower === 'magazine online') {
-            _redemptionMsg = 'Aplică codul sau menționează oferta OFAI la checkout';
+            _redemptionMsg = t('offerDetail.redemptionCheckout');
             _redemptionIcon = 'cart';
           }
         }
@@ -916,7 +916,7 @@
     <div class="detail-card">
       <div class="detail-card-header">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        Cum profiți de ofertă?
+        <%= t('offerDetail.howToRedeem') %>
       </div>
       <div class="redemption-steps">
         <div class="redemption-step">
@@ -945,14 +945,14 @@
         <div style="margin-top: 12px;">
           <a href="tel:<%= _bkPhone %>" class="btn-booking btn-booking-primary" onclick="trackClick(<%= offer.business.id %>,'phone',<%= offer.id %>)" style="display: inline-flex;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Sun&#259;: <%= _bkPhone %>
+            <%= t('offerDetail.callBtn') %> <%= _bkPhone %>
           </a>
         </div>
       <% } else if (_bkType === 'whatsapp' && _bkWhatsapp) { %>
         <div style="margin-top: 12px;">
           <a href="https://wa.me/<%= _bkWhatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-whatsapp" onclick="trackClick(<%= offer.business.id %>,'whatsapp',<%= offer.id %>)" style="display: inline-flex;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-            Rezerv&#259; pe WhatsApp
+            <%= t('offerDetail.bookWhatsapp') %>
           </a>
         </div>
       <% } else if ((_bkType === 'url' || _bkType === 'link') && _bkUrl) { %>
@@ -960,7 +960,7 @@
         <div style="margin-top: 12px;">
           <a href="<%= _safeRedemptionUrl %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-primary" onclick="trackClick(<%= offer.business.id %>,'booking_url',<%= offer.id %>)" style="display: inline-flex;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-            Rezerv&#259; online
+            <%= t('offerDetail.bookOnline') %>
           </a>
         </div>
       <% } %>
@@ -973,8 +973,8 @@
       <div class="detail-card detail-card-promo" id="promo-code-section">
         <div class="detail-card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          Cod promoțional
-          <span class="detail-card-badge detail-card-badge-exclusive">EXCLUSIV</span>
+          <%= t('offerDetail.promoCode') %>
+          <span class="detail-card-badge detail-card-badge-exclusive"><%= t('offerDetail.exclusive') %></span>
         </div>
 
         <% if (!webUser) { %>
@@ -984,7 +984,7 @@
           <div style="text-align: center; margin-top: 12px;">
             <div class="promo-login-hint">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <a href="/login?returnTo=/oferta/<%= offer.id %>">Conectează-te</a> sau <a href="/register?returnTo=/oferta/<%= offer.id %>">creează cont gratuit</a>
+              <a href="/login?returnTo=/oferta/<%= offer.id %>"><%= t('offerDetail.loginToSee') %></a> <%= t('offerDetail.orCreateAccount') %> <a href="/register?returnTo=/oferta/<%= offer.id %>"><%= t('offerDetail.createFreeAccount') %></a>
             </div>
           </div>
         <% } else { %>
@@ -992,11 +992,11 @@
           <div class="promo-code-placeholder" id="promo-code-container">
             <span class="promo-code-blur" id="promo-code-text">XXXXXXXX</span>
             <% if (codesExhausted) { %>
-              <button class="promo-reveal-btn" disabled style="opacity: 0.5; cursor: not-allowed;">Coduri epuizate</button>
+              <button class="promo-reveal-btn" disabled style="opacity: 0.5; cursor: not-allowed;"><%= t('offerDetail.codesExhausted') %></button>
             <% } else { %>
               <button class="promo-reveal-btn" id="promo-reveal-btn" onclick="revealPromoCode(<%= offer.id %>)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                Dezvăluie codul promo
+                <%= t('offerDetail.revealCode') %>
               </button>
             <% } %>
           </div>
@@ -1005,9 +1005,9 @@
             <div class="detail-scarcity-bar"><div class="detail-scarcity-bar-fill" style="width: <%= pctUsed %>%;"></div></div>
             <div class="detail-scarcity-text">
               <% if (remaining === 0) { %>
-                Codurile s-au epuizat
+                <%= t('offerDetail.codesUsedUp') %>
               <% } else { %>
-                doar <%= remaining %> coduri rămase din <%= offer.max_reveals %>
+                <%= t('offerDetail.codesRemaining', { remaining: remaining, total: offer.max_reveals }) %>
               <% } %>
             </div>
           <% } %>
@@ -1019,7 +1019,7 @@
       <div class="detail-card">
         <div class="detail-card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-          Descriere
+          <%= t('offerDetail.description') %>
         </div>
         <p style="font-size: 0.9375rem; line-height: 1.8; color: var(--text-secondary); white-space: pre-wrap; margin: 0;"><%= offer.description %></p>
       </div>
@@ -1029,7 +1029,7 @@
       <div class="detail-card">
         <div class="detail-card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Condiții
+          <%= t('offerDetail.conditions') %>
         </div>
         <p style="font-size: 0.9375rem; line-height: 1.7; color: var(--text-secondary); white-space: pre-wrap;"><%= offer.conditions %></p>
       </div>
@@ -1039,7 +1039,7 @@
       <div class="detail-card">
         <div class="detail-card-header">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Locații (<%= offer.locations.length %>)
+          <%= t('offerDetail.locations', { count: offer.locations.length }) %>
         </div>
         <div class="offer-locations-grid">
           <% offer.locations.forEach(function(loc) { %>
@@ -1061,24 +1061,24 @@
                 <% if (offerLocNavUrl) { %>
                   <a href="<%= offerLocNavUrl %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-primary" onclick="trackClick(<%= offer.business.id %>,'navigate',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                    Navigheaz&#259;
+                    <%= t('offerDetail.navigate') %>
                   </a>
                 <% } %>
                 <% if (loc.booking_type === 'phone' && loc.booking_phone) { %>
                   <a href="tel:<%= loc.booking_phone %>" class="btn-booking btn-booking-secondary" onclick="trackClick(<%= offer.business.id %>,'phone',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    Rezerv&#259;: <%= loc.booking_phone %>
+                    <%= t('offerDetail.bookBtn') %> <%= loc.booking_phone %>
                   </a>
                 <% } else if (loc.booking_type === 'whatsapp' && loc.booking_whatsapp) { %>
                   <a href="https://wa.me/<%= loc.booking_whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-whatsapp" onclick="trackClick(<%= offer.business.id %>,'whatsapp',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
-                    Rezerv&#259; pe WhatsApp
+                    <%= t('offerDetail.bookWhatsapp') %>
                   </a>
                 <% } else if (loc.booking_type === 'url' && loc.booking_url) { %>
                   <% var safeLocBooking = (loc.booking_url || '').match(/^https?:\/\//) ? loc.booking_url : '#'; %>
                   <a href="<%= safeLocBooking %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-secondary" onclick="trackClick(<%= offer.business.id %>,'booking_url',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
-                    Rezerv&#259; online
+                    <%= t('offerDetail.bookOnline') %>
                   </a>
                 <% } %>
               </div>
@@ -1123,9 +1123,9 @@
 
       <div class="business-sidebar-rating-count">
         <% if (offer.business.rating_count && offer.business.rating_count > 0) { %>
-          <%= offer.business.rating_count %> recenzi<%= offer.business.rating_count === 1 ? 'e' : 'i' %>
+          <%= offer.business.rating_count === 1 ? t('offerDetail.reviewsCount_one', { count: offer.business.rating_count }) : t('offerDetail.reviewsCount_other', { count: offer.business.rating_count }) %>
         <% } else { %>
-          Nicio recenzie
+          <%= t('offerDetail.noReviews') %>
         <% } %>
       </div>
 
@@ -1142,7 +1142,7 @@
       </div>
 
       <a href="/business/<%= offer.business.id %>" class="business-sidebar-cta">
-        Vezi business-ul
+        <%= t('offerDetail.viewBusiness') %>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: middle; margin-left: 4px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </a>
     </div>
@@ -1150,7 +1150,7 @@
 
   <% if (typeof similarOffers !== 'undefined' && similarOffers && similarOffers.length > 0) { %>
     <section class="similar-offers-section" style="grid-column: 1 / -1;">
-      <h3>Oferte similare</h3>
+      <h3><%= t('offerDetail.similarOffers') %></h3>
       <div class="similar-offers-grid">
         <% similarOffers.forEach(function(so) { %>
           <a href="/oferta/<%= so.id %>" class="offer-card offer-card-compact">
@@ -1184,6 +1184,13 @@
 
 <% if (offer.has_promo_code && webUser) { %>
 <script nonce="<%= cspNonce %>">
+  var i18n = {
+    loading: '<%= t("offerDetail.loading") %>',
+    revealError: '<%= t("offerDetail.revealError") %>',
+    revealCode: '<%= t("offerDetail.revealCode") %>',
+    copyCode: '<%= t("offerDetail.copyCode") %>',
+    copied: '<%= t("offerDetail.copied") %>'
+  };
   // Share button (safe — uses dataset instead of inline JS)
   (function() {
     var btn = document.querySelector('.share-btn[data-share-title]');
@@ -1208,7 +1215,7 @@
 
     // Disable button and show loading
     btn.disabled = true;
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Se incarca...';
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> ' + i18n.loading;
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -1223,7 +1230,7 @@
 
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
-        throw new Error(data.message || 'Eroare la dezvaluirea codului');
+        throw new Error(data.message || i18n.revealError);
       }
 
       const data = await resp.json();
@@ -1241,7 +1248,7 @@
             '<span class="promo-code-blur revealed" id="promo-code-value"></span>' +
             '<button class="promo-copy-btn" id="promo-copy-btn" onclick="copyPromoCode()">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
-              'Copiaza codul' +
+              i18n.copyCode +
             '</button>' +
           '</div>';
         document.getElementById('promo-code-value').textContent = data.promo_code;
@@ -1250,8 +1257,8 @@
       btn.disabled = false;
       btn.innerHTML =
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
-        ' Dezvăluie codul';
-      alert(err.message || 'Eroare la dezvăluirea codului');
+        ' ' + i18n.revealCode;
+      alert(err.message || i18n.revealError);
     }
   }
 
@@ -1299,7 +1306,7 @@
     btn.classList.add('copied');
     btn.innerHTML =
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-      ' Copiat!';
+      ' ' + i18n.copied;
     setTimeout(function() {
       btn.classList.remove('copied');
       btn.innerHTML =

@@ -1,11 +1,11 @@
-<%- include('partials/head', { pageTitle: 'Categorii', activePage: 'categorii', pageDesc: 'Explorează oferte pe categorii: restaurante, beauty, fitness, divertisment și multe altele.' }) %>
+<%- include('partials/head', { pageTitle: t('categories.pageTitle'), activePage: 'categorii', pageDesc: t('categories.pageDesc') }) %>
 <%- include('partials/navbar', { activePage: 'categorii', webUser: typeof webUser !== 'undefined' ? webUser : null }) %>
 
 <section class="page-header">
   <div class="page-header-glow"></div>
   <div class="container">
-    <h1 class="page-title text-gradient">Categorii</h1>
-    <p class="page-subtitle">Explorează oferte din <%= categories.length %> categorii disponibile</p>
+    <h1 class="page-title text-gradient"><%= t('categories.pageTitle') %></h1>
+    <p class="page-subtitle"><%= t('categories.subtitle', { count: categories.length }) %></p>
   </div>
 </section>
 
@@ -35,7 +35,7 @@
         <a href="/oferte?category=<%= cat.id %>" class="category-card reveal reveal-delay-<%= (index % 5) + 1 %>">
           <div class="category-icon"><%- categoryIcons[cat.name] || defaultCatIcon %></div>
           <div class="category-name"><%= cat.name %></div>
-          <div class="category-count"><%= cat.offer_count || 0 %> oferte</div>
+          <div class="category-count"><%= cat.offer_count || 0 %> <%= t('common.offers') %></div>
         </a>
       <% }); %>
     </div>
