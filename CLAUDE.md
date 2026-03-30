@@ -134,17 +134,21 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Cropper.js CDN:** Loaded conditionally when `loadPortalCss` is set; `cdn.jsdelivr.net` added to CSP `scriptSrc` + `styleSrc`
 - **Booking fallback:** Consumer business-detail.ejs falls back to `business.phone`/`business.website` when `booking_phone`/`booking_url` are null
 - **Image upload:** `accept="image/jpeg,image/png,image/webp"` on all upload inputs (not `image/*`); multer error handler in web-portal-api.js
+- **i18n EJS:** Use `<%= t('key') %>` for escaped output, `<%- t('key') %>` for HTML content (e.g., GDPR consent with links). Language switcher uses `?lang=ro`/`?lang=en` query param + `ofai_lang` cookie.
+- **i18n Flutter:** Use `AppLocalizations.of(context)!.key` to access translations. Import `package:flutter_gen/gen_l10n/app_localizations.dart`. Run `flutter gen-l10n` after modifying ARB files.
+- **Service Worker:** `sw.js` in `src/public/` — never cache API/auth/billing paths. Update `CACHE_NAME` version when changing cached assets.
+- **Search helper:** `buildFuzzySearch(columns, paramIdx)` in `src/helpers/search.js` — apply `similarity: true` only on short columns (title, name), NOT on description (too noisy for trigrams)
 
 ## Language
 - UI text and user-facing strings: Romanian
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (30 March 2026)
+## Current State (30 March 2026, post-masterplan)
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~256 endpoints, 20 providers, 71 migrations, 26 screens, 13 models, 24 widgets
+- 23 route files, ~258 endpoints, 20 providers, 72 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -226,6 +230,12 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Portal Hint Texts:** Explanatory hints on booking section ("va apărea un card pe pagina business-ului"), opening hours ("va fi afișat cu status Deschis/Închis"), and image uploads (format + resolution recommendations)
 - **Pricing Page Cleanup:** Removed AI-sensitive features (Rezumat AI, Răspunsuri sugerate AI, Analize competitive) from public /preturi — visible only in portal subscription tab. Removed strikethrough/X items from Free card. Rezervări shows check for all tiers.
 - **Analytics Tier Gating:** Period buttons (7/30/90 zile) now respect tier's `analytics_days` limit. Default period matches tier max (was hardcoded 30 for all). Backend already enforced via Math.min cap.
+- **Fuzzy Search:** pg_trgm extension + `buildFuzzySearch()` helper combining ILIKE + similarity() across 5 search routes (web offers, web businesses, mobile offers, mobile businesses, search suggest). Typo tolerance with 0.15 threshold.
+- **Backend Testing:** Jest + Supertest infrastructure with 19 tests (jwt helpers, tier normalization, search helper). `npm test` / `npm run test:coverage`. App exports via `require.main === module` guard.
+- **Referral Dashboard:** `GET /users/me/referral-stats` API returns total referrals, points, recent list. Flutter bottom sheet enhanced with stat chips + referral history.
+- **PWA Support:** Web app manifest (`/manifest.json`), service worker (`/sw.js`) with cache strategies (static=cache-first, HTML=network-first, API=network-only), offline fallback page, apple-touch-icon, theme-color meta.
+- **i18n Infrastructure:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~60 keys), 4 core templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~25 keys), localization delegates, nav labels localized.
+- **Admin Cron Testing:** `POST /admin/test-cron/review-prompt` endpoint to manually trigger post-redemption review cron.
 - **Offer Detail Booking Button:** Actionable CTA (phone/whatsapp/url) in "Cum profiți de ofertă?" section — previously only showed text
 - **Booking Type Normalization:** Migration 071 fixes `link`→`url` (20 businesses) + `NONE`→`none` (2 locations). Route handlers normalize at read time as defense in depth.
 - **Pagination UX:** Sliding window (shows pages around current), prev/next arrows, scroll-to-top on both /oferte and /business-uri
@@ -273,14 +283,21 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Audit #11 (20 Mar):** 92 findings, 25 fixes (commit `7a040ac`)
 - **Audit #12 (24 Mar):** 19 fixes + CSP nonce migration (commit `47fcf7b`) + performance indexes (migration 064)
 
+### Recently Implemented (Masterplan, 30 Mar 2026)
+- **Search:** pg_trgm extension + fuzzy search helper (`src/helpers/search.js`) across 5 routes — ILIKE + `similarity()` with 0.15 threshold, typo-tolerant
+- **Testing:** Jest + Supertest infrastructure — 19 tests across 3 suites (jwt, tiers, search helpers), `npm test` / `npm run test:coverage`
+- **Referral dashboard:** `GET /users/me/referral-stats` API + enhanced Flutter bottom sheet with stats + recent referrals
+- **Post-redemption review cron:** Extracted to testable `runReviewPromptCron()`, admin test endpoint `POST /admin/test-cron/review-prompt`
+- **PWA:** Web app manifest, service worker (cache-first static, network-first HTML, network-only API), offline.html fallback, CSP workerSrc
+- **i18n backend:** i18next + i18next-http-middleware, `ro.json` + `en.json` (~60 keys), 4 templates migrated (navbar, footer, login, register), RO/EN language switcher
+- **i18n Flutter:** flutter_localizations + ARB files (~25 keys), localization delegates configured, nav labels localized
+- **Redis cache plan:** Documentation at `docs/plans/2026-03-23-redis-cache-plan.md`
+
 ### Remaining Gaps
-- **Search:** Basic keyword matching only — no full-text (pg_trgm), no fuzzy/typo tolerance, no distance-based filtering
-- **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented
+- **Redis cache:** Planned (see docs/plans/2026-03-23-redis-cache-plan.md), not implemented — in-memory CacheService as interim
 - **Rate limiter:** In-memory only, resets on deploy (Redis plan will address)
 - **Stripe:** Still on test keys — go-live with real keys pending
-- **Testing:** Flutter has 7 test files (models, widgets, utils); backend has zero automated tests — risk for regressions
-- **Referral dashboard:** Backend tracks referrals but user can't see their invite stats
-- **Post-redemption review cron:** Implemented but not tested in production
-- **Offline/PWA:** Connectivity indicator exists but no service worker or local caching
-- **i18n:** All strings hardcoded in Romanian — no multi-language support
+- **i18n remaining pages:** Only navbar, footer, login, register migrated — remaining 20+ EJS templates + Flutter screens still hardcoded Romanian
 - **Support WhatsApp:** Placeholder number `40700000000` — replace with real number before go-live
+- **Search distance filtering:** pg_trgm done but no PostGIS/distance-based filtering yet
+- **PWA icons:** Temporary copies of favicon — replace with properly sized 192x192 and 512x512 icons
