@@ -77,7 +77,7 @@
           </div>
           <span class="bd-rating-text">
             <%= business.rating ? Number(business.rating).toFixed(1) : '0.0' %>
-            <span class="bd-rating-count">(<%= business.rating_count || 0 %> recenzii)</span>
+            <span class="bd-rating-count">(<%= business.rating_count || 0 %> <%= (business.rating_count || 0) == 1 ? t('businessDetail.review_one') : t('businessDetail.review_other') %>)</span>
           </span>
         </div>
 
