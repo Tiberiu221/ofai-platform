@@ -1,8 +1,5 @@
--- Performance indexes for common query patterns
--- Uses CONCURRENTLY to avoid table locks
-
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_followed_biz_bid_created
-  ON followed_businesses(business_id, created_at);
-
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_offer_views_composite
-  ON offer_views(business_id, offer_id, viewed_at);
+-- Migration 073: Performance indexes
+-- Original indexes were redundant with existing ones from migrations 023, 028, 047.
+-- idx_followed_biz_bid_created: redundant with idx_followed_businesses_business_id (023)
+-- idx_offer_views_composite: redundant with idx_offer_views_bid_date (047)
+-- Kept as no-op to maintain migration numbering.

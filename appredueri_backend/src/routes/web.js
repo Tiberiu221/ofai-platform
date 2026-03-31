@@ -307,7 +307,7 @@ router.get("/", async (req, res) => {
         return { rows: pool_.slice(0, 20) };
       })(),
       // 7. Top businesses (cached 10min)
-      cache.cached('home:topBiz', async () => {
+      cache.cached('home:topBiz', 10 * 60 * 1000, async () => {
         const tbRes = await pool.query(`
           SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                  b.lat, b.lng, b.is_verified, b.subscription_badge_type,
@@ -331,7 +331,7 @@ router.get("/", async (req, res) => {
           LIMIT 8
         `);
         return tbRes;
-      }, { ttl: 600, groups: ['homepage', 'businesses'] }),
+      }, { groups: ['homepage', 'businesses'] }),
       // 8. Followed offers (null if not logged in)
       isLoggedIn
         ? pool.query(`
@@ -490,7 +490,7 @@ router.get("/oferte", async (req, res) => {
     let userPrefsCategoryNames = [];
 
     if (req.webUser) {
-      const prefData = await cache.cached(`user:${req.webUser.id}:prefs`, async () => {
+      const prefData = await cache.cached(`user:${req.webUser.id}:prefs`, 5 * 60 * 1000, async () => {
         const prefsRes = await pool.query(
           "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
           [req.webUser.id]
@@ -507,7 +507,7 @@ router.get("/oferte", async (req, res) => {
           res.categoryNames = cn.rows.map(r => r.name);
         }
         return res;
-      }, { ttl: 300 });
+      });
       if (prefData) {
         const hasCities = prefData.preferred_city_ids && prefData.preferred_city_ids.length > 0;
         const hasCats = prefData.preferred_category_ids && prefData.preferred_category_ids.length > 0;
@@ -725,7 +725,7 @@ router.get("/business-uri", async (req, res) => {
     let userPrefsCategoryNames = [];
 
     if (req.webUser) {
-      const prefData = await cache.cached(`user:${req.webUser.id}:prefs`, async () => {
+      const prefData = await cache.cached(`user:${req.webUser.id}:prefs`, 5 * 60 * 1000, async () => {
         const prefsRes = await pool.query(
           "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
           [req.webUser.id]
@@ -742,7 +742,7 @@ router.get("/business-uri", async (req, res) => {
           res.categoryNames = cn.rows.map(r => r.name);
         }
         return res;
-      }, { ttl: 300 });
+      });
       if (prefData) {
         const hasCities = prefData.preferred_city_ids && prefData.preferred_city_ids.length > 0;
         const hasCats = prefData.preferred_category_ids && prefData.preferred_category_ids.length > 0;

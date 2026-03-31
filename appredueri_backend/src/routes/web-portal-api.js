@@ -1856,7 +1856,7 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
     }
 
     // Heavy computation — cached 24h
-    const responseData = await cache.cached(`competitive:${businessId}`, async () => {
+    const responseData = await cache.cached(`competitive:${businessId}`, 24 * 60 * 60 * 1000, async () => {
       const [myViewsRes, mySubsRes, myOffersRes, myReviewsRes] = await Promise.all([
         pool.query(
           `SELECT COUNT(*) as cnt FROM business_views
@@ -1955,7 +1955,7 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
       ];
 
       return { available: true, peersCount, insights };
-    }, { ttl: 86400, groups: ['businesses'] });
+    }, { groups: ['businesses'] });
     res.json(responseData);
 
   } catch (err) {
