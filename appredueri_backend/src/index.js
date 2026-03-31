@@ -318,6 +318,15 @@ app.get("/health", (req, res) => {
 
 // ============================================
 // ============================================
+// WEB AUTH RATE LIMITING (before webRouter mount)
+// ============================================
+app.use("/login", authLimiter);
+app.use("/register", authLimiter);
+app.use("/forgot-password", passwordResetLimiter);
+app.use("/verify-code", verifyResetCodeLimiter);
+app.use("/reset-password", verifyResetCodeLimiter);
+
+// ============================================
 // WEB PAGES (Public — Landing, Oferte, etc.)
 // SEO routes (robots.txt, sitemap.xml) moved to web.js
 // ============================================

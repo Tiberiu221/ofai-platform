@@ -119,6 +119,7 @@ async function _getDealOfDay() {
       LEFT JOIN cities ci2 ON b.city_id = ci2.id
       WHERE o.is_active = TRUE AND o.is_deal_of_day = TRUE AND o.deal_of_day_date = CURRENT_DATE
         AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        AND o.moderation_status IN ('approved', 'auto_approved')
       LIMIT 1
     `);
     if (dodResult.rows.length === 0) {
@@ -136,6 +137,7 @@ async function _getDealOfDay() {
         LEFT JOIN (SELECT offer_id, COUNT(*) AS cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
         LEFT JOIN (SELECT offer_id, COUNT(*) AS cnt FROM business_clicks GROUP BY offer_id) click_agg ON click_agg.offer_id = o.id
         WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          AND o.moderation_status IN ('approved', 'auto_approved')
         ORDER BY COALESCE(fav_agg.cnt, 0) + COALESCE(click_agg.cnt, 0) DESC
         LIMIT 1
       `);
@@ -230,6 +232,7 @@ async function _getPromotedOffers(dealOfDay) {
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN reviews r ON r.business_id = b.id
       WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        AND o.moderation_status IN ('approved', 'auto_approved')
         ${exclude}
       GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
@@ -1380,6 +1383,7 @@ router.get("/business/:id", async (req, res) => {
       JOIN businesses b2 ON o.business_id = b2.id
       LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
       WHERE o.business_id = $1 AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+        AND o.moderation_status IN ('approved', 'auto_approved')
       ORDER BY o.discount_value DESC
       LIMIT 50
     `, [id]);

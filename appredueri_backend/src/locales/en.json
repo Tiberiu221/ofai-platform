@@ -66,7 +66,11 @@
     "resendCode": "Resend code",
     "backToLogin": "Back to login",
     "resetError": "Error resetting password",
-    "checkEmailForCode": "Check your email for the reset code."
+    "checkEmailForCode": "Check your email for the reset code.",
+    "verifyCode": "Verify code",
+    "verifyCodeSubtitle": "Enter the code received by email and your new password.",
+    "backToResetPassword": "Back to reset password",
+    "allFieldsRequired": "All fields are required"
   },
   "onboarding": {
     "pageTitle": "Welcome",

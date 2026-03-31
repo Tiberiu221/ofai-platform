@@ -65,6 +65,11 @@ router.get("/forgot-password", (req, res) => {
   res.render("public/forgot-password", { activePage: null, webUser: null, noIndex: true });
 });
 
+router.get("/verify-code", (req, res) => {
+  const email = req.query.email || '';
+  res.render("public/verify-code", { activePage: null, webUser: null, noIndex: true, prefillEmail: email });
+});
+
 // POST /login
 router.post("/login", async (req, res) => {
   try {
@@ -312,7 +317,7 @@ router.post("/reset-password", async (req, res) => {
     }
     const pwdCheck = validatePassword(newPassword);
     if (!pwdCheck.valid) {
-      return res.status(400).json({ message: pwdCheck.message });
+      return res.status(400).json({ message: pwdCheck.errors[0] || 'Parolă invalidă' });
     }
 
     const tokenRes = await pool.query(

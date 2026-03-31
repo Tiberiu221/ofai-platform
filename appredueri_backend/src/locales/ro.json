@@ -66,7 +66,11 @@
     "resendCode": "Retrimite cod",
     "backToLogin": "Înapoi la login",
     "resetError": "Eroare la resetare",
-    "checkEmailForCode": "Verifică email-ul pentru codul de resetare."
+    "checkEmailForCode": "Verifică email-ul pentru codul de resetare.",
+    "verifyCode": "Verificare cod",
+    "verifyCodeSubtitle": "Introdu codul primit pe email și noua parolă.",
+    "backToResetPassword": "Înapoi la resetare parolă",
+    "allFieldsRequired": "Toate câmpurile sunt obligatorii"
   },
   "onboarding": {
     "pageTitle": "Bun venit",

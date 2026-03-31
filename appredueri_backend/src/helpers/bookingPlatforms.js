@@ -11,6 +11,8 @@ const PLATFORMS = [
   { slug: 'google',      label: 'Google Business',  labelEn: 'Google Business', type: 'url',      color: '#4285F4' },
   { slug: 'treatwell',   label: 'Treatwell',        labelEn: 'Treatwell',       type: 'url',      color: '#E91E63' },
   { slug: 'planfy',      label: 'Planfy',           labelEn: 'Planfy',          type: 'url',      color: '#FF6B00' },
+  { slug: 'setmore',    label: 'Setmore',          labelEn: 'Setmore',         type: 'url',      color: '#50B0AE' },
+  { slug: 'simplybook', label: 'SimplyBook',       labelEn: 'SimplyBook',      type: 'url',      color: '#1F498D' },
   { slug: 'website',     label: 'Website propriu',  labelEn: 'Own website',     type: 'url',      color: '#a1a1aa' },
   { slug: 'other',       label: 'Altul',            labelEn: 'Other',           type: 'url',      color: '#71717a', hasCustomLabel: true },
 ];
