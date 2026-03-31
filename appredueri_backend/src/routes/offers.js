@@ -873,13 +873,9 @@ router.get("/:id", async (req, res) => {
       url: img.image_url || makeAbsoluteUrl(req, `/uploads/businesses/${img.image_filename}`)
     }));
 
-    // 5. Multi-platform booking methods
+    // 5. Multi-platform booking methods (offer-level override > business-level fallback)
     const { getActionLabel: getOfBMLabel, getBookingHref: getOfBMHref, getPlatform: getOfBMP } = require('../helpers/bookingPlatforms');
-    const ofBmRes = await pool.query(
-      "SELECT platform, platform_label, value FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
-      [row.business_id]
-    );
-    const offerBookingMethods = ofBmRes.rows.map(m => ({
+    const mapOfBM = (rows) => rows.map(m => ({
       platform: m.platform,
       platform_label: m.platform_label || null,
       value: m.value,
@@ -888,6 +884,21 @@ router.get("/:id", async (req, res) => {
       color: (getOfBMP(m.platform) || {}).color || '#a1a1aa',
       type: (getOfBMP(m.platform) || {}).type || 'url',
     }));
+    // Check offer-specific first
+    const offerOwnBm = await pool.query(
+      "SELECT platform, platform_label, value FROM offer_booking_methods WHERE offer_id = $1 ORDER BY sort_order, id",
+      [id]
+    );
+    let offerBookingMethods;
+    if (offerOwnBm.rows.length > 0) {
+      offerBookingMethods = mapOfBM(offerOwnBm.rows);
+    } else {
+      const bizBm = await pool.query(
+        "SELECT platform, platform_label, value FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+        [row.business_id]
+      );
+      offerBookingMethods = mapOfBM(bizBm.rows);
+    }
 
     const avg = parseFloat(row.rating_avg || 0);
     const count = parseInt(row.rating_count || 0);

@@ -299,6 +299,80 @@ router.put("/api/web/portal/:businessId/booking-methods", requireBusinessOwner, 
   }
 });
 
+// GET — list booking methods for an offer (empty = inherits from business)
+router.get("/api/web/portal/:businessId/offers/:offerId/booking-methods", requireBusinessOwner, async (req, res) => {
+  try {
+    const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
+    // Verify offer belongs to business
+    const offerCheck = await pool.query("SELECT id FROM offers WHERE id = $1 AND business_id = $2", [offerId, req.businessId]);
+    if (offerCheck.rows.length === 0) return res.status(404).json({ message: "Ofertă negăsită" });
+
+    const { rows } = await pool.query(
+      "SELECT id, platform, platform_label, value, sort_order FROM offer_booking_methods WHERE offer_id = $1 ORDER BY sort_order, id",
+      [offerId]
+    );
+    // Also return business methods for "inherit" preview
+    const bizMethods = await pool.query(
+      "SELECT platform, platform_label, value FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+      [req.businessId]
+    );
+    res.json({ methods: rows, businessMethods: bizMethods.rows, platforms: PLATFORMS });
+  } catch (err) {
+    console.error("[Web API] Get offer booking methods error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea metodelor de rezervare" });
+  }
+});
+
+// PUT — replace all booking methods for an offer (empty array = inherit from business)
+router.put("/api/web/portal/:businessId/offers/:offerId/booking-methods", requireBusinessOwner, async (req, res) => {
+  try {
+    const offerId = parseInt(req.params.offerId, 10);
+    if (isNaN(offerId)) return res.status(400).json({ message: "ID invalid" });
+    const offerCheck = await pool.query("SELECT id FROM offers WHERE id = $1 AND business_id = $2", [offerId, req.businessId]);
+    if (offerCheck.rows.length === 0) return res.status(404).json({ message: "Ofertă negăsită" });
+
+    const { methods } = req.body || {};
+    if (!Array.isArray(methods)) return res.status(400).json({ message: "Date invalide" });
+    if (methods.length > 12) return res.status(400).json({ message: "Maximum 12 metode" });
+
+    const validated = [];
+    for (let i = 0; i < methods.length; i++) {
+      const m = methods[i];
+      if (!m.platform || !isValidPlatform(m.platform)) return res.status(400).json({ message: `Platformă invalidă: ${m.platform}` });
+      const value = (m.value || '').trim();
+      if (!value) return res.status(400).json({ message: `Valoare lipsă pentru ${m.platform}` });
+      if (value.length > 500) return res.status(400).json({ message: `Valoare prea lungă` });
+      const label = m.platform === 'other' ? (m.platform_label || '').trim().slice(0, 100) || null : null;
+      validated.push({ platform: m.platform, platform_label: label, value, sort_order: i });
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM offer_booking_methods WHERE offer_id = $1', [offerId]);
+      for (const m of validated) {
+        await client.query(
+          'INSERT INTO offer_booking_methods (offer_id, platform, platform_label, value, sort_order) VALUES ($1, $2, $3, $4, $5)',
+          [offerId, m.platform, m.platform_label, m.value, m.sort_order]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+
+    cache.invalidateGroup('offers');
+    res.json({ success: true, count: validated.length });
+  } catch (err) {
+    console.error("[Web API] Update offer booking methods error:", err);
+    res.status(500).json({ message: "Eroare la salvarea metodelor de rezervare" });
+  }
+});
+
 // =====================================
 //   PARSE GOOGLE MAPS LINK
 // =====================================

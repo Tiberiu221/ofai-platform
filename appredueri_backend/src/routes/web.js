@@ -1025,19 +1025,30 @@ router.get("/oferta/:id", async (req, res) => {
       })),
     };
 
-    // Load multi-platform booking methods (new system)
+    // Load multi-platform booking methods (offer-level override > business-level fallback)
     const { getActionLabel, getBookingHref, getPlatform } = require('../helpers/bookingPlatforms');
-    const bmRes = await pool.query(
-      "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
-      [row.business_id]
-    );
-    offer.bookingMethods = bmRes.rows.map(m => ({
+    const mapBM = (rows) => rows.map(m => ({
       ...m,
       actionLabel: getActionLabel(m, req.language || 'ro'),
       href: getBookingHref(m),
       color: (getPlatform(m.platform) || {}).color || '#a1a1aa',
       type: (getPlatform(m.platform) || {}).type || 'url',
     }));
+    // Check offer-specific first
+    const offerBmRes = await pool.query(
+      "SELECT platform, platform_label, value, sort_order FROM offer_booking_methods WHERE offer_id = $1 ORDER BY sort_order, id",
+      [offer.id]
+    );
+    if (offerBmRes.rows.length > 0) {
+      offer.bookingMethods = mapBM(offerBmRes.rows);
+    } else {
+      // Fallback to business-level
+      const bizBmRes = await pool.query(
+        "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+        [row.business_id]
+      );
+      offer.bookingMethods = mapBM(bizBmRes.rows);
+    }
 
     // Similar offers (same category, respecting competitor blocking)
     let similarOffers = [];
