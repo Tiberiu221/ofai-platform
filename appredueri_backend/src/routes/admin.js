@@ -224,7 +224,7 @@ router.get("/analytics", async (req, res) => {
           GROUP BY 1 ORDER BY 1
         `),
         // Business: total
-        pool.query("SELECT COUNT(*) FROM businesses WHERE is_active IS NOT FALSE"),
+        pool.query("SELECT COUNT(*) FROM businesses"),
         // Business: with active offers
         pool.query(`
           SELECT COUNT(DISTINCT b.id) as cnt FROM businesses b
