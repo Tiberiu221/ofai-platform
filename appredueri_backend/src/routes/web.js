@@ -328,7 +328,7 @@ router.get("/", async (req, res) => {
       userFollowedIds,
       activePage: "home",
       webUser: req.webUser,
-      structuredData: {
+      structuredData: [{
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "OFAI",
@@ -340,7 +340,17 @@ router.get("/", async (req, res) => {
           "contactType": "customer service",
           "url": "https://ofai.ro/ajutor"
         }
-      },
+      }, {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "OFAI",
+        "url": "https://ofai.ro",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://ofai.ro/oferte?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }],
     });
   } catch (err) {
     console.error("[Web] Home page error:", err.message);
@@ -575,7 +585,7 @@ router.get("/oferte", async (req, res) => {
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
-          { "@type": "ListItem", "position": 2, "name": "Oferte" }
+          { "@type": "ListItem", "position": 2, "name": "Oferte", "item": "https://ofai.ro/oferte" }
         ]
       }],
     });
@@ -780,7 +790,7 @@ router.get("/business-uri", async (req, res) => {
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
-          { "@type": "ListItem", "position": 2, "name": "Business-uri" }
+          { "@type": "ListItem", "position": 2, "name": "Business-uri", "item": "https://ofai.ro/business-uri" }
         ]
       }],
     });
@@ -1494,7 +1504,7 @@ router.get("/categorii", async (req, res) => {
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
-          { "@type": "ListItem", "position": 2, "name": "Categorii" }
+          { "@type": "ListItem", "position": 2, "name": "Categorii", "item": "https://ofai.ro/categorii" }
         ]
       },
     });
@@ -1529,7 +1539,7 @@ router.get("/orase", async (req, res) => {
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://ofai.ro" },
-          { "@type": "ListItem", "position": 2, "name": "Orașe" }
+          { "@type": "ListItem", "position": 2, "name": "Orașe", "item": "https://ofai.ro/orase" }
         ]
       },
     });
@@ -2289,7 +2299,7 @@ router.get("/blog/:slug", async (req, res) => {
       return rows;
     }, { groups: ['blog'] });
 
-    const structuredData = {
+    const structuredData = [{
       '@context': 'https://schema.org',
       '@type': 'Article',
       headline: post.title,
@@ -2297,10 +2307,18 @@ router.get("/blog/:slug", async (req, res) => {
       author: { '@type': 'Person', name: post.author_name || 'Echipa OFAI' },
       datePublished: post.published_at?.toISOString(),
       dateModified: post.updated_at?.toISOString(),
-      publisher: { '@type': 'Organization', name: 'OFAI', url: 'https://ofai.ro' },
+      publisher: { '@type': 'Organization', name: 'OFAI', url: 'https://ofai.ro', logo: { '@type': 'ImageObject', url: 'https://ofai.ro/images/ofai-favicon.png' } },
       mainEntityOfPage: `https://ofai.ro/blog/${post.slug}`,
       ...(post.image_url ? { image: post.image_url } : {}),
-    };
+    }, {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Acasă', item: 'https://ofai.ro' },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://ofai.ro/blog' },
+        { '@type': 'ListItem', position: 3, name: post.title, item: `https://ofai.ro/blog/${post.slug}` },
+      ]
+    }];
 
     res.render("public/blog-post", {
       activePage: 'blog',

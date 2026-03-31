@@ -1,5 +1,5 @@
 const cloudinary = require("cloudinary").v2;
-const streamifier = require("streamifier");
+const { Readable } = require("stream");
 
 // Configurare Cloudinary
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -165,7 +165,7 @@ function uploadToCloudinary(buffer, imageType, publicId = null) {
       }
     );
 
-    streamifier.createReadStream(buffer).pipe(uploadStream);
+    Readable.from(buffer).pipe(uploadStream);
   });
 }
 
@@ -293,7 +293,7 @@ function uploadRawToCloudinary(buffer, originalFilename) {
       }
     );
 
-    streamifier.createReadStream(buffer).pipe(uploadStream);
+    Readable.from(buffer).pipe(uploadStream);
   });
 }
 

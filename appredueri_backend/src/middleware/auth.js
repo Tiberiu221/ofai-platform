@@ -101,7 +101,13 @@ function optionalAuth(req, res, next) {
         }
         next();
       })
-      .catch(() => { req.user = null; next(); });
+      .catch((e) => {
+        if (e.code && (e.code === 'ECONNREFUSED' || e.code.startsWith('5'))) {
+          console.error('[optionalAuth] DB error:', e.message);
+        }
+        req.user = null;
+        next();
+      });
   } catch {
     req.user = null;
     next();
