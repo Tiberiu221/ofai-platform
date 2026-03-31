@@ -1,0 +1,254 @@
+<%- include('partials/layout-top', { pageTitle: 'Analytics', activePage: 'analytics', loadChartJs: true }) %>
+
+<h1>Analytics</h1>
+<p class="a-text-muted" style="margin-bottom: 24px;">Date actualizate la fiecare 15 minute.</p>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 1: REVENUE
+     ═══════════════════════════════════════════════════════ -->
+<h2 style="margin-bottom: 16px;">Revenue</h2>
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-success-bright);"><%= data.revenue.mrr %> RON</div>
+    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">MRR (Monthly Recurring Revenue)</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-primary);"><%= data.revenue.arr %> RON</div>
+    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">ARR (Annual)</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700;"><%= data.subscriptions.paidCount %></div>
+    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">Abonați plătitori</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: <%= parseFloat(data.subscriptions.churnRate) > 5 ? 'var(--a-danger)' : 'var(--a-success-bright)' %>;"><%= data.subscriptions.churnRate %>%</div>
+    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">Churn Rate (30 zile)</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
+  <div class="a-card">
+    <h3 style="margin-bottom: 12px;">Distribuție Tier-uri</h3>
+    <canvas id="chart-tier-dist" height="200"></canvas>
+  </div>
+  <div class="a-card">
+    <h3 style="margin-bottom: 12px;">Status Subscripții</h3>
+    <canvas id="chart-sub-status" height="200"></canvas>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 2: SUBSCRIPTIONS HISTORY
+     ═══════════════════════════════════════════════════════ -->
+<h2 style="margin-bottom: 16px;">Subscripții — Trend 6 luni</h2>
+<div class="a-card" style="margin-bottom: 40px;">
+  <canvas id="chart-sub-history" height="250"></canvas>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 3: USERS
+     ═══════════════════════════════════════════════════════ -->
+<h2 style="margin-bottom: 16px;">Utilizatori</h2>
+<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600;"><%= data.users.total %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Total</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-success-bright);"><%= data.users.active30d %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Activi 30 zile</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-primary);"><%= data.users.active7d %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Activi 7 zile</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-info);"><%= data.users.newMonth %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Noi luna asta</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-warning-bright);"><%= data.users.dormant %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Dormanți (30d+)</div>
+  </div>
+</div>
+
+<div class="a-card" style="margin-bottom: 40px;">
+  <h3 style="margin-bottom: 12px;">Înregistrări noi pe săptămână (12 săptămâni)</h3>
+  <canvas id="chart-signups" height="200"></canvas>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 4: BUSINESS HEALTH
+     ═══════════════════════════════════════════════════════ -->
+<h2 style="margin-bottom: 16px;">Business Health</h2>
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600;"><%= data.businessHealth.total %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Total business-uri</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-success-bright);"><%= data.businessHealth.withOffers %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Cu oferte active</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-warning-bright);"><%= data.businessHealth.total - data.businessHealth.withOffers %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Fără oferte</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <% var paidBiz = data.businessHealth.byTier.filter(t => t.tier !== 'free' && t.tier !== null).reduce((s,t) => s + parseInt(t.cnt), 0); %>
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-primary);"><%= paidBiz %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Plătitori</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
+  <div class="a-card">
+    <h3 style="margin-bottom: 12px;">Distribuție per Tier</h3>
+    <canvas id="chart-biz-tier" height="200"></canvas>
+  </div>
+  <div class="a-card">
+    <h3 style="margin-bottom: 12px;">Top 10 — Vizualizări (30 zile)</h3>
+    <% if (data.businessHealth.topByViews.length > 0) { %>
+      <canvas id="chart-top-views" height="200"></canvas>
+    <% } else { %>
+      <p class="a-text-muted">Nicio vizualizare înregistrată.</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SECTION 5: EMAILS
+     ═══════════════════════════════════════════════════════ -->
+<h2 style="margin-bottom: 16px;">Email Engagement (30 zile)</h2>
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600;"><%= data.emails.totalSent %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Trimise (30 zile)</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <div style="font-size: 24px; font-weight: 600; color: var(--a-danger, #ef4444);"><%= data.emails.totalFailed %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Eșuate</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 16px;">
+    <% var failRate = data.emails.totalSent > 0 ? ((data.emails.totalFailed / data.emails.totalSent) * 100).toFixed(1) : '0.0'; %>
+    <div style="font-size: 24px; font-weight: 600; color: <%= parseFloat(failRate) > 5 ? 'var(--a-danger, #ef4444)' : 'var(--a-success-bright)' %>;"><%= failRate %>%</div>
+    <div class="a-text-muted" style="font-size: 12px;">Rată eșec</div>
+  </div>
+</div>
+
+<div class="a-card" style="margin-bottom: 40px;">
+  <h3 style="margin-bottom: 12px;">Emailuri per tip</h3>
+  <canvas id="chart-emails" height="250"></canvas>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     CHART.JS INITIALIZATION
+     ═══════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  var chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#9ca3af' } } },
+    scales: {
+      x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+    }
+  };
+
+  // Tier Distribution (Pie)
+  var tierData = <%- JSON.stringify(data.revenue.tierDist) %>;
+  var tierColors = { free: '#71717a', standard: '#fb923c', premium: '#a78bfa' };
+  new Chart(document.getElementById('chart-tier-dist'), {
+    type: 'doughnut',
+    data: {
+      labels: tierData.map(function(t) { return t.name; }),
+      datasets: [{ data: tierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: tierData.map(function(t) { return tierColors[t.slug] || '#3b82f6'; }) }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+  });
+
+  // Subscription Status (Doughnut)
+  var statusData = <%- JSON.stringify(data.subscriptions.statusCounts) %>;
+  var statusColors = { active: '#22c55e', trial: '#3b82f6', past_due: '#f59e0b', cancelled: '#ef4444', expired: '#71717a' };
+  new Chart(document.getElementById('chart-sub-status'), {
+    type: 'doughnut',
+    data: {
+      labels: statusData.map(function(s) { return s.status; }),
+      datasets: [{ data: statusData.map(function(s) { return parseInt(s.cnt); }), backgroundColor: statusData.map(function(s) { return statusColors[s.status] || '#71717a'; }) }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+  });
+
+  // Subscription History (Stacked Bar)
+  var historyData = <%- JSON.stringify(data.subscriptions.history) %>;
+  var months = [...new Set(historyData.map(function(h) { return h.month; }))].sort();
+  var actions = ['created', 'upgraded', 'downgraded', 'cancelled'];
+  var actionColors = { created: '#22c55e', upgraded: '#3b82f6', downgraded: '#f59e0b', cancelled: '#ef4444' };
+  new Chart(document.getElementById('chart-sub-history'), {
+    type: 'bar',
+    data: {
+      labels: months.map(function(m) { return new Date(m).toLocaleDateString('ro-RO', { month: 'short', year: '2-digit' }); }),
+      datasets: actions.map(function(a) {
+        return {
+          label: a.charAt(0).toUpperCase() + a.slice(1),
+          data: months.map(function(m) { var row = historyData.find(function(h) { return h.month === m && h.action === a; }); return row ? parseInt(row.cnt) : 0; }),
+          backgroundColor: actionColors[a]
+        };
+      })
+    },
+    options: Object.assign({}, chartDefaults, { plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: Object.assign({}, chartDefaults.scales, { x: Object.assign({}, chartDefaults.scales.x, { stacked: true }), y: Object.assign({}, chartDefaults.scales.y, { stacked: true }) }) })
+  });
+
+  // User Signups (Line)
+  var signupsData = <%- JSON.stringify(data.users.signupsWeekly) %>;
+  new Chart(document.getElementById('chart-signups'), {
+    type: 'line',
+    data: {
+      labels: signupsData.map(function(s) { return new Date(s.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+      datasets: [{ label: 'Utilizatori noi', data: signupsData.map(function(s) { return parseInt(s.cnt); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
+    },
+    options: chartDefaults
+  });
+
+  // Business Tier Distribution (Pie)
+  var bizTierData = <%- JSON.stringify(data.businessHealth.byTier) %>;
+  new Chart(document.getElementById('chart-biz-tier'), {
+    type: 'doughnut',
+    data: {
+      labels: bizTierData.map(function(t) { return t.tier || 'free'; }),
+      datasets: [{ data: bizTierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: bizTierData.map(function(t) { return tierColors[t.tier] || '#71717a'; }) }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+  });
+
+  // Top 10 Business Views (Horizontal Bar)
+  var topViewsData = <%- JSON.stringify(data.businessHealth.topByViews) %>;
+  if (topViewsData.length > 0) {
+    new Chart(document.getElementById('chart-top-views'), {
+      type: 'bar',
+      data: {
+        labels: topViewsData.map(function(b) { return b.name; }),
+        datasets: [{ label: 'Vizualizări', data: topViewsData.map(function(b) { return parseInt(b.views); }), backgroundColor: '#3b82f6' }]
+      },
+      options: Object.assign({}, chartDefaults, { indexAxis: 'y' })
+    });
+  }
+
+  // Email Stats (Bar)
+  var emailData = <%- JSON.stringify(data.emails.stats) %>;
+  new Chart(document.getElementById('chart-emails'), {
+    type: 'bar',
+    data: {
+      labels: emailData.map(function(e) { return e.email_type; }),
+      datasets: [
+        { label: 'Trimise', data: emailData.map(function(e) { return parseInt(e.total) - parseInt(e.failed); }), backgroundColor: '#22c55e' },
+        { label: 'Eșuate', data: emailData.map(function(e) { return parseInt(e.failed); }), backgroundColor: '#ef4444' }
+      ]
+    },
+    options: Object.assign({}, chartDefaults, { scales: Object.assign({}, chartDefaults.scales, { x: Object.assign({}, chartDefaults.scales.x, { stacked: true }), y: Object.assign({}, chartDefaults.scales.y, { stacked: true }) }) })
+  });
+})();
+</script>
+
+<%- include('partials/layout-bottom') %>
