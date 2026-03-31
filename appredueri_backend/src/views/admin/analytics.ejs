@@ -148,7 +148,7 @@
 (function() {
   var chartDefaults = {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     plugins: { legend: { labels: { color: '#9ca3af' } } },
     scales: {
       x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -165,7 +165,7 @@
       labels: tierData.map(function(t) { return t.name; }),
       datasets: [{ data: tierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: tierData.map(function(t) { return tierColors[t.slug] || '#3b82f6'; }) }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
   });
 
   // Subscription Status (Doughnut)
@@ -177,7 +177,7 @@
       labels: statusData.map(function(s) { return s.status; }),
       datasets: [{ data: statusData.map(function(s) { return parseInt(s.cnt); }), backgroundColor: statusData.map(function(s) { return statusColors[s.status] || '#71717a'; }) }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
   });
 
   // Subscription History (Stacked Bar)
@@ -219,7 +219,7 @@
       labels: bizTierData.map(function(t) { return t.tier || 'free'; }),
       datasets: [{ data: bizTierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: bizTierData.map(function(t) { return tierColors[t.tier] || '#71717a'; }) }]
     },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
   });
 
   // Top 10 Business Views (Horizontal Bar)
