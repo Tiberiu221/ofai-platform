@@ -144,7 +144,7 @@
 <!-- ═══════════════════════════════════════════════════════
      CHART.JS INITIALIZATION
      ═══════════════════════════════════════════════════════ -->
-<script>
+<script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
 (function() {
   var chartDefaults = {
     responsive: true,
