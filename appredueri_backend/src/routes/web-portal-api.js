@@ -223,6 +223,83 @@ router.use("/api/web/portal/:businessId", (err, req, res, next) => {
 });
 
 // =====================================
+//   BOOKING METHODS (Multi-platform)
+// =====================================
+const { PLATFORMS, isValidPlatform } = require('../helpers/bookingPlatforms');
+
+// GET — list booking methods for a business
+router.get("/api/web/portal/:businessId/booking-methods", requireBusinessOwner, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      "SELECT id, platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+      [req.businessId]
+    );
+    res.json({ methods: rows, platforms: PLATFORMS });
+  } catch (err) {
+    console.error("[Web API] Get booking methods error:", err);
+    res.status(500).json({ message: "Eroare la încărcarea metodelor de rezervare" });
+  }
+});
+
+// PUT — replace all booking methods for a business (full sync)
+router.put("/api/web/portal/:businessId/booking-methods", requireBusinessOwner, async (req, res) => {
+  try {
+    const businessId = req.businessId;
+    const { methods } = req.body || {};
+
+    if (!Array.isArray(methods)) {
+      return res.status(400).json({ message: "Date invalide" });
+    }
+    if (methods.length > 12) {
+      return res.status(400).json({ message: "Maximum 12 metode de rezervare" });
+    }
+
+    // Validate each method
+    const validated = [];
+    for (let i = 0; i < methods.length; i++) {
+      const m = methods[i];
+      if (!m.platform || !isValidPlatform(m.platform)) {
+        return res.status(400).json({ message: `Platformă invalidă: ${m.platform}` });
+      }
+      const value = (m.value || '').trim();
+      if (!value) {
+        return res.status(400).json({ message: `Valoare lipsă pentru ${m.platform}` });
+      }
+      if (value.length > 500) {
+        return res.status(400).json({ message: `Valoare prea lungă pentru ${m.platform}` });
+      }
+      const label = m.platform === 'other' ? (m.platform_label || '').trim().slice(0, 100) || null : null;
+      validated.push({ platform: m.platform, platform_label: label, value, sort_order: i });
+    }
+
+    // Replace all in a transaction
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM business_booking_methods WHERE business_id = $1', [businessId]);
+      for (const m of validated) {
+        await client.query(
+          'INSERT INTO business_booking_methods (business_id, platform, platform_label, value, sort_order) VALUES ($1, $2, $3, $4, $5)',
+          [businessId, m.platform, m.platform_label, m.value, m.sort_order]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+
+    cache.invalidateGroup('businesses');
+    res.json({ success: true, count: validated.length });
+  } catch (err) {
+    console.error("[Web API] Update booking methods error:", err);
+    res.status(500).json({ message: "Eroare la salvarea metodelor de rezervare" });
+  }
+});
+
+// =====================================
 //   PARSE GOOGLE MAPS LINK
 // =====================================
 router.post("/api/web/parse-maps-link", requireWebAuth, mapsParseLimiter, async (req, res) => {

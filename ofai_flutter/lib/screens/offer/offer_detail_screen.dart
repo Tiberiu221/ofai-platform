@@ -10,6 +10,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/launchers.dart';
 import '../../models/offer.dart' show Booking;
+import '../../core/utils/booking_platforms.dart';
 import '../../providers/offers_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -640,8 +641,40 @@ class OfferDetailScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.lg),
                           ],
 
-                          // Booking
-                          if (booking != null && booking.hasBooking) ...[
+                          // Booking (multi-platform or legacy fallback)
+                          if (offer.bookingMethods != null && offer.bookingMethods!.isNotEmpty) ...[
+                            _SectionTitle(AppLocalizations.of(context)!.booking),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: offer.bookingMethods!.map((bm) {
+                                return _ActionChip(
+                                  icon: bm.isPhone ? Icons.phone : bm.isWhatsApp ? Icons.message : Icons.language,
+                                  label: bm.label,
+                                  color: bm.color,
+                                  onTap: () {
+                                    if (bm.isPhone) {
+                                      Launchers.call(bm.value);
+                                    } else if (bm.isWhatsApp) {
+                                      Launchers.whatsApp(bm.value);
+                                    } else {
+                                      Launchers.website(bm.href);
+                                    }
+                                    final biz = offer.business;
+                                    if (biz != null) {
+                                      AnalyticsService.trackClick(
+                                        businessId: biz.id,
+                                        offerId: offer.id,
+                                        actionType: bm.isPhone ? 'phone' : bm.isWhatsApp ? 'whatsapp' : 'booking_url',
+                                      );
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ] else if (booking != null && booking.hasBooking) ...[
                             _SectionTitle(AppLocalizations.of(context)!.booking),
                             const SizedBox(height: AppSpacing.sm),
                             if (booking.instructions != null && booking.instructions!.isNotEmpty) ...[
@@ -884,26 +917,28 @@ class _ActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color? color;
 
-  const _ActionChip({required this.icon, required this.label, required this.onTap});
+  const _ActionChip({required this.icon, required this.label, required this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
+    final c = color ?? AppColors.accent;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.accentMuted,
+          color: c.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-          border: Border.all(color: AppColors.accent),
+          border: Border.all(color: c.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: AppColors.accent),
+            Icon(icon, size: 18, color: c),
             const SizedBox(width: 6),
-            Text(label, style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
+            Text(label, style: AppTypography.labelMedium.copyWith(color: c)),
           ],
         ),
       ),

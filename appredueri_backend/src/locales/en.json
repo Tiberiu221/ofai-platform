@@ -262,7 +262,8 @@
     "reviewsCount_one": "{{count}} review",
     "reviewsCount_other": "{{count}} reviews",
     "noReviews": "No reviews",
-    "similarOffers": "Similar offers"
+    "similarOffers": "Similar offers",
+    "bookOn": "Book on {{platform}}"
   },
   "businessDetail": {
     "breadcrumbHome": "Home",

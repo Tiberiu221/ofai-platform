@@ -262,7 +262,8 @@
     "reviewsCount_one": "{{count}} recenzie",
     "reviewsCount_other": "{{count}} recenzii",
     "noReviews": "Nicio recenzie",
-    "similarOffers": "Oferte similare"
+    "similarOffers": "Oferte similare",
+    "bookOn": "Rezervă pe {{platform}}"
   },
   "businessDetail": {
     "breadcrumbHome": "Acasă",

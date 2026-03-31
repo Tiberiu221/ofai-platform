@@ -1,3 +1,5 @@
+import '../core/utils/booking_platforms.dart';
+
 class Offer {
   final int id;
   final String title;
@@ -13,6 +15,7 @@ class Offer {
   final List<OfferLocation>? locations;
   // Detail-only fields
   final Booking? booking;
+  final List<BookingMethod>? bookingMethods;
   final List<GalleryImage>? gallery;
   final bool hasPromoCode;
   // Platform polish fields
@@ -39,6 +42,7 @@ class Offer {
     this.business,
     this.locations,
     this.booking,
+    this.bookingMethods,
     this.gallery,
     this.hasPromoCode = false,
     this.saveCount,
@@ -81,6 +85,9 @@ class Offer {
       booking: json['booking'] != null
           ? Booking.fromJson(json['booking'] as Map<String, dynamic>)
           : null,
+      bookingMethods: (json['booking_methods'] as List<dynamic>?)
+          ?.map((e) => BookingMethod.fromJson(e as Map<String, dynamic>))
+          .toList(),
       gallery: (json['gallery'] as List<dynamic>?)
           ?.map((e) => GalleryImage.fromJson(e as Map<String, dynamic>))
           .toList(),

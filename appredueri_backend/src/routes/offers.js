@@ -873,6 +873,22 @@ router.get("/:id", async (req, res) => {
       url: img.image_url || makeAbsoluteUrl(req, `/uploads/businesses/${img.image_filename}`)
     }));
 
+    // 5. Multi-platform booking methods
+    const { getActionLabel: getOfBMLabel, getBookingHref: getOfBMHref, getPlatform: getOfBMP } = require('../helpers/bookingPlatforms');
+    const ofBmRes = await pool.query(
+      "SELECT platform, platform_label, value FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+      [row.business_id]
+    );
+    const offerBookingMethods = ofBmRes.rows.map(m => ({
+      platform: m.platform,
+      platform_label: m.platform_label || null,
+      value: m.value,
+      label: getOfBMLabel(m),
+      href: getOfBMHref(m),
+      color: (getOfBMP(m.platform) || {}).color || '#a1a1aa',
+      type: (getOfBMP(m.platform) || {}).type || 'url',
+    }));
+
     const avg = parseFloat(row.rating_avg || 0);
     const count = parseInt(row.rating_count || 0);
 
@@ -904,6 +920,9 @@ router.get("/:id", async (req, res) => {
         url: makeAbsoluteUrl(req, effectiveBooking.url),
         instructions: effectiveBooking.instructions
       },
+
+      // Multi-platform booking methods (new system)
+      booking_methods: offerBookingMethods,
 
       business: {
         id: row.business_id,

@@ -346,7 +346,23 @@ router.get("/:id", optionalAuth, async (req, res) => {
       }];
     }
 
-    // 3c. Catalog (categories + active items)
+    // 3c. Multi-platform booking methods
+    const { getActionLabel: getBMLabel, getBookingHref: getBMHref, getPlatform: getBMP } = require('../helpers/bookingPlatforms');
+    const bmResult = await pool.query(
+      "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+      [id]
+    );
+    const bookingMethodsArr = bmResult.rows.map(m => ({
+      platform: m.platform,
+      platform_label: m.platform_label || null,
+      value: m.value,
+      label: getBMLabel(m),
+      href: getBMHref(m),
+      color: (getBMP(m.platform) || {}).color || '#a1a1aa',
+      type: (getBMP(m.platform) || {}).type || 'url',
+    }));
+
+    // 3d. Catalog (categories + active items)
     const catalogRes = await pool.query(
       `SELECT ci.id, ci.category_id, ci.type, ci.name, ci.description, ci.price, ci.price_label,
               ci.duration_minutes, ci.image_url, ci.sort_order,
@@ -499,6 +515,8 @@ router.get("/:id", optionalAuth, async (req, res) => {
         url: makeAbsoluteUrl(baseUrl, b.booking_url),
         instructions: b.booking_instructions,
       },
+      // Multi-platform booking methods (new system)
+      booking_methods: bookingMethodsArr,
       // AI-generated review summary
       review_summary: reviewSummary,
       // Active offers

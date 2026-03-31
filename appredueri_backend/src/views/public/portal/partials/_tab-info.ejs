@@ -50,71 +50,22 @@
           </div>
         </div>
 
-        <!-- Booking Section -->
+        <!-- Booking Section (Multi-platform) -->
         <div class="glass-card" id="booking-section" style="margin-top: 16px;">
           <h3 class="section-title">Rezervări</h3>
+          <p class="img-upload-hint" style="margin-bottom: 12px;">Selectează una sau mai multe metode de rezervare. Toate vor apărea pe pagina business-ului.</p>
 
-          <p class="img-upload-hint" style="margin-bottom: 12px;">Pe pagina business-ului va apărea un card de rezervare în funcție de selecția de mai jos.</p>
-          <label class="form-label">Tip rezervare</label>
-          <div class="booking-grid">
-            <div class="booking-option <%= business.booking_type === 'none' || !business.booking_type ? 'active' : '' %>" onclick="selectBookingType('none')">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-              Niciunul
-            </div>
-            <div class="booking-option <%= business.booking_type === 'phone' ? 'active' : '' %>" onclick="selectBookingType('phone')">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              Telefon
-            </div>
-            <div class="booking-option <%= business.booking_type === 'whatsapp' ? 'active' : '' %>" onclick="selectBookingType('whatsapp')">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              WhatsApp
-            </div>
-            <div class="booking-option <%= business.booking_type === 'url' ? 'active' : '' %>" onclick="selectBookingType('url')">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              Link
-            </div>
-          </div>
-          <input type="hidden" name="booking_type" id="booking-type-input" value="<%= business.booking_type || 'none' %>">
-
-          <div class="booking-fields">
-            <div class="booking-field" id="booking-field-phone" style="<%= business.booking_type === 'phone' ? 'display:block' : 'display:none' %>">
-              <p class="booking-info-text" id="booking-info-phone">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                Se va folosi: <strong id="booking-phone-preview"><%= business.booking_phone || business.phone || 'Adaugă un telefon în profil' %></strong>
-                <a href="#" class="booking-change-link" onclick="toggleBookingOverride('phone'); return false;">Schimbă</a>
-              </p>
-              <div class="booking-override" id="booking-override-phone" style="display:none">
-                <input type="text" name="booking_phone" class="form-input" value="<%= business.booking_phone || '' %>" placeholder="<%= business.phone || '+40 7XX XXX XXX' %>">
-                <a href="#" class="booking-change-link" onclick="toggleBookingOverride('phone'); return false;">Anulează</a>
-              </div>
-            </div>
-            <div class="booking-field" id="booking-field-whatsapp" style="<%= business.booking_type === 'whatsapp' ? 'display:block' : 'display:none' %>">
-              <p class="booking-info-text" id="booking-info-whatsapp">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                Se va folosi: <strong id="booking-whatsapp-preview"><%= business.booking_whatsapp || business.phone || 'Adaugă un telefon în profil' %></strong>
-                <a href="#" class="booking-change-link" onclick="toggleBookingOverride('whatsapp'); return false;">Schimbă</a>
-              </p>
-              <div class="booking-override" id="booking-override-whatsapp" style="display:none">
-                <input type="text" name="booking_whatsapp" class="form-input" value="<%= business.booking_whatsapp || '' %>" placeholder="<%= business.phone || '+40 7XX XXX XXX' %>">
-                <a href="#" class="booking-change-link" onclick="toggleBookingOverride('whatsapp'); return false;">Anulează</a>
-              </div>
-            </div>
-            <div class="booking-field" id="booking-field-url" style="<%= business.booking_type === 'url' ? 'display:block' : 'display:none' %>">
-              <p class="booking-info-text" id="booking-info-url">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                Se va folosi: <strong id="booking-url-preview"><%= business.booking_url || business.website || 'Adaugă un website în profil' %></strong>
-                <a href="#" class="booking-change-link" onclick="toggleBookingOverride('url'); return false;">Schimbă</a>
-              </p>
-              <div class="booking-override" id="booking-override-url" style="display:none">
-                <input type="text" name="booking_url" class="form-input" value="<%= business.booking_url || '' %>" placeholder="<%= business.website || 'https://' %>">
-                <a href="#" class="booking-change-link" onclick="toggleBookingOverride('url'); return false;">Anulează</a>
-              </div>
-            </div>
+          <label class="form-label">Platforme de rezervare</label>
+          <div class="booking-grid booking-grid-multi" id="booking-platforms-grid">
+            <!-- Populated by JS from API -->
           </div>
 
-          <div class="form-group" style="margin-top: 12px;">
-            <label class="form-label">Instrucțiuni rezervare</label>
-            <textarea name="booking_instructions" class="form-textarea" placeholder="Ex: Rezervările se fac cu minim 2 ore înainte..."><%= business.booking_instructions || '' %></textarea>
+          <div id="booking-inputs-container" style="margin-top: 12px;">
+            <!-- Dynamically added inputs for selected platforms -->
+          </div>
+
+          <div style="margin-top: 12px; text-align: right;">
+            <button type="button" class="btn-accent" onclick="window.saveBookingMethods()" style="padding: 10px 24px; font-size: 0.875rem;">Salvează rezervările</button>
           </div>
         </div>
 

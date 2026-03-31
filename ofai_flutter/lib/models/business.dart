@@ -1,5 +1,6 @@
 import 'offer.dart' show Booking;
 import 'catalog.dart' show CatalogCategory;
+import '../core/utils/booking_platforms.dart';
 
 class Business {
   final int id;
@@ -30,6 +31,8 @@ class Business {
   final bool isPromoted;
   // Catalog (services/products/menu items)
   final List<CatalogCategory>? catalog;
+  // Multi-platform booking methods
+  final List<BookingMethod>? bookingMethods;
   // Platform polish fields
   final int? followerCount;
   final Map<int, int>? ratingDistribution; // {1: count, 2: count, ...5: count}
@@ -61,6 +64,7 @@ class Business {
     this.badgeType,
     this.isPromoted = false,
     this.catalog,
+    this.bookingMethods,
     this.followerCount,
     this.ratingDistribution,
     this.isOwner = false,
@@ -124,6 +128,9 @@ class Business {
       isPromoted: json['is_promoted'] == true,
       catalog: (json['catalog'] as List<dynamic>?)
           ?.map((e) => CatalogCategory.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      bookingMethods: (json['booking_methods'] as List<dynamic>?)
+          ?.map((e) => BookingMethod.fromJson(e as Map<String, dynamic>))
           .toList(),
       followerCount: json['follower_count'] as int?,
       isOwner: json['is_owner'] as bool? ?? false,

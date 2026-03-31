@@ -143,7 +143,9 @@
 
   /* ── Booking Type Grid ── */
   .booking-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-  @media (max-width: 500px) { .booking-grid { grid-template-columns: repeat(2, 1fr); } }
+  .booking-grid-multi { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 768px) { .booking-grid-multi { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 500px) { .booking-grid, .booking-grid-multi { grid-template-columns: repeat(2, 1fr); } }
   .booking-option {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     padding: 14px 8px; border-radius: var(--radius-md);

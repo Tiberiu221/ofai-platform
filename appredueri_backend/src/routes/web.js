@@ -1025,6 +1025,20 @@ router.get("/oferta/:id", async (req, res) => {
       })),
     };
 
+    // Load multi-platform booking methods (new system)
+    const { getActionLabel, getBookingHref, getPlatform } = require('../helpers/bookingPlatforms');
+    const bmRes = await pool.query(
+      "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+      [row.business_id]
+    );
+    offer.bookingMethods = bmRes.rows.map(m => ({
+      ...m,
+      actionLabel: getActionLabel(m, req.language || 'ro'),
+      href: getBookingHref(m),
+      color: (getPlatform(m.platform) || {}).color || '#a1a1aa',
+      type: (getPlatform(m.platform) || {}).type || 'url',
+    }));
+
     // Similar offers (same category, respecting competitor blocking)
     let similarOffers = [];
     if (row.cat_id) {
@@ -1501,6 +1515,20 @@ router.get("/business/:id", async (req, res) => {
       const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 500", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
+
+    // Load multi-platform booking methods
+    const { getActionLabel: getBAL, getBookingHref: getBH, getPlatform: getP } = require('../helpers/bookingPlatforms');
+    const bmBizRes = await pool.query(
+      "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
+      [id]
+    );
+    business.bookingMethods = bmBizRes.rows.map(m => ({
+      ...m,
+      actionLabel: getBAL(m, req.language || 'ro'),
+      href: getBH(m),
+      color: (getP(m.platform) || {}).color || '#a1a1aa',
+      type: (getP(m.platform) || {}).type || 'url',
+    }));
 
     res.render("public/business-detail", {
       business,

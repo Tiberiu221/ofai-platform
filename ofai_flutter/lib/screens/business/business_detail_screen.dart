@@ -9,6 +9,7 @@ import '../../core/utils/launchers.dart';
 import '../../models/business.dart' show BusinessLocation, BusinessHours;
 import '../../models/catalog.dart' show CatalogCategory;
 import '../../models/offer.dart' show Booking;
+import '../../core/utils/booking_platforms.dart';
 import '../../providers/businesses_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
 import '../../providers/reviews_provider.dart';
@@ -471,8 +472,36 @@ class BusinessDetailScreen extends ConsumerWidget {
                             const SizedBox(height: 40),
                           ],
 
-                          // Booking
-                          if (business.booking != null && business.booking!.hasBooking) ...[
+                          // Booking (multi-platform or legacy fallback)
+                          if (business.bookingMethods != null && business.bookingMethods!.isNotEmpty) ...[
+                            Text(AppLocalizations.of(context)!.booking, style: AppTypography.headlineSmall),
+                            const SizedBox(height: AppSpacing.sm),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: business.bookingMethods!.map((bm) {
+                                return _BookingChip(
+                                  icon: bm.isPhone ? Icons.phone : bm.isWhatsApp ? Icons.message : Icons.language,
+                                  label: bm.label,
+                                  color: bm.color,
+                                  onTap: () {
+                                    if (bm.isPhone) {
+                                      Launchers.call(bm.value);
+                                    } else if (bm.isWhatsApp) {
+                                      Launchers.whatsApp(bm.value);
+                                    } else {
+                                      Launchers.website(bm.href);
+                                    }
+                                    AnalyticsService.trackClick(
+                                      businessId: business.id,
+                                      actionType: bm.isPhone ? 'phone' : bm.isWhatsApp ? 'whatsapp' : 'booking_url',
+                                    );
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 40),
+                          ] else if (business.booking != null && business.booking!.hasBooking) ...[
                             Text(AppLocalizations.of(context)!.booking, style: AppTypography.headlineSmall),
                             const SizedBox(height: AppSpacing.sm),
                             Wrap(
@@ -1324,26 +1353,28 @@ class _BookingChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color? color;
 
-  const _BookingChip({required this.icon, required this.label, required this.onTap});
+  const _BookingChip({required this.icon, required this.label, required this.onTap, this.color});
 
   @override
   Widget build(BuildContext context) {
+    final c = color ?? AppColors.accent;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: AppColors.accentMuted,
+          color: c.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-          border: Border.all(color: AppColors.accent),
+          border: Border.all(color: c.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: AppColors.accent),
+            Icon(icon, size: 18, color: c),
             const SizedBox(width: 6),
-            Text(label, style: AppTypography.labelMedium.copyWith(color: AppColors.accent)),
+            Text(label, style: AppTypography.labelMedium.copyWith(color: c)),
           ],
         ),
       ),
