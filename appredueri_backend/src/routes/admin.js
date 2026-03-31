@@ -194,7 +194,7 @@ router.get("/analytics", async (req, res) => {
           FROM business_subscriptions bs
           JOIN subscription_plans sp ON sp.id = bs.plan_id
           WHERE bs.status IN ('active', 'trial')
-          GROUP BY sp.slug, sp.name
+          GROUP BY sp.slug, sp.name, sp.sort_order
           ORDER BY sp.sort_order
         `),
         // Subscriptions: status counts
@@ -230,7 +230,7 @@ router.get("/analytics", async (req, res) => {
           SELECT COUNT(DISTINCT b.id) as cnt FROM businesses b
           JOIN offers o ON o.business_id = b.id AND o.is_active = true
             AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          WHERE b.is_active IS NOT FALSE
+          WHERE TRUE
         `),
         // Business: by tier
         pool.query(`
@@ -238,7 +238,7 @@ router.get("/analytics", async (req, res) => {
           FROM businesses b
           LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active', 'trial')
           LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
-          WHERE b.is_active IS NOT FALSE
+          WHERE TRUE
           GROUP BY sp.slug
         `),
         // Business: top 10 by views (30d)
