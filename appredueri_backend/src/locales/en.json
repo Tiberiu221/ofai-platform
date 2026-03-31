@@ -258,6 +258,7 @@
     "conditions": "Conditions",
     "locations": "Locations ({{count}})",
     "viewBusiness": "View business",
+    "visitWebsite": "Visit website",
     "reviewsCount_one": "{{count}} review",
     "reviewsCount_other": "{{count}} reviews",
     "noReviews": "No reviews",

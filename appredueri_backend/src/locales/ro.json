@@ -258,6 +258,7 @@
     "conditions": "Condiții",
     "locations": "Locații ({{count}})",
     "viewBusiness": "Vezi business-ul",
+    "visitWebsite": "Vizitează website-ul",
     "reviewsCount_one": "{{count}} recenzie",
     "reviewsCount_other": "{{count}} recenzii",
     "noReviews": "Nicio recenzie",
