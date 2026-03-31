@@ -1338,9 +1338,9 @@
       html += '<div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">';
       html += '<span style="min-width: 120px; font-size: 0.8125rem; font-weight: 600; color:' + p.color + ';">' + p.label + '</span>';
       if (p.hasCustomLabel) {
-        html += '<input type="text" class="form-input" data-ofslug="' + p.slug + '" data-field="label" value="' + (sel.platform_label || '').replace(/"/g, '&quot;') + '" placeholder="Nume platformă" style="flex: 0 0 120px;">';
+        html += '<input type="text" class="of-input" data-ofslug="' + p.slug + '" data-field="label" value="' + (sel.platform_label || '').replace(/"/g, '&quot;') + '" placeholder="Nume platformă" style="flex: 0 0 120px;">';
       }
-      html += '<input type="' + (p.inputType || 'url') + '" class="form-input" data-ofslug="' + p.slug + '" data-field="value" value="' + (sel.value || '').replace(/"/g, '&quot;') + '" placeholder="' + placeholder + '" style="flex: 1;">';
+      html += '<input type="' + (p.inputType || 'url') + '" class="of-input" data-ofslug="' + p.slug + '" data-field="value" value="' + (sel.value || '').replace(/"/g, '&quot;') + '" placeholder="' + placeholder + '" style="flex: 1;">';
       html += '<button type="button" onclick="window.toggleOfBmPlatform(\'' + p.slug + '\')" style="background:none;border:none;color:var(--text-tertiary);cursor:pointer;padding:4px;" title="Elimină">';
       html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
       html += '</div>';
