@@ -155,7 +155,7 @@
     text-align: center;
   }
   .booking-option:hover { border-color: var(--border-hover); }
-  .booking-option.active { border-color: var(--accent); background: var(--accent-glow); color: var(--accent); }
+  .booking-option.active { background: rgba(255,255,255,0.06); }
   .booking-option svg { flex-shrink: 0; }
 
   .booking-fields { margin-top: 12px; }
