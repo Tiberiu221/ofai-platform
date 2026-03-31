@@ -198,7 +198,7 @@ router.get("/analytics", async (req, res) => {
           ORDER BY sp.sort_order
         `),
         // Subscriptions: status counts
-        pool.query(`SELECT status, COUNT(*) as cnt FROM business_subscriptions GROUP BY status`),
+        pool.query(`SELECT status, COUNT(*) as cnt FROM business_subscriptions GROUP BY status`).catch(() => ({ rows: [] })),
         // Subscriptions: history last 6 months
         pool.query(`
           SELECT DATE_TRUNC('month', created_at)::date as month, action, COUNT(*) as cnt
@@ -206,7 +206,7 @@ router.get("/analytics", async (req, res) => {
           WHERE created_at >= NOW() - INTERVAL '6 months'
           GROUP BY 1, 2
           ORDER BY 1
-        `),
+        `).catch(() => ({ rows: [] })),
         // Users: total
         pool.query("SELECT COUNT(*) FROM users"),
         // Users: active 30d
@@ -259,7 +259,7 @@ router.get("/analytics", async (req, res) => {
           WHERE created_at >= NOW() - INTERVAL '30 days'
           GROUP BY email_type
           ORDER BY total DESC
-        `)
+        `).catch(() => ({ rows: [] }))
       ]);
 
       const mrrBani = parseInt(mrrResult.rows[0]?.mrr_bani || 0);
@@ -283,16 +283,16 @@ router.get("/analytics", async (req, res) => {
           churnRate
         },
         users: {
-          total: parseInt(totalUsersResult.rows[0].count),
-          active30d: parseInt(activeUsers30dResult.rows[0].count),
-          active7d: parseInt(activeUsers7dResult.rows[0].count),
-          newMonth: parseInt(newUsersMonthResult.rows[0].count),
-          dormant: parseInt(dormantResult.rows[0].count),
+          total: parseInt(totalUsersResult.rows[0]?.count || 0),
+          active30d: parseInt(activeUsers30dResult.rows[0]?.count || 0),
+          active7d: parseInt(activeUsers7dResult.rows[0]?.count || 0),
+          newMonth: parseInt(newUsersMonthResult.rows[0]?.count || 0),
+          dormant: parseInt(dormantResult.rows[0]?.count || 0),
           signupsWeekly: signupsWeeklyResult.rows
         },
         businessHealth: {
-          total: parseInt(bizTotalResult.rows[0].count),
-          withOffers: parseInt(bizWithOffersResult.rows[0].cnt),
+          total: parseInt(bizTotalResult.rows[0]?.count || 0),
+          withOffers: parseInt(bizWithOffersResult.rows[0]?.cnt || 0),
           byTier: bizByTierResult.rows,
           topByViews: topBizViewsResult.rows
         },
@@ -306,8 +306,8 @@ router.get("/analytics", async (req, res) => {
 
     res.render("admin/analytics", { pageTitle: "Analytics", activePage: "analytics", loadChartJs: true, data });
   } catch (err) {
-    console.error("[Admin] Analytics error:", err);
-    res.status(500).send("Eroare la încărcarea analytics.");
+    console.error("[Admin] Analytics error:", err.message, err.stack);
+    res.status(500).send("Eroare la încărcarea analytics: " + (process.env.NODE_ENV !== 'production' ? err.message : 'Verifică logurile serverului.'));
   }
 });
 
