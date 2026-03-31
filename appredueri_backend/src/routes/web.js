@@ -224,29 +224,32 @@ router.get("/", async (req, res) => {
         for (let i = pool_.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool_[i], pool_[j]] = [pool_[j], pool_[i]]; }
         return { rows: pool_.slice(0, 20) };
       })(),
-      // 7. Top businesses
-      pool.query(`
-        SELECT b.id, b.name, b.logo_url, b.cover_image_url,
-               b.lat, b.lng, b.is_verified, b.subscription_badge_type,
-               ci.name as city_name, cat.name as category_name,
-               COALESCE(AVG(r.rating), 0) as rating_avg,
-               COUNT(DISTINCT r.id) as rating_count,
-               COUNT(DISTINCT o.id) as offer_count,
-               COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
-        FROM businesses b
-        LEFT JOIN cities ci ON b.city_id = ci.id
-        LEFT JOIN categories cat ON b.category_id = cat.id
-        LEFT JOIN reviews r ON r.business_id = b.id
-        LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-        LEFT JOIN business_subscriptions bsub
-          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
-        LEFT JOIN subscription_plans splan
-          ON splan.id = bsub.plan_id
-        GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
-        HAVING COUNT(DISTINCT o.id) > 0
-        ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC
-        LIMIT 8
-      `),
+      // 7. Top businesses (cached 10min)
+      cache.cached('home:topBiz', async () => {
+        const tbRes = await pool.query(`
+          SELECT b.id, b.name, b.logo_url, b.cover_image_url,
+                 b.lat, b.lng, b.is_verified, b.subscription_badge_type,
+                 ci.name as city_name, cat.name as category_name,
+                 COALESCE(AVG(r.rating), 0) as rating_avg,
+                 COUNT(DISTINCT r.id) as rating_count,
+                 COUNT(DISTINCT o.id) as offer_count,
+                 COALESCE(splan.has_promoted_placement, FALSE) as is_promoted
+          FROM businesses b
+          LEFT JOIN cities ci ON b.city_id = ci.id
+          LEFT JOIN categories cat ON b.category_id = cat.id
+          LEFT JOIN reviews r ON r.business_id = b.id
+          LEFT JOIN offers o ON o.business_id = b.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          LEFT JOIN business_subscriptions bsub
+            ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+          LEFT JOIN subscription_plans splan
+            ON splan.id = bsub.plan_id
+          GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
+          HAVING COUNT(DISTINCT o.id) > 0
+          ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC
+          LIMIT 8
+        `);
+        return tbRes;
+      }, { ttl: 600, groups: ['homepage', 'businesses'] }),
       // 8. Followed offers (null if not logged in)
       isLoggedIn
         ? pool.query(`
@@ -267,8 +270,8 @@ router.get("/", async (req, res) => {
       // 9. User favorite/follow IDs (null if not logged in)
       isLoggedIn
         ? Promise.all([
-            pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
-            pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 10000", [req.webUser.id]),
+            pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 500", [req.webUser.id]),
+            pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 500", [req.webUser.id]),
           ])
         : Promise.resolve(null),
     ]);
@@ -388,43 +391,49 @@ router.get("/oferte", async (req, res) => {
       paramIdx++;
     }
 
-    // Fetch and optionally apply user preferences
+    // Fetch and optionally apply user preferences (cached 5min)
     let userHasPrefs = false;
     let prefsActive = false;
     let userPrefsCityNames = [];
     let userPrefsCategoryNames = [];
 
     if (req.webUser) {
-      const prefsRes = await pool.query(
-        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
-        [req.webUser.id]
-      );
-      if (prefsRes.rows[0]) {
-        const prefs = prefsRes.rows[0];
-        const hasCities = prefs.preferred_city_ids && prefs.preferred_city_ids.length > 0;
-        const hasCats = prefs.preferred_category_ids && prefs.preferred_category_ids.length > 0;
+      const prefData = await cache.cached(`user:${req.webUser.id}:prefs`, async () => {
+        const prefsRes = await pool.query(
+          "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
+          [req.webUser.id]
+        );
+        if (!prefsRes.rows[0]) return null;
+        const p = prefsRes.rows[0];
+        const res = { preferred_city_ids: p.preferred_city_ids, preferred_category_ids: p.preferred_category_ids, cityNames: [], categoryNames: [] };
+        if (p.preferred_city_ids && p.preferred_city_ids.length > 0) {
+          const cn = await pool.query("SELECT name FROM cities WHERE id = ANY($1)", [p.preferred_city_ids]);
+          res.cityNames = cn.rows.map(r => r.name);
+        }
+        if (p.preferred_category_ids && p.preferred_category_ids.length > 0) {
+          const cn = await pool.query("SELECT name FROM categories WHERE id = ANY($1)", [p.preferred_category_ids]);
+          res.categoryNames = cn.rows.map(r => r.name);
+        }
+        return res;
+      }, { ttl: 300 });
+      if (prefData) {
+        const hasCities = prefData.preferred_city_ids && prefData.preferred_city_ids.length > 0;
+        const hasCats = prefData.preferred_category_ids && prefData.preferred_category_ids.length > 0;
         userHasPrefs = hasCities || hasCats;
-
-        if (hasCities) {
-          const cityNames = await pool.query("SELECT name FROM cities WHERE id = ANY($1)", [prefs.preferred_city_ids]);
-          userPrefsCityNames = cityNames.rows.map(r => r.name);
-        }
-        if (hasCats) {
-          const catNames = await pool.query("SELECT name FROM categories WHERE id = ANY($1)", [prefs.preferred_category_ids]);
-          userPrefsCategoryNames = catNames.rows.map(r => r.name);
-        }
+        userPrefsCityNames = prefData.cityNames || [];
+        userPrefsCategoryNames = prefData.categoryNames || [];
 
         // Apply preference filters only when prefs=1 and no manual city/category override
         if (req.query.prefs === '1' && !selectedCity && !selectedCategory) {
           prefsActive = true;
           if (hasCities) {
             conditions.push(`(b.city_id = ANY($${paramIdx}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
-            params.push(prefs.preferred_city_ids);
+            params.push(prefData.preferred_city_ids);
             paramIdx++;
           }
           if (hasCats) {
             conditions.push(`b.category_id = ANY($${paramIdx})`);
-            params.push(prefs.preferred_category_ids);
+            params.push(prefData.preferred_category_ids);
             paramIdx++;
           }
         }
@@ -518,7 +527,7 @@ router.get("/oferte", async (req, res) => {
     // Fetch user favorite IDs for card heart buttons
     let userFavoriteIds = [];
     if (req.webUser) {
-      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 500", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
@@ -617,43 +626,49 @@ router.get("/business-uri", async (req, res) => {
       paramIdx++;
     }
 
-    // Fetch and optionally apply user preferences
+    // Fetch and optionally apply user preferences (cached 5min)
     let userHasPrefs = false;
     let prefsActive = false;
     let userPrefsCityNames = [];
     let userPrefsCategoryNames = [];
 
     if (req.webUser) {
-      const prefsRes = await pool.query(
-        "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
-        [req.webUser.id]
-      );
-      if (prefsRes.rows[0]) {
-        const prefs = prefsRes.rows[0];
-        const hasCities = prefs.preferred_city_ids && prefs.preferred_city_ids.length > 0;
-        const hasCats = prefs.preferred_category_ids && prefs.preferred_category_ids.length > 0;
+      const prefData = await cache.cached(`user:${req.webUser.id}:prefs`, async () => {
+        const prefsRes = await pool.query(
+          "SELECT preferred_city_ids, preferred_category_ids FROM users WHERE id = $1",
+          [req.webUser.id]
+        );
+        if (!prefsRes.rows[0]) return null;
+        const p = prefsRes.rows[0];
+        const res = { preferred_city_ids: p.preferred_city_ids, preferred_category_ids: p.preferred_category_ids, cityNames: [], categoryNames: [] };
+        if (p.preferred_city_ids && p.preferred_city_ids.length > 0) {
+          const cn = await pool.query("SELECT name FROM cities WHERE id = ANY($1)", [p.preferred_city_ids]);
+          res.cityNames = cn.rows.map(r => r.name);
+        }
+        if (p.preferred_category_ids && p.preferred_category_ids.length > 0) {
+          const cn = await pool.query("SELECT name FROM categories WHERE id = ANY($1)", [p.preferred_category_ids]);
+          res.categoryNames = cn.rows.map(r => r.name);
+        }
+        return res;
+      }, { ttl: 300 });
+      if (prefData) {
+        const hasCities = prefData.preferred_city_ids && prefData.preferred_city_ids.length > 0;
+        const hasCats = prefData.preferred_category_ids && prefData.preferred_category_ids.length > 0;
         userHasPrefs = hasCities || hasCats;
-
-        if (hasCities) {
-          const cityNames = await pool.query("SELECT name FROM cities WHERE id = ANY($1)", [prefs.preferred_city_ids]);
-          userPrefsCityNames = cityNames.rows.map(r => r.name);
-        }
-        if (hasCats) {
-          const catNames = await pool.query("SELECT name FROM categories WHERE id = ANY($1)", [prefs.preferred_category_ids]);
-          userPrefsCategoryNames = catNames.rows.map(r => r.name);
-        }
+        userPrefsCityNames = prefData.cityNames || [];
+        userPrefsCategoryNames = prefData.categoryNames || [];
 
         // Apply preference filters only when prefs=1 and no manual city/category override
         if (req.query.prefs === '1' && !selectedCity && !selectedCategory) {
           prefsActive = true;
           if (hasCities) {
             conditions.push(`(b.city_id = ANY($${paramIdx}) OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
-            params.push(prefs.preferred_city_ids);
+            params.push(prefData.preferred_city_ids);
             paramIdx++;
           }
           if (hasCats) {
             conditions.push(`b.category_id = ANY($${paramIdx})`);
-            params.push(prefs.preferred_category_ids);
+            params.push(prefData.preferred_category_ids);
             paramIdx++;
           }
         }
@@ -718,7 +733,7 @@ router.get("/business-uri", async (req, res) => {
     // Fetch user followed IDs for card heart buttons
     let userFollowedIds = [];
     if (req.webUser) {
-      const followRes = await pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
+      const followRes = await pool.query("SELECT business_id FROM followed_businesses WHERE user_id = $1 LIMIT 500", [req.webUser.id]);
       userFollowedIds = followRes.rows.map(r => r.business_id);
     }
 
@@ -955,10 +970,11 @@ router.get("/oferta/:id", async (req, res) => {
             FROM offers o
             JOIN businesses b ON o.business_id = b.id
             LEFT JOIN cities c2 ON b.city_id = c2.id
+            LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
             WHERE o.id != $1 AND o.is_active = TRUE
               AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
               AND o.business_id = $2
-            ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
+            ORDER BY COALESCE(fav_agg.cnt, 0) DESC
             LIMIT 4
           `;
           simParams = [id, row.business_id];
@@ -973,10 +989,11 @@ router.get("/oferta/:id", async (req, res) => {
             FROM offers o
             JOIN businesses b ON o.business_id = b.id
             LEFT JOIN cities c2 ON b.city_id = c2.id
+            LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
             WHERE o.id != $1 AND o.is_active = TRUE
               AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
               AND b.category_id = $2
-            ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) DESC
+            ORDER BY COALESCE(fav_agg.cnt, 0) DESC
             LIMIT 4
           `;
           simParams = [id, row.cat_id];
@@ -990,7 +1007,7 @@ router.get("/oferta/:id", async (req, res) => {
     // Fetch user favorite IDs for similar offer heart buttons
     let userFavoriteIds = [];
     if (req.webUser) {
-      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 500", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
@@ -1241,9 +1258,10 @@ router.get("/business/:id", async (req, res) => {
              o.start_date, o.end_date,
              COALESCE(o.logo_url, b2.cover_image_url) as image_url,
              b2.name as business_name, b2.logo_url as business_logo,
-             (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as favorite_count
+             COALESCE(fav_agg.cnt, 0) as favorite_count
       FROM offers o
       JOIN businesses b2 ON o.business_id = b2.id
+      LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
       WHERE o.business_id = $1 AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
       ORDER BY o.discount_value DESC
       LIMIT 50
@@ -1388,7 +1406,7 @@ router.get("/business/:id", async (req, res) => {
     // Fetch user favorite IDs for offer card heart buttons
     let userFavoriteIds = [];
     if (req.webUser) {
-      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 10000", [req.webUser.id]);
+      const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 500", [req.webUser.id]);
       userFavoriteIds = favRes.rows.map(r => r.offer_id);
     }
 
@@ -1782,12 +1800,13 @@ router.get("/portal", requireWebAuth, async (req, res) => {
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                c.name as city_name, cat.name as category_name,
                sp.slug as plan_slug, sp.name as plan_name,
-               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_offers
+               COALESCE(ao.cnt, 0) as active_offers
         FROM businesses b
         LEFT JOIN cities c ON b.city_id = c.id
         LEFT JOIN categories cat ON b.category_id = cat.id
         LEFT JOIN business_subscriptions bs ON bs.business_id = b.id
         LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
+        LEFT JOIN (SELECT business_id, COUNT(*) as cnt FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE) GROUP BY business_id) ao ON ao.business_id = b.id
         ORDER BY b.name
       `);
     } else {
@@ -1795,13 +1814,14 @@ router.get("/portal", requireWebAuth, async (req, res) => {
         SELECT b.id, b.name, b.logo_url, b.cover_image_url,
                c.name as city_name, cat.name as category_name,
                sp.slug as plan_slug, sp.name as plan_name,
-               (SELECT COUNT(*) FROM offers WHERE business_id = b.id AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_offers
+               COALESCE(ao.cnt, 0) as active_offers
         FROM businesses b
         JOIN user_businesses ub ON ub.business_id = b.id AND ub.user_id = $1
         LEFT JOIN cities c ON b.city_id = c.id
         LEFT JOIN categories cat ON b.category_id = cat.id
         LEFT JOIN business_subscriptions bs ON bs.business_id = b.id
         LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
+        LEFT JOIN (SELECT business_id, COUNT(*) as cnt FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE) GROUP BY business_id) ao ON ao.business_id = b.id
         ORDER BY b.name
       `, [req.webUser.id]);
     }

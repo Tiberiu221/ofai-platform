@@ -317,13 +317,15 @@ router.get("/flash", async (req, res) => {
         b.is_verified as business_verified,
         b.subscription_badge_type as business_badge_type,
         c.name as city_name, cat.name as category_name,
-        (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) as rating_avg,
-        (SELECT COUNT(*) FROM reviews WHERE business_id = b.id) as rating_count,
-        (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
+        COALESCE(rev_agg.avg_rating, 0) as rating_avg,
+        COALESCE(rev_agg.review_count, 0) as rating_count,
+        COALESCE(fav_agg.save_count, 0) as save_count
       FROM offers o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
+      LEFT JOIN (SELECT business_id, COUNT(*) as review_count, AVG(rating) as avg_rating FROM reviews GROUP BY business_id) rev_agg ON rev_agg.business_id = b.id
+      LEFT JOIN (SELECT offer_id, COUNT(*) as save_count FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
       WHERE o.is_active = TRUE
         AND o.flash_expires_at IS NOT NULL
         AND o.flash_expires_at > NOW()
@@ -678,14 +680,15 @@ router.get("/deal-of-day", async (req, res) => {
                b.cover_image_url as business_cover, b.is_verified as business_verified,
                b.subscription_badge_type as business_badge_type,
                c.name as city_name,
-               (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) as save_count
+               COALESCE(fav_agg.cnt, 0) as save_count
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities c ON b.city_id = c.id
+        LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
+        LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM business_clicks GROUP BY offer_id) click_agg ON click_agg.offer_id = o.id
         WHERE o.is_active = TRUE
           AND (o.end_date IS NULL OR o.end_date > CURRENT_DATE)
-        ORDER BY (SELECT COUNT(*) FROM favorite_offers fo WHERE fo.offer_id = o.id) +
-                 (SELECT COUNT(*) FROM business_clicks bc WHERE bc.offer_id = o.id) DESC
+        ORDER BY COALESCE(fav_agg.cnt, 0) + COALESCE(click_agg.cnt, 0) DESC
         LIMIT 1
       `);
     }

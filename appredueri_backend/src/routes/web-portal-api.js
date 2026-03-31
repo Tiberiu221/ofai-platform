@@ -1816,24 +1816,13 @@ router.get("/api/web/portal/:businessId/analytics/export",
 // COMPETITIVE INSIGHTS (Premium only)
 // ═══════════════════════════════════════════════════════
 
-// Competitive insights cache (24h TTL)
-const competitiveCache = new Map();
-const COMPETITIVE_CACHE_TTL = 24 * 60 * 60 * 1000;
-
 router.get("/api/web/portal/:businessId/analytics/competitive",
   requireBusinessOwner, requireFeature('has_competitive_insights'),
   async (req, res) => {
   try {
     const businessId = req.businessId;
 
-    // Check cache
-    const cacheKey = `comp_${businessId}`;
-    const cached = competitiveCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < COMPETITIVE_CACHE_TTL) {
-      return res.json(cached.data);
-    }
-
-    // Get business city_id and category_id
+    // Pre-checks that shouldn't be cached (they may change)
     const bizRes = await pool.query(
       'SELECT city_id, category_id FROM businesses WHERE id = $1',
       [businessId]
@@ -1866,108 +1855,107 @@ router.get("/api/web/portal/:businessId/analytics/competitive",
       });
     }
 
-    // Get YOUR metrics
-    const [myViewsRes, mySubsRes, myOffersRes, myReviewsRes] = await Promise.all([
-      pool.query(
-        `SELECT COUNT(*) as cnt FROM business_views
-         WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '30 days'`,
-        [businessId]
-      ),
-      pool.query(
-        'SELECT COUNT(*) as cnt FROM followed_businesses WHERE business_id = $1',
-        [businessId]
-      ),
-      pool.query(
-        `SELECT COUNT(*) as cnt FROM offers
-         WHERE business_id = $1 AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)`,
-        [businessId]
-      ),
-      pool.query(
-        `SELECT COUNT(*) as review_count, COALESCE(AVG(rating), 0) as avg_rating
-         FROM reviews WHERE business_id = $1`,
-        [businessId]
-      ),
-    ]);
+    // Heavy computation — cached 24h
+    const responseData = await cache.cached(`competitive:${businessId}`, async () => {
+      const [myViewsRes, mySubsRes, myOffersRes, myReviewsRes] = await Promise.all([
+        pool.query(
+          `SELECT COUNT(*) as cnt FROM business_views
+           WHERE business_id = $1 AND viewed_at >= NOW() - INTERVAL '30 days'`,
+          [businessId]
+        ),
+        pool.query(
+          'SELECT COUNT(*) as cnt FROM followed_businesses WHERE business_id = $1',
+          [businessId]
+        ),
+        pool.query(
+          `SELECT COUNT(*) as cnt FROM offers
+           WHERE business_id = $1 AND is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)`,
+          [businessId]
+        ),
+        pool.query(
+          `SELECT COUNT(*) as review_count, COALESCE(AVG(rating), 0) as avg_rating
+           FROM reviews WHERE business_id = $1`,
+          [businessId]
+        ),
+      ]);
 
-    const myMetrics = {
-      views30d: parseInt(myViewsRes.rows[0].cnt) || 0,
-      subscribers: parseInt(mySubsRes.rows[0].cnt) || 0,
-      activeOffers: parseInt(myOffersRes.rows[0].cnt) || 0,
-      avgRating: parseFloat(parseFloat(myReviewsRes.rows[0].avg_rating).toFixed(1)) || 0,
-      reviewCount: parseInt(myReviewsRes.rows[0].review_count) || 0,
-    };
+      const myMetrics = {
+        views30d: parseInt(myViewsRes.rows[0].cnt) || 0,
+        subscribers: parseInt(mySubsRes.rows[0].cnt) || 0,
+        activeOffers: parseInt(myOffersRes.rows[0].cnt) || 0,
+        avgRating: parseFloat(parseFloat(myReviewsRes.rows[0].avg_rating).toFixed(1)) || 0,
+        reviewCount: parseInt(myReviewsRes.rows[0].review_count) || 0,
+      };
 
-    // Get PEER AVERAGES (same city + category, excluding self)
-    const peerRes = await pool.query(`
-      SELECT
-        (SELECT COALESCE(AVG(v_cnt), 0) FROM (
-          SELECT COUNT(*) as v_cnt
-          FROM businesses b2
-          LEFT JOIN business_views bv ON bv.business_id = b2.id
-            AND bv.viewed_at >= NOW() - INTERVAL '30 days'
-          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
-          GROUP BY b2.id
-        ) sub_views) as avg_views_30d,
+      const peerRes = await pool.query(`
+        SELECT
+          (SELECT COALESCE(AVG(v_cnt), 0) FROM (
+            SELECT COUNT(*) as v_cnt
+            FROM businesses b2
+            LEFT JOIN business_views bv ON bv.business_id = b2.id
+              AND bv.viewed_at >= NOW() - INTERVAL '30 days'
+            WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+            GROUP BY b2.id
+          ) sub_views) as avg_views_30d,
 
-        (SELECT COALESCE(AVG(s_cnt), 0) FROM (
-          SELECT COUNT(*) as s_cnt
-          FROM businesses b2
-          LEFT JOIN followed_businesses fb ON fb.business_id = b2.id
-          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
-          GROUP BY b2.id
-        ) sub_subs) as avg_subscribers,
+          (SELECT COALESCE(AVG(s_cnt), 0) FROM (
+            SELECT COUNT(*) as s_cnt
+            FROM businesses b2
+            LEFT JOIN followed_businesses fb ON fb.business_id = b2.id
+            WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+            GROUP BY b2.id
+          ) sub_subs) as avg_subscribers,
 
-        (SELECT COALESCE(AVG(o_cnt), 0) FROM (
-          SELECT COUNT(*) as o_cnt
-          FROM businesses b2
-          LEFT JOIN offers o ON o.business_id = b2.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
-          GROUP BY b2.id
-        ) sub_offers) as avg_active_offers,
+          (SELECT COALESCE(AVG(o_cnt), 0) FROM (
+            SELECT COUNT(*) as o_cnt
+            FROM businesses b2
+            LEFT JOIN offers o ON o.business_id = b2.id AND o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+            WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+            GROUP BY b2.id
+          ) sub_offers) as avg_active_offers,
 
-        (SELECT COALESCE(AVG(b_avg), 0) FROM (
-          SELECT AVG(r.rating) as b_avg
-          FROM businesses b2
-          JOIN reviews r ON r.business_id = b2.id
-          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
-          GROUP BY b2.id
-          HAVING COUNT(r.id) >= 1
-        ) sub_rating) as avg_rating,
+          (SELECT COALESCE(AVG(b_avg), 0) FROM (
+            SELECT AVG(r.rating) as b_avg
+            FROM businesses b2
+            JOIN reviews r ON r.business_id = b2.id
+            WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+            GROUP BY b2.id
+            HAVING COUNT(r.id) >= 1
+          ) sub_rating) as avg_rating,
 
-        (SELECT COALESCE(AVG(r_cnt), 0) FROM (
-          SELECT COUNT(*) as r_cnt
-          FROM businesses b2
-          LEFT JOIN reviews r ON r.business_id = b2.id
-          WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
-          GROUP BY b2.id
-        ) sub_review_count) as avg_review_count
-    `, [city_id, category_id, businessId]);
+          (SELECT COALESCE(AVG(r_cnt), 0) FROM (
+            SELECT COUNT(*) as r_cnt
+            FROM businesses b2
+            LEFT JOIN reviews r ON r.business_id = b2.id
+            WHERE b2.city_id = $1 AND b2.category_id = $2 AND b2.id != $3
+            GROUP BY b2.id
+          ) sub_review_count) as avg_review_count
+      `, [city_id, category_id, businessId]);
 
-    const peer = peerRes.rows[0];
-    const peerAvg = {
-      views30d: parseFloat(parseFloat(peer.avg_views_30d).toFixed(1)),
-      subscribers: parseFloat(parseFloat(peer.avg_subscribers).toFixed(1)),
-      activeOffers: parseFloat(parseFloat(peer.avg_active_offers).toFixed(1)),
-      avgRating: parseFloat(parseFloat(peer.avg_rating).toFixed(1)),
-      reviewCount: parseFloat(parseFloat(peer.avg_review_count).toFixed(1)),
-    };
+      const peer = peerRes.rows[0];
+      const peerAvg = {
+        views30d: parseFloat(parseFloat(peer.avg_views_30d).toFixed(1)),
+        subscribers: parseFloat(parseFloat(peer.avg_subscribers).toFixed(1)),
+        activeOffers: parseFloat(parseFloat(peer.avg_active_offers).toFixed(1)),
+        avgRating: parseFloat(parseFloat(peer.avg_rating).toFixed(1)),
+        reviewCount: parseFloat(parseFloat(peer.avg_review_count).toFixed(1)),
+      };
 
-    // Calculate percentage differences
-    function pctDiff(mine, avg) {
-      if (avg === 0) return mine > 0 ? 100 : 0;
-      return Math.round(((mine - avg) / avg) * 100);
-    }
+      function pctDiff(mine, avg) {
+        if (avg === 0) return mine > 0 ? 100 : 0;
+        return Math.round(((mine - avg) / avg) * 100);
+      }
 
-    const insights = [
-      { metric: 'Vizualizari (30 zile)', yours: myMetrics.views30d, categoryAvg: peerAvg.views30d, diff: pctDiff(myMetrics.views30d, peerAvg.views30d) },
-      { metric: 'Abonati', yours: myMetrics.subscribers, categoryAvg: peerAvg.subscribers, diff: pctDiff(myMetrics.subscribers, peerAvg.subscribers) },
-      { metric: 'Oferte active', yours: myMetrics.activeOffers, categoryAvg: peerAvg.activeOffers, diff: pctDiff(myMetrics.activeOffers, peerAvg.activeOffers) },
-      { metric: 'Rating', yours: myMetrics.avgRating, categoryAvg: peerAvg.avgRating, diff: pctDiff(myMetrics.avgRating, peerAvg.avgRating) },
-      { metric: 'Recenzii', yours: myMetrics.reviewCount, categoryAvg: peerAvg.reviewCount, diff: pctDiff(myMetrics.reviewCount, peerAvg.reviewCount) },
-    ];
+      const insights = [
+        { metric: 'Vizualizari (30 zile)', yours: myMetrics.views30d, categoryAvg: peerAvg.views30d, diff: pctDiff(myMetrics.views30d, peerAvg.views30d) },
+        { metric: 'Abonati', yours: myMetrics.subscribers, categoryAvg: peerAvg.subscribers, diff: pctDiff(myMetrics.subscribers, peerAvg.subscribers) },
+        { metric: 'Oferte active', yours: myMetrics.activeOffers, categoryAvg: peerAvg.activeOffers, diff: pctDiff(myMetrics.activeOffers, peerAvg.activeOffers) },
+        { metric: 'Rating', yours: myMetrics.avgRating, categoryAvg: peerAvg.avgRating, diff: pctDiff(myMetrics.avgRating, peerAvg.avgRating) },
+        { metric: 'Recenzii', yours: myMetrics.reviewCount, categoryAvg: peerAvg.reviewCount, diff: pctDiff(myMetrics.reviewCount, peerAvg.reviewCount) },
+      ];
 
-    const responseData = { available: true, peersCount, insights };
-    competitiveCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+      return { available: true, peersCount, insights };
+    }, { ttl: 86400, groups: ['businesses'] });
     res.json(responseData);
 
   } catch (err) {
