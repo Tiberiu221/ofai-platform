@@ -32,8 +32,16 @@
     <canvas id="chart-tier-dist" height="200"></canvas>
   </div>
   <div class="a-card">
-    <h3 style="margin-bottom: 12px;">Status Subscripții</h3>
+    <h3 style="margin-bottom: 12px;">Free vs Plătitori</h3>
     <canvas id="chart-sub-status" height="200"></canvas>
+    <div style="margin-top: 12px;">
+      <% data.revenue.tierDist.forEach(function(t) { %>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
+          <span><%= t.name %></span>
+          <span style="font-weight: 600;"><%= t.cnt %></span>
+        </div>
+      <% }); %>
+    </div>
   </div>
 </div>
 
@@ -168,14 +176,14 @@
     options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
   });
 
-  // Subscription Status (Doughnut)
-  var statusData = <%- JSON.stringify(data.subscriptions.statusCounts) %>;
-  var statusColors = { active: '#22c55e', trial: '#3b82f6', past_due: '#f59e0b', cancelled: '#ef4444', expired: '#71717a' };
+  // Free vs Paid (Doughnut) — uses tier data, grouping standard+premium as "Plătitori"
+  var freeCount = 0, paidCount = 0;
+  tierData.forEach(function(t) { if (t.slug === 'free') freeCount += parseInt(t.cnt); else paidCount += parseInt(t.cnt); });
   new Chart(document.getElementById('chart-sub-status'), {
     type: 'doughnut',
     data: {
-      labels: statusData.map(function(s) { return s.status; }),
-      datasets: [{ data: statusData.map(function(s) { return parseInt(s.cnt); }), backgroundColor: statusData.map(function(s) { return statusColors[s.status] || '#71717a'; }) }]
+      labels: ['Gratuit', 'Plătitori'],
+      datasets: [{ data: [freeCount, paidCount], backgroundColor: ['#71717a', '#22c55e'] }]
     },
     options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
   });
