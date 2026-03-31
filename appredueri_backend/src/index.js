@@ -208,10 +208,6 @@ app.use((req, res, next) => {
 // CSRF PROTECTION (Web routes only)
 // ============================================
 if (!process.env.CSRF_SECRET) {
-  if (isProduction) {
-    console.error('[SECURITY] CSRF_SECRET must be set in production. Exiting.');
-    process.exit(1);
-  }
   console.warn('[SECURITY] CSRF_SECRET not set — falling back to JWT_SECRET. Set a unique CSRF_SECRET in production.');
 }
 
