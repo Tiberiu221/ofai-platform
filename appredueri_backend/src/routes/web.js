@@ -14,6 +14,7 @@ const { optionalWebAuth, requireWebAuth } = require("../middleware/webAuth");
 const { requireBusinessOwner } = require("../middleware/businessWebAuth");
 const { attachTier } = require('../middleware/tierAuth');
 const { clickLimiter, revealLimiter } = require("../middleware/rateLimiter");
+const { getActionLabel, getBookingHref, getPlatform } = require('../helpers/bookingPlatforms');
 
 // Apply optional auth to ALL web routes
 router.use(optionalWebAuth);
@@ -67,7 +68,7 @@ router.get('/sitemap.xml', async (req, res) => {
         "SELECT id, start_date::date as lastmod FROM offers WHERE is_active = true AND moderation_status IN ('approved', 'auto_approved') AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
       ),
       pool.query(
-        "SELECT id FROM businesses ORDER BY id DESC LIMIT 5000"
+        "SELECT id, COALESCE(updated_at, created_at)::date as lastmod FROM businesses WHERE is_active IS NOT FALSE ORDER BY id DESC LIMIT 5000"
       ),
       pool.query(
         "SELECT slug, COALESCE(updated_at, published_at)::date as lastmod FROM blog_posts WHERE is_published = true ORDER BY published_at DESC LIMIT 1000"
@@ -83,7 +84,7 @@ router.get('/sitemap.xml', async (req, res) => {
       xml += `\n  <url>\n    <loc>${BASE}/oferta/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
     }
     for (const row of businesses.rows) {
-      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
     }
     for (const row of blogPosts.rows) {
       xml += `\n  <url>\n    <loc>${BASE}/blog/${row.slug}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
@@ -1029,7 +1030,6 @@ router.get("/oferta/:id", async (req, res) => {
     };
 
     // Load multi-platform booking methods (offer-level override > business-level fallback)
-    const { getActionLabel, getBookingHref, getPlatform } = require('../helpers/bookingPlatforms');
     const mapBM = (rows) => rows.map(m => ({
       ...m,
       actionLabel: getActionLabel(m, req.language || 'ro'),
@@ -1532,17 +1532,16 @@ router.get("/business/:id", async (req, res) => {
     }
 
     // Load multi-platform booking methods
-    const { getActionLabel: getBAL, getBookingHref: getBH, getPlatform: getP } = require('../helpers/bookingPlatforms');
     const bmBizRes = await pool.query(
       "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
       [id]
     );
     business.bookingMethods = bmBizRes.rows.map(m => ({
       ...m,
-      actionLabel: getBAL(m, req.language || 'ro'),
-      href: getBH(m),
-      color: (getP(m.platform) || {}).color || '#a1a1aa',
-      type: (getP(m.platform) || {}).type || 'url',
+      actionLabel: getActionLabel(m, req.language || 'ro'),
+      href: getBookingHref(m),
+      color: (getPlatform(m.platform) || {}).color || '#a1a1aa',
+      type: (getPlatform(m.platform) || {}).type || 'url',
     }));
 
     res.render("public/business-detail", {
@@ -2576,7 +2575,7 @@ router.get('/preturi', async (req, res) => {
     });
   } catch (err) {
     console.error('[Web] Pricing page error:', err);
-    res.status(500).send('Eroare la incarcarea paginii de preturi.');
+    res.status(500).render("public/500", { activePage: null, webUser: req.webUser || null, noIndex: true });
   }
 });
 

@@ -1920,7 +1920,7 @@
     var planName = planSlug === 'standard' ? 'Standard' : 'Premium';
     var isCycleSwitch = planSlug === _currentBillingCycle.replace('monthly','').replace('yearly','') ? false : false;
     // Detect cycle-only switch (same plan, different cycle)
-    var currentTierSlug = document.querySelector('#subscription-content h3 span')?.textContent?.toLowerCase() || '';
+    var currentTierSlug = _serverTier ? _serverTier.tier : 'free';
     var isSamePlan = (planSlug === 'standard' && currentTierSlug === 'standard') || (planSlug === 'premium' && currentTierSlug === 'premium');
     var isUpgrade = planSlug === 'premium' && !isSamePlan;
 

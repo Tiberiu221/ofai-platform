@@ -266,7 +266,14 @@ router.put("/api/web/portal/:businessId/booking-methods", requireBusinessOwner, 
         return res.status(400).json({ message: `Valoare lipsă pentru ${m.platform}` });
       }
       if (value.length > 500) {
-        return res.status(400).json({ message: `Valoare prea lungă pentru ${m.platform}` });
+        return res.status(400).json({ message: "Valoare prea lungă" });
+      }
+      // Validate URL format for URL-type platforms
+      const platformDef = PLATFORMS.find(p => p.slug === m.platform);
+      if (platformDef && platformDef.type === 'url') {
+        if (!/^(https?:\/\/)?([\w\-\.]+\.)+[\w\-]{2,}/.test(value)) {
+          return res.status(400).json({ message: "Format URL invalid" });
+        }
       }
       const label = m.platform === 'other' ? (m.platform_label || '').trim().slice(0, 100) || null : null;
       validated.push({ platform: m.platform, platform_label: label, value, sort_order: i });
@@ -341,8 +348,12 @@ router.put("/api/web/portal/:businessId/offers/:offerId/booking-methods", requir
       const m = methods[i];
       if (!m.platform || !isValidPlatform(m.platform)) return res.status(400).json({ message: "Platformă invalidă" });
       const value = (m.value || '').trim();
-      if (!value) return res.status(400).json({ message: `Valoare lipsă pentru ${m.platform}` });
-      if (value.length > 500) return res.status(400).json({ message: `Valoare prea lungă` });
+      if (!value) return res.status(400).json({ message: "Valoare lipsă" });
+      if (value.length > 500) return res.status(400).json({ message: "Valoare prea lungă" });
+      const platformDef2 = PLATFORMS.find(p => p.slug === m.platform);
+      if (platformDef2 && platformDef2.type === 'url' && !/^(https?:\/\/)?([\w\-\.]+\.)+[\w\-]{2,}/.test(value)) {
+        return res.status(400).json({ message: "Format URL invalid" });
+      }
       const label = m.platform === 'other' ? (m.platform_label || '').trim().slice(0, 100) || null : null;
       validated.push({ platform: m.platform, platform_label: label, value, sort_order: i });
     }

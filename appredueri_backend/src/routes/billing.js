@@ -625,7 +625,7 @@ async function handleSubscriptionUpdated(subscription) {
     cache.del(`tier:biz:${local.business_id}`);
     console.log(`[Billing] Subscription ${action}: business ${local.business_id}, ${local.current_slug} -> ${newPlan.slug}`);
 
-    if (newPlan.slug === 'premium') {
+    if (newPlan.slug === 'premium' || newPlan.slug === 'standard') {
       sendUpgradeEmails(local.business_id, newPlan).catch(err =>
         console.error('[Billing] Upgrade email error:', err.message)
       );

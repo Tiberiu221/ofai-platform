@@ -1510,13 +1510,26 @@
           bmMethods.push({ platform: p.slug, value: val, platform_label: labelInput ? labelInput.value.trim() : null });
         });
         try {
-          await fetch('/api/web/portal/' + businessId + '/offers/' + savedOfferId + '/booking-methods', {
+          var bmRes = await fetch('/api/web/portal/' + businessId + '/offers/' + savedOfferId + '/booking-methods', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfVal },
             credentials: 'same-origin',
             body: JSON.stringify({ methods: bmMethods })
           });
-        } catch (_bmErr) { console.error('[Booking] Save offer methods error:', _bmErr); }
+          if (!bmRes.ok) {
+            var bmData = await bmRes.json().catch(function() { return {}; });
+            showMessage('Eroare la salvarea metodelor de rezervare: ' + (bmData.message || 'Eroare necunoscută'), 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Salvează';
+            return;
+          }
+        } catch (_bmErr) {
+          console.error('[Booking] Save offer methods error:', _bmErr);
+          showMessage('Eroare la salvarea metodelor de rezervare.', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Salvează';
+          return;
+        }
       } else if (_ofBmMode === 'inherit' && savedOfferId) {
         // Clear any existing custom methods (revert to inherit)
         try {

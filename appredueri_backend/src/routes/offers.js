@@ -5,6 +5,7 @@ const auth = require("../middleware/auth");
 const { optionalAuth } = require("../middleware/auth");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
 const { revealLimiter, searchLimiter } = require("../middleware/rateLimiter");
+const { getActionLabel: getOfBMLabel, getBookingHref: getOfBMHref, getPlatform: getOfBMP } = require('../helpers/bookingPlatforms');
 
 // ==============================
 // Helper: Construire URL absolut
@@ -874,7 +875,6 @@ router.get("/:id", async (req, res) => {
     }));
 
     // 5. Multi-platform booking methods (offer-level override > business-level fallback)
-    const { getActionLabel: getOfBMLabel, getBookingHref: getOfBMHref, getPlatform: getOfBMP } = require('../helpers/bookingPlatforms');
     const mapOfBM = (rows) => rows.map(m => ({
       platform: m.platform,
       platform_label: m.platform_label || null,
@@ -884,21 +884,12 @@ router.get("/:id", async (req, res) => {
       color: (getOfBMP(m.platform) || {}).color || '#a1a1aa',
       type: (getOfBMP(m.platform) || {}).type || 'url',
     }));
-    // Check offer-specific first
-    const offerOwnBm = await pool.query(
-      "SELECT platform, platform_label, value FROM offer_booking_methods WHERE offer_id = $1 ORDER BY sort_order, id",
-      [id]
-    );
-    let offerBookingMethods;
-    if (offerOwnBm.rows.length > 0) {
-      offerBookingMethods = mapOfBM(offerOwnBm.rows);
-    } else {
-      const bizBm = await pool.query(
-        "SELECT platform, platform_label, value FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
-        [row.business_id]
-      );
-      offerBookingMethods = mapOfBM(bizBm.rows);
-    }
+    // Parallel fetch: offer-specific + business-level (use offer if has rows, else business)
+    const [offerOwnBm, bizBm] = await Promise.all([
+      pool.query("SELECT platform, platform_label, value FROM offer_booking_methods WHERE offer_id = $1 ORDER BY sort_order, id", [id]),
+      pool.query("SELECT platform, platform_label, value FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id", [row.business_id]),
+    ]);
+    const offerBookingMethods = mapOfBM(offerOwnBm.rows.length > 0 ? offerOwnBm.rows : bizBm.rows);
 
     const avg = parseFloat(row.rating_avg || 0);
     const count = parseInt(row.rating_count || 0);

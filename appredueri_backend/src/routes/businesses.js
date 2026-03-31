@@ -4,6 +4,7 @@ const pool = require("../db");
 const { optionalAuth } = require("../middleware/auth");
 const { getExistingSummary, getSummary, canSummarize } = require("../services/llm/summarizationService");
 const { parsePagination, paginatedResponse } = require("../helpers/validate");
+const { getActionLabel: getBMLabel, getBookingHref: getBMHref, getPlatform: getBMP } = require('../helpers/bookingPlatforms');
 
 // helper ca în offers.js
 function makeAbsoluteUrl(base, maybeUrl) {
@@ -347,7 +348,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
     }
 
     // 3c. Multi-platform booking methods
-    const { getActionLabel: getBMLabel, getBookingHref: getBMHref, getPlatform: getBMP } = require('../helpers/bookingPlatforms');
+    // Booking methods (helper already imported at top of file)
     const bmResult = await pool.query(
       "SELECT platform, platform_label, value, sort_order FROM business_booking_methods WHERE business_id = $1 ORDER BY sort_order, id",
       [id]
