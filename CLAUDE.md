@@ -138,6 +138,11 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **i18n Flutter:** Use `AppLocalizations.of(context)!.key` to access translations. Import `package:flutter_gen/gen_l10n/app_localizations.dart`. Run `flutter gen-l10n` after modifying ARB files.
 - **Service Worker:** `sw.js` in `src/public/` — never cache API/auth/billing paths. Update `CACHE_NAME` version when changing cached assets.
 - **Search helper:** `buildFuzzySearch(columns, paramIdx)` in `src/helpers/search.js` — apply `similarity: true` only on short columns (title, name), NOT on description (too noisy for trigrams)
+- **businesses.is_active:** Column does NOT exist on `businesses` table. Do NOT use in WHERE clauses. Use subscription status or offer counts to determine activity.
+- **offers.updated_at:** Column does NOT exist. Use `created_at` or `start_date` instead.
+- **review_responses.responded_by:** Column missing from migrations but referenced in INSERT code — will crash on review response submit
+- **Admin pages + CSP nonce:** Admin templates use `layout-top.ejs` (not `partials/head.ejs`). Inline `<script>` tags in admin MUST include `nonce="<%= cspNonce %>"` — `cspNonce` is available via `res.locals`
+- **Multi-platform booking:** `bookingPlatforms.js` has 14 platforms. Portal uses `initBookingMethods()` — must be called AFTER function definition (was bug: called before). Offer form uses `of-input` class (not `form-input` — portal.css not loaded on offer form)
 
 ## Language
 - UI text and user-facing strings: Romanian
@@ -170,6 +175,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - AI review summaries, location management
 - **Email Logs** — `/admin/emails` with filters per type/status, stats, env toggle visibility
 - **Blog CMS** — `/admin/blog` list/create/edit/delete/toggle-publish, Cloudinary images, SEO fields
+- **Analytics Dashboard** — `/admin/analytics` with Chart.js: MRR/ARR/churn, tier distribution, Free vs Paid, subscription history, user signups, business health, email engagement (cached 15min)
 
 ### Features — Implemented
 - **Opening Hours:** Per-location schedules, 24h select dropdowns, consumer Deschis/Închis badge
@@ -247,6 +253,10 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Email Audit Logging:** All 12 email types now use `logEmail()` for admin dashboard visibility
 - **LLM Prompt Injection:** Complete `[USER_INPUT]` fencing on all 5 LLM services (~20 fields)
 - **Onboarding UX:** Explanatory subtitles on city/category selection steps
+- **Multi-Platform Booking:** 14 platforms (Telefon, WhatsApp, Booksy, Fresha, Airbnb, Booking.com, Calendly, Google, Treatwell, Planfy, Setmore, SimplyBook, Website propriu, Altul). Multi-select on business portal + offer form with inherit/custom toggle. Consumer branded buttons with platform colors. Migration 074 + 075.
+- **Admin Analytics Dashboard:** `/admin/analytics` with Chart.js — MRR/ARR/churn cards, tier distribution doughnut, Free vs Paid breakdown, subscription history bar, user signups line chart, business health, email engagement. Cached 15min.
+- **Web Auth Rate Limiting:** POST /login, /register, /forgot-password, /verify-code, /reset-password all rate-limited
+- **Password Reset Web Flow:** GET /verify-code route + verify-code.ejs template for complete web password reset
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
