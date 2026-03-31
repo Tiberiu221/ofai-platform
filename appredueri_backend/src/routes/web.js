@@ -63,7 +63,7 @@ async function _getDealOfDay() {
 }
 
 async function _getFeaturedOffers(userPrefs, dealOfDay) {
-  const where = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"];
+  const where = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)", "o.moderation_status IN ('approved', 'auto_approved')"];
   const params = [];
   let paramIdx = 1;
   if (userPrefs.city_ids && userPrefs.city_ids.length > 0) {
@@ -358,7 +358,7 @@ router.get("/oferte", async (req, res) => {
     const selectedCity = req.query.city || null;
     const sort = req.query.sort || "newest";
 
-    const conditions = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)"];
+    const conditions = ["o.is_active = true", "(o.end_date IS NULL OR o.end_date >= CURRENT_DATE)", "o.moderation_status IN ('approved', 'auto_approved')"];
     const params = [];
     let paramIdx = 1;
 
@@ -818,7 +818,7 @@ router.get("/oferta/:id", async (req, res) => {
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN cities c ON b.city_id = c.id
       LEFT JOIN categories cat ON b.category_id = cat.id
-      WHERE o.id = $1
+      WHERE o.id = $1 AND o.is_active = true AND o.moderation_status IN ('approved', 'auto_approved')
     `, [id]);
 
     if (result.rows.length === 0) {

@@ -13,6 +13,7 @@ const { attachTier, requireFeature, requireLimit } = require("../middleware/tier
 const { countActiveOffers, countGalleryImages } = require("../helpers/tiers");
 const { generateReviewSuggestions } = require("../services/llm/reviewSuggestions");
 const { formatError } = require("../services/llm/anthropicClient");
+const { cancelSubscription } = require("../services/subscriptionService");
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage pentru Cloudinary)
@@ -627,11 +628,11 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
 
     const result = await offerService.createOffer(pool, {
       businessId: parseInt(businessId),
-      title: title,
-      description: description,
+      title: sanitizeString(title, 200),
+      description: sanitizeString(description, 2000),
       discountType: discount_type,
       discountValue: discount_value ? Number(discount_value) : null,
-      conditions: conditions,
+      conditions: sanitizeString(conditions, 2000),
       startDate: start_date,
       endDate: end_date,
       isActive: is_active === 'true' || is_active === true,
@@ -640,7 +641,7 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
       bookingPhone: booking_phone,
       bookingWhatsapp: booking_whatsapp,
       bookingUrl: booking_url,
-      bookingInstructions: booking_instructions,
+      bookingInstructions: sanitizeString(booking_instructions, 500),
       promoCodes: sanitizedPromoCodes,
       maxReveals: max_reveals ? parseInt(max_reveals) : null,
       redemptionMethod: redemption_method === 'auto' ? null : (redemption_method || null),
@@ -649,6 +650,22 @@ router.post("/:businessId/offers", businessAuth, requireLimit('max_active_offers
     });
 
     console.log("[BusinessPortal] Offer created with ID:", result.offerId, "moderation:", result.moderationStatus);
+
+    // Sync offer_locations (matching web-portal-api.js pattern)
+    let parsedLocationIds = locationIds;
+    if (typeof parsedLocationIds === 'string') { try { parsedLocationIds = JSON.parse(parsedLocationIds); } catch(e) { parsedLocationIds = null; } }
+    if (Array.isArray(parsedLocationIds) && parsedLocationIds.length > 0) {
+      const locResult = await pool.query(
+        'SELECT id FROM business_locations WHERE business_id = $1 AND id = ANY($2)',
+        [businessId, parsedLocationIds.map(id => parseInt(id, 10)).filter(id => Number.isInteger(id))]
+      );
+      for (const loc of locResult.rows) {
+        await pool.query(
+          'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [result.offerId, loc.id]
+        );
+      }
+    }
 
     cache.invalidateGroup('offers'); cache.invalidateGroup('homepage');
     res.json({
@@ -737,11 +754,11 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
 
     if (title !== undefined) {
       updates.push(`title = $${paramIndex++}`);
-      values.push(title);
+      values.push(sanitizeString(title, 200));
     }
     if (description !== undefined) {
       updates.push(`description = $${paramIndex++}`);
-      values.push(description || null);
+      values.push(sanitizeString(description, 2000) || null);
     }
     if (discount_type !== undefined) {
       updates.push(`discount_type = $${paramIndex++}`);
@@ -753,7 +770,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     }
     if (conditions !== undefined) {
       updates.push(`conditions = $${paramIndex++}`);
-      values.push(conditions || null);
+      values.push(sanitizeString(conditions, 2000) || null);
     }
     if (start_date !== undefined) {
       updates.push(`start_date = $${paramIndex++}`);
@@ -790,7 +807,7 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
     }
     if (booking_instructions !== undefined) {
       updates.push(`booking_instructions = $${paramIndex++}`);
-      values.push(booking_instructions || null);
+      values.push(sanitizeString(booking_instructions, 500) || null);
     }
     if (max_reveals !== undefined) {
       updates.push(`max_reveals = $${paramIndex++}`);
@@ -911,6 +928,26 @@ router.put("/:businessId/offers/:offerId", businessAuth, upload.single("image"),
       throw txErr;
     } finally {
       client.release();
+    }
+
+    // Sync offer_locations (outside transaction, matching web-portal-api.js pattern)
+    if (Array.isArray(locationIds)) {
+      await pool.query('DELETE FROM offer_locations WHERE offer_id = $1', [offerId]);
+      if (locationIds.length > 0) {
+        const validLocs = await pool.query(
+          'SELECT id FROM business_locations WHERE business_id = $1 AND id = ANY($2)',
+          [businessId, locationIds.map(id => parseInt(id, 10)).filter(id => Number.isInteger(id))]
+        );
+        const validIds = new Set(validLocs.rows.map(r => r.id));
+        for (const locId of locationIds) {
+          if (validIds.has(parseInt(locId, 10))) {
+            await pool.query(
+              'INSERT INTO offer_locations (offer_id, location_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+              [offerId, parseInt(locId, 10)]
+            );
+          }
+        }
+      }
     }
 
     console.log("[BusinessPortal] Offer updated successfully — reset to pending_review");
@@ -1671,7 +1708,6 @@ router.get(
 router.post('/:businessId/subscription/cancel', businessAuth, async (req, res) => {
   try {
     const businessId = parseInt(req.params.businessId);
-    const { cancelSubscription } = require('../services/subscriptionService');
     const result = await cancelSubscription(pool, businessId, 'mobile');
 
     if (!result.success) {

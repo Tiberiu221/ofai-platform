@@ -16,8 +16,20 @@ const {
   getLatestValidReviewId
 } = require("../services/llm/summarizationService");
 const { sendBusinessApprovedEmail, sendBusinessRejectedEmail, sendOfferApprovedEmail, sendOfferRejectedEmail } = require("../services/email");
+const sanitizeHtml = require("sanitize-html");
 const { parsePagination, createImageFilter } = require("../helpers/validate");
 const { getBusinessTier, countLocations, syncBadgeType } = require("../helpers/tiers");
+
+const BLOG_ALLOWED_TAGS = ['p','br','strong','em','ul','ol','li','h2','h3','h4','a','img','blockquote','code','pre','table','thead','tbody','tr','th','td','figure','figcaption','span','div','hr'];
+const BLOG_SANITIZE_OPTS = {
+  allowedTags: BLOG_ALLOWED_TAGS,
+  allowedAttributes: { a: ['href','target','rel'], img: ['src','alt','loading','width','height'], span: ['class'], div: ['class'] },
+  allowedSchemes: ['https','http'],
+};
+
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 // =====================================
 //   CONFIG UPLOADS (Memory Storage → Cloudinary)
@@ -2373,13 +2385,13 @@ router.get("/onboarding", async (req, res) => {
       const attachments = typeof r.attachments === 'string' ? JSON.parse(r.attachments) : (r.attachments || []);
       html += `<div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div><strong>${r.business_name}</strong> (#${r.business_id})</div>
-          <span class="badge" style="background:${color}20;color:${color}">${r.status}</span>
+          <div><strong>${escHtml(r.business_name)}</strong> (#${r.business_id})</div>
+          <span class="badge" style="background:${color}20;color:${color}">${escHtml(r.status)}</span>
         </div>
-        <div class="meta">${typeLabels[r.request_type] || r.request_type} · ${r.first_name} ${r.last_name} (${r.requester_email}) · ${new Date(r.created_at).toLocaleString('ro-RO')}</div>
-        ${r.message ? `<div class="msg">${r.message.replace(/</g, '&lt;')}</div>` : ''}
-        ${attachments.length > 0 ? '<div style="margin-top:8px">' + attachments.map(a => `<a class="att" href="${a.url}" target="_blank">${(a.name || 'fișier').replace(/</g, '&lt;')}</a>`).join('') + '</div>' : ''}
-        ${r.admin_notes ? `<div class="meta" style="margin-top:8px"><strong>Note admin:</strong> ${r.admin_notes.replace(/</g, '&lt;')}</div>` : ''}
+        <div class="meta">${typeLabels[r.request_type] || escHtml(r.request_type)} · ${escHtml(r.first_name)} ${escHtml(r.last_name)} (${escHtml(r.requester_email)}) · ${new Date(r.created_at).toLocaleString('ro-RO')}</div>
+        ${r.message ? `<div class="msg">${escHtml(r.message)}</div>` : ''}
+        ${attachments.length > 0 ? '<div style="margin-top:8px">' + attachments.map(a => `<a class="att" href="${escHtml(a.url)}" target="_blank">${escHtml(a.name || 'fișier')}</a>`).join('') + '</div>' : ''}
+        ${r.admin_notes ? `<div class="meta" style="margin-top:8px"><strong>Note admin:</strong> ${escHtml(r.admin_notes)}</div>` : ''}
         <div class="actions">
           ${r.status === 'pending' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="in_progress"><button class="btn btn-blue" type="submit">Marchează în lucru</button></form>` : ''}
           ${r.status === 'in_progress' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="completed"><button class="btn btn-green" type="submit">Finalizează</button></form>` : ''}
@@ -2663,11 +2675,12 @@ router.post("/blog/new", upload.single("image"), async (req, res) => {
     }
 
     const published = is_published === 'on' || is_published === 'true';
+    const safeContent = sanitizeHtml(content || '', BLOG_SANITIZE_OPTS);
 
     await pool.query(`
       INSERT INTO blog_posts (slug, title, excerpt, content, image_url, category_id, author_name, meta_title, meta_description, is_published, published_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    `, [slug, title, excerpt || null, content, image_url, category_id || null, author_name || 'Echipa OFAI',
+    `, [slug, title, excerpt || null, safeContent, image_url, category_id || null, author_name || 'Echipa OFAI',
         meta_title || null, meta_description || null, published, published ? new Date() : null]);
 
     cache.invalidateGroup('blog');
@@ -2725,12 +2738,13 @@ router.post("/blog/:id/edit", upload.single("image"), async (req, res) => {
 
     const published = is_published === 'on' || is_published === 'true';
     const publishedAt = published && !current.published_at ? new Date() : current.published_at;
+    const safeContent = sanitizeHtml(content || '', BLOG_SANITIZE_OPTS);
 
     await pool.query(`
       UPDATE blog_posts SET slug=$1, title=$2, excerpt=$3, content=$4, image_url=$5, category_id=$6,
         author_name=$7, meta_title=$8, meta_description=$9, is_published=$10, published_at=$11, updated_at=NOW()
       WHERE id=$12
-    `, [slug, title, excerpt || null, content, image_url, category_id || null, author_name || 'Echipa OFAI',
+    `, [slug, title, excerpt || null, safeContent, image_url, category_id || null, author_name || 'Echipa OFAI',
         meta_title || null, meta_description || null, published, publishedAt, id]);
 
     cache.invalidateGroup('blog');
