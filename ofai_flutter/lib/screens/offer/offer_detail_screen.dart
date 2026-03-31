@@ -57,6 +57,7 @@ class OfferDetailScreen extends ConsumerWidget {
           final startDate = offer.startDate != null ? DateTime.tryParse(offer.startDate!) : null;
           final endDate = offer.endDate != null ? DateTime.tryParse(offer.endDate!) : null;
           final booking = offer.booking;
+          final hasAnyBooking = (booking != null && booking.hasBooking) || (offer.bookingMethods?.isNotEmpty == true);
 
           return Stack(
             children: [
@@ -818,7 +819,7 @@ class OfferDetailScreen extends ConsumerWidget {
                   // Bottom padding for FAB + booking bar
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: booking != null && booking.hasBooking ? 160 : 100,
+                      height: hasAnyBooking ? 160 : 100,
                     ),
                   ),
                 ],
@@ -826,7 +827,7 @@ class OfferDetailScreen extends ConsumerWidget {
               ),
 
               // Sticky booking CTA bar
-              if (booking != null && booking.hasBooking)
+              if (hasAnyBooking)
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -856,7 +857,7 @@ class OfferDetailScreen extends ConsumerWidget {
               // Favorite FAB with bounce animation
               if (isLoggedIn)
                 Positioned(
-                  bottom: booking != null && booking.hasBooking
+                  bottom: hasAnyBooking
                       ? MediaQuery.of(context).padding.bottom + AppSpacing.md + 6
                       : AppSpacing.xxl,
                   right: AppSpacing.pagePadding,

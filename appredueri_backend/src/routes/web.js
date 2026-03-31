@@ -392,8 +392,8 @@ router.get("/", async (req, res) => {
 
     // Preferred city name for banner
     let preferredCityName = null;
-    if (userPrefs.city_id) {
-      const cityName = citiesResult.rows.find(c => c.id === userPrefs.city_id);
+    if (userPrefs.city_ids && userPrefs.city_ids.length > 0) {
+      const cityName = citiesResult.rows.find(c => c.id === userPrefs.city_ids[0]);
       preferredCityName = cityName ? cityName.name : null;
     }
 
@@ -408,7 +408,7 @@ router.get("/", async (req, res) => {
       topBusinesses: topBizResult.rows,
       followedOffers,
       preferredCityName,
-      hasPreferences: !!(userPrefs.city_id || userPrefs.category_ids.length > 0),
+      hasPreferences: !!((userPrefs.city_ids && userPrefs.city_ids.length > 0) || userPrefs.category_ids.length > 0),
       userFavoriteIds,
       userFollowedIds,
       activePage: "home",

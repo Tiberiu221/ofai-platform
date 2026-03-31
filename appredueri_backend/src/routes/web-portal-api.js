@@ -259,7 +259,7 @@ router.put("/api/web/portal/:businessId/booking-methods", requireBusinessOwner, 
     for (let i = 0; i < methods.length; i++) {
       const m = methods[i];
       if (!m.platform || !isValidPlatform(m.platform)) {
-        return res.status(400).json({ message: `Platformă invalidă: ${m.platform}` });
+        return res.status(400).json({ message: "Platformă invalidă" });
       }
       const value = (m.value || '').trim();
       if (!value) {
@@ -339,7 +339,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId/booking-methods", requir
     const validated = [];
     for (let i = 0; i < methods.length; i++) {
       const m = methods[i];
-      if (!m.platform || !isValidPlatform(m.platform)) return res.status(400).json({ message: `Platformă invalidă: ${m.platform}` });
+      if (!m.platform || !isValidPlatform(m.platform)) return res.status(400).json({ message: "Platformă invalidă" });
       const value = (m.value || '').trim();
       if (!value) return res.status(400).json({ message: `Valoare lipsă pentru ${m.platform}` });
       if (value.length > 500) return res.status(400).json({ message: `Valoare prea lungă` });

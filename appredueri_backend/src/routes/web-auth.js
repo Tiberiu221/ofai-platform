@@ -11,7 +11,7 @@ const pool = require("../db");
 const { signToken, generateRefreshToken } = require("../helpers/jwt");
 const { sendWelcomeEmail, sendPasswordResetEmail } = require("../services/email");
 const { triggerWebhook } = require("../services/n8n");
-const { validatePassword } = require("../helpers/validate");
+const { validatePassword, isValidEmail, sanitizeString } = require("../helpers/validate");
 const { OAuth2Client } = require("google-auth-library");
 const { SALT_ROUNDS } = require("./web-shared");
 
@@ -129,10 +129,20 @@ router.post("/login", async (req, res) => {
 // POST /register
 router.post("/register", async (req, res) => {
   try {
-    const { email, password, first_name, last_name, accept_terms, accept_privacy } = req.body || {};
+    const { email, password, accept_terms, accept_privacy } = req.body || {};
+    let { first_name, last_name } = req.body || {};
     if (!email || !password) {
       return res.status(400).json({ message: "Email si parola sunt obligatorii" });
     }
+
+    // Email format validation
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Format email invalid" });
+    }
+
+    // Sanitize name fields (max 100 chars)
+    first_name = sanitizeString(first_name, 100);
+    last_name = sanitizeString(last_name, 100);
 
     // Password strength validation
     const pwdCheck = validatePassword(password);
