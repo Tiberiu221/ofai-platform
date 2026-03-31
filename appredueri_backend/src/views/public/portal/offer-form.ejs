@@ -257,6 +257,27 @@
     display: block;
   }
 
+  /* Multi-platform booking grid (reused from portal) */
+  #of-booking-platforms-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 768px) { #of-booking-platforms-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 500px) { #of-booking-platforms-grid { grid-template-columns: repeat(2, 1fr); } }
+  #of-booking-platforms-grid .booking-option {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 14px 8px; border-radius: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer; transition: all 0.2s;
+    font-size: 0.8125rem; color: rgba(255,255,255,0.6);
+    text-align: center;
+  }
+  #of-booking-platforms-grid .booking-option:hover { border-color: rgba(255,255,255,0.2); }
+  #of-booking-platforms-grid .booking-option.active { border-color: #fb923c; background: rgba(251,146,60,0.08); color: #fb923c; }
+  #of-booking-platforms-grid .booking-option svg { flex-shrink: 0; }
+
   /* ─── ACTION BUTTONS ─────────────────────────────────────── */
   .of-actions {
     display: flex;
