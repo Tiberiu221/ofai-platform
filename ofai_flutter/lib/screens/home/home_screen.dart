@@ -411,7 +411,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                                 Text(
                                                   AppLocalizations.of(context)!.offersCount(coll.offerCount),
                                                   style: AppTypography.caption.copyWith(
-                                                    color: Colors.white70,
+                                                    color: AppColors.textSecondary,
                                                   ),
                                                 ),
                                               ],

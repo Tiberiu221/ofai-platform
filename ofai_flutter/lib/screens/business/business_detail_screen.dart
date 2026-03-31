@@ -1506,15 +1506,15 @@ class _CatalogSectionState extends State<_CatalogSection> {
   int _selectedIdx = 0;
 
   static const _typeColors = <String, Color>{
-    'service': Color(0xFF60A5FA),
-    'product': Color(0xFF4ADE80),
-    'menu_item': Color(0xFFFB923C),
+    'service': AppColors.catalogService,
+    'product': AppColors.catalogProduct,
+    'menu_item': AppColors.catalogMenuItem,
   };
 
   static const _typeBgColors = <String, Color>{
-    'service': Color(0x263B82F6),
-    'product': Color(0x2622C55E),
-    'menu_item': Color(0x26FB923C),
+    'service': AppColors.catalogServiceBg,
+    'product': AppColors.catalogProductBg,
+    'menu_item': AppColors.catalogMenuItemBg,
   };
 
   @override

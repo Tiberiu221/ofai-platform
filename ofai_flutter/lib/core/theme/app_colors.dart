@@ -49,4 +49,12 @@ class AppColors {
   // Overlays
   static const overlay = Color(0x80000000); // rgba(0,0,0,0.5)
   static const overlayLight = Color(0x33000000); // rgba(0,0,0,0.2)
+
+  // Catalog type colors
+  static const catalogService = Color(0xFF60A5FA);
+  static const catalogProduct = Color(0xFF4ADE80);
+  static const catalogMenuItem = Color(0xFFFB923C);
+  static const catalogServiceBg = Color(0x263B82F6);
+  static const catalogProductBg = Color(0x2622C55E);
+  static const catalogMenuItemBg = Color(0x26FB923C);
 }

@@ -87,7 +87,7 @@ class Offer {
       hasPromoCode: json['has_promo_code'] as bool? ?? false,
       saveCount: json['save_count'] as int?,
       isTrending: json['is_trending'] as bool? ?? false,
-      isPromoted: json['is_promoted'] == true,
+      isPromoted: json['is_promoted'] as bool? ?? false,
       maxReveals: json['max_reveals'] as int?,
       revealCount: json['reveal_count'] as int?,
       moderationStatus: json['moderation_status'] as String?,

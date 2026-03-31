@@ -19,6 +19,88 @@ const { clickLimiter, revealLimiter } = require("../middleware/rateLimiter");
 router.use(optionalWebAuth);
 
 // ═══════════════════════════════════════════════════════
+// SEO: robots.txt + sitemap.xml (moved from index.js)
+// ═══════════════════════════════════════════════════════
+router.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cont
+Disallow: /colectia-mea
+Disallow: /setari
+Disallow: /preferinte
+Disallow: /my-businesses
+Disallow: /portal
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-code
+Disallow: /api/
+
+Sitemap: https://ofai.ro/sitemap.xml`);
+});
+
+router.get('/sitemap.xml', async (req, res) => {
+  try {
+    const BASE = 'https://ofai.ro';
+    const today = new Date().toISOString().split('T')[0];
+
+    const staticPages = [
+      { loc: '/', priority: '1.0', changefreq: 'daily' },
+      { loc: '/oferte', priority: '0.9', changefreq: 'daily' },
+      { loc: '/business-uri', priority: '0.8', changefreq: 'daily' },
+      { loc: '/categorii', priority: '0.7', changefreq: 'weekly' },
+      { loc: '/orase', priority: '0.7', changefreq: 'weekly' },
+      { loc: '/preturi', priority: '0.6', changefreq: 'monthly' },
+      { loc: '/pentru-business', priority: '0.6', changefreq: 'monthly' },
+      { loc: '/ajutor', priority: '0.4', changefreq: 'monthly' },
+      { loc: '/termeni', priority: '0.3', changefreq: 'yearly' },
+      { loc: '/confidentialitate', priority: '0.3', changefreq: 'yearly' },
+      { loc: '/blog', priority: '0.7', changefreq: 'daily' },
+    ];
+
+    const [offers, businesses, blogPosts] = await Promise.all([
+      pool.query(
+        "SELECT id, start_date::date as lastmod FROM offers WHERE is_active = true AND moderation_status IN ('approved', 'auto_approved') AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
+      ),
+      pool.query(
+        "SELECT id FROM businesses ORDER BY id DESC LIMIT 5000"
+      ),
+      pool.query(
+        "SELECT slug, COALESCE(updated_at, published_at)::date as lastmod FROM blog_posts WHERE is_published = true ORDER BY published_at DESC LIMIT 1000"
+      ),
+    ]);
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+    for (const page of staticPages) {
+      xml += `\n  <url>\n    <loc>${BASE}${page.loc}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>`;
+    }
+    for (const row of offers.rows) {
+      xml += `\n  <url>\n    <loc>${BASE}/oferta/${row.id}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>`;
+    }
+    for (const row of businesses.rows) {
+      xml += `\n  <url>\n    <loc>${BASE}/business/${row.id}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+    }
+    for (const row of blogPosts.rows) {
+      xml += `\n  <url>\n    <loc>${BASE}/blog/${row.slug}</loc>\n    <lastmod>${row.lastmod || today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>`;
+    }
+
+    xml += '\n</urlset>';
+
+    res.set('Content-Type', 'application/xml');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (err) {
+    console.error('[SEO] Sitemap error:', err.message);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// ═══════════════════════════════════════════════════════
 // HOME PAGE
 // ═══════════════════════════════════════════════════════
 // Home page helpers (extracted for parallelization)

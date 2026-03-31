@@ -156,11 +156,24 @@ class CacheService {
   }
 
   _evictOldest() {
-    const iter = this._store.keys();
-    for (let i = 0; i < EVICT_BATCH; i++) {
-      const { value: key, done } = iter.next();
-      if (done) break;
-      this._delete(key);
+    const now = Date.now();
+    // First pass: evict expired entries
+    let evicted = 0;
+    for (const [key, entry] of this._store) {
+      if (evicted >= EVICT_BATCH) break;
+      if (now > entry.expiresAt) {
+        this._delete(key);
+        evicted++;
+      }
+    }
+    // If not enough evicted, remove oldest by insertion order
+    if (evicted < EVICT_BATCH) {
+      const iter = this._store.keys();
+      for (let i = evicted; i < EVICT_BATCH; i++) {
+        const { value: key, done } = iter.next();
+        if (done) break;
+        this._delete(key);
+      }
     }
   }
 }
