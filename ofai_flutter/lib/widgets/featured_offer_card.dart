@@ -56,6 +56,22 @@ class FeaturedOfferCard extends ConsumerWidget {
     return DistanceUtils.format(km);
   }
 
+  static Widget _logoFallback(String name) {
+    return Container(
+      color: AppColors.accent,
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'B',
+          style: const TextStyle(
+            color: AppColors.bgPrimary,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final heroImage = offer.displayImage;
@@ -227,9 +243,33 @@ class FeaturedOfferCard extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (offer.business != null) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 6),
                             Row(
                               children: [
+                                // Business logo avatar with border for gradient visibility
+                                Container(
+                                  width: 26,
+                                  height: 26,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white24, width: 1),
+                                  ),
+                                  child: ClipOval(
+                                    child: SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: offer.business!.logoUrl != null && offer.business!.logoUrl!.isNotEmpty
+                                          ? CachedNetworkImage(
+                                              imageUrl: offer.business!.logoUrl!,
+                                              fit: BoxFit.cover,
+                                              placeholder: (_, __) => _logoFallback(offer.business!.name),
+                                              errorWidget: (_, __, ___) => _logoFallback(offer.business!.name),
+                                            )
+                                          : _logoFallback(offer.business!.name),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
                                 if (offer.business!.badgeType != null) ...[
                                   SubscriptionBadge(
                                       badgeType: offer.business!.badgeType,

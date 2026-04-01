@@ -7,7 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
 import '../../widgets/particle_background.dart';
 import '../../widgets/glass_card.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});

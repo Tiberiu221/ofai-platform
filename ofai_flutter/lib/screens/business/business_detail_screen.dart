@@ -24,7 +24,7 @@ import '../../widgets/subscription_badge.dart';
 import '../../services/analytics_service.dart';
 import '../../widgets/report_dialog.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class BusinessDetailScreen extends ConsumerWidget {
   final int businessId;
@@ -142,15 +142,26 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                              // Logo overlay
+                              // Logo overlay — bottom left on cover
                               Positioned(
                                 bottom: 16,
                                 left: 20,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: SizedBox(
-                                    width: 56,
-                                    height: 56,
+                                child: Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.bgPrimary, width: 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.3),
+                                        blurRadius: 6,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
                                     child: business.logoUrl != null
                                         ? CachedNetworkImage(
                                             imageUrl: business.logoUrl!,
@@ -213,9 +224,16 @@ class BusinessDetailScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
-                          // Name
+                          // Name with badge on left
                           Row(
                             children: [
+                              if (business.hasBadge) ...[
+                                GestureDetector(
+                                  onTap: () => _showBadgeInfo(context, business.badgeType!),
+                                  child: SubscriptionBadge(badgeType: business.badgeType, size: 24),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
                               Expanded(
                                 child: Semantics(
                                   label: 'Business: ${business.name}',
@@ -223,14 +241,6 @@ class BusinessDetailScreen extends ConsumerWidget {
                                   child: Text(business.name, style: AppTypography.headlineLarge),
                                 ),
                               ),
-                              if (business.hasBadge)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 6),
-                                  child: GestureDetector(
-                                    onTap: () => _showBadgeInfo(context, business.badgeType!),
-                                    child: SubscriptionBadge(badgeType: business.badgeType, size: 24),
-                                  ),
-                                ),
                             ],
                           ),
                           const SizedBox(height: 4),
@@ -334,54 +344,49 @@ class BusinessDetailScreen extends ConsumerWidget {
                             const SizedBox(height: 40),
                           ],
 
-                          // Contact info
-                          if (business.address != null || business.phone != null || business.website != null) ...[
-                            Container(
-                              padding: const EdgeInsets.all(AppSpacing.md),
-                              decoration: BoxDecoration(
-                                color: AppColors.bgCard,
-                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(AppLocalizations.of(context)!.contact, style: AppTypography.headlineSmall),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  if (business.address != null)
-                                    _InfoTile(
-                                      icon: Icons.location_on_outlined,
-                                      label: business.address!,
-                                      onTap: business.lat != null && business.lng != null
-                                          ? () {
-                                              Launchers.maps(business.lat!, business.lng!, address: business.address);
-                                              AnalyticsService.trackClick(businessId: business.id, actionType: 'navigate');
-                                            }
-                                          : null,
-                                    ),
-                                  if (business.phone != null)
-                                    _InfoTile(
-                                      icon: Icons.phone_outlined,
-                                      label: business.phone!,
+                          // Action buttons — Sună, Website, Navighează (like web)
+                          if (business.phone != null || business.website != null || (business.lat != null && business.lng != null)) ...[
+                            Column(
+                              children: [
+                                if (business.phone != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                    child: _ActionButton(
+                                      icon: Icons.phone,
+                                      label: AppLocalizations.of(context)!.callNow,
                                       onTap: () {
                                         Launchers.call(business.phone!);
                                         AnalyticsService.trackClick(businessId: business.id, actionType: 'phone');
                                       },
                                     ),
-                                  if (business.website != null)
-                                    _InfoTile(
+                                  ),
+                                if (business.website != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                    child: _ActionButton(
                                       icon: Icons.language,
-                                      label: business.website!,
+                                      label: 'Website',
                                       onTap: () {
                                         Launchers.website(business.website!);
                                         AnalyticsService.trackClick(businessId: business.id, actionType: 'website');
                                       },
-                                      accent: true,
                                     ),
-                                ],
-                              ),
+                                  ),
+                                if (business.lat != null && business.lng != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                    child: _ActionButton(
+                                      icon: Icons.navigation_outlined,
+                                      label: 'Navighează',
+                                      onTap: () {
+                                        Launchers.maps(business.lat!, business.lng!, address: business.address);
+                                        AnalyticsService.trackClick(businessId: business.id, actionType: 'navigate');
+                                      },
+                                    ),
+                                  ),
+                              ],
                             ),
-                            const SizedBox(height: 40),
+                            const SizedBox(height: AppSpacing.lg),
                           ],
 
                           // Locations
@@ -553,55 +558,118 @@ class BusinessDetailScreen extends ConsumerWidget {
                             const SizedBox(height: 40),
                           ],
 
-                          // Active offers have priority over pinch card — mutually exclusive
-                          if (business.activeOffers != null && business.activeOffers!.isNotEmpty) ...[
-                            Text(AppLocalizations.of(context)!.activeOffers, style: AppTypography.headlineSmall),
-                            const SizedBox(height: AppSpacing.sm),
-                            ...business.activeOffers!.map((offer) => Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: InkWell(
-                                onTap: () => context.push('/offer/${offer.id}'),
-                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                                splashColor: AppColors.accent.withValues(alpha: 0.1),
-                                child: Container(
-                                  padding: const EdgeInsets.all(AppSpacing.md),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.bgCard,
-                                    borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                          // About / Description
+                          if (business.description != null && business.description!.isNotEmpty) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              decoration: BoxDecoration(
+                                color: AppColors.bgSecondary,
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Icon(Icons.info_outline, size: 20, color: AppColors.accent),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Text('Despre ${business.name}', style: AppTypography.headlineSmall),
+                                  ]),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    business.description!,
+                                    style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
                                   ),
-                                  child: Row(
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+
+                          // Active offers — card style like web
+                          if (business.activeOffers != null && business.activeOffers!.isNotEmpty) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              decoration: BoxDecoration(
+                                color: AppColors.bgSecondary,
+                                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header row: icon + title + count badge
+                                  Row(
                                     children: [
-                                      if (offer.discountLabel.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.accent,
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            offer.discountLabel,
-                                            style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
-                                          ),
+                                      Icon(Icons.local_offer_outlined, size: 20, color: AppColors.accent),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Text(AppLocalizations.of(context)!.activeOffers, style: AppTypography.headlineSmall),
+                                      const Spacer(),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.accent.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
-                                      if (offer.discountLabel.isNotEmpty)
-                                        const SizedBox(width: AppSpacing.sm),
-                                      Expanded(
                                         child: Text(
-                                          offer.title,
-                                          style: AppTypography.bodyMedium,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                          '${business.activeOffers!.length} ${business.activeOffers!.length == 1 ? "ofertă" : "oferte"}',
+                                          style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
                                         ),
                                       ),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      Icon(Icons.chevron_right, size: 18, color: AppColors.textTertiary),
                                     ],
                                   ),
-                                ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  // Offer rows
+                                  ...business.activeOffers!.map((offer) => Padding(
+                                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                    child: InkWell(
+                                      onTap: () => context.push('/offer/${offer.id}'),
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                      splashColor: AppColors.accent.withValues(alpha: 0.1),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(AppSpacing.md),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.bgCard,
+                                          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                                          border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            if (offer.discountLabel.isNotEmpty)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.accent,
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  offer.discountLabel,
+                                                  style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                                                ),
+                                              ),
+                                            if (offer.discountLabel.isNotEmpty)
+                                              const SizedBox(width: AppSpacing.sm),
+                                            Expanded(
+                                              child: Text(
+                                                offer.title,
+                                                style: AppTypography.bodyMedium,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(width: AppSpacing.sm),
+                                            Icon(Icons.chevron_right, size: 18, color: AppColors.textTertiary),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )),
+                                ],
                               ),
-                            )),
-                            const SizedBox(height: 40),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
                           ] else if (business.showPinch) ...[
                             // Pinch card — "Vreau o ofertă!" (only when NO active offers)
                             _PinchRequestCard(
@@ -994,6 +1062,38 @@ bool _hasLocationBooking(BusinessLocation loc, Booking? mainBooking) {
   return loc.bookingPhone != mainBooking.phone ||
       loc.bookingWhatsapp != mainBooking.whatsapp ||
       loc.bookingUrl != mainBooking.url;
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _ActionButton({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.bgSecondary,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: AppColors.accent),
+            const SizedBox(width: AppSpacing.sm),
+            Text(label, style: AppTypography.labelLarge),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _InfoTile extends StatelessWidget {

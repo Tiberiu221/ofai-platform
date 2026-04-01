@@ -27,7 +27,7 @@ import '../../providers/saved_searches_provider.dart';
 import '../../core/utils/distance.dart';
 import '../../models/offer.dart';
 import '../../widgets/location_banner.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -51,11 +51,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   int? _lastAppliedCityId;
 
   int _locationCheckKey = 0;
+  bool _isHeaderCollapsed = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_onTabChanged);
     _offersScrollController.addListener(_onOffersScroll);
     _businessesScrollController.addListener(_onBusinessesScroll);
     _searchFocusNode.addListener(() {
@@ -118,6 +120,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   }
 
   void _onOffersScroll() {
+    _updateHeaderCollapse(_offersScrollController);
     if (_offersScrollController.position.pixels >=
         _offersScrollController.position.maxScrollExtent - 200) {
       ref.read(offersListProvider.notifier).loadMore();
@@ -125,9 +128,34 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
   }
 
   void _onBusinessesScroll() {
+    _updateHeaderCollapse(_businessesScrollController);
     if (_businessesScrollController.position.pixels >=
         _businessesScrollController.position.maxScrollExtent - 200) {
       ref.read(businessesListProvider.notifier).loadMore();
+    }
+  }
+
+  void _updateHeaderCollapse(ScrollController controller) {
+    if (!controller.hasClients) return;
+    final offset = controller.offset;
+    if (offset > 60 && !_isHeaderCollapsed) {
+      setState(() => _isHeaderCollapsed = true);
+    } else if (offset <= 10 && _isHeaderCollapsed) {
+      setState(() => _isHeaderCollapsed = false);
+    }
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) return;
+    // Sync collapse state with the new tab's scroll position
+    final controller = _tabController.index == 0
+        ? _offersScrollController
+        : _businessesScrollController;
+    if (controller.hasClients) {
+      final collapsed = controller.offset > 60;
+      if (collapsed != _isHeaderCollapsed) {
+        setState(() => _isHeaderCollapsed = collapsed);
+      }
     }
   }
 
@@ -183,12 +211,23 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: AppSpacing.lg),
-
-            // Title
-            Padding(
-              padding: AppSpacing.pageH,
-              child: Text(AppLocalizations.of(context)!.explore, style: AppTypography.displaySmall),
+            // Collapsible title
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _isHeaderCollapsed
+                  ? const SizedBox(width: double.infinity)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: AppSpacing.lg),
+                        Padding(
+                          padding: AppSpacing.pageH,
+                          child: Text(AppLocalizations.of(context)!.explore, style: AppTypography.displaySmall),
+                        ),
+                      ],
+                    ),
             ),
 
             const SizedBox(height: AppSpacing.md),
@@ -255,6 +294,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               ),
             ),
 
+            // Collapsible filters, tabs, results count, location banner
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _isHeaderCollapsed
+                  ? const SizedBox(width: double.infinity)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
             const SizedBox(height: AppSpacing.md),
 
             // Filter chips row
@@ -394,6 +443,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
 
             // Location banner (shown only when location NOT granted)
             LocationBanner(key: ValueKey(_locationCheckKey)),
+                      ],
+                    ),
+            ),
 
             const SizedBox(height: AppSpacing.sm),
 

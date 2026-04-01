@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_typography.dart';
@@ -98,12 +98,6 @@ class _ShellScreenState extends State<_ShellScreen> {
                     color: AppColors.glassInsetTop,
                     blurRadius: 1,
                     offset: Offset(0, 1),
-                  ),
-                  // Bottom inner shadow (depth)
-                  BoxShadow(
-                    color: AppColors.glassInsetBottom,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
                   ),
                 ],
               ),

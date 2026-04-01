@@ -227,7 +227,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
     // 1. Date principale business + Rating Mediu + BOOKING INFO
     const businessRes = await pool.query(
       `SELECT
-        b.id, b.name, b.address, b.phone, b.website, b.lat, b.lng,
+        b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,
         b.logo_url,
         b.cover_image_url,
         b.is_verified,
@@ -502,6 +502,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
     return res.json({
       id: b.id,
       name: b.name,
+      description: b.description,
       address: b.address,
       phone: b.phone,
       website: b.website,

@@ -7,7 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/storage/preferences.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../app.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});

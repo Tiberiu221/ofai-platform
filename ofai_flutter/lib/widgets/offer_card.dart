@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_typography.dart';
 import '../core/theme/app_spacing.dart';
@@ -253,7 +253,7 @@ class OfferCard extends ConsumerWidget {
             // ── Content section ──
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg,
+                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,12 +291,14 @@ class OfferCard extends ConsumerWidget {
 
   // ── Shared metadata rows ─────────────────────────────────────
 
-  /// Business name row: [badge] full-width name
+  /// Business name row: [logo] [badge] full-width name
   Widget _buildBusinessRow() {
     final biz = offer.business;
     if (biz == null) return const SizedBox.shrink();
     return Row(
       children: [
+        _buildBusinessLogo(biz.logoUrl, biz.name),
+        const SizedBox(width: 6),
         if (biz.badgeType != null) ...[
           SubscriptionBadge(badgeType: biz.badgeType, size: 14),
           const SizedBox(width: 4),
@@ -310,6 +312,39 @@ class OfferCard extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  static Widget _buildBusinessLogo(String? logoUrl, String name) {
+    return ClipOval(
+      child: SizedBox(
+        width: 20,
+        height: 20,
+        child: logoUrl != null && logoUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: logoUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => _logoFallback(name),
+                errorWidget: (_, __, ___) => _logoFallback(name),
+              )
+            : _logoFallback(name),
+      ),
+    );
+  }
+
+  static Widget _logoFallback(String name) {
+    return Container(
+      color: AppColors.accent,
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : 'B',
+          style: const TextStyle(
+            color: AppColors.bgPrimary,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 

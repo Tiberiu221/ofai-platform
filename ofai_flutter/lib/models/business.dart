@@ -5,6 +5,7 @@ import '../core/utils/booking_platforms.dart';
 class Business {
   final int id;
   final String name;
+  final String? description;
   final String? address;
   final String? phone;
   final String? website;
@@ -41,6 +42,7 @@ class Business {
   Business({
     required this.id,
     required this.name,
+    this.description,
     this.address,
     this.phone,
     this.website,
@@ -86,6 +88,7 @@ class Business {
     return Business(
       id: json['id'] as int,
       name: json['name'] as String,
+      description: json['description'] as String?,
       address: json['address'] as String?,
       phone: json['phone'] as String?,
       website: json['website'] as String?,

@@ -9,7 +9,7 @@ import '../../core/network/api_exceptions.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../widgets/glass_card.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   final String? referralCode;

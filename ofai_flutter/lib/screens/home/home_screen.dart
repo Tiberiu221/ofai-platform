@@ -23,7 +23,7 @@ import '../../providers/recently_viewed_provider.dart';
 import '../../providers/collections_provider.dart';
 import '../../providers/category_feed_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
