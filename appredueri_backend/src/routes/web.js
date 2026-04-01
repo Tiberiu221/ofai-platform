@@ -252,7 +252,7 @@ router.get("/", async (req, res) => {
 
     // ── Phase A: All independent queries in parallel ──
     const [
-      [bizCount, offerCount, cityCount, recentOffers],
+      [bizCount, offerCount, catCount, recentOffers],
       categoriesResult,
       userPrefsResult,
       dealOfDay,
@@ -264,13 +264,13 @@ router.get("/", async (req, res) => {
     ] = await Promise.all([
       // 1. Stats counts (cached 1h)
       cache.cached('home:stats', 60 * 60 * 1000, async () => {
-        const [biz, off, cit, rec] = await Promise.all([
+        const [biz, off, cat, rec] = await Promise.all([
           pool.query("SELECT COUNT(*) as total FROM businesses"),
           pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND (end_date IS NULL OR end_date >= CURRENT_DATE)"),
-          pool.query("SELECT COUNT(*) as total FROM cities"),
+          pool.query("SELECT COUNT(*) as total FROM categories"),
           pool.query("SELECT COUNT(*) as total FROM offers WHERE is_active = true AND start_date > CURRENT_DATE - INTERVAL '7 days'"),
         ]);
-        return [biz, off, cit, rec];
+        return [biz, off, cat, rec];
       }, { groups: ['homepage'] }),
       // 2. Categories with offer counts (cached 2h)
       cache.cached('home:categories', 2 * 60 * 60 * 1000, async () => {
@@ -379,7 +379,7 @@ router.get("/", async (req, res) => {
     const stats = {
       totalBusinesses: parseInt(bizCount.rows[0].total),
       totalOffers: parseInt(offerCount.rows[0].total),
-      totalCities: parseInt(cityCount.rows[0].total),
+      totalCategories: parseInt(catCount.rows[0].total),
       newOffers: parseInt(recentOffers.rows[0].total) || Math.floor(parseInt(offerCount.rows[0].total) * 0.1),
     };
 
