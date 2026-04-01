@@ -2382,7 +2382,12 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
         WHERE (b.name ILIKE $1 OR cat.name ILIKE $1
-               OR similarity(b.name, $2) > 0.15)
+               OR similarity(b.name, $2) > 0.15
+               OR EXISTS (
+                 SELECT 1 FROM business_catalog_items ci
+                 WHERE ci.business_id = b.id AND ci.is_active = TRUE
+                   AND (ci.name ILIKE $1 OR similarity(ci.name, $2) > 0.25)
+               ))
         ORDER BY CASE WHEN b.name ILIKE $1 THEN 0 ELSE 1 END,
                  similarity(b.name, $2) DESC,
                  b.name

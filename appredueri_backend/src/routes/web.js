@@ -700,11 +700,26 @@ router.get("/business-uri", async (req, res) => {
 
     let searchOrderClauseBiz = null;
     if (query) {
+      const ilikeParamIdx = paramIdx; // saved BEFORE buildFuzzySearch — used to ref same params in catalog EXISTS
       const { buildFuzzySearch } = require("../helpers/search");
       const fuzzy = buildFuzzySearch([
         { col: 'b.name', ilike: true, similarity: true },
       ], paramIdx);
-      conditions.push(fuzzy.condition);
+
+      // Catalog EXISTS: match businesses via their service/product catalog items.
+      // Safety guard: only add similarity() part when fuzzy generated a sim param (paramCount === 2).
+      // Higher threshold (0.25) for catalog items to avoid false positives.
+      // E.g. similarity('Polish caroserie', 'cardiologie') = 0.16 — just above 0.15, but wrong match.
+      const catalogSimPart = fuzzy.paramCount === 2
+        ? `OR similarity(ci.name, $${ilikeParamIdx + 1}) > 0.25`
+        : '';
+      const catalogExists = `EXISTS (
+        SELECT 1 FROM business_catalog_items ci
+        WHERE ci.business_id = b.id AND ci.is_active = TRUE
+          AND (ci.name ILIKE $${ilikeParamIdx} ${catalogSimPart})
+      )`;
+
+      conditions.push(`(${fuzzy.condition} OR ${catalogExists})`);
       params.push(...fuzzy.params(query));
       paramIdx += fuzzy.paramCount;
       searchOrderClauseBiz = fuzzy.orderClause;
