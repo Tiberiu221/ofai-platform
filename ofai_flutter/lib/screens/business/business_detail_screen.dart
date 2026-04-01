@@ -271,47 +271,65 @@ class BusinessDetailScreen extends ConsumerWidget {
 
                           const SizedBox(height: AppSpacing.lg),
 
-                          // Rating row
-                          if (business.rating != null && business.rating! > 0) ...[
-                            Semantics(
-                              label: AppLocalizations.of(context)!.ratingLabel(business.rating!.toStringAsFixed(1), business.ratingCount ?? 0),
-                              child: Row(
+                          // Rating row + write review button (always visible)
+                          Builder(builder: (_) {
+                            final hasRating = business.rating != null && business.rating! > 0;
+                            final rating = business.rating ?? 0.0;
+                            return Column(
                               children: [
-                                ...List.generate(5, (i) => Icon(
-                                  i < business.rating!.round() ? Icons.star : Icons.star_border,
-                                  size: 20,
-                                  color: i < business.rating!.round() ? AppColors.accent : AppColors.textTertiary,
-                                )),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  business.rating!.toStringAsFixed(1),
-                                  style: AppTypography.labelLarge.copyWith(color: AppColors.accent),
+                                Row(
+                                  children: [
+                                    ...List.generate(5, (i) => Icon(
+                                      i < rating.round() ? Icons.star : Icons.star_border,
+                                      size: 20,
+                                      color: i < rating.round() ? AppColors.accent : AppColors.textTertiary,
+                                    )),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    if (hasRating) ...[
+                                      Text(
+                                        rating.toStringAsFixed(1),
+                                        style: AppTypography.labelLarge.copyWith(color: AppColors.accent),
+                                      ),
+                                      if (business.ratingCount != null)
+                                        Text(
+                                          ' ${AppLocalizations.of(context)!.reviewsCount(business.ratingCount!)}',
+                                          style: AppTypography.caption,
+                                        ),
+                                    ] else ...[
+                                      Text(
+                                        'Nicio recenzie',
+                                        style: AppTypography.caption.copyWith(color: AppColors.textTertiary),
+                                      ),
+                                    ],
+                                    const Spacer(),
+                                    if (isLoggedIn)
+                                      GestureDetector(
+                                        onTap: () => _showReviewSheet(context, ref),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.accent,
+                                            borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.edit, size: 14, color: AppColors.bgPrimary),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                AppLocalizations.of(context)!.writeReview,
+                                                style: AppTypography.labelSmall.copyWith(color: AppColors.bgPrimary),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                if (business.ratingCount != null)
-                                  Text(
-                                    ' ${AppLocalizations.of(context)!.reviewsCount(business.ratingCount!)}',
-                                    style: AppTypography.caption,
-                                  ),
-                                const Spacer(),
-                                if (isLoggedIn)
-                                  GestureDetector(
-                                    onTap: () => _showReviewSheet(context, ref),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: AppColors.accent),
-                                        borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                                      ),
-                                      child: Text(
-                                        AppLocalizations.of(context)!.writeReview,
-                                        style: AppTypography.labelSmall.copyWith(color: AppColors.accent),
-                                      ),
-                                    ),
-                                  ),
+                                const SizedBox(height: AppSpacing.xxl),
                               ],
-                            )),
-                            const SizedBox(height: AppSpacing.xxl),
-                          ],
+                            );
+                          }),
 
                           // Review summary
                           if (business.reviewSummary != null && business.reviewSummary!.text.isNotEmpty) ...[
@@ -763,6 +781,8 @@ class BusinessDetailScreen extends ConsumerWidget {
                           icon: Icons.rate_review_outlined,
                           title: AppLocalizations.of(context)!.noReviewsYet,
                           subtitle: AppLocalizations.of(context)!.beFirstToReview,
+                          actionLabel: isLoggedIn ? AppLocalizations.of(context)!.writeReview : null,
+                          onAction: isLoggedIn ? () => _showReviewSheet(context, ref) : null,
                         ),
                       ),
                     )
