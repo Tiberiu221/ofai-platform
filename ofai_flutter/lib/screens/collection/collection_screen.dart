@@ -396,44 +396,48 @@ class _FavoritesTab extends ConsumerWidget {
             );
           }
           final offer = filtered[index];
-          return Dismissible(
-            key: ValueKey('fav_${offer.id}'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: AppSpacing.xxl),
-              decoration: BoxDecoration(
-                color: AppColors.danger.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              ),
-              child: const Icon(Icons.delete_outline, color: AppColors.danger),
-            ),
-            confirmDismiss: (_) async {
-              try {
-                await ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context)!.removedFromFavorites(offer.title)),
-                      backgroundColor: AppColors.bgSecondary,
-                      action: SnackBarAction(
-                        label: AppLocalizations.of(context)!.cancel,
-                        textColor: AppColors.accent,
-                        onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
-                      ),
+          return Stack(
+            children: [
+              OfferCard(offer: offer),
+              Positioned(
+                top: AppSpacing.sm,
+                right: AppSpacing.sm,
+                child: GestureDetector(
+                  onTap: () async {
+                    try {
+                      await ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(AppLocalizations.of(context)!.removedFromFavorites(offer.title)),
+                            backgroundColor: AppColors.bgSecondary,
+                            action: SnackBarAction(
+                              label: AppLocalizations.of(context)!.cancel,
+                              textColor: AppColors.accent,
+                              onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.9),
+                      shape: BoxShape.circle,
                     ),
-                  );
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
-                  );
-                }
-              }
-              return false;
-            },
-            child: OfferCard(offer: offer),
+                    child: const Icon(Icons.close, size: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -535,44 +539,48 @@ class _SubscriptionsTab extends ConsumerWidget {
             );
           }
           final biz = filtered[index];
-          return Dismissible(
-            key: ValueKey('sub_${biz.id}'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: AppSpacing.xxl),
-              decoration: BoxDecoration(
-                color: AppColors.danger.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              ),
-              child: const Icon(Icons.delete_outline, color: AppColors.danger),
-            ),
-            confirmDismiss: (_) async {
-              try {
-                await ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AppLocalizations.of(context)!.removedFromFollowed(biz.name)),
-                      backgroundColor: AppColors.bgSecondary,
-                      action: SnackBarAction(
-                        label: AppLocalizations.of(context)!.cancel,
-                        textColor: AppColors.accent,
-                        onPressed: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id),
-                      ),
+          return Stack(
+            children: [
+              BusinessCard(business: biz),
+              Positioned(
+                top: AppSpacing.sm,
+                right: AppSpacing.sm,
+                child: GestureDetector(
+                  onTap: () async {
+                    try {
+                      await ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(AppLocalizations.of(context)!.removedFromFollowed(biz.name)),
+                            backgroundColor: AppColors.bgSecondary,
+                            action: SnackBarAction(
+                              label: AppLocalizations.of(context)!.cancel,
+                              textColor: AppColors.accent,
+                              onPressed: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id),
+                            ),
+                          ),
+                        );
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.9),
+                      shape: BoxShape.circle,
                     ),
-                  );
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
-                  );
-                }
-              }
-              return false;
-            },
-            child: BusinessCard(business: biz),
+                    child: const Icon(Icons.close, size: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
