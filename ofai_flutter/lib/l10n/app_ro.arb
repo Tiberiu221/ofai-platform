@@ -371,7 +371,7 @@
   "badgesEarned": "Insigne castigate",
   "selectForReviews": "Selecteaza pentru recenzii",
   "savedSearches": "Cautari salvate",
-  "preferences": "Preferinte",
+  "preferences": "Preferinte & Notificari",
   "addBusiness": "Adauga business",
   "terms": "Termeni",
   "privacy": "Confidentialitate",
@@ -384,7 +384,7 @@
     }
   },
 
-  "prefTitle": "Preferinte",
+  "prefTitle": "Preferinte & Notificari",
   "prefCities": "Orasele preferate",
   "prefCitiesHelp": "Poti selecta mai multe orase",
   "prefCategories": "Categorii preferate",

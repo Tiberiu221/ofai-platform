@@ -267,7 +267,7 @@
   "badgesEarned": "Badges earned",
   "selectForReviews": "Select for reviews",
   "savedSearches": "Saved searches",
-  "preferences": "Preferences",
+  "preferences": "Preferences & Notifications",
   "addBusiness": "Add business",
   "terms": "Terms",
   "privacy": "Privacy",
@@ -275,7 +275,7 @@
   "deleteAccount": "Delete account",
   "shareText": "Discover the best deals in your city on OFAI! Use my link: https://ofai.ro/r/{code}",
 
-  "prefTitle": "Preferences",
+  "prefTitle": "Preferences & Notifications",
   "prefCities": "Preferred cities",
   "prefCitiesHelp": "You can select multiple cities",
   "prefCategories": "Preferred categories",

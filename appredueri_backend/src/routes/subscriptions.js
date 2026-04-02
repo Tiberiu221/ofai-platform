@@ -25,6 +25,8 @@ router.get("/", async (req, res) => {
     b.lng,
     b.logo_url,
     b.cover_image_url,
+    b.subscription_badge_type,
+    b.is_verified,
     c.id   AS city_id,
     c.name AS city_name,
     cat.id   AS category_id,
@@ -52,6 +54,8 @@ router.get("/", async (req, res) => {
     b.lng,
     b.logo_url,
     b.cover_image_url,
+    b.subscription_badge_type,
+    b.is_verified,
     c.id,
     c.name,
     cat.id,
@@ -77,6 +81,7 @@ const response = result.rows.map(row => ({
   lng: row.lng,
   logo_url: row.logo_url || null,
   cover_image_url: row.cover_image_url || null,
+  cover_image: row.cover_image_url || null,
   rating: parseFloat(parseFloat(row.rating_avg).toFixed(1)),
   rating_count: parseInt(row.rating_count) || 0,
   city: row.city_id
@@ -85,7 +90,10 @@ const response = result.rows.map(row => ({
   category: row.category_id
     ? { id: row.category_id, name: row.category_name }
     : null,
-  active_offers_count: Number(row.active_offers_count) || 0
+  active_offers_count: Number(row.active_offers_count) || 0,
+  is_verified: row.is_verified || false,
+  subscription_badge_type: row.subscription_badge_type || null,
+  badge_type: row.subscription_badge_type || (row.is_verified ? 'verified' : null)
 }));
 
     res.json(paginatedResponse(response, total, page, limit));

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -312,15 +311,40 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                user?.displayName ?? '',
-                style: AppTypography.headlineLarge,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    user?.displayName ?? '',
+                    style: AppTypography.headlineLarge,
+                  ),
+                  if (user?.displayBadgeId != null && user?.badges != null)
+                    () {
+                      final badge = user!.badges!.where((b) => b.id == user.displayBadgeId).firstOrNull;
+                      if (badge == null) return const SizedBox.shrink();
+                      final color = _parseBadgeColor(badge.color);
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Icon(Icons.star_rounded, size: 22, color: color),
+                      );
+                    }(),
+                ],
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 user?.email ?? '',
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              GestureDetector(
+                onTap: () => context.push('/account/edit-profile'),
+                child: Text(
+                  AppLocalizations.of(context)!.editProfileTitle,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: AppColors.accent,
+                  ),
                 ),
               ),
 
@@ -353,112 +377,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               //   ... gamification UI ...
               // ],
 
-              // Badges card (glassmorphism)
-              if (user?.badges case final userBadges? when userBadges.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.lg),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.04),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                        boxShadow: [
-                          // Inner glow top
-                          BoxShadow(
-                            color: Colors.white.withValues(alpha: 0.03),
-                            blurRadius: 0,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                            child: Row(
-                              children: [
-                                Text(AppLocalizations.of(context)!.badgesEarned, style: AppTypography.labelLarge),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accent,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '${userBadges.length}',
-                                    style: AppTypography.labelSmall.copyWith(
-                                      color: AppColors.bgPrimary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                            child: Text(AppLocalizations.of(context)!.selectForReviews, style: AppTypography.captionMuted),
-                          ),
-                          // Badge strip
-                          SizedBox(
-                            height: 110,
-                            child: ShaderMask(
-                              shaderCallback: (Rect bounds) {
-                                return LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.white,
-                                    Colors.white,
-                                    Colors.transparent,
-                                  ],
-                                  stops: const [0.0, 0.05, 0.95, 1.0],
-                                ).createShader(bounds);
-                              },
-                              blendMode: BlendMode.dstIn,
-                              child: ListView(
-                                scrollDirection: Axis.horizontal,
-                                physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                children: [
-                                  _BadgeChip(
-                                    badge: null,
-                                    isSelected: user?.displayBadgeId == null,
-                                    onTap: () => _updateDisplayBadge(ref, null),
-                                  ),
-                                  ...userBadges.map((badge) => _BadgeChip(
-                                    badge: badge,
-                                    isSelected: user?.displayBadgeId == badge.id,
-                                    onTap: () => _updateDisplayBadge(ref, badge.id),
-                                  )),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-
               const SizedBox(height: AppSpacing.lg),
 
               // Menu items
-              _MenuItem(
-                icon: Icons.person_outline,
-                label: AppLocalizations.of(context)!.myProfile,
-                onTap: () => context.push('/account/edit-profile'),
-              ),
               _MenuItem(
                 icon: Icons.tune_outlined,
                 label: AppLocalizations.of(context)!.preferences,
@@ -632,146 +553,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
     }
   }
 
-  Future<void> _updateDisplayBadge(WidgetRef ref, int? badgeId) async {
-    try {
-      await ref.read(authProvider.notifier).updateDisplayBadge(badgeId);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(badgeId != null ? AppLocalizations.of(context)!.badgeSelected : AppLocalizations.of(context)!.badgeDeselected)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Eroare: ${friendlyError(e)}')),
-      );
-    }
-  }
-}
-
-class _BadgeChip extends StatelessWidget {
-  final UserBadge? badge;
-  final bool isSelected;
-  final VoidCallback? onTap;
-  const _BadgeChip({this.badge, this.isSelected = false, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isNone = badge == null;
-    final color = isNone ? AppColors.textTertiary : _parseColor(badge!.color);
-    final label = isNone ? 'Fără insignă' : badge!.name;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Tooltip(
-        message: badge?.description ?? label,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: SizedBox(
-            width: 80,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Circle with optional checkmark overlay
-                AnimatedScale(
-                  scale: isSelected ? 1.08 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  child: SizedBox(
-                    width: 58,
-                    height: 58,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        // Main circle
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeOut,
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isNone
-                                ? AppColors.bgSecondary
-                                : color.withValues(alpha: 0.12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? color
-                                  : color.withValues(alpha: 0.30),
-                              width: isSelected ? 2.5 : 1,
-                            ),
-                            boxShadow: isSelected && !isNone
-                                ? [
-                                    BoxShadow(
-                                      color: color.withValues(alpha: 0.40),
-                                      blurRadius: 14,
-                                      spreadRadius: 0,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Center(
-                            child: Icon(
-                              isNone ? Icons.close_rounded : Icons.star_rounded,
-                              size: isNone ? 20 : 24,
-                              color: isNone
-                                  ? AppColors.textTertiary
-                                  : (isSelected ? color : color.withValues(alpha: 0.7)),
-                            ),
-                          ),
-                        ),
-                        // Checkmark overlay (bottom-right) when selected
-                        if (isSelected && !isNone)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: Container(
-                              width: 18,
-                              height: 18,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: color,
-                                border: Border.all(
-                                  color: AppColors.bgPrimary,
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.check,
-                                size: 10,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                // Label — 2 lines
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 10,
-                    height: 1.2,
-                    color: isSelected ? color : AppColors.textTertiary,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _parseColor(String hex) {
-    hex = hex.replaceFirst('#', '');
-    if (hex.length == 6) hex = 'FF$hex';
-    return Color(int.parse(hex, radix: 16));
+  Color _parseBadgeColor(String hex) {
+    var h = hex.replaceFirst('#', '');
+    if (h.length == 6) h = 'FF$h';
+    return Color(int.parse(h, radix: 16));
   }
 }
 

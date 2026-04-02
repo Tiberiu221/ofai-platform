@@ -35,9 +35,27 @@ class BusinessCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.bgCard,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(
+            color: business.isPremium
+                ? AppColors.premiumPurple.withValues(alpha: 0.3)
+                : AppColors.border,
+          ),
         ),
-        child: Column(
+        child: Stack(
+          children: [
+            // Subtle cover background for Premium businesses
+            if (business.isPremium && hasCover)
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.08,
+                  child: CachedNetworkImage(
+                    imageUrl: business.coverImage!,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 400,
+                  ),
+                ),
+              ),
+            Column(
           children: [
             // Cover image strip with follow heart overlay
             if (hasCover)
@@ -82,7 +100,7 @@ class BusinessCard extends ConsumerWidget {
                         Row(
                           children: [
                             if (business.hasBadge) ...[
-                              SubscriptionBadge(badgeType: business.badgeType, size: 16),
+                              SubscriptionBadge(badgeType: business.badgeType, size: 18),
                               const SizedBox(width: 4),
                             ],
                             Expanded(
@@ -167,6 +185,8 @@ class BusinessCard extends ConsumerWidget {
                 ],
               ),
             ),
+          ],
+        ),
           ],
         ),
       ),

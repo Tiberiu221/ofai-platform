@@ -35,13 +35,23 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
   String? _sortMode; // 'name_asc' | 'rating_desc' | 'distance' (both tabs)
   bool _didFetch = false;
   Position? _userPosition;
+  bool _selectMode = false;
+  Set<int> _selectedBizIds = {};
+  bool _isDeleting = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) setState(() {});
+      if (!_tabController.indexIsChanging) {
+        // Reset select mode when switching away from Business-uri tab
+        if (_tabController.index != 1 && _selectMode) {
+          _selectMode = false;
+          _selectedBizIds.clear();
+        }
+        setState(() {});
+      }
     });
     _favScrollController.addListener(_onFavScroll);
     _subScrollController.addListener(_onSubScroll);
@@ -103,6 +113,76 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
     }
   }
 
+  void _toggleSelectMode() {
+    setState(() {
+      _selectMode = !_selectMode;
+      if (!_selectMode) _selectedBizIds.clear();
+    });
+  }
+
+  void _toggleBizSelection(int id) {
+    setState(() {
+      if (_selectedBizIds.contains(id)) {
+        _selectedBizIds.remove(id);
+      } else {
+        _selectedBizIds.add(id);
+      }
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    if (_selectedBizIds.isEmpty) return;
+    final count = _selectedBizIds.length;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgSecondary,
+        title: Text('Nu mai urmări $count business-uri?', style: AppTypography.labelLarge),
+        content: Text('Vor fi eliminate din colecția ta.', style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Elimină', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      await Future.wait(
+        _selectedBizIds.map((id) => ref.read(followedBusinessesProvider.notifier).toggleFollow(id)),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$count business-uri eliminate'),
+            backgroundColor: AppColors.bgSecondary,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+          _selectMode = false;
+          _selectedBizIds.clear();
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -138,6 +218,19 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
     }
 
     return Scaffold(
+      floatingActionButton: _selectMode && _selectedBizIds.isNotEmpty
+          ? Padding(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 8),
+              child: FloatingActionButton.extended(
+                onPressed: _isDeleting ? null : _deleteSelected,
+                backgroundColor: AppColors.danger,
+                icon: _isDeleting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.delete_outline, color: Colors.white),
+                label: Text('${_selectedBizIds.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+              ),
+            )
+          : null,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +238,22 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
             const SizedBox(height: AppSpacing.xxl),
             Padding(
               padding: AppSpacing.pageH,
-              child: Text(AppLocalizations.of(context)!.myCollection, style: AppTypography.displaySmall),
+              child: Row(
+                children: [
+                  Text(AppLocalizations.of(context)!.myCollection, style: AppTypography.displaySmall),
+                  const Spacer(),
+                  if (_tabController.index == 1)
+                    GestureDetector(
+                      onTap: _toggleSelectMode,
+                      child: Text(
+                        _selectMode ? 'Anulează' : 'Selectează',
+                        style: AppTypography.labelMedium.copyWith(
+                          color: _selectMode ? AppColors.danger : AppColors.accent,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
 
@@ -278,7 +386,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen>
                 controller: _tabController,
                 children: [
                   _FavoritesTab(scrollController: _favScrollController, searchQuery: _searchQuery, sortMode: _sortMode, userPosition: _userPosition),
-                  _SubscriptionsTab(scrollController: _subScrollController, searchQuery: _searchQuery, sortMode: _sortMode, userPosition: _userPosition),
+                  _SubscriptionsTab(scrollController: _subScrollController, searchQuery: _searchQuery, sortMode: _sortMode, userPosition: _userPosition, selectMode: _selectMode, selectedIds: _selectedBizIds, onToggleSelect: _toggleBizSelection),
                 ],
               ),
             ),
@@ -475,8 +583,11 @@ class _SubscriptionsTab extends ConsumerWidget {
   final String searchQuery;
   final String? sortMode;
   final Position? userPosition;
+  final bool selectMode;
+  final Set<int> selectedIds;
+  final void Function(int) onToggleSelect;
 
-  const _SubscriptionsTab({required this.scrollController, required this.searchQuery, this.sortMode, this.userPosition});
+  const _SubscriptionsTab({required this.scrollController, required this.searchQuery, this.sortMode, this.userPosition, this.selectMode = false, required this.selectedIds, required this.onToggleSelect});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -564,73 +675,46 @@ class _SubscriptionsTab extends ConsumerWidget {
             );
           }
           final biz = filtered[index];
-          return Stack(
-            children: [
-              BusinessCard(business: biz),
-              Positioned(
-                top: AppSpacing.sm,
-                right: AppSpacing.sm,
-                child: Semantics(
-                  label: 'Nu mai urmări',
-                  button: true,
-                  child: GestureDetector(
-                  onTap: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: AppColors.bgSecondary,
-                        title: Text('Nu mai urmări?', style: AppTypography.labelLarge),
-                        content: Text(biz.name, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: AppColors.textSecondary)),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: Text('Elimină', style: TextStyle(color: AppColors.danger)),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm != true) return;
-                    try {
-                      await ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(AppLocalizations.of(context)!.removedFromFollowed(biz.name)),
-                            backgroundColor: AppColors.bgSecondary,
-                            action: SnackBarAction(
-                              label: AppLocalizations.of(context)!.cancel,
-                              textColor: AppColors.accent,
-                              onPressed: () => ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id),
+          final isSelected = selectedIds.contains(biz.id);
+          return GestureDetector(
+            onTap: selectMode ? () => onToggleSelect(biz.id) : null,
+            child: Row(
+              children: [
+                // Selection circle — animates in/out
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  width: selectMode ? 40 : 0,
+                  child: selectMode
+                      ? Center(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected ? AppColors.accent : Colors.transparent,
+                              border: Border.all(
+                                color: isSelected ? AppColors.accent : AppColors.textTertiary,
+                                width: 2,
+                              ),
                             ),
+                            child: isSelected
+                                ? const Icon(Icons.check, size: 16, color: Colors.white)
+                                : null,
                           ),
-                        );
-                      }
-                    } catch (_) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(AppLocalizations.of(context)!.removeError), backgroundColor: AppColors.danger),
-                        );
-                      }
-                    }
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xB3111111),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border, width: 0.5),
-                    ),
-                    child: const Icon(Icons.close, size: 18, color: Color(0xFFEF4444)),
+                        )
+                      : null,
+                ),
+                // Business card
+                Expanded(
+                  child: AbsorbPointer(
+                    absorbing: selectMode,
+                    child: BusinessCard(business: biz),
                   ),
                 ),
-                ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
