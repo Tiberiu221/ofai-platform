@@ -404,6 +404,25 @@ class _FavoritesTab extends ConsumerWidget {
                 left: 12,
                 child: GestureDetector(
                   onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: AppColors.bgSecondary,
+                        title: Text('Elimină din favorite?', style: AppTypography.labelLarge),
+                        content: Text(offer.title, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: AppColors.textSecondary)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text('Elimină', style: TextStyle(color: AppColors.danger)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm != true) return;
                     try {
                       await ref.read(favoritesProvider.notifier).toggleFavorite(offer.id);
                       if (context.mounted) {
@@ -545,10 +564,29 @@ class _SubscriptionsTab extends ConsumerWidget {
             children: [
               BusinessCard(business: biz),
               Positioned(
-                top: 52,
-                left: 12,
+                top: AppSpacing.sm,
+                right: AppSpacing.sm,
                 child: GestureDetector(
                   onTap: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: AppColors.bgSecondary,
+                        title: Text('Nu mai urmări?', style: AppTypography.labelLarge),
+                        content: Text(biz.name, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text(AppLocalizations.of(context)!.cancel, style: TextStyle(color: AppColors.textSecondary)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text('Elimină', style: TextStyle(color: AppColors.danger)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm != true) return;
                     try {
                       await ref.read(followedBusinessesProvider.notifier).toggleFollow(biz.id);
                       if (context.mounted) {
