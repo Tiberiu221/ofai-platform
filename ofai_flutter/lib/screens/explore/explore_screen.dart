@@ -23,7 +23,6 @@ import '../../widgets/search_suggest_dropdown.dart';
 import '../../widgets/fade_in_item.dart';
 import '../../providers/search_suggest_provider.dart';
 import '../../providers/search_history_provider.dart';
-import '../../providers/saved_searches_provider.dart';
 import '../../core/utils/distance.dart';
 import '../../models/offer.dart';
 import '../../widgets/location_banner.dart';
@@ -368,19 +367,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
                       semanticsLabel: 'Sorteaza ofertele',
                     ),
                   ],
-                  // Save search — shown when any meaningful filter is active and user is authenticated
-                  if (authState.status == AuthStatus.authenticated &&
-                      (_searchController.text.isNotEmpty ||
-                       (offersState.cityId ?? businessesState.cityId) != null ||
-                       (offersState.categoryId ?? businessesState.categoryId) != null)) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    _FilterChip(
-                      label: AppLocalizations.of(context)!.saveSearch,
-                      isActive: false,
-                      icon: Icons.bookmark_add_outlined,
-                      onTap: () => _saveCurrentSearch(offersState, businessesState),
-                    ),
-                  ],
                   // Clear all — shown when any filter is active or prefs is off
                   if ((offersState.cityId ?? businessesState.cityId) != null ||
                       (offersState.categoryId ?? businessesState.categoryId) != null ||
@@ -619,27 +605,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
       default:
         return '🕐 ${l.sorting}';
     }
-  }
-
-  Future<void> _saveCurrentSearch(OffersListState offersState, BusinessesListState businessesState) async {
-    final query = _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null;
-    final cityId = offersState.cityId ?? businessesState.cityId;
-    final categoryId = offersState.categoryId ?? businessesState.categoryId;
-
-    final success = await ref.read(savedSearchesProvider.notifier).create(
-      query: query,
-      cityId: cityId,
-      categoryId: categoryId,
-    );
-
-    if (!mounted) return;
-    final l = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? l.searchSaved : l.searchSaveError),
-        backgroundColor: success ? AppColors.bgSecondary : AppColors.danger,
-      ),
-    );
   }
 
   void _clearFilters() {

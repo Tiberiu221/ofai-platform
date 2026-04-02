@@ -211,11 +211,6 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
                     prefs: prefs,
                   ),
                   _NotifToggle(
-                    label: AppLocalizations.of(context)!.prefSavedSearch,
-                    prefKey: 'saved_search',
-                    prefs: prefs,
-                  ),
-                  _NotifToggle(
                     label: AppLocalizations.of(context)!.prefMarketing,
                     prefKey: 'marketing',
                     prefs: prefs,

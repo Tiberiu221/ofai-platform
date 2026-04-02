@@ -90,10 +90,6 @@ class ApiEndpoints {
   static const String cities = '/cities';
   static const String categories = '/categories';
 
-  // Saved Searches
-  static const String savedSearches = '/saved-searches';
-  static String deleteSavedSearch(int id) => '/saved-searches/$id';
-
   // Gamification
   static const String gamification = '/users/me/gamification';
 

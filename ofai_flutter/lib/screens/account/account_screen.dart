@@ -465,11 +465,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                 onTap: () => context.push('/account/preferences'),
               ),
               _MenuItem(
-                icon: Icons.saved_search,
-                label: AppLocalizations.of(context)!.savedSearches,
-                onTap: () => context.push('/account/saved-searches'),
-              ),
-              _MenuItem(
                 icon: Icons.flag_outlined,
                 label: AppLocalizations.of(context)!.myReports,
                 onTap: () => context.push('/account/my-reports'),

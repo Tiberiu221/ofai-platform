@@ -62,7 +62,7 @@ class OfferCard extends ConsumerWidget {
 
   Widget _buildVertical(BuildContext context, WidgetRef ref) {
     return Semantics(
-      label: 'Oferta: ${offer.title}${offer.business != null ? ', ${offer.business!.name}' : ''}',
+      label: 'Oferta: ${offer.title}${offer.business != null ? ', ' : ''}${offer.business?.name ?? ''}',
       button: true,
       child: TapScale(
         onTap: () => context.push('/offer/${offer.id}'),
@@ -189,8 +189,12 @@ class OfferCard extends ConsumerWidget {
   // ── Horizontal layout ────────────────────────────────────────
 
   Widget _buildHorizontal(BuildContext context, WidgetRef ref) {
+    final bizName = offer.business?.name;
+    final semanticsLabel = bizName != null
+        ? 'Oferta: ${offer.title}, $bizName'
+        : 'Oferta: ${offer.title}';
     return Semantics(
-      label: 'Oferta: ${offer.title}${offer.business != null ? ', ${offer.business!.name}' : ''}',
+      label: semanticsLabel,
       button: true,
       child: TapScale(
       onTap: () => context.push('/offer/${offer.id}'),
@@ -288,6 +292,7 @@ class OfferCard extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

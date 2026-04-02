@@ -25,7 +25,7 @@ class CitiesScreen extends ConsumerWidget {
       body: citiesAsync.when(
         data: (cities) {
           if (cities.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.location_city_outlined,
               title: AppLocalizations.of(context)!.citiesEmpty,
             );

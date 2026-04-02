@@ -25,7 +25,7 @@ class CategoriesScreen extends ConsumerWidget {
       body: categoriesAsync.when(
         data: (categories) {
           if (categories.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.category_outlined,
               title: AppLocalizations.of(context)!.categoriesEmpty,
             );
