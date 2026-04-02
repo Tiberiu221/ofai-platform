@@ -80,7 +80,7 @@ const response = result.rows.map(row => ({
   lat: row.lat,
   lng: row.lng,
   logo_url: row.logo_url || null,
-  cover_image_url: row.cover_image_url || null,
+  cover_image: row.cover_image_url || null,
   rating: parseFloat(parseFloat(row.rating_avg).toFixed(1)),
   rating_count: parseInt(row.rating_count) || 0,
   city: row.city_id

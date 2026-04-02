@@ -60,7 +60,20 @@ class BusinessCard extends ConsumerWidget {
                 ),
               ),
             // Main row content
-            Padding(
+            Stack(
+              children: [
+                if (business.isPremium && hasCover)
+                  Positioned.fill(
+                    child: Opacity(
+                      opacity: 0.06,
+                      child: CachedNetworkImage(
+                        imageUrl: business.coverImage!,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 400,
+                      ),
+                    ),
+                  ),
+                Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
@@ -166,6 +179,8 @@ class BusinessCard extends ConsumerWidget {
                   Icon(Icons.chevron_right, color: AppColors.textTertiary, size: 20),
                 ],
               ),
+            ),
+              ],
             ),
           ],
         ),
