@@ -154,7 +154,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~258 endpoints, 20 providers, 72 migrations, 26 screens, 13 models, 24 widgets
+- 23 route files, ~258 endpoints, 20 providers, 75 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -239,9 +239,10 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Analytics Tier Gating:** Period buttons (7/30/90 zile) now respect tier's `analytics_days` limit. Default period matches tier max (was hardcoded 30 for all). Backend already enforced via Math.min cap.
 - **Fuzzy Search:** pg_trgm extension + `buildFuzzySearch()` helper combining ILIKE + similarity() across 5 search routes (web offers, web businesses, mobile offers, mobile businesses, search suggest). Typo tolerance with 0.15 threshold.
 - **Backend Testing:** Jest + Supertest infrastructure with 19 tests (jwt helpers, tier normalization, search helper). `npm test` / `npm run test:coverage`. App exports via `require.main === module` guard.
+- **Flutter Testing:** flutter_test + mocktail, 11 test files (7 model + 4 widget), 66 model tests passing. Tests cover: offer, business, saved_search, collection, user, report models + formatters.
 - **Referral Dashboard:** `GET /users/me/referral-stats` API returns total referrals, points, recent list. Flutter bottom sheet enhanced with stat chips + referral history.
 - **PWA Support:** Web app manifest (`/manifest.json`), service worker (`/sw.js`) with cache strategies (static=cache-first, HTML=network-first, API=network-only), offline fallback page, apple-touch-icon, theme-color meta.
-- **i18n Complete:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~717 keys, 26 namespaces), ALL 25 consumer EJS templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~180 keys), ALL 26 screens + 5 widgets localized. Provider/utility error strings remain hardcoded (no BuildContext available).
+- **i18n Complete:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~717 keys, 26 namespaces), ALL 25 consumer EJS templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~430 keys RO + EN), ALL 26 screens + widgets fully localized (including help FAQ, report dialog, business request form). Default locale: RO. Provider/utility error strings remain hardcoded (no BuildContext available).
 - **Admin Cron Testing:** `POST /admin/test-cron/review-prompt` endpoint to manually trigger post-redemption review cron.
 - **Offer Detail Booking Button:** Actionable CTA (phone/whatsapp/url) in "Cum profiți de ofertă?" section — previously only showed text
 - **Booking Type Normalization:** Migration 071 fixes `link`→`url` (20 businesses) + `NONE`→`none` (2 locations). Route handlers normalize at read time as defense in depth.
@@ -258,6 +259,14 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Admin Analytics Dashboard:** `/admin/analytics` with Chart.js — MRR/ARR/churn cards, tier distribution doughnut, Free vs Paid breakdown, subscription history bar, user signups line chart, business health, email engagement. Cached 15min.
 - **Web Auth Rate Limiting:** POST /login, /register, /forgot-password, /verify-code, /reset-password all rate-limited
 - **Password Reset Web Flow:** GET /verify-code route + verify-code.ejs template for complete web password reset
+- **Flutter QA Fixes:** SavedSearch DateTime.tryParse crash fix, FollowedBusinesses toggle dedup (_pendingToggles), RadioListTile→RadioGroup migration (Flutter 3.32+), collections provider error propagation, email validation regex strengthened, dead code cleanup (~56 lines removed)
+- **Flutter i18n Completion:** 92 new localization keys (RO+EN) across 8 screens: help (FAQ), business_request (form), report_dialog (reasons), my_reports (statuses), account (profile pic), categories, cities, saved_searches. Report dialog: const list→method pattern for l10n.
+- **Distance Sort Bug Fix:** Auto-resort offers when loadMore() appends new items during distance sort
+- **Keyboard Dismiss:** textInputAction on edit_profile, change_password, business_request screens
+- **Pull-to-Refresh:** Added to categories, cities, saved_searches, collection_detail screens (await .future for FutureProvider)
+- **Accessibility:** Semantics labels on offer_card horizontal layout, collection X buttons, account camera icon
+- **Firebase Analytics:** firebase_analytics dependency, trackScreenView/trackSearch/trackOnboardingComplete, FirebaseAnalyticsObserver on GoRouter (auto screen_view tracking)
+- **Error Retry Interceptor:** Dio interceptor with exponential backoff (1s→2s→4s), max 3 retries on 5xx + network errors only (NOT 4xx), added after AuthInterceptor
 
 ### Features — Intentionally Hidden
 - **Gamification UI:** Backend active (points, levels, streak, 10+ badge types tracked in DB), UI intentionally hidden — DO NOT re-enable without explicit request. Only badges visible on Account screen.
@@ -310,7 +319,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
 - **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
 - **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
-- **i18n complete:** ✅ Backend 717 keys (26 namespaces) + Flutter 180 keys — all 25 pages + 26 screens
+- **i18n complete:** ✅ Backend 717 keys (26 namespaces) + Flutter ~430 keys (RO+EN) — all 25 pages + 26 screens + widgets fully localized
 - **Stripe config:** ✅ Env vars (`STRIPE_SECRET_KEY`), no hardcoded keys — swap to live when ready
 - **Gamification UI:** ✅ Hidden intentionally (backend active, UI disabled by design)
 
@@ -323,3 +332,6 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **PWA icons:** Files exist but are 64x64 — need proper 192x192 and 512x512 icons
 - **GA4 conversion funnel:** Basic events tracked (promo_reveal, business_action), full funnel missing
 - **Backend test coverage:** Infrastructure exists but only helpers tested — no route/integration tests
+- **Flutter test coverage:** Model tests exist (66 passing), but no provider tests or integration tests yet
+- **Accessibility:** Basic Semantics added, but many icon buttons still lack labels; touch targets not fully audited
+- **Offline caching:** No API response cache (architectural change, needs Hive/Isar + Dio cache interceptor)
