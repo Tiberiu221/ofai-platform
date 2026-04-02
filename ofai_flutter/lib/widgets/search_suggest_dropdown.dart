@@ -358,6 +358,8 @@ class _BusinessSuggestItem extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: business.logoUrl!,
                         fit: BoxFit.cover,
+                        memCacheWidth: 56,
+                        memCacheHeight: 56,
                         placeholder: (_, __) => Container(
                           color: AppColors.bgCard,
                           child: Icon(Icons.store, size: 16, color: AppColors.textTertiary),

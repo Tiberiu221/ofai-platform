@@ -327,6 +327,8 @@ class OfferCard extends ConsumerWidget {
             ? CachedNetworkImage(
                 imageUrl: logoUrl,
                 fit: BoxFit.cover,
+                memCacheWidth: 40,
+                memCacheHeight: 40,
                 placeholder: (_, __) => _logoFallback(name),
                 errorWidget: (_, __, ___) => _logoFallback(name),
               )
@@ -451,6 +453,7 @@ class OfferCard extends ConsumerWidget {
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
+      memCacheWidth: 600,
       placeholder: (_, __) => Container(color: AppColors.bgSecondary),
       errorWidget: (_, __, ___) => Container(
         color: AppColors.bgSecondary,

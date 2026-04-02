@@ -50,6 +50,8 @@ class BusinessCard extends ConsumerWidget {
                     CachedNetworkImage(
                       imageUrl: business.coverImage!,
                       fit: BoxFit.cover,
+                      memCacheWidth: 480,
+                      memCacheHeight: 128,
                       placeholder: (_, __) => Container(color: AppColors.bgSecondary),
                       errorWidget: (_, __, ___) => Container(color: AppColors.bgSecondary),
                     ),
@@ -243,6 +245,8 @@ class BusinessCard extends ConsumerWidget {
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.cover,
+      memCacheWidth: 112,
+      memCacheHeight: 112,
       placeholder: (_, __) => Container(color: AppColors.bgSecondary),
       errorWidget: (_, __, ___) => Container(
         color: AppColors.accent,
