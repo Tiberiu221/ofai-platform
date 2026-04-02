@@ -4,6 +4,7 @@ import '../core/theme/app_typography.dart';
 import '../core/network/api_client.dart';
 import 'package:dio/dio.dart';
 import '../core/network/api_endpoints.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 /// Report reason option
 class _ReportReason {
@@ -12,19 +13,19 @@ class _ReportReason {
   const _ReportReason(this.key, this.label);
 }
 
-const _offerReasons = [
-  _ReportReason('fake_offer', 'Oferta nu este reala'),
-  _ReportReason('misleading_price', 'Pret inselator'),
-  _ReportReason('inappropriate_content', 'Continut inadecvat'),
-  _ReportReason('spam', 'Spam / publicitate agresiva'),
-  _ReportReason('other', 'Altul'),
+List<_ReportReason> _getOfferReasons(AppLocalizations l10n) => [
+  _ReportReason('fake_offer', l10n.reportFakeOffer),
+  _ReportReason('misleading_price', l10n.reportMisleadingPrice),
+  _ReportReason('inappropriate_content', l10n.reportInappropriate),
+  _ReportReason('spam', l10n.reportSpam),
+  _ReportReason('other', l10n.reportOther),
 ];
 
-const _businessReasons = [
-  _ReportReason('closed_business', 'Business inchis / inexistent'),
-  _ReportReason('inappropriate_content', 'Continut inadecvat'),
-  _ReportReason('spam', 'Spam / publicitate agresiva'),
-  _ReportReason('other', 'Altul'),
+List<_ReportReason> _getBusinessReasons(AppLocalizations l10n) => [
+  _ReportReason('closed_business', l10n.reportClosedBusiness),
+  _ReportReason('inappropriate_content', l10n.reportInappropriate),
+  _ReportReason('spam', l10n.reportSpam),
+  _ReportReason('other', l10n.reportOther),
 ];
 
 /// Shows a report bottom sheet for an offer or business.
@@ -61,9 +62,6 @@ class _ReportSheetState extends State<_ReportSheet> {
   final _detailsController = TextEditingController();
   bool _submitting = false;
 
-  List<_ReportReason> get _reasons =>
-      widget.targetType == 'offer' ? _offerReasons : _businessReasons;
-
   @override
   void dispose() {
     _detailsController.dispose();
@@ -71,10 +69,11 @@ class _ReportSheetState extends State<_ReportSheet> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_selectedReason == null) return;
     if (_selectedReason == 'other' && _detailsController.text.trim().length < 5) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Te rugam sa descrii problema (minim 5 caractere).')),
+        SnackBar(content: Text(l10n.reportDetailsMinLength)),
       );
       return;
     }
@@ -97,11 +96,12 @@ class _ReportSheetState extends State<_ReportSheet> {
       }
     } catch (e) {
       if (mounted) {
-        String msg = 'Eroare la trimiterea raportului.';
+        final l10n = AppLocalizations.of(context)!;
+        String msg = l10n.reportErrorGeneric;
         if (e is DioException && e.response?.statusCode == 409) {
-          msg = 'Ai raportat deja aceasta resursa.';
+          msg = l10n.reportErrorDuplicate;
         } else if (e is DioException && e.response?.statusCode == 429) {
-          msg = 'Ai atins limita de rapoarte pentru astazi.';
+          msg = l10n.reportErrorRateLimit;
         }
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       }
@@ -112,6 +112,11 @@ class _ReportSheetState extends State<_ReportSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final reasons = widget.targetType == 'offer'
+        ? _getOfferReasons(l10n)
+        : _getBusinessReasons(l10n);
+
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
@@ -136,12 +141,12 @@ class _ReportSheetState extends State<_ReportSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Raporteaza ${widget.targetType == "offer" ? "oferta" : "business-ul"}',
+            widget.targetType == 'offer' ? l10n.reportOfferTitle : l10n.reportBusinessTitle,
             style: AppTypography.headlineSmall,
           ),
           const SizedBox(height: 4),
           Text(
-            'Selecteaza motivul raportarii:',
+            l10n.reportSelectReason,
             style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
@@ -149,7 +154,7 @@ class _ReportSheetState extends State<_ReportSheet> {
             groupValue: _selectedReason ?? '',
             onChanged: (v) => setState(() => _selectedReason = v),
             child: Column(
-              children: _reasons.map((r) => RadioListTile<String>(
+              children: reasons.map((r) => RadioListTile<String>(
                 value: r.key,
                 title: Text(r.label, style: AppTypography.bodyMedium),
                 activeColor: AppColors.accent,
@@ -165,7 +170,7 @@ class _ReportSheetState extends State<_ReportSheet> {
               maxLength: 500,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Descrie problema...',
+                hintText: l10n.reportDetailsHint,
                 hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 enabledBorder: OutlineInputBorder(
@@ -189,7 +194,7 @@ class _ReportSheetState extends State<_ReportSheet> {
               ),
               child: _submitting
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Trimite raportul'),
+                  : Text(l10n.reportSubmitBtn),
             ),
           ),
           const SizedBox(height: 8),

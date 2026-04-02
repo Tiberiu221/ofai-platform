@@ -7,6 +7,7 @@ import '../../providers/reports_provider.dart';
 import '../../models/report.dart';
 import '../../widgets/empty_state.dart';
 import 'package:intl/intl.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class MyReportsScreen extends ConsumerStatefulWidget {
   const MyReportsScreen({super.key});
@@ -28,16 +29,16 @@ class _MyReportsScreenState extends ConsumerState<MyReportsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Rapoartele mele'),
+        title: Text(AppLocalizations.of(context)!.myReportsTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
           : state.reports.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: Icons.flag_outlined,
-                  title: 'Niciun raport trimis',
-                  subtitle: 'Rapoartele tale vor aparea aici',
+                  title: AppLocalizations.of(context)!.myReportsEmpty,
+                  subtitle: AppLocalizations.of(context)!.myReportsEmptySubtitle,
                 )
               : RefreshIndicator(
                   color: AppColors.accent,
@@ -68,16 +69,16 @@ class _MyReportsScreenState extends ConsumerState<MyReportsScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.bgCard,
-        title: const Text('Retrage raportul?'),
-        content: const Text('Raportul va fi sters definitiv.'),
+        title: Text(AppLocalizations.of(context)!.reportWithdrawTitle),
+        content: Text(AppLocalizations.of(context)!.reportWithdrawBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Anuleaza'),
+            child: Text(AppLocalizations.of(context)!.cancelAction),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Retrage', style: TextStyle(color: AppColors.danger)),
+            child: Text(AppLocalizations.of(context)!.reportWithdrawConfirm, style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -88,7 +89,7 @@ class _MyReportsScreenState extends ConsumerState<MyReportsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? 'Raportul a fost retras' : 'Nu s-a putut retrage raportul'),
+            content: Text(success ? AppLocalizations.of(context)!.reportWithdrawn : AppLocalizations.of(context)!.reportWithdrawError),
             backgroundColor: success ? AppColors.success : AppColors.danger,
             behavior: SnackBarBehavior.floating,
           ),
@@ -125,7 +126,7 @@ class _ReportTile extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(
-                report.targetType == 'offer' ? 'Oferta #${report.targetId}' : 'Business #${report.targetId}',
+                report.targetType == 'offer' ? AppLocalizations.of(context)!.reportOfferTarget(report.targetId) : AppLocalizations.of(context)!.reportBusinessTarget(report.targetId),
                 style: AppTypography.labelMedium.copyWith(color: AppColors.textSecondary),
               ),
               const Spacer(),
@@ -155,7 +156,7 @@ class _ReportTile extends StatelessWidget {
                 GestureDetector(
                   onTap: onWithdraw,
                   child: Text(
-                    'Retrage',
+                    AppLocalizations.of(context)!.reportWithdrawConfirm,
                     style: AppTypography.labelSmall.copyWith(color: AppColors.danger),
                   ),
                 ),
@@ -173,11 +174,12 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final (label, color) = switch (status) {
-      'pending' => ('In asteptare', AppColors.warning),
-      'reviewed' => ('Analizat', AppColors.info),
-      'resolved' => ('Rezolvat', AppColors.success),
-      _ => ('Necunoscut', AppColors.textTertiary),
+      'pending' => (l10n.reportStatusPending, AppColors.warning),
+      'reviewed' => (l10n.reportStatusReviewed, AppColors.info),
+      'resolved' => (l10n.reportStatusResolved, AppColors.success),
+      _ => (l10n.reportStatusUnknown, AppColors.textTertiary),
     };
 
     return Container(

@@ -982,7 +982,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showPictureInReviews => 'Show picture in reviews';
 
   @override
-  String get profileUpdated => 'Profile updated';
+  String get profileUpdated => 'Profile photo updated!';
 
   @override
   String get saveError => 'Error saving';
@@ -1093,4 +1093,305 @@ class AppLocalizationsEn extends AppLocalizations {
   String savePlural(int count) {
     return '$count saves';
   }
+
+  @override
+  String get helpTitle => 'Help & Support';
+
+  @override
+  String get helpSubtitle => 'How can we help?';
+
+  @override
+  String get helpDescription =>
+      'The OFAI team is here for you. We usually respond within 24 hours.';
+
+  @override
+  String get helpEmailTitle => 'Email';
+
+  @override
+  String get helpEmailValue => 'contact@ofai.ro';
+
+  @override
+  String get helpPhoneTitle => 'Phone';
+
+  @override
+  String get helpPhoneValue => '+40 700 000 000';
+
+  @override
+  String get helpFaqTitle => 'Frequently asked questions';
+
+  @override
+  String get helpLinksTitle => 'Useful links';
+
+  @override
+  String get helpTermsLink => 'Terms and conditions';
+
+  @override
+  String get helpPrivacyLink => 'Privacy policy';
+
+  @override
+  String get helpFaq1Q => 'How does the platform work?';
+
+  @override
+  String get helpFaq1A =>
+      'OFAI helps you discover deals and discounts from local businesses. You can search by city, category or keywords, save your favorite offers and follow preferred businesses.';
+
+  @override
+  String get helpFaq2Q => 'How do I earn points?';
+
+  @override
+  String get helpFaq2A =>
+      'You earn points for your activity on the platform: writing reviews, daily visits and interacting with offers.';
+
+  @override
+  String get helpFaq3Q => 'How can I use my points?';
+
+  @override
+  String get helpFaq3A =>
+      'Accumulated points contribute to your progress on the platform. The more points you have, the higher your level and the more badges you unlock.';
+
+  @override
+  String get helpFaq4Q => 'How do I change my city?';
+
+  @override
+  String get helpFaq4A =>
+      'Go to Account > Preferences and select your desired city. Offers and businesses will be filtered automatically.';
+
+  @override
+  String get helpFaq5Q => 'How do I follow a business?';
+
+  @override
+  String get helpFaq5A =>
+      'Open the business page and tap the \"Follow\" button. You\'ll receive notifications when the business adds new offers.';
+
+  @override
+  String get helpFaq6Q => 'How do I leave a review?';
+
+  @override
+  String get helpFaq6A =>
+      'Open the business page and tap \"Write a review\". Choose a rating from 1 to 5 stars and optionally leave a comment.';
+
+  @override
+  String get helpFaq7Q => 'How do I delete my account?';
+
+  @override
+  String get helpFaq7A =>
+      'Go to Account > Delete account. This action is irreversible and all your data will be permanently deleted.';
+
+  @override
+  String get helpFaq8Q => 'How do I register a business?';
+
+  @override
+  String get helpFaq8A =>
+      'From Account, tap \"Add a business\" and fill in the form. Our team will review your request and notify you.';
+
+  @override
+  String get bizReqTitle => 'Add a business';
+
+  @override
+  String get bizReqSubtitle =>
+      'Suggest a business that is not yet on the platform.';
+
+  @override
+  String get bizReqNameLabel => 'Business name *';
+
+  @override
+  String get bizReqNameHint => 'E.g.: Elite Salon';
+
+  @override
+  String get bizReqNameRequired => 'Name is required';
+
+  @override
+  String get bizReqCityLabel => 'City *';
+
+  @override
+  String get bizReqCityHint => 'Choose city';
+
+  @override
+  String get bizReqCityRequired => 'City is required';
+
+  @override
+  String get bizReqCategoryLabel => 'Category';
+
+  @override
+  String get bizReqCategoryHint => 'Choose category';
+
+  @override
+  String get bizReqAddressLabel => 'Address';
+
+  @override
+  String get bizReqAddressHint => 'E.g.: 10 Victoriei St., Cluj-Napoca';
+
+  @override
+  String get bizReqPhoneLabel => 'Phone';
+
+  @override
+  String get bizReqPhoneHint => 'E.g.: 0712 345 678';
+
+  @override
+  String get bizReqWebsiteLabel => 'Website';
+
+  @override
+  String get bizReqWebsiteHint => 'E.g.: www.elitesalon.ro';
+
+  @override
+  String get bizReqDescLabel => 'Description';
+
+  @override
+  String get bizReqDescHint => 'Briefly describe the business...';
+
+  @override
+  String get bizReqSubmit => 'Submit request';
+
+  @override
+  String get bizReqSuccessTitle => 'Request sent!';
+
+  @override
+  String get bizReqSuccessBody =>
+      'Your request has been registered. We will review it and notify you when it is approved.';
+
+  @override
+  String get bizReqError =>
+      'Error sending request. Do you already have a pending request?';
+
+  @override
+  String get reportOfferTitle => 'Report offer';
+
+  @override
+  String get reportBusinessTitle => 'Report business';
+
+  @override
+  String get reportSelectReason => 'Select the reason for reporting:';
+
+  @override
+  String get reportFakeOffer => 'Offer is not real';
+
+  @override
+  String get reportMisleadingPrice => 'Misleading price';
+
+  @override
+  String get reportInappropriate => 'Inappropriate content';
+
+  @override
+  String get reportSpam => 'Spam / aggressive advertising';
+
+  @override
+  String get reportOther => 'Other';
+
+  @override
+  String get reportClosedBusiness => 'Business closed / non-existent';
+
+  @override
+  String get reportDetailsHint => 'Describe the issue...';
+
+  @override
+  String get reportDetailsMinLength =>
+      'Please describe the issue (minimum 5 characters).';
+
+  @override
+  String get reportSubmitBtn => 'Submit report';
+
+  @override
+  String get reportErrorGeneric => 'Error submitting report.';
+
+  @override
+  String get reportErrorDuplicate => 'You have already reported this resource.';
+
+  @override
+  String get reportErrorRateLimit =>
+      'You have reached the report limit for today.';
+
+  @override
+  String get myReportsTitle => 'My Reports';
+
+  @override
+  String get myReportsEmpty => 'No reports submitted';
+
+  @override
+  String get myReportsEmptySubtitle => 'Your reports will appear here';
+
+  @override
+  String reportOfferTarget(int id) {
+    return 'Offer #$id';
+  }
+
+  @override
+  String reportBusinessTarget(int id) {
+    return 'Business #$id';
+  }
+
+  @override
+  String get reportWithdrawTitle => 'Withdraw report?';
+
+  @override
+  String get reportWithdrawBody => 'The report will be permanently deleted.';
+
+  @override
+  String get reportWithdrawConfirm => 'Withdraw';
+
+  @override
+  String get reportWithdrawn => 'Report has been withdrawn';
+
+  @override
+  String get reportWithdrawError => 'Could not withdraw report';
+
+  @override
+  String get reportStatusPending => 'Pending';
+
+  @override
+  String get reportStatusReviewed => 'Reviewed';
+
+  @override
+  String get reportStatusResolved => 'Resolved';
+
+  @override
+  String get reportStatusUnknown => 'Unknown';
+
+  @override
+  String get profilePickGallery => 'Choose from gallery';
+
+  @override
+  String get profileDeletePhoto => 'Delete photo';
+
+  @override
+  String get profileUploading => 'Uploading photo...';
+
+  @override
+  String get profileDeleted => 'Profile photo deleted';
+
+  @override
+  String get badgeSelected => 'Badge selected!';
+
+  @override
+  String get badgeDeselected => 'Badge deactivated';
+
+  @override
+  String get categoriesTitle => 'Categories';
+
+  @override
+  String get categoriesEmpty => 'No categories available';
+
+  @override
+  String get categoriesError => 'Error loading categories';
+
+  @override
+  String get categoriesRetry => 'Retry';
+
+  @override
+  String get citiesTitle => 'Cities';
+
+  @override
+  String get citiesEmpty => 'No cities available';
+
+  @override
+  String get citiesError => 'Error loading cities';
+
+  @override
+  String get savedSearchesTitle => 'Saved Searches';
+
+  @override
+  String get savedSearchesEmpty => 'No saved searches';
+
+  @override
+  String get savedSearchesEmptySubtitle =>
+      'Save searches from Explore to get notified when new offers appear.';
 }

@@ -1925,7 +1925,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileUpdated.
   ///
   /// In ro, this message translates to:
-  /// **'Profil actualizat'**
+  /// **'Poza de profil actualizata!'**
   String get profileUpdated;
 
   /// No description provided for @saveError.
@@ -2131,6 +2131,570 @@ abstract class AppLocalizations {
   /// In ro, this message translates to:
   /// **'{count} salvari'**
   String savePlural(int count);
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ajutor & Suport'**
+  String get helpTitle;
+
+  /// No description provided for @helpSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum te putem ajuta?'**
+  String get helpSubtitle;
+
+  /// No description provided for @helpDescription.
+  ///
+  /// In ro, this message translates to:
+  /// **'Echipa OFAI iti sta la dispozitie. Raspundem in medie in mai putin de 24 de ore.'**
+  String get helpDescription;
+
+  /// No description provided for @helpEmailTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Email'**
+  String get helpEmailTitle;
+
+  /// No description provided for @helpEmailValue.
+  ///
+  /// In ro, this message translates to:
+  /// **'contact@ofai.ro'**
+  String get helpEmailValue;
+
+  /// No description provided for @helpPhoneTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Telefon'**
+  String get helpPhoneTitle;
+
+  /// No description provided for @helpPhoneValue.
+  ///
+  /// In ro, this message translates to:
+  /// **'+40 700 000 000'**
+  String get helpPhoneValue;
+
+  /// No description provided for @helpFaqTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Intrebari frecvente'**
+  String get helpFaqTitle;
+
+  /// No description provided for @helpLinksTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Link-uri utile'**
+  String get helpLinksTitle;
+
+  /// No description provided for @helpTermsLink.
+  ///
+  /// In ro, this message translates to:
+  /// **'Termeni si conditii'**
+  String get helpTermsLink;
+
+  /// No description provided for @helpPrivacyLink.
+  ///
+  /// In ro, this message translates to:
+  /// **'Politica de confidentialitate'**
+  String get helpPrivacyLink;
+
+  /// No description provided for @helpFaq1Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum functioneaza platforma?'**
+  String get helpFaq1Q;
+
+  /// No description provided for @helpFaq1A.
+  ///
+  /// In ro, this message translates to:
+  /// **'OFAI iti permite sa descoperi oferte si reduceri de la afaceri locale. Poti cauta dupa oras, categorie sau cuvinte cheie, salva ofertele favorite si urmari business-urile preferate.'**
+  String get helpFaq1A;
+
+  /// No description provided for @helpFaq2Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum castig puncte?'**
+  String get helpFaq2Q;
+
+  /// No description provided for @helpFaq2A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Castigi puncte pentru activitatea ta pe platforma: scrierea de recenzii, vizitarea zilnica a aplicatiei si interactiunea cu ofertele.'**
+  String get helpFaq2A;
+
+  /// No description provided for @helpFaq3Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum pot folosi punctele?'**
+  String get helpFaq3Q;
+
+  /// No description provided for @helpFaq3A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Punctele acumulate contribuie la progresul tau pe platforma. Cu cat ai mai multe puncte, cu atat urci in nivel si deblochezi badge-uri noi.'**
+  String get helpFaq3A;
+
+  /// No description provided for @helpFaq4Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum schimb orasul?'**
+  String get helpFaq4Q;
+
+  /// No description provided for @helpFaq4A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Mergi in Cont > Preferinte si selecteaza orasul dorit. Ofertele si business-urile vor fi filtrate automat.'**
+  String get helpFaq4A;
+
+  /// No description provided for @helpFaq5Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum urmaresc un business?'**
+  String get helpFaq5Q;
+
+  /// No description provided for @helpFaq5A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Deschide pagina business-ului si apasa butonul \"Urmareste\". Vei primi notificari cand business-ul adauga oferte noi.'**
+  String get helpFaq5A;
+
+  /// No description provided for @helpFaq6Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum las o recenzie?'**
+  String get helpFaq6Q;
+
+  /// No description provided for @helpFaq6A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Deschide pagina business-ului si apasa \"Scrie recenzie\". Alege un rating de la 1 la 5 stele si optional lasa un comentariu.'**
+  String get helpFaq6A;
+
+  /// No description provided for @helpFaq7Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum imi sterg contul?'**
+  String get helpFaq7Q;
+
+  /// No description provided for @helpFaq7A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Mergi in Cont > Sterge contul. Aceasta actiune este ireversibila si toate datele tale vor fi sterse permanent.'**
+  String get helpFaq7A;
+
+  /// No description provided for @helpFaq8Q.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cum pot inregistra un business?'**
+  String get helpFaq8Q;
+
+  /// No description provided for @helpFaq8A.
+  ///
+  /// In ro, this message translates to:
+  /// **'Din Cont, apasa \"Adauga un business\" si completeaza formularul. Echipa noastra va analiza cererea si te va notifica.'**
+  String get helpFaq8A;
+
+  /// No description provided for @bizReqTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Adauga un business'**
+  String get bizReqTitle;
+
+  /// No description provided for @bizReqSubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Propune un business care nu se afla inca pe platforma.'**
+  String get bizReqSubtitle;
+
+  /// No description provided for @bizReqNameLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Numele business-ului *'**
+  String get bizReqNameLabel;
+
+  /// No description provided for @bizReqNameHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ex: Salon Elite'**
+  String get bizReqNameHint;
+
+  /// No description provided for @bizReqNameRequired.
+  ///
+  /// In ro, this message translates to:
+  /// **'Numele este obligatoriu'**
+  String get bizReqNameRequired;
+
+  /// No description provided for @bizReqCityLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Oras *'**
+  String get bizReqCityLabel;
+
+  /// No description provided for @bizReqCityHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Alege orasul'**
+  String get bizReqCityHint;
+
+  /// No description provided for @bizReqCityRequired.
+  ///
+  /// In ro, this message translates to:
+  /// **'Orasul este obligatoriu'**
+  String get bizReqCityRequired;
+
+  /// No description provided for @bizReqCategoryLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Categorie'**
+  String get bizReqCategoryLabel;
+
+  /// No description provided for @bizReqCategoryHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Alege categoria'**
+  String get bizReqCategoryHint;
+
+  /// No description provided for @bizReqAddressLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Adresa'**
+  String get bizReqAddressLabel;
+
+  /// No description provided for @bizReqAddressHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ex: Str. Victoriei 10, Cluj-Napoca'**
+  String get bizReqAddressHint;
+
+  /// No description provided for @bizReqPhoneLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Telefon'**
+  String get bizReqPhoneLabel;
+
+  /// No description provided for @bizReqPhoneHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ex: 0712 345 678'**
+  String get bizReqPhoneHint;
+
+  /// No description provided for @bizReqWebsiteLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Website'**
+  String get bizReqWebsiteLabel;
+
+  /// No description provided for @bizReqWebsiteHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ex: www.salonelite.ro'**
+  String get bizReqWebsiteHint;
+
+  /// No description provided for @bizReqDescLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'Descriere'**
+  String get bizReqDescLabel;
+
+  /// No description provided for @bizReqDescHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Descrie pe scurt business-ul...'**
+  String get bizReqDescHint;
+
+  /// No description provided for @bizReqSubmit.
+  ///
+  /// In ro, this message translates to:
+  /// **'Trimite cererea'**
+  String get bizReqSubmit;
+
+  /// No description provided for @bizReqSuccessTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cerere trimisa!'**
+  String get bizReqSuccessTitle;
+
+  /// No description provided for @bizReqSuccessBody.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cererea ta a fost inregistrata. O vom analiza si te vom notifica cand va fi aprobata.'**
+  String get bizReqSuccessBody;
+
+  /// No description provided for @bizReqError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la trimiterea cererii. Mai ai deja o cerere in asteptare?'**
+  String get bizReqError;
+
+  /// No description provided for @reportOfferTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Raporteaza oferta'**
+  String get reportOfferTitle;
+
+  /// No description provided for @reportBusinessTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Raporteaza business-ul'**
+  String get reportBusinessTitle;
+
+  /// No description provided for @reportSelectReason.
+  ///
+  /// In ro, this message translates to:
+  /// **'Selecteaza motivul raportarii:'**
+  String get reportSelectReason;
+
+  /// No description provided for @reportFakeOffer.
+  ///
+  /// In ro, this message translates to:
+  /// **'Oferta nu este reala'**
+  String get reportFakeOffer;
+
+  /// No description provided for @reportMisleadingPrice.
+  ///
+  /// In ro, this message translates to:
+  /// **'Pret inselator'**
+  String get reportMisleadingPrice;
+
+  /// No description provided for @reportInappropriate.
+  ///
+  /// In ro, this message translates to:
+  /// **'Continut inadecvat'**
+  String get reportInappropriate;
+
+  /// No description provided for @reportSpam.
+  ///
+  /// In ro, this message translates to:
+  /// **'Spam / publicitate agresiva'**
+  String get reportSpam;
+
+  /// No description provided for @reportOther.
+  ///
+  /// In ro, this message translates to:
+  /// **'Altul'**
+  String get reportOther;
+
+  /// No description provided for @reportClosedBusiness.
+  ///
+  /// In ro, this message translates to:
+  /// **'Business inchis / inexistent'**
+  String get reportClosedBusiness;
+
+  /// No description provided for @reportDetailsHint.
+  ///
+  /// In ro, this message translates to:
+  /// **'Descrie problema...'**
+  String get reportDetailsHint;
+
+  /// No description provided for @reportDetailsMinLength.
+  ///
+  /// In ro, this message translates to:
+  /// **'Te rugam sa descrii problema (minim 5 caractere).'**
+  String get reportDetailsMinLength;
+
+  /// No description provided for @reportSubmitBtn.
+  ///
+  /// In ro, this message translates to:
+  /// **'Trimite raportul'**
+  String get reportSubmitBtn;
+
+  /// No description provided for @reportErrorGeneric.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la trimiterea raportului.'**
+  String get reportErrorGeneric;
+
+  /// No description provided for @reportErrorDuplicate.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ai raportat deja aceasta resursa.'**
+  String get reportErrorDuplicate;
+
+  /// No description provided for @reportErrorRateLimit.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ai atins limita de rapoarte pentru astazi.'**
+  String get reportErrorRateLimit;
+
+  /// No description provided for @myReportsTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Rapoartele mele'**
+  String get myReportsTitle;
+
+  /// No description provided for @myReportsEmpty.
+  ///
+  /// In ro, this message translates to:
+  /// **'Niciun raport trimis'**
+  String get myReportsEmpty;
+
+  /// No description provided for @myReportsEmptySubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Rapoartele tale vor aparea aici'**
+  String get myReportsEmptySubtitle;
+
+  /// No description provided for @reportOfferTarget.
+  ///
+  /// In ro, this message translates to:
+  /// **'Oferta #{id}'**
+  String reportOfferTarget(int id);
+
+  /// No description provided for @reportBusinessTarget.
+  ///
+  /// In ro, this message translates to:
+  /// **'Business #{id}'**
+  String reportBusinessTarget(int id);
+
+  /// No description provided for @reportWithdrawTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Retrage raportul?'**
+  String get reportWithdrawTitle;
+
+  /// No description provided for @reportWithdrawBody.
+  ///
+  /// In ro, this message translates to:
+  /// **'Raportul va fi sters definitiv.'**
+  String get reportWithdrawBody;
+
+  /// No description provided for @reportWithdrawConfirm.
+  ///
+  /// In ro, this message translates to:
+  /// **'Retrage'**
+  String get reportWithdrawConfirm;
+
+  /// No description provided for @reportWithdrawn.
+  ///
+  /// In ro, this message translates to:
+  /// **'Raportul a fost retras'**
+  String get reportWithdrawn;
+
+  /// No description provided for @reportWithdrawError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nu s-a putut retrage raportul'**
+  String get reportWithdrawError;
+
+  /// No description provided for @reportStatusPending.
+  ///
+  /// In ro, this message translates to:
+  /// **'In asteptare'**
+  String get reportStatusPending;
+
+  /// No description provided for @reportStatusReviewed.
+  ///
+  /// In ro, this message translates to:
+  /// **'Analizat'**
+  String get reportStatusReviewed;
+
+  /// No description provided for @reportStatusResolved.
+  ///
+  /// In ro, this message translates to:
+  /// **'Rezolvat'**
+  String get reportStatusResolved;
+
+  /// No description provided for @reportStatusUnknown.
+  ///
+  /// In ro, this message translates to:
+  /// **'Necunoscut'**
+  String get reportStatusUnknown;
+
+  /// No description provided for @profilePickGallery.
+  ///
+  /// In ro, this message translates to:
+  /// **'Alege din galerie'**
+  String get profilePickGallery;
+
+  /// No description provided for @profileDeletePhoto.
+  ///
+  /// In ro, this message translates to:
+  /// **'Sterge poza'**
+  String get profileDeletePhoto;
+
+  /// No description provided for @profileUploading.
+  ///
+  /// In ro, this message translates to:
+  /// **'Se incarca poza...'**
+  String get profileUploading;
+
+  /// No description provided for @profileDeleted.
+  ///
+  /// In ro, this message translates to:
+  /// **'Poza de profil stearsa'**
+  String get profileDeleted;
+
+  /// No description provided for @badgeSelected.
+  ///
+  /// In ro, this message translates to:
+  /// **'Insigna selectata!'**
+  String get badgeSelected;
+
+  /// No description provided for @badgeDeselected.
+  ///
+  /// In ro, this message translates to:
+  /// **'Insigna dezactivata'**
+  String get badgeDeselected;
+
+  /// No description provided for @categoriesTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Categorii'**
+  String get categoriesTitle;
+
+  /// No description provided for @categoriesEmpty.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nicio categorie disponibila'**
+  String get categoriesEmpty;
+
+  /// No description provided for @categoriesError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la incarcarea categoriilor'**
+  String get categoriesError;
+
+  /// No description provided for @categoriesRetry.
+  ///
+  /// In ro, this message translates to:
+  /// **'Reincearca'**
+  String get categoriesRetry;
+
+  /// No description provided for @citiesTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Orase'**
+  String get citiesTitle;
+
+  /// No description provided for @citiesEmpty.
+  ///
+  /// In ro, this message translates to:
+  /// **'Niciun oras disponibil'**
+  String get citiesEmpty;
+
+  /// No description provided for @citiesError.
+  ///
+  /// In ro, this message translates to:
+  /// **'Eroare la incarcarea oraselor'**
+  String get citiesError;
+
+  /// No description provided for @savedSearchesTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Cautari salvate'**
+  String get savedSearchesTitle;
+
+  /// No description provided for @savedSearchesEmpty.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nicio cautare salvata'**
+  String get savedSearchesEmpty;
+
+  /// No description provided for @savedSearchesEmptySubtitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi.'**
+  String get savedSearchesEmptySubtitle;
 }
 
 class _AppLocalizationsDelegate

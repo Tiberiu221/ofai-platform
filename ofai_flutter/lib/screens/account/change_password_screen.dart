@@ -97,6 +97,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 validator: (v) =>
                     v == null || v.isEmpty ? AppLocalizations.of(context)!.currentPasswordRequired : null,
+                textInputAction: TextInputAction.next,
               ),
 
               const SizedBox(height: AppSpacing.xxl),
@@ -122,6 +123,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   if (!RegExp(r'\d').hasMatch(v)) return AppLocalizations.of(context)!.needsDigit;
                   return null;
                 },
+                textInputAction: TextInputAction.next,
               ),
 
               const SizedBox(height: AppSpacing.xxl),
@@ -146,6 +148,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   if (v != _newCtrl.text) return AppLocalizations.of(context)!.passwordsMismatch;
                   return null;
                 },
+                textInputAction: TextInputAction.done,
               ),
 
               const SizedBox(height: AppSpacing.xxxl),

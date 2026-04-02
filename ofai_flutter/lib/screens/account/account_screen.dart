@@ -564,7 +564,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library, color: AppColors.accent),
-              title: const Text('Alege din galerie'),
+              title: Text(AppLocalizations.of(context)!.profilePickGallery),
               onTap: () {
                 Navigator.pop(ctx);
                 _pickAndUploadImage(context, ref);
@@ -573,7 +573,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
             if (ref.read(authProvider).user?.profilePictureUrl != null)
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Sterge poza'),
+                title: Text(AppLocalizations.of(context)!.profileDeletePhoto),
                 onTap: () {
                   Navigator.pop(ctx);
                   _deleteProfilePicture(context, ref);
@@ -598,7 +598,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Se incarca poza...')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.profileUploading)),
       );
 
       await ref.read(authProvider.notifier).updateProfilePicture(picked.path);
@@ -606,7 +606,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Poza de profil actualizata!')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.profileUpdated)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -623,7 +623,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Poza de profil stearsa')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.profileDeleted)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -638,7 +638,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
       await ref.read(authProvider.notifier).updateDisplayBadge(badgeId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(badgeId != null ? 'Insignă selectată!' : 'Insignă dezactivată')),
+        SnackBar(content: Text(badgeId != null ? AppLocalizations.of(context)!.badgeSelected : AppLocalizations.of(context)!.badgeDeselected)),
       );
     } catch (e) {
       if (!mounted) return;

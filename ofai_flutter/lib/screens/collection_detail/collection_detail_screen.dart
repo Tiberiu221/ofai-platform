@@ -20,8 +20,15 @@ class CollectionDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       body: detailAsync.when(
-        data: (collection) => CustomScrollView(
-          slivers: [
+        data: (collection) => RefreshIndicator(
+          color: AppColors.accent,
+          backgroundColor: AppColors.bgCard,
+          onRefresh: () async {
+            ref.invalidate(collectionDetailProvider(collectionId));
+            await ref.read(collectionDetailProvider(collectionId).future);
+          },
+          child: CustomScrollView(
+            slivers: [
             // Header with image
             SliverAppBar(
               expandedHeight: collection.imageUrl != null ? 200 : 0,
@@ -91,7 +98,8 @@ class CollectionDetailScreen extends ConsumerWidget {
               ),
 
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.huge)),
-          ],
+            ],
+          ),
         ),
         loading: () => SafeArea(
           child: Column(

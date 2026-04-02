@@ -492,6 +492,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
         onAction: _clearFilters,
       );
     }
+    // Auto-resort when new items arrive via loadMore
+    if (_isDistanceSort && _userPosition != null && state.offers.length > (_distanceSortedOffers?.length ?? 0)) {
+      _sortCurrentOffersByDistance();
+    }
     // Use distance-sorted list if active, otherwise normal provider list
     final displayOffers = (_isDistanceSort && _distanceSortedOffers != null)
         ? _distanceSortedOffers!

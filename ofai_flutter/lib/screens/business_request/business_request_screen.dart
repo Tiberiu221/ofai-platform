@@ -7,6 +7,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/static_data_provider.dart';
 import '../../providers/business_requests_provider.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class BusinessRequestScreen extends ConsumerStatefulWidget {
   const BusinessRequestScreen({super.key});
@@ -59,6 +60,8 @@ class _BusinessRequestScreenState
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
+    final l10n = AppLocalizations.of(context)!;
+
     if (success) {
       showDialog(
         context: context,
@@ -72,11 +75,11 @@ class _BusinessRequestScreenState
               side: const BorderSide(color: AppColors.borderLight, width: 0.5),
             ),
             title: Text(
-              'Cerere trimisa!',
+              l10n.bizReqSuccessTitle,
               style: AppTypography.headlineSmall,
             ),
             content: Text(
-              'Cererea ta a fost inregistrata. O vom analiza si te vom notifica cand va fi aprobata.',
+              l10n.bizReqSuccessBody,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -98,8 +101,8 @@ class _BusinessRequestScreenState
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Eroare la trimiterea cererii. Mai ai deja o cerere in asteptare?'),
+        SnackBar(
+          content: Text(l10n.bizReqError),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -108,12 +111,13 @@ class _BusinessRequestScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final citiesAsync = ref.watch(citiesProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Adauga un business', style: AppTypography.headlineMedium),
+        title: Text(l10n.bizReqTitle, style: AppTypography.headlineMedium),
         backgroundColor: AppColors.bgPrimary,
         surfaceTintColor: Colors.transparent,
       ),
@@ -125,7 +129,7 @@ class _BusinessRequestScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Propune un business care nu se afla inca pe platforma.',
+                l10n.bizReqSubtitle,
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -133,26 +137,27 @@ class _BusinessRequestScreenState
               const SizedBox(height: AppSpacing.xxl),
 
               // Name
-              _buildLabel('Numele business-ului *'),
+              _buildLabel(l10n.bizReqNameLabel),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _nameController,
                 style: AppTypography.bodyMedium,
-                decoration: _inputDecoration('Ex: Salon Elite'),
+                decoration: _inputDecoration(l10n.bizReqNameHint),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Numele este obligatoriu' : null,
+                    (v == null || v.trim().isEmpty) ? l10n.bizReqNameRequired : null,
                 maxLength: 200,
+                textInputAction: TextInputAction.next,
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
               // City
-              _buildLabel('Oras *'),
+              _buildLabel(l10n.bizReqCityLabel),
               const SizedBox(height: AppSpacing.xs),
               citiesAsync.when(
                 data: (cities) => DropdownButtonFormField<int>(
                   value: _selectedCityId,
-                  decoration: _inputDecoration('Alege orasul'),
+                  decoration: _inputDecoration(l10n.bizReqCityHint),
                   dropdownColor: AppColors.bgSecondary,
                   style: AppTypography.bodyMedium,
                   items: cities
@@ -162,21 +167,21 @@ class _BusinessRequestScreenState
                           ))
                       .toList(),
                   onChanged: (v) => setState(() => _selectedCityId = v),
-                  validator: (v) => v == null ? 'Orasul este obligatoriu' : null,
+                  validator: (v) => v == null ? l10n.bizReqCityRequired : null,
                 ),
                 loading: () => const LinearProgressIndicator(color: AppColors.accent),
-                error: (_, __) => const Text('Eroare la incarcarea oraselor'),
+                error: (_, __) => Text(l10n.citiesError),
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
               // Category
-              _buildLabel('Categorie'),
+              _buildLabel(l10n.bizReqCategoryLabel),
               const SizedBox(height: AppSpacing.xs),
               categoriesAsync.when(
                 data: (categories) => DropdownButtonFormField<int>(
                   value: _selectedCategoryId,
-                  decoration: _inputDecoration('Alege categoria'),
+                  decoration: _inputDecoration(l10n.bizReqCategoryHint),
                   dropdownColor: AppColors.bgSecondary,
                   style: AppTypography.bodyMedium,
                   items: categories
@@ -188,56 +193,59 @@ class _BusinessRequestScreenState
                   onChanged: (v) => setState(() => _selectedCategoryId = v),
                 ),
                 loading: () => const LinearProgressIndicator(color: AppColors.accent),
-                error: (_, __) => const Text('Eroare la incarcarea categoriilor'),
+                error: (_, __) => Text(l10n.categoriesError),
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
               // Address
-              _buildLabel('Adresa'),
+              _buildLabel(l10n.bizReqAddressLabel),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _addressController,
                 style: AppTypography.bodyMedium,
-                decoration: _inputDecoration('Ex: Str. Victoriei 10, Cluj-Napoca'),
+                decoration: _inputDecoration(l10n.bizReqAddressHint),
                 maxLength: 500,
+                textInputAction: TextInputAction.next,
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
               // Phone
-              _buildLabel('Telefon'),
+              _buildLabel(l10n.bizReqPhoneLabel),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _phoneController,
                 style: AppTypography.bodyMedium,
-                decoration: _inputDecoration('Ex: 0712 345 678'),
+                decoration: _inputDecoration(l10n.bizReqPhoneHint),
                 keyboardType: TextInputType.phone,
                 maxLength: 50,
+                textInputAction: TextInputAction.next,
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
               // Website
-              _buildLabel('Website'),
+              _buildLabel(l10n.bizReqWebsiteLabel),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _websiteController,
                 style: AppTypography.bodyMedium,
-                decoration: _inputDecoration('Ex: www.salonelite.ro'),
+                decoration: _inputDecoration(l10n.bizReqWebsiteHint),
                 keyboardType: TextInputType.url,
                 maxLength: 500,
+                textInputAction: TextInputAction.next,
               ),
 
               const SizedBox(height: AppSpacing.lg),
 
               // Description
-              _buildLabel('Descriere'),
+              _buildLabel(l10n.bizReqDescLabel),
               const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _descriptionController,
                 style: AppTypography.bodyMedium,
-                decoration: _inputDecoration('Descrie pe scurt business-ul...'),
+                decoration: _inputDecoration(l10n.bizReqDescHint),
                 maxLines: 4,
                 maxLength: 2000,
               ),
@@ -259,7 +267,7 @@ class _BusinessRequestScreenState
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text('Trimite cererea'),
+                      : Text(l10n.bizReqSubmit),
                 ),
               ),
 

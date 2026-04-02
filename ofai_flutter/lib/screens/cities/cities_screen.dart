@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../providers/static_data_provider.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/empty_state.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class CitiesScreen extends ConsumerWidget {
   const CitiesScreen({super.key});
@@ -17,7 +18,7 @@ class CitiesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Orase', style: AppTypography.headlineMedium),
+        title: Text(AppLocalizations.of(context)!.citiesTitle, style: AppTypography.headlineMedium),
         backgroundColor: AppColors.bgPrimary,
         surfaceTintColor: Colors.transparent,
       ),
@@ -26,47 +27,55 @@ class CitiesScreen extends ConsumerWidget {
           if (cities.isEmpty) {
             return const EmptyState(
               icon: Icons.location_city_outlined,
-              title: 'Niciun oras disponibil',
+              title: AppLocalizations.of(context)!.citiesEmpty,
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.pagePadding),
-            itemCount: cities.length,
-            separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
-            itemBuilder: (context, index) {
-              final city = cities[index];
-              return InkWell(
-                onTap: () => context.push('/explore?city=${city.id}'),
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.lg,
-                    horizontal: AppSpacing.md,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.location_city,
-                        color: AppColors.accent,
-                        size: 22,
-                      ),
-                      const SizedBox(width: AppSpacing.lg),
-                      Expanded(
-                        child: Text(
-                          city.name,
-                          style: AppTypography.bodyLarge,
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right,
-                        color: AppColors.textTertiary,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              );
+          return RefreshIndicator(
+            color: AppColors.accent,
+            backgroundColor: AppColors.bgCard,
+            onRefresh: () async {
+              ref.invalidate(citiesProvider);
+              await ref.read(citiesProvider.future);
             },
+            child: ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.pagePadding),
+              itemCount: cities.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.border),
+              itemBuilder: (context, index) {
+                final city = cities[index];
+                return InkWell(
+                  onTap: () => context.push('/explore?city=${city.id}'),
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.lg,
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_city,
+                          color: AppColors.accent,
+                          size: 22,
+                        ),
+                        const SizedBox(width: AppSpacing.lg),
+                        Expanded(
+                          child: Text(
+                            city.name,
+                            style: AppTypography.bodyLarge,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.textTertiary,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           );
         },
         loading: () => Padding(
@@ -78,7 +87,7 @@ class CitiesScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Eroare la incarcarea oraselor',
+                AppLocalizations.of(context)!.citiesError,
                 style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),

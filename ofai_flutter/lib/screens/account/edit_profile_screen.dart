@@ -103,6 +103,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? AppLocalizations.of(context)!.firstNameRequired : null,
                 textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
               ),
               const SizedBox(height: AppSpacing.xxl),
               Text(AppLocalizations.of(context)!.lastName, style: AppTypography.labelMedium),
@@ -113,6 +114,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? AppLocalizations.of(context)!.lastNameRequired : null,
                 textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: AppSpacing.xxl),
 

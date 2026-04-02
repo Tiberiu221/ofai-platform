@@ -6,6 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/saved_searches_provider.dart';
 import '../../models/saved_search.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class SavedSearchesScreen extends ConsumerStatefulWidget {
   const SavedSearchesScreen({super.key});
@@ -27,20 +28,25 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cautari salvate'),
+        title: Text(AppLocalizations.of(context)!.savedSearchesTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
           : state.searches.isEmpty
               ? _buildEmpty()
-              : ListView.separated(
-                  padding: const EdgeInsets.all(AppSpacing.pagePadding),
-                  itemCount: state.searches.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (context, index) {
-                    return _SearchItem(search: state.searches[index]);
-                  },
+              : RefreshIndicator(
+                  color: AppColors.accent,
+                  backgroundColor: AppColors.bgCard,
+                  onRefresh: () => ref.read(savedSearchesProvider.notifier).fetch(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.pagePadding),
+                    itemCount: state.searches.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                    itemBuilder: (context, index) {
+                      return _SearchItem(search: state.searches[index]);
+                    },
+                  ),
                 ),
     );
   }
@@ -55,12 +61,12 @@ class _SavedSearchesScreenState extends ConsumerState<SavedSearchesScreen> {
             Icon(Icons.saved_search, size: 64, color: AppColors.textTertiary),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Nicio cautare salvata',
+              AppLocalizations.of(context)!.savedSearchesEmpty,
               style: AppTypography.headlineSmall,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi.',
+              AppLocalizations.of(context)!.savedSearchesEmptySubtitle,
               style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),

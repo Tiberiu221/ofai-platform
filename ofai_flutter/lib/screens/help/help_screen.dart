@@ -5,15 +5,17 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ajutor & Suport'),
+        title: Text(l10n.helpTitle),
         backgroundColor: AppColors.bgPrimary,
       ),
       body: SingleChildScrollView(
@@ -21,10 +23,10 @@ class HelpScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Cum te putem ajuta?', style: AppTypography.headlineLarge),
+            Text(l10n.helpSubtitle, style: AppTypography.headlineLarge),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Echipa OFAI iti sta la dispozitie. Raspundem in medie in mai putin de 24 de ore.',
+              l10n.helpDescription,
               style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.xxl),
@@ -32,36 +34,36 @@ class HelpScreen extends StatelessWidget {
             // Contact cards
             _ContactCard(
               icon: Icons.email_outlined,
-              title: 'Email',
-              subtitle: 'contact@ofai.ro',
+              title: l10n.helpEmailTitle,
+              subtitle: l10n.helpEmailValue,
               onTap: () => _launchUrl('mailto:contact@ofai.ro'),
             ),
             const SizedBox(height: AppSpacing.md),
             _ContactCard(
               icon: Icons.phone_outlined,
-              title: 'Telefon',
-              subtitle: '+40 700 000 000',
+              title: l10n.helpPhoneTitle,
+              subtitle: l10n.helpPhoneValue,
               onTap: () => _launchUrl('tel:+40700000000'),
             ),
 
             const SizedBox(height: AppSpacing.xxxl),
 
             // FAQ
-            Text('Intrebari frecvente', style: AppTypography.headlineMedium),
+            Text(l10n.helpFaqTitle, style: AppTypography.headlineMedium),
             const SizedBox(height: AppSpacing.lg),
-            ..._faqItems.map((faq) => _FaqItem(faq: faq)),
+            ..._getFaqItems(l10n).map((faq) => _FaqItem(faq: faq)),
 
             const SizedBox(height: AppSpacing.xxxl),
 
             // Useful links
-            Text('Link-uri utile', style: AppTypography.headlineMedium),
+            Text(l10n.helpLinksTitle, style: AppTypography.headlineMedium),
             const SizedBox(height: AppSpacing.lg),
             _LinkItem(
-              label: 'Termeni si conditii',
+              label: l10n.helpTermsLink,
               onTap: () => context.push('/terms'),
             ),
             _LinkItem(
-              label: 'Politica de confidentialitate',
+              label: l10n.helpPrivacyLink,
               onTap: () => context.push('/privacy'),
             ),
 
@@ -79,6 +81,17 @@ class HelpScreen extends StatelessWidget {
     }
   }
 }
+
+List<_Faq> _getFaqItems(AppLocalizations l10n) => [
+  _Faq(question: l10n.helpFaq1Q, answer: l10n.helpFaq1A),
+  _Faq(question: l10n.helpFaq2Q, answer: l10n.helpFaq2A),
+  _Faq(question: l10n.helpFaq3Q, answer: l10n.helpFaq3A),
+  _Faq(question: l10n.helpFaq4Q, answer: l10n.helpFaq4A),
+  _Faq(question: l10n.helpFaq5Q, answer: l10n.helpFaq5A),
+  _Faq(question: l10n.helpFaq6Q, answer: l10n.helpFaq6A),
+  _Faq(question: l10n.helpFaq7Q, answer: l10n.helpFaq7A),
+  _Faq(question: l10n.helpFaq8Q, answer: l10n.helpFaq8A),
+];
 
 class _ContactCard extends StatelessWidget {
   final IconData icon;
@@ -142,49 +155,6 @@ class _ContactCard extends StatelessWidget {
     );
   }
 }
-
-final _faqItems = [
-  _Faq(
-    question: 'Cum functioneaza platforma?',
-    answer:
-        'OFAI iti permite sa descoperi oferte si reduceri de la afaceri locale. Poti cauta dupa oras, categorie sau cuvinte cheie, salva ofertele favorite si urmari business-urile preferate.',
-  ),
-  _Faq(
-    question: 'Cum castig puncte?',
-    answer:
-        'Castigi puncte pentru activitatea ta pe platforma: scrierea de recenzii, vizitarea zilnica a aplicatiei si interactiunea cu ofertele.',
-  ),
-  _Faq(
-    question: 'Cum pot folosi punctele?',
-    answer:
-        'Punctele acumulate contribuie la progresul tau pe platforma. Cu cat ai mai multe puncte, cu atat urci in nivel si deblochezi badge-uri noi.',
-  ),
-  _Faq(
-    question: 'Cum schimb orasul?',
-    answer:
-        'Mergi in Cont > Preferinte si selecteaza orasul dorit. Ofertele si business-urile vor fi filtrate automat.',
-  ),
-  _Faq(
-    question: 'Cum urmaresc un business?',
-    answer:
-        'Deschide pagina business-ului si apasa butonul "Urmareste". Vei primi notificari cand business-ul adauga oferte noi.',
-  ),
-  _Faq(
-    question: 'Cum las o recenzie?',
-    answer:
-        'Deschide pagina business-ului si apasa "Scrie recenzie". Alege un rating de la 1 la 5 stele si optional lasa un comentariu.',
-  ),
-  _Faq(
-    question: 'Cum imi sterg contul?',
-    answer:
-        'Mergi in Cont > Sterge contul. Aceasta actiune este ireversibila si toate datele tale vor fi sterse permanent.',
-  ),
-  _Faq(
-    question: 'Cum pot inregistra un business?',
-    answer:
-        'Din Cont, apasa "Adauga un business" si completeaza formularul. Echipa noastra va analiza cererea si te va notifica.',
-  ),
-];
 
 class _Faq {
   final String question;

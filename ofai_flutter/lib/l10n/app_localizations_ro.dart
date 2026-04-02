@@ -987,7 +987,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get showPictureInReviews => 'Arata poza in recenzii';
 
   @override
-  String get profileUpdated => 'Profil actualizat';
+  String get profileUpdated => 'Poza de profil actualizata!';
 
   @override
   String get saveError => 'Eroare la salvare';
@@ -1098,4 +1098,305 @@ class AppLocalizationsRo extends AppLocalizations {
   String savePlural(int count) {
     return '$count salvari';
   }
+
+  @override
+  String get helpTitle => 'Ajutor & Suport';
+
+  @override
+  String get helpSubtitle => 'Cum te putem ajuta?';
+
+  @override
+  String get helpDescription =>
+      'Echipa OFAI iti sta la dispozitie. Raspundem in medie in mai putin de 24 de ore.';
+
+  @override
+  String get helpEmailTitle => 'Email';
+
+  @override
+  String get helpEmailValue => 'contact@ofai.ro';
+
+  @override
+  String get helpPhoneTitle => 'Telefon';
+
+  @override
+  String get helpPhoneValue => '+40 700 000 000';
+
+  @override
+  String get helpFaqTitle => 'Intrebari frecvente';
+
+  @override
+  String get helpLinksTitle => 'Link-uri utile';
+
+  @override
+  String get helpTermsLink => 'Termeni si conditii';
+
+  @override
+  String get helpPrivacyLink => 'Politica de confidentialitate';
+
+  @override
+  String get helpFaq1Q => 'Cum functioneaza platforma?';
+
+  @override
+  String get helpFaq1A =>
+      'OFAI iti permite sa descoperi oferte si reduceri de la afaceri locale. Poti cauta dupa oras, categorie sau cuvinte cheie, salva ofertele favorite si urmari business-urile preferate.';
+
+  @override
+  String get helpFaq2Q => 'Cum castig puncte?';
+
+  @override
+  String get helpFaq2A =>
+      'Castigi puncte pentru activitatea ta pe platforma: scrierea de recenzii, vizitarea zilnica a aplicatiei si interactiunea cu ofertele.';
+
+  @override
+  String get helpFaq3Q => 'Cum pot folosi punctele?';
+
+  @override
+  String get helpFaq3A =>
+      'Punctele acumulate contribuie la progresul tau pe platforma. Cu cat ai mai multe puncte, cu atat urci in nivel si deblochezi badge-uri noi.';
+
+  @override
+  String get helpFaq4Q => 'Cum schimb orasul?';
+
+  @override
+  String get helpFaq4A =>
+      'Mergi in Cont > Preferinte si selecteaza orasul dorit. Ofertele si business-urile vor fi filtrate automat.';
+
+  @override
+  String get helpFaq5Q => 'Cum urmaresc un business?';
+
+  @override
+  String get helpFaq5A =>
+      'Deschide pagina business-ului si apasa butonul \"Urmareste\". Vei primi notificari cand business-ul adauga oferte noi.';
+
+  @override
+  String get helpFaq6Q => 'Cum las o recenzie?';
+
+  @override
+  String get helpFaq6A =>
+      'Deschide pagina business-ului si apasa \"Scrie recenzie\". Alege un rating de la 1 la 5 stele si optional lasa un comentariu.';
+
+  @override
+  String get helpFaq7Q => 'Cum imi sterg contul?';
+
+  @override
+  String get helpFaq7A =>
+      'Mergi in Cont > Sterge contul. Aceasta actiune este ireversibila si toate datele tale vor fi sterse permanent.';
+
+  @override
+  String get helpFaq8Q => 'Cum pot inregistra un business?';
+
+  @override
+  String get helpFaq8A =>
+      'Din Cont, apasa \"Adauga un business\" si completeaza formularul. Echipa noastra va analiza cererea si te va notifica.';
+
+  @override
+  String get bizReqTitle => 'Adauga un business';
+
+  @override
+  String get bizReqSubtitle =>
+      'Propune un business care nu se afla inca pe platforma.';
+
+  @override
+  String get bizReqNameLabel => 'Numele business-ului *';
+
+  @override
+  String get bizReqNameHint => 'Ex: Salon Elite';
+
+  @override
+  String get bizReqNameRequired => 'Numele este obligatoriu';
+
+  @override
+  String get bizReqCityLabel => 'Oras *';
+
+  @override
+  String get bizReqCityHint => 'Alege orasul';
+
+  @override
+  String get bizReqCityRequired => 'Orasul este obligatoriu';
+
+  @override
+  String get bizReqCategoryLabel => 'Categorie';
+
+  @override
+  String get bizReqCategoryHint => 'Alege categoria';
+
+  @override
+  String get bizReqAddressLabel => 'Adresa';
+
+  @override
+  String get bizReqAddressHint => 'Ex: Str. Victoriei 10, Cluj-Napoca';
+
+  @override
+  String get bizReqPhoneLabel => 'Telefon';
+
+  @override
+  String get bizReqPhoneHint => 'Ex: 0712 345 678';
+
+  @override
+  String get bizReqWebsiteLabel => 'Website';
+
+  @override
+  String get bizReqWebsiteHint => 'Ex: www.salonelite.ro';
+
+  @override
+  String get bizReqDescLabel => 'Descriere';
+
+  @override
+  String get bizReqDescHint => 'Descrie pe scurt business-ul...';
+
+  @override
+  String get bizReqSubmit => 'Trimite cererea';
+
+  @override
+  String get bizReqSuccessTitle => 'Cerere trimisa!';
+
+  @override
+  String get bizReqSuccessBody =>
+      'Cererea ta a fost inregistrata. O vom analiza si te vom notifica cand va fi aprobata.';
+
+  @override
+  String get bizReqError =>
+      'Eroare la trimiterea cererii. Mai ai deja o cerere in asteptare?';
+
+  @override
+  String get reportOfferTitle => 'Raporteaza oferta';
+
+  @override
+  String get reportBusinessTitle => 'Raporteaza business-ul';
+
+  @override
+  String get reportSelectReason => 'Selecteaza motivul raportarii:';
+
+  @override
+  String get reportFakeOffer => 'Oferta nu este reala';
+
+  @override
+  String get reportMisleadingPrice => 'Pret inselator';
+
+  @override
+  String get reportInappropriate => 'Continut inadecvat';
+
+  @override
+  String get reportSpam => 'Spam / publicitate agresiva';
+
+  @override
+  String get reportOther => 'Altul';
+
+  @override
+  String get reportClosedBusiness => 'Business inchis / inexistent';
+
+  @override
+  String get reportDetailsHint => 'Descrie problema...';
+
+  @override
+  String get reportDetailsMinLength =>
+      'Te rugam sa descrii problema (minim 5 caractere).';
+
+  @override
+  String get reportSubmitBtn => 'Trimite raportul';
+
+  @override
+  String get reportErrorGeneric => 'Eroare la trimiterea raportului.';
+
+  @override
+  String get reportErrorDuplicate => 'Ai raportat deja aceasta resursa.';
+
+  @override
+  String get reportErrorRateLimit =>
+      'Ai atins limita de rapoarte pentru astazi.';
+
+  @override
+  String get myReportsTitle => 'Rapoartele mele';
+
+  @override
+  String get myReportsEmpty => 'Niciun raport trimis';
+
+  @override
+  String get myReportsEmptySubtitle => 'Rapoartele tale vor aparea aici';
+
+  @override
+  String reportOfferTarget(int id) {
+    return 'Oferta #$id';
+  }
+
+  @override
+  String reportBusinessTarget(int id) {
+    return 'Business #$id';
+  }
+
+  @override
+  String get reportWithdrawTitle => 'Retrage raportul?';
+
+  @override
+  String get reportWithdrawBody => 'Raportul va fi sters definitiv.';
+
+  @override
+  String get reportWithdrawConfirm => 'Retrage';
+
+  @override
+  String get reportWithdrawn => 'Raportul a fost retras';
+
+  @override
+  String get reportWithdrawError => 'Nu s-a putut retrage raportul';
+
+  @override
+  String get reportStatusPending => 'In asteptare';
+
+  @override
+  String get reportStatusReviewed => 'Analizat';
+
+  @override
+  String get reportStatusResolved => 'Rezolvat';
+
+  @override
+  String get reportStatusUnknown => 'Necunoscut';
+
+  @override
+  String get profilePickGallery => 'Alege din galerie';
+
+  @override
+  String get profileDeletePhoto => 'Sterge poza';
+
+  @override
+  String get profileUploading => 'Se incarca poza...';
+
+  @override
+  String get profileDeleted => 'Poza de profil stearsa';
+
+  @override
+  String get badgeSelected => 'Insigna selectata!';
+
+  @override
+  String get badgeDeselected => 'Insigna dezactivata';
+
+  @override
+  String get categoriesTitle => 'Categorii';
+
+  @override
+  String get categoriesEmpty => 'Nicio categorie disponibila';
+
+  @override
+  String get categoriesError => 'Eroare la incarcarea categoriilor';
+
+  @override
+  String get categoriesRetry => 'Reincearca';
+
+  @override
+  String get citiesTitle => 'Orase';
+
+  @override
+  String get citiesEmpty => 'Niciun oras disponibil';
+
+  @override
+  String get citiesError => 'Eroare la incarcarea oraselor';
+
+  @override
+  String get savedSearchesTitle => 'Cautari salvate';
+
+  @override
+  String get savedSearchesEmpty => 'Nicio cautare salvata';
+
+  @override
+  String get savedSearchesEmptySubtitle =>
+      'Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi.';
 }
