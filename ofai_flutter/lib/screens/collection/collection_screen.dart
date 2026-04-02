@@ -400,8 +400,8 @@ class _FavoritesTab extends ConsumerWidget {
             children: [
               OfferCard(offer: offer),
               Positioned(
-                top: AppSpacing.sm,
-                right: AppSpacing.sm,
+                top: 52,
+                left: 12,
                 child: GestureDetector(
                   onTap: () async {
                     try {
@@ -428,12 +428,14 @@ class _FavoritesTab extends ConsumerWidget {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.danger.withValues(alpha: 0.9),
+                      color: const Color(0xB3111111),
                       shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.border, width: 0.5),
                     ),
-                    child: const Icon(Icons.close, size: 16, color: Colors.white),
+                    child: const Icon(Icons.close, size: 18, color: Color(0xFFEF4444)),
                   ),
                 ),
               ),
@@ -543,8 +545,8 @@ class _SubscriptionsTab extends ConsumerWidget {
             children: [
               BusinessCard(business: biz),
               Positioned(
-                top: AppSpacing.sm,
-                right: AppSpacing.sm,
+                top: 52,
+                left: 12,
                 child: GestureDetector(
                   onTap: () async {
                     try {
@@ -571,12 +573,14 @@ class _SubscriptionsTab extends ConsumerWidget {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.danger.withValues(alpha: 0.9),
+                      color: const Color(0xB3111111),
                       shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.border, width: 0.5),
                     ),
-                    child: const Icon(Icons.close, size: 16, color: Colors.white),
+                    child: const Icon(Icons.close, size: 18, color: Color(0xFFEF4444)),
                   ),
                 ),
               ),
