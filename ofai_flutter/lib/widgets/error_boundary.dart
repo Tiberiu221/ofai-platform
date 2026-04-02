@@ -32,12 +32,6 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   bool _hasError = false;
-  FlutterErrorDetails? _errorDetails;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +55,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
                 onPressed: () {
                   setState(() {
                     _hasError = false;
-                    _errorDetails = null;
                   });
                   widget.onRetry?.call();
                 },
@@ -76,11 +69,10 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
 
     // Use ErrorWidget.builder replacement approach
     return _ErrorCatcher(
-      onError: (details) {
+      onError: (_) {
         if (mounted) {
           setState(() {
             _hasError = true;
-            _errorDetails = details;
           });
         }
       },

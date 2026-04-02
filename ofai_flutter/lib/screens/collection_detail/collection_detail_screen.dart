@@ -6,7 +6,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../providers/collections_provider.dart';
 import '../../widgets/offer_card.dart';
-import '../../widgets/skeleton_loader.dart';
+
 import '../../widgets/error_state.dart' as w;
 
 class CollectionDetailScreen extends ConsumerWidget {

@@ -9,7 +9,7 @@ import '../../core/utils/launchers.dart';
 import '../../models/business.dart' show BusinessLocation, BusinessHours;
 import '../../models/catalog.dart' show CatalogCategory;
 import '../../models/offer.dart' show Booking;
-import '../../core/utils/booking_platforms.dart';
+
 import '../../providers/businesses_provider.dart';
 import '../../providers/followed_businesses_provider.dart';
 import '../../providers/reviews_provider.dart';
@@ -1116,41 +1116,6 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _InfoTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool accent;
-
-  const _InfoTile({required this.icon, required this.label, this.onTap, this.accent = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppColors.textTertiary),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                label,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: accent ? AppColors.accent : AppColors.textPrimary,
-                ),
-              ),
-            ),
-            if (onTap != null)
-              Icon(Icons.open_in_new, size: 16, color: AppColors.textTertiary),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _SuccessOverlay extends StatefulWidget {
   const _SuccessOverlay();

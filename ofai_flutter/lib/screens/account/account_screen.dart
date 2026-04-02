@@ -262,7 +262,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
 
     final favState = ref.watch(favoritesProvider);
     final subState = ref.watch(followedBusinessesProvider);
-    final gamState = ref.watch(gamificationProvider);
+    // gamification UI hidden — ref.watch removed to avoid unused variable warning
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -350,7 +350,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               // ],
 
               // Badges card (glassmorphism)
-              if (user?.badges != null && user!.badges!.isNotEmpty) ...[
+              if (user?.badges case final userBadges? when userBadges.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
@@ -388,7 +388,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
-                                    '${user!.badges!.length}',
+                                    '${userBadges.length}',
                                     style: AppTypography.labelSmall.copyWith(
                                       color: AppColors.bgPrimary,
                                       fontWeight: FontWeight.w700,
@@ -427,12 +427,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                                 children: [
                                   _BadgeChip(
                                     badge: null,
-                                    isSelected: user!.displayBadgeId == null,
+                                    isSelected: user?.displayBadgeId == null,
                                     onTap: () => _updateDisplayBadge(ref, null),
                                   ),
-                                  ...user!.badges!.map((badge) => _BadgeChip(
+                                  ...userBadges.map((badge) => _BadgeChip(
                                     badge: badge,
-                                    isSelected: user!.displayBadgeId == badge.id,
+                                    isSelected: user?.displayBadgeId == badge.id,
                                     onTap: () => _updateDisplayBadge(ref, badge.id),
                                   )),
                                 ],

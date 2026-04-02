@@ -145,15 +145,19 @@ class _ReportSheetState extends State<_ReportSheet> {
             style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
-          ..._reasons.map((r) => RadioListTile<String>(
-            value: r.key,
-            groupValue: _selectedReason,
+          RadioGroup<String>(
+            groupValue: _selectedReason ?? '',
             onChanged: (v) => setState(() => _selectedReason = v),
-            title: Text(r.label, style: AppTypography.bodyMedium),
-            activeColor: AppColors.accent,
-            contentPadding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-          )),
+            child: Column(
+              children: _reasons.map((r) => RadioListTile<String>(
+                value: r.key,
+                title: Text(r.label, style: AppTypography.bodyMedium),
+                activeColor: AppColors.accent,
+                contentPadding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              )).toList(),
+            ),
+          ),
           if (_selectedReason == 'other') ...[
             const SizedBox(height: 8),
             TextField(

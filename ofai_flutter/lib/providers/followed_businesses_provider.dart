@@ -49,6 +49,7 @@ class FollowedBusinessesState {
 
 class FollowedBusinessesNotifier extends StateNotifier<FollowedBusinessesState> {
   final ApiClient _api;
+  final Set<int> _pendingToggles = {};
 
   FollowedBusinessesNotifier(this._api) : super(const FollowedBusinessesState());
 
@@ -104,6 +105,9 @@ class FollowedBusinessesNotifier extends StateNotifier<FollowedBusinessesState> 
   bool isFollowed(int businessId) => state.followedIds.contains(businessId);
 
   Future<void> toggleFollow(int businessId) async {
+    if (_pendingToggles.contains(businessId)) return;
+    _pendingToggles.add(businessId);
+
     final wasFollowed = state.followedIds.contains(businessId);
 
     // Snapshot full state for complete rollback on failure
@@ -137,6 +141,8 @@ class FollowedBusinessesNotifier extends StateNotifier<FollowedBusinessesState> 
     } catch (e) {
       // Full rollback to pre-optimistic state
       state = previousState;
+    } finally {
+      _pendingToggles.remove(businessId);
     }
   }
 }

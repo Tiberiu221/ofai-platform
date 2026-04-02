@@ -957,25 +957,6 @@ class OfferDetailScreen extends ConsumerWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final IconData? icon;
-  const _SectionTitle(this.title, {this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    if (icon != null) {
-      return Row(
-        children: [
-          Icon(icon, size: 20, color: AppColors.accent),
-          const SizedBox(width: AppSpacing.sm),
-          Text(title, style: AppTypography.headlineSmall),
-        ],
-      );
-    }
-    return Text(title, style: AppTypography.headlineSmall);
-  }
-}
 
 class _SectionCard extends StatelessWidget {
   final IconData icon;

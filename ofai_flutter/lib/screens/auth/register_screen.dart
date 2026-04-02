@@ -196,7 +196,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   ),
                                   validator: (v) {
                                     if (v == null || v.trim().isEmpty) return AppLocalizations.of(context)!.authEmailRequired;
-                                    if (!v.contains('@')) return AppLocalizations.of(context)!.authEmailInvalid;
+                                    if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(v.trim())) return AppLocalizations.of(context)!.authEmailInvalid;
                                     return null;
                                   },
                                 ),

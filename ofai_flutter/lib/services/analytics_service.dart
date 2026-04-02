@@ -20,7 +20,7 @@ class AnalyticsService {
     try {
       await _api.dio.post(ApiEndpoints.clicks, data: {
         'business_id': businessId,
-        ?'offer_id': offerId,
+        if (offerId != null) 'offer_id': offerId,
         'action_type': actionType,
       });
     } catch (_) {

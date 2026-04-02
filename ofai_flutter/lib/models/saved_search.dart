@@ -28,7 +28,7 @@ class SavedSearch {
       categoryId: json['category_id'] as int?,
       cityName: json['city_name'] as String?,
       categoryName: json['category_name'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 

@@ -40,8 +40,8 @@ class _LocationBannerState extends ConsumerState<LocationBanner> {
     ]);
     if (!mounted) return;
     setState(() {
-      _locationGranted = results[0] as bool;
-      _dismissed = results[1] as bool;
+      _locationGranted = results[0];
+      _dismissed = results[1];
       _initialized = true;
     });
   }
