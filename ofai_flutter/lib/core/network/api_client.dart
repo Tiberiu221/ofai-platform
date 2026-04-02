@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../storage/secure_storage.dart';
 import 'api_endpoints.dart';
 import 'api_exceptions.dart';
+import 'retry_interceptor.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
@@ -30,6 +31,9 @@ class ApiClient {
     );
 
     dio.interceptors.add(_AuthInterceptor(this));
+    // RetryInterceptor after AuthInterceptor: auth handles 401 refresh,
+    // retry handles 5xx and network errors on the already-authenticated request.
+    dio.interceptors.add(RetryInterceptor(dio: dio));
   }
 
   // Perform token refresh

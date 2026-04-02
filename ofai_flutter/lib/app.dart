@@ -12,6 +12,7 @@ import 'core/theme/page_transitions.dart';
 import 'core/storage/preferences.dart';
 import 'providers/auth_provider.dart';
 import 'services/push_notification_service.dart';
+import 'services/analytics_service.dart';
 import 'widgets/offline_banner.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/explore/explore_screen.dart';
@@ -241,6 +242,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     refreshListenable: notifier,
+    observers: [AnalyticsService.observer],
     redirect: (context, state) {
       // Don't redirect while auth is still being checked
       if (notifier.authStatus == AuthStatus.initial) return null;

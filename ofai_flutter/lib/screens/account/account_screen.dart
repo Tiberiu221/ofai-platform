@@ -272,7 +272,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
               const SizedBox(height: AppSpacing.xxl),
 
               // Avatar + name
-              GestureDetector(
+              Semantics(
+                label: 'Schimbă poza de profil',
+                button: true,
+                child: GestureDetector(
                 onTap: () => _showProfilePictureOptions(context, ref),
                 child: Stack(
                   children: [
@@ -306,6 +309,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> with AutomaticKee
                     ),
                   ],
                 ),
+              ),
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(

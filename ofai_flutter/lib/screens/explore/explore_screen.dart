@@ -27,6 +27,7 @@ import '../../providers/saved_searches_provider.dart';
 import '../../core/utils/distance.dart';
 import '../../models/offer.dart';
 import '../../widgets/location_banner.dart';
+import '../../services/analytics_service.dart';
 import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
@@ -184,6 +185,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     final query = _searchController.text.trim();
     if (query.length >= 3) {
       ref.read(searchHistoryProvider.notifier).addQuery(query);
+      // Track search in Firebase Analytics
+      final offersState = ref.read(offersListProvider);
+      AnalyticsService.trackSearch(
+        query,
+        city: offersState.cityId?.toString(),
+        category: offersState.categoryId?.toString(),
+      );
     }
     setState(() => _showSuggest = false);
     _searchFocusNode.unfocus();

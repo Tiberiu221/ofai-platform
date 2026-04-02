@@ -9,8 +9,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/launchers.dart';
-import '../../models/offer.dart' show Booking;
-import '../../core/utils/booking_platforms.dart';
+
 import '../../providers/offers_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';

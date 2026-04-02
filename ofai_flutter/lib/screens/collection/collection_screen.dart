@@ -402,7 +402,10 @@ class _FavoritesTab extends ConsumerWidget {
               Positioned(
                 top: 52,
                 left: 12,
-                child: GestureDetector(
+                child: Semantics(
+                  label: 'Elimină din favorite',
+                  button: true,
+                  child: GestureDetector(
                   onTap: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
@@ -456,6 +459,7 @@ class _FavoritesTab extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.close, size: 18, color: Color(0xFFEF4444)),
                   ),
+                ),
                 ),
               ),
             ],
@@ -566,7 +570,10 @@ class _SubscriptionsTab extends ConsumerWidget {
               Positioned(
                 top: AppSpacing.sm,
                 right: AppSpacing.sm,
-                child: GestureDetector(
+                child: Semantics(
+                  label: 'Nu mai urmări',
+                  button: true,
+                  child: GestureDetector(
                   onTap: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
@@ -620,6 +627,7 @@ class _SubscriptionsTab extends ConsumerWidget {
                     ),
                     child: const Icon(Icons.close, size: 18, color: Color(0xFFEF4444)),
                   ),
+                ),
                 ),
               ),
             ],

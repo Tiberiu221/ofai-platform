@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/storage/preferences.dart';
 import '../../widgets/orange_glow_wave.dart';
 import '../../app.dart';
+import '../../services/analytics_service.dart';
 import 'package:ofai_flutter/l10n/app_localizations.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -55,6 +56,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _complete() async {
     await AppPreferences.setOnboardingDone();
+    AnalyticsService.trackOnboardingComplete();
     if (mounted) {
       ref.invalidate(onboardingDoneProvider);
       context.go('/');

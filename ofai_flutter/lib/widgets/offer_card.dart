@@ -189,7 +189,10 @@ class OfferCard extends ConsumerWidget {
   // ── Horizontal layout ────────────────────────────────────────
 
   Widget _buildHorizontal(BuildContext context, WidgetRef ref) {
-    return TapScale(
+    return Semantics(
+      label: 'Oferta: ${offer.title}${offer.business != null ? ', ${offer.business!.name}' : ''}',
+      button: true,
+      child: TapScale(
       onTap: () => context.push('/offer/${offer.id}'),
       child: Container(
         width: 260,
