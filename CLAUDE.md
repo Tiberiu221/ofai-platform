@@ -107,6 +107,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - Never jump to fixing symptoms without understanding the full data path
 
 ## Important Gotchas
+- **ADB emulator screenshots are TOKEN-EXPENSIVE:** Always ask the user for permission before using ADB screenshots (`adb exec-out screencap`). Each screenshot + navigation cycle burns significant context. ADB path: `C:/Users/tiber/AppData/Local/Android/Sdk/platform-tools/adb.exe`, emulator screen 1080x2400.
 - **manage.ejs is HUGE** (~2250 lines) - be careful with edits, check closing divs
 - **Portal tab partials:** Catalog tab is in `_tab-catalog.ejs`, Info tab in `_tab-info.ejs`
 - **Column collisions:** `SELECT bs.*, sp.*` in tiers.js causes id/created_at collisions - use explicit aliases
