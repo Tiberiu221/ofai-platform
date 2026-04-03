@@ -2,7 +2,10 @@
 
 <div class="a-page-header">
   <h1>Business-uri</h1>
-  <a href="/admin/businesses/new" class="a-btn">+ Adaugă business nou</a>
+  <div style="display: flex; gap: 8px;">
+    <a href="/admin/export/businesses" class="a-btn a-btn-secondary a-btn-sm">Export CSV</a>
+    <a href="/admin/businesses/new" class="a-btn">+ Adauga business nou</a>
+  </div>
 </div>
 
 <% if (typeof error !== "undefined" && error === "has_offers") { %>

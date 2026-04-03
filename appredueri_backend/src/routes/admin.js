@@ -2513,6 +2513,126 @@ router.get("/audit-logs", async (req, res) => {
 });
 
 // ═════════════════════════════════════════════
+//   CSV EXPORT
+// ═════════════════════════════════════════════
+router.get("/export/:type", async (req, res) => {
+  const type = req.params.type;
+  const allowed = ['businesses', 'users', 'offers', 'subscriptions', 'email-logs', 'audit-logs'];
+  if (!allowed.includes(type)) return res.status(400).send("Tip export invalid");
+
+  try {
+    let rows, filename, headers;
+
+    switch (type) {
+      case 'businesses': {
+        const r = await pool.query(`
+          SELECT b.id, b.name, c.name AS city, cat.name AS category,
+                 b.address, b.phone, b.website, b.is_verified,
+                 COALESCE(sp.slug, 'free') AS plan,
+                 bs.status AS sub_status, bs.billing_cycle
+          FROM businesses b
+          JOIN cities c ON c.id = b.city_id
+          JOIN categories cat ON cat.id = b.category_id
+          LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active','trial')
+          LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
+          ORDER BY b.id
+        `);
+        rows = r.rows;
+        filename = 'businesses';
+        headers = ['id', 'name', 'city', 'category', 'address', 'phone', 'website', 'is_verified', 'plan', 'sub_status', 'billing_cycle'];
+        break;
+      }
+      case 'users': {
+        const r = await pool.query(`
+          SELECT id, first_name, last_name, email, role, city_id,
+                 created_at::date AS registered,
+                 last_active_at::date AS last_active,
+                 CASE WHEN banned_at IS NOT NULL THEN 'banned' ELSE 'active' END AS status
+          FROM users ORDER BY id
+        `);
+        rows = r.rows;
+        filename = 'users';
+        headers = ['id', 'first_name', 'last_name', 'email', 'role', 'city_id', 'registered', 'last_active', 'status'];
+        break;
+      }
+      case 'offers': {
+        const r = await pool.query(`
+          SELECT o.id, o.title, b.name AS business, o.discount_type, o.discount_value,
+                 o.start_date::date, o.end_date::date, o.is_active, o.moderation_status,
+                 o.views_count, o.clicks_count, o.saves_count
+          FROM offers o
+          JOIN businesses b ON b.id = o.business_id
+          ORDER BY o.id DESC
+        `);
+        rows = r.rows;
+        filename = 'offers';
+        headers = ['id', 'title', 'business', 'discount_type', 'discount_value', 'start_date', 'end_date', 'is_active', 'moderation_status', 'views_count', 'clicks_count', 'saves_count'];
+        break;
+      }
+      case 'subscriptions': {
+        const r = await pool.query(`
+          SELECT bs.id, b.name AS business, sp.slug AS plan, bs.status, bs.billing_cycle,
+                 bs.current_period_end::date, bs.cancel_at_period_end,
+                 bs.stripe_subscription_id, bs.stripe_customer_id,
+                 bs.created_at::date AS created
+          FROM business_subscriptions bs
+          JOIN subscription_plans sp ON sp.id = bs.plan_id
+          JOIN businesses b ON b.id = bs.business_id
+          ORDER BY bs.created_at DESC
+        `);
+        rows = r.rows;
+        filename = 'subscriptions';
+        headers = ['id', 'business', 'plan', 'status', 'billing_cycle', 'current_period_end', 'cancel_at_period_end', 'stripe_subscription_id', 'stripe_customer_id', 'created'];
+        break;
+      }
+      case 'email-logs': {
+        const r = await pool.query(`
+          SELECT id, email_type, email_to, status, created_at::date AS sent_date
+          FROM email_logs ORDER BY created_at DESC LIMIT 10000
+        `);
+        rows = r.rows;
+        filename = 'email-logs';
+        headers = ['id', 'email_type', 'email_to', 'status', 'sent_date'];
+        break;
+      }
+      case 'audit-logs': {
+        const r = await pool.query(`
+          SELECT id, action, entity_type, entity_id, ip_address, details, created_at
+          FROM audit_log ORDER BY created_at DESC LIMIT 10000
+        `);
+        rows = r.rows;
+        filename = 'audit-logs';
+        headers = ['id', 'action', 'entity_type', 'entity_id', 'ip_address', 'details', 'created_at'];
+        break;
+      }
+    }
+
+    // Generate CSV
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '';
+      const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    const csvLines = [headers.join(',')];
+    for (const row of rows) {
+      csvLines.push(headers.map(h => escapeCsv(row[h])).join(','));
+    }
+
+    const now = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="ofai-${filename}-${now}.csv"`);
+    res.send('\ufeff' + csvLines.join('\n')); // BOM for Excel UTF-8
+  } catch (err) {
+    console.error("[Admin] Export error:", err.message);
+    res.status(500).send("Eroare la export");
+  }
+});
+
+// ═════════════════════════════════════════════
 //   CONCIERGE ONBOARDING REQUESTS
 // ═════════════════════════════════════════════
 
