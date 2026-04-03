@@ -1464,6 +1464,7 @@ a.back-link:hover {
   border: 1px solid var(--a-border);
   border-radius: var(--a-radius-lg);
   padding: 20px;
+  overflow: hidden;
 }
 .an-chart-card__title {
   font-size: 14px;
@@ -1476,10 +1477,12 @@ a.back-link:hover {
 .an-canvas-wrap {
   position: relative;
   width: 100%;
+  overflow: hidden;
 }
-.an-canvas-wrap--sm { height: 200px; }
-.an-canvas-wrap--md { height: 260px; }
-.an-canvas-wrap--lg { height: 300px; }
+.an-canvas-wrap--sm { height: 200px; max-height: 200px; }
+.an-canvas-wrap--md { height: 260px; max-height: 260px; }
+.an-canvas-wrap--lg { height: 300px; max-height: 300px; }
+.an-canvas-wrap canvas { max-height: 100% !important; }
 
 /* Expand button on chart cards */
 .an-chart-card,
@@ -1567,6 +1570,7 @@ a.back-link:hover {
   border-radius: var(--a-radius-lg);
   padding: 20px;
   margin-bottom: 24px;
+  overflow: hidden;
 }
 
 /* Responsive */
