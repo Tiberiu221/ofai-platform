@@ -374,8 +374,8 @@ async function fetchContentHealth(days) {
   const iv2 = intervalSql(days * 2);
 
   const [offersCur, offersPrev, expiring, pending, avgRating, creationRate] = await Promise.all([
-    pool.query(`SELECT COUNT(*) as cnt FROM offers WHERE created_at >= NOW() - INTERVAL '${iv}'`),
-    pool.query(`SELECT COUNT(*) as cnt FROM offers WHERE created_at >= NOW() - INTERVAL '${iv2}' AND created_at < NOW() - INTERVAL '${iv}'`),
+    pool.query(`SELECT COUNT(*) as cnt FROM offers WHERE start_date >= NOW() - INTERVAL '${iv}'`),
+    pool.query(`SELECT COUNT(*) as cnt FROM offers WHERE start_date >= NOW() - INTERVAL '${iv2}' AND start_date < NOW() - INTERVAL '${iv}'`),
     pool.query(`
       SELECT COUNT(*) as cnt FROM offers
       WHERE is_active = true AND end_date IS NOT NULL
@@ -387,8 +387,8 @@ async function fetchContentHealth(days) {
       FROM reviews WHERE created_at >= NOW() - INTERVAL '${iv}'
     `),
     pool.query(`
-      SELECT DATE_TRUNC('week', created_at)::date as week, COUNT(*) as cnt
-      FROM offers WHERE created_at >= NOW() - INTERVAL '12 weeks'
+      SELECT DATE_TRUNC('week', start_date)::date as week, COUNT(*) as cnt
+      FROM offers WHERE start_date >= NOW() - INTERVAL '12 weeks'
       GROUP BY 1 ORDER BY 1
     `)
   ]);
