@@ -1388,8 +1388,13 @@ a.back-link:hover {
 .an-period-btn--active { background: var(--a-primary); color: #fff; }
 .an-period-btn--active:hover { color: #fff; background: var(--a-primary); }
 
-/* Section */
-.an-section { margin-bottom: 40px; max-width: 100%; overflow: hidden; }
+/* Section — calc-based width cap prevents Chart.js infinite growth */
+.an-section {
+  margin-bottom: 40px;
+  max-width: calc(100vw - 280px); /* viewport - 240px sidebar - 40px padding */
+  overflow: hidden;
+  box-sizing: border-box;
+}
 .an-section__header {
   display: flex;
   justify-content: space-between;
@@ -1579,6 +1584,7 @@ a.back-link:hover {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .an-section { max-width: calc(100vw - 24px); }
   .an-kpi-grid--4, .an-kpi-grid--5 { grid-template-columns: repeat(2, 1fr); }
   .an-kpi-grid--3 { grid-template-columns: 1fr 1fr; }
   .an-chart-grid--2 { grid-template-columns: 1fr; }

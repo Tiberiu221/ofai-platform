@@ -34,6 +34,12 @@
      ═══════════════════════════════════════════════════════ -->
 <script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
 (function() {
+  // Force all canvas wraps to explicit pixel width (prevents Chart.js resize loop)
+  document.querySelectorAll('.an-canvas-wrap').forEach(function(wrap) {
+    var w = wrap.parentElement.clientWidth - 40; // account for padding
+    if (w > 0) wrap.style.width = w + 'px';
+  });
+
   var chartDefaults = {
     responsive: true,
     maintainAspectRatio: false,
