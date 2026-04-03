@@ -167,6 +167,73 @@ router.get("/", (req, res) => {
 router.use(require("./admin-analytics"));
 
 // =====================================
+//   SUBSCRIPTIONS
+// =====================================
+router.get("/subscriptions", async (req, res) => {
+  try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
+    const { plan, status, q } = req.query;
+
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    if (plan && ['free', 'standard', 'premium'].includes(plan)) {
+      filters.push(`sp.slug = $${idx++}`);
+      values.push(plan);
+    }
+    if (status && ['active', 'trial', 'past_due', 'cancelled', 'expired'].includes(status)) {
+      filters.push(`bs.status = $${idx++}`);
+      values.push(status);
+    }
+    if (q && q.trim()) {
+      filters.push(`b.name ILIKE $${idx++}`);
+      values.push(`%${q.trim()}%`);
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM business_subscriptions bs
+       JOIN subscription_plans sp ON sp.id = bs.plan_id
+       JOIN businesses b ON b.id = bs.business_id
+       ${whereClause}`,
+      values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT
+        bs.id, bs.business_id, bs.status, bs.billing_cycle,
+        bs.current_period_start, bs.current_period_end,
+        bs.cancel_at_period_end, bs.trial_start, bs.trial_end,
+        bs.stripe_subscription_id, bs.stripe_customer_id,
+        bs.created_at,
+        sp.slug AS plan_slug, sp.name AS plan_name, sp.badge_type,
+        sp.price_monthly, sp.price_yearly,
+        b.name AS business_name, b.logo_url
+      FROM business_subscriptions bs
+      JOIN subscription_plans sp ON sp.id = bs.plan_id
+      JOIN businesses b ON b.id = bs.business_id
+      ${whereClause}
+      ORDER BY bs.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    res.render("admin/subscriptions", {
+      subscriptions: result.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      filters: { plan: plan || "", status: status || "", q: q || "" },
+      pageTitle: "Subscriptii",
+      activePage: "subscriptions"
+    });
+  } catch (err) {
+    console.error("[Admin] Subscriptions error:", err.message);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// =====================================
 //   DASHBOARD
 // =====================================
 
@@ -480,7 +547,9 @@ router.get("/businesses/:id/edit", async (req, res) => {
       categoriesResult,
       imagesResult,
       locationsResult,
-      ownersResult, // NEW
+      ownersResult,
+      subscriptionResult,
+      subHistoryResult,
     ] = await Promise.all([
       pool.query("SELECT id, name, city_id, category_id, address, lat, lng, phone, website, description, logo_url, cover_image_url, is_verified, verified_at FROM businesses WHERE id = $1", [id]),
       pool.query("SELECT id, name FROM cities ORDER BY name"),
@@ -498,18 +567,43 @@ router.get("/businesses/:id/edit", async (req, res) => {
         ORDER BY bl.id ASC`,
         [id]
       ),
-      // Fetch owners
       pool.query(
-        `SELECT u.id, u.email, u.first_name, u.last_name 
-         FROM user_businesses ub 
-         JOIN users u ON u.id = ub.user_id 
+        `SELECT u.id, u.email, u.first_name, u.last_name
+         FROM user_businesses ub
+         JOIN users u ON u.id = ub.user_id
          WHERE ub.business_id = $1`,
+        [id]
+      ),
+      // Subscription info
+      pool.query(
+        `SELECT bs.id AS sub_id, bs.status, bs.billing_cycle,
+                bs.current_period_start, bs.current_period_end,
+                bs.trial_start, bs.trial_end, bs.cancel_at_period_end,
+                bs.stripe_subscription_id, bs.stripe_customer_id,
+                bs.created_at AS sub_created_at,
+                sp.slug AS plan_slug, sp.name AS plan_name, sp.badge_type,
+                sp.price_monthly, sp.price_yearly
+         FROM business_subscriptions bs
+         JOIN subscription_plans sp ON sp.id = bs.plan_id
+         WHERE bs.business_id = $1
+         ORDER BY bs.created_at DESC LIMIT 1`,
+        [id]
+      ),
+      // Subscription history (last 10)
+      pool.query(
+        `SELECT sh.action, sh.reason, sh.created_at,
+                fp.name AS from_plan, tp.name AS to_plan
+         FROM subscription_history sh
+         LEFT JOIN subscription_plans fp ON fp.id = sh.from_plan_id
+         JOIN subscription_plans tp ON tp.id = sh.to_plan_id
+         WHERE sh.business_id = $1
+         ORDER BY sh.created_at DESC LIMIT 10`,
         [id]
       ),
     ]);
 
     if (businessResult.rows.length === 0) {
-      return res.status(404).send("Business-ul nu există");
+      return res.status(404).send("Business-ul nu existe");
     }
 
     res.render("admin/businesses-edit", {
@@ -518,7 +612,9 @@ router.get("/businesses/:id/edit", async (req, res) => {
       categories: categoriesResult.rows,
       images: imagesResult.rows,
       locations: locationsResult.rows,
-      owners: ownersResult.rows, // SEND TO VIEW
+      owners: ownersResult.rows,
+      subscription: subscriptionResult.rows[0] || null,
+      subHistory: subHistoryResult.rows,
       error: req.query.err || "",
     });
   } catch (err) {

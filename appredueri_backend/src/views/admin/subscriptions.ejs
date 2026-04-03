@@ -1,0 +1,114 @@
+<%- include('partials/layout-top', { pageTitle: 'Subscriptii', activePage: 'subscriptions' }) %>
+
+<div class="a-page-header">
+  <h1>Subscriptii</h1>
+</div>
+
+<!-- Filters -->
+<form method="get" action="/admin/subscriptions" class="filters">
+  <div class="filters-row">
+    <label>
+      Cauta
+      <input type="text" name="q" value="<%= filters.q %>" placeholder="Nume business..." />
+    </label>
+    <label>
+      Plan
+      <select name="plan">
+        <option value="">Toate</option>
+        <option value="free" <%= filters.plan === 'free' ? 'selected' : '' %>>Free</option>
+        <option value="standard" <%= filters.plan === 'standard' ? 'selected' : '' %>>Standard</option>
+        <option value="premium" <%= filters.plan === 'premium' ? 'selected' : '' %>>Premium</option>
+      </select>
+    </label>
+    <label>
+      Status
+      <select name="status">
+        <option value="">Toate</option>
+        <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+        <option value="trial" <%= filters.status === 'trial' ? 'selected' : '' %>>Trial</option>
+        <option value="past_due" <%= filters.status === 'past_due' ? 'selected' : '' %>>Past Due</option>
+        <option value="cancelled" <%= filters.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+        <option value="expired" <%= filters.status === 'expired' ? 'selected' : '' %>>Expired</option>
+      </select>
+    </label>
+    <div class="filters-actions">
+      <button type="submit" class="a-btn">Aplica</button>
+      <a href="/admin/subscriptions" class="a-btn a-btn-secondary">Reseteaza</a>
+    </div>
+  </div>
+</form>
+
+<% if (!subscriptions || subscriptions.length === 0) { %>
+  <div class="a-card" style="text-align: center; padding: 40px;">
+    <p class="a-text-muted">Nicio subscriptie gasita.</p>
+  </div>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>Business</th>
+        <th>Plan</th>
+        <th>Status</th>
+        <th>Ciclu</th>
+        <th>Perioada</th>
+        <th>Stripe ID</th>
+        <th>Actiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% subscriptions.forEach(function(s) { %>
+        <tr>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <% if (s.logo_url) { %>
+                <img src="<%= s.logo_url %>" alt="" width="28" height="28" style="border-radius: 4px; object-fit: cover;" />
+              <% } %>
+              <a href="/admin/businesses/<%= s.business_id %>/edit" style="color: var(--a-text); font-weight: 500;"><%= s.business_name %></a>
+            </div>
+          </td>
+          <td>
+            <span class="sub-badge sub-badge--<%= s.plan_slug %>"><%= s.plan_name %></span>
+          </td>
+          <td>
+            <span class="sub-status sub-status--<%= s.status %>"><%= s.status %></span>
+            <% if (s.cancel_at_period_end) { %>
+              <span style="color: var(--a-warning-bright); font-size: 11px; display: block;">Anulare la sfarsit</span>
+            <% } %>
+          </td>
+          <td>
+            <% if (s.billing_cycle === 'monthly') { %>
+              Lunar (<%= (s.price_monthly / 100).toFixed(0) %> RON)
+            <% } else if (s.billing_cycle === 'yearly') { %>
+              Anual (<%= (s.price_yearly / 100).toFixed(0) %> RON)
+            <% } else { %>
+              <span class="a-text-muted">-</span>
+            <% } %>
+          </td>
+          <td style="font-size: 12px;">
+            <% if (s.status === 'trial' && s.trial_end) { %>
+              <span style="color: var(--a-primary);">Trial pana: <%= new Date(s.trial_end).toLocaleDateString('ro-RO') %></span>
+            <% } else if (s.current_period_end) { %>
+              <%= new Date(s.current_period_end).toLocaleDateString('ro-RO') %>
+            <% } else { %>
+              <span class="a-text-muted">-</span>
+            <% } %>
+          </td>
+          <td style="font-size: 11px; font-family: monospace;">
+            <% if (s.stripe_subscription_id) { %>
+              <span title="<%= s.stripe_subscription_id %>" style="cursor: help;"><%= s.stripe_subscription_id.substring(0, 18) %>...</span>
+            <% } else { %>
+              <span class="a-text-muted">-</span>
+            <% } %>
+          </td>
+          <td>
+            <a href="/admin/businesses/<%= s.business_id %>/edit" class="a-btn a-btn-sm">Detalii</a>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/subscriptions', query: filters }) %>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

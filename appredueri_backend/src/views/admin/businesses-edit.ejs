@@ -4,6 +4,90 @@
 
 <h1>Editează business: <%= business.name %></h1>
 
+<!-- SUBSCRIPTION INFO -->
+<% if (typeof subscription !== 'undefined') { %>
+<div class="a-card" style="margin-bottom: 24px; border-left: 3px solid <%= subscription ? (subscription.plan_slug === 'premium' ? '#a78bfa' : subscription.plan_slug === 'standard' ? '#fb923c' : '#71717a') : '#71717a' %>;">
+  <h3 style="margin-bottom: 12px;">Subscriptie</h3>
+  <% if (subscription) { %>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
+      <div>
+        <div class="a-text-muted" style="font-size: 11px; margin-bottom: 4px;">Plan</div>
+        <span class="sub-badge sub-badge--<%= subscription.plan_slug %>"><%= subscription.plan_name %></span>
+      </div>
+      <div>
+        <div class="a-text-muted" style="font-size: 11px; margin-bottom: 4px;">Status</div>
+        <span class="sub-status sub-status--<%= subscription.status %>"><%= subscription.status %></span>
+        <% if (subscription.cancel_at_period_end) { %>
+          <div style="color: var(--a-warning-bright); font-size: 11px;">Anulare la sfarsit</div>
+        <% } %>
+      </div>
+      <div>
+        <div class="a-text-muted" style="font-size: 11px; margin-bottom: 4px;">Ciclu</div>
+        <% if (subscription.billing_cycle === 'monthly') { %>
+          Lunar (<%= (subscription.price_monthly / 100).toFixed(0) %> RON)
+        <% } else if (subscription.billing_cycle === 'yearly') { %>
+          Anual (<%= (subscription.price_yearly / 100).toFixed(0) %> RON)
+        <% } else { %>
+          <span class="a-text-muted">-</span>
+        <% } %>
+      </div>
+      <div>
+        <div class="a-text-muted" style="font-size: 11px; margin-bottom: 4px;">Perioada</div>
+        <% if (subscription.status === 'trial' && subscription.trial_end) { %>
+          <span style="color: var(--a-primary);">Trial pana: <%= new Date(subscription.trial_end).toLocaleDateString('ro-RO') %></span>
+        <% } else if (subscription.current_period_end) { %>
+          <%= new Date(subscription.current_period_end).toLocaleDateString('ro-RO') %>
+        <% } else { %>
+          <span class="a-text-muted">-</span>
+        <% } %>
+      </div>
+    </div>
+
+    <% if (subscription.stripe_subscription_id || subscription.stripe_customer_id) { %>
+      <div style="font-size: 11px; font-family: monospace; color: var(--a-text-muted); margin-bottom: 12px;">
+        <% if (subscription.stripe_customer_id) { %>
+          Customer: <%= subscription.stripe_customer_id %><br>
+        <% } %>
+        <% if (subscription.stripe_subscription_id) { %>
+          Subscription: <%= subscription.stripe_subscription_id %>
+        <% } %>
+      </div>
+    <% } %>
+  <% } else { %>
+    <span class="sub-badge sub-badge--free">Free</span>
+    <span class="a-text-muted" style="margin-left: 8px; font-size: 13px;">Fara subscriptie activa</span>
+  <% } %>
+
+  <% if (typeof subHistory !== 'undefined' && subHistory.length > 0) { %>
+    <details style="margin-top: 12px;">
+      <summary style="cursor: pointer; font-size: 13px; color: var(--a-text-muted);">Istoric (<%= subHistory.length %> intrari)</summary>
+      <table style="margin-top: 8px; font-size: 12px;">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Actiune</th>
+            <th>De la</th>
+            <th>La</th>
+            <th>Motiv</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% subHistory.forEach(function(h) { %>
+            <tr>
+              <td><%= new Date(h.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }) %></td>
+              <td><%= h.action %></td>
+              <td><%= h.from_plan || '-' %></td>
+              <td><%= h.to_plan %></td>
+              <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<%= h.reason || '' %>"><%= h.reason ? h.reason.substring(0, 60) : '-' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </details>
+  <% } %>
+</div>
+<% } %>
+
 <!-- INFO BOX -->
 <div class="info-box">
   <h3>📸 Ghid pentru imagini</h3>
