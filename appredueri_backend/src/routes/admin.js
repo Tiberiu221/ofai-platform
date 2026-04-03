@@ -19,6 +19,7 @@ const { sendBusinessApprovedEmail, sendBusinessRejectedEmail, sendOfferApprovedE
 const sanitizeHtml = require("sanitize-html");
 const { parsePagination, createImageFilter } = require("../helpers/validate");
 const { getBusinessTier, countLocations, syncBadgeType } = require("../helpers/tiers");
+const pushService = require("../services/pushNotifications");
 
 const BLOG_ALLOWED_TAGS = ['p','br','strong','em','ul','ol','li','h2','h3','h4','a','img','blockquote','code','pre','table','thead','tbody','tr','th','td','figure','figcaption','span','div','hr'];
 const BLOG_SANITIZE_OPTS = {
@@ -2869,6 +2870,67 @@ router.get("/push-notifications", async (req, res) => {
   } catch (err) {
     console.error("[Admin] Push notifications error:", err.message);
     res.status(500).send("Eroare server");
+  }
+});
+
+// POST: Send push notification from admin
+router.post("/push-notifications/send", async (req, res) => {
+  try {
+    const { targetType, targetId, title, body } = req.body;
+
+    if (!title || !body) {
+      return res.status(400).json({ error: "Title și body sunt obligatorii" });
+    }
+    if (!["all", "user", "city"].includes(targetType)) {
+      return res.status(400).json({ error: "targetType invalid" });
+    }
+    if (targetType !== "all" && !targetId) {
+      return res.status(400).json({ error: "targetId e obligatoriu pentru acest tip" });
+    }
+
+    const notification = { title, body, data: { type: "admin_test" } };
+    let result;
+    let tokensCount = 0;
+
+    switch (targetType) {
+      case "all": {
+        const { rows } = await pool.query("SELECT COUNT(*) FROM push_tokens WHERE is_active = TRUE");
+        tokensCount = parseInt(rows[0].count);
+        result = await pushService.sendToAll(pool, notification);
+        break;
+      }
+      case "user": {
+        const { rows } = await pool.query("SELECT COUNT(*) FROM push_tokens WHERE user_id = $1 AND is_active = TRUE", [targetId]);
+        tokensCount = parseInt(rows[0].count);
+        result = await pushService.sendToUser(pool, targetId, notification);
+        break;
+      }
+      case "city": {
+        const { rows } = await pool.query(`
+          SELECT COUNT(DISTINCT pt.token) FROM push_tokens pt
+          JOIN users u ON u.id = pt.user_id
+          WHERE u.city_id = $1 AND pt.is_active = TRUE
+        `, [targetId]);
+        tokensCount = parseInt(rows[0].count);
+        result = await pushService.sendToCity(pool, targetId, notification);
+        break;
+      }
+    }
+
+    await pushService.logNotification(pool, {
+      title, body,
+      data: { type: "admin_test" },
+      sentBy: req.adminUser?.id || "admin",
+      targetType, targetId,
+      tokensCount,
+      successCount: result.sent,
+      failureCount: result.failed || 0,
+    });
+
+    res.json({ success: true, sent: result.sent, failed: result.failed, tokensCount });
+  } catch (err) {
+    console.error("[Admin] Send push error:", err.message);
+    res.status(500).json({ error: "Eroare la trimitere: " + err.message });
   }
 });
 

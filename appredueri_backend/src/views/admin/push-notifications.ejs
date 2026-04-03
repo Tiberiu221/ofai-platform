@@ -4,6 +4,155 @@
   <h1>Push Notifications</h1>
 </div>
 
+<!-- Send Notification -->
+<h2>Trimite notificare</h2>
+<div class="a-card" style="padding: 24px; margin-bottom: 24px;">
+  <div style="margin-bottom: 16px;">
+    <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Template rapid</label>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('offer')" style="font-size: 12px;">🔥 Ofertă nouă</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('flash')" style="font-size: 12px;">⚡ Flash Deal</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('digest')" style="font-size: 12px;">📬 Digest săptămânal</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('welcome')" style="font-size: 12px;">👋 Bun venit</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('promo')" style="font-size: 12px;">🎁 Promoție specială</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('review')" style="font-size: 12px;">⭐ Lasă o recenzie</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('reengagement')" style="font-size: 12px;">💤 Re-engagement</button>
+      <button type="button" class="a-btn a-btn-sm" onclick="fillTemplate('test')" style="font-size: 12px;">🧪 Test simplu</button>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+    <div>
+      <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Titlu</label>
+      <input type="text" id="push-title" placeholder="Titlul notificării..." style="width: 100%; padding: 8px 12px; background: var(--a-bg-input, #1a1a2e); border: 1px solid var(--a-border, #2a2a4a); border-radius: 6px; color: var(--a-text); font-size: 14px;">
+    </div>
+    <div>
+      <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Destinatar</label>
+      <div style="display: flex; gap: 8px;">
+        <select id="push-target-type" onchange="toggleTargetId()" style="flex: 1; padding: 8px 12px; background: var(--a-bg-input, #1a1a2e); border: 1px solid var(--a-border, #2a2a4a); border-radius: 6px; color: var(--a-text); font-size: 14px;">
+          <option value="user">User specific</option>
+          <option value="all">Toți userii</option>
+          <option value="city">Oraș</option>
+        </select>
+        <input type="number" id="push-target-id" placeholder="User ID" value="1" style="width: 100px; padding: 8px 12px; background: var(--a-bg-input, #1a1a2e); border: 1px solid var(--a-border, #2a2a4a); border-radius: 6px; color: var(--a-text); font-size: 14px;">
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <label style="font-weight: 600; font-size: 13px; display: block; margin-bottom: 6px;">Mesaj</label>
+    <textarea id="push-body" rows="2" placeholder="Corpul notificării..." style="width: 100%; padding: 8px 12px; background: var(--a-bg-input, #1a1a2e); border: 1px solid var(--a-border, #2a2a4a); border-radius: 6px; color: var(--a-text); font-size: 14px; resize: vertical;"></textarea>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <button type="button" id="push-send-btn" onclick="sendPushNotification()" class="a-btn a-btn-primary" style="font-size: 14px;">
+      Trimite notificarea
+    </button>
+    <span id="push-result" style="font-size: 13px;"></span>
+  </div>
+</div>
+
+<script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
+var pushTemplates = {
+  offer: {
+    title: '🔥 Ofertă nouă!',
+    body: 'Restaurant Bella Italia — 30% reducere la toate pastele, doar azi!'
+  },
+  flash: {
+    title: '⚡ Flash Deal — Se termină în 2 ore!',
+    body: 'Salon Beauty Queen: Manichiură + Pedichiură la doar 49 RON (era 120 RON)'
+  },
+  digest: {
+    title: '📬 Rezumatul tău săptămânal',
+    body: '12 oferte noi în Cluj-Napoca! Descoperă reducerile de la business-urile tale preferate.'
+  },
+  welcome: {
+    title: '👋 Bine ai venit pe OFAI!',
+    body: 'Descoperă cele mai bune oferte din orașul tău. Setează preferințele pentru notificări personalizate.'
+  },
+  promo: {
+    title: '🎁 Promoție exclusivă!',
+    body: 'Doar azi: 50% reducere la prima comandă la Coffee Shop Downtown. Folosește codul OFAI50.'
+  },
+  review: {
+    title: '⭐ Cum a fost experiența ta?',
+    body: 'Ai vizitat recent Pizzeria Roma. Lasă o recenzie și ajută comunitatea!'
+  },
+  reengagement: {
+    title: '💤 Ne-ai lipsit!',
+    body: 'Au apărut 8 oferte noi de când nu ai mai fost pe OFAI. Descoperă ce ai ratat!'
+  },
+  test: {
+    title: '🧪 Notificare de test',
+    body: 'Aceasta este o notificare de test din panoul de admin OFAI.'
+  }
+};
+
+function fillTemplate(key) {
+  var t = pushTemplates[key];
+  if (t) {
+    document.getElementById('push-title').value = t.title;
+    document.getElementById('push-body').value = t.body;
+  }
+}
+
+function toggleTargetId() {
+  var type = document.getElementById('push-target-type').value;
+  var idInput = document.getElementById('push-target-id');
+  if (type === 'all') {
+    idInput.style.display = 'none';
+  } else {
+    idInput.style.display = '';
+    idInput.placeholder = type === 'user' ? 'User ID' : 'City ID';
+  }
+}
+
+function sendPushNotification() {
+  var title = document.getElementById('push-title').value.trim();
+  var body = document.getElementById('push-body').value.trim();
+  var targetType = document.getElementById('push-target-type').value;
+  var targetId = document.getElementById('push-target-id').value;
+  var resultEl = document.getElementById('push-result');
+  var btn = document.getElementById('push-send-btn');
+
+  if (!title || !body) {
+    resultEl.innerHTML = '<span style="color: var(--a-danger);">Completează titlul și mesajul</span>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Se trimite...';
+  resultEl.innerHTML = '';
+
+  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+  var payload = { title: title, body: body, targetType: targetType };
+  if (targetType !== 'all') payload.targetId = parseInt(targetId);
+
+  fetch('/admin/push-notifications/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.textContent = 'Trimite notificarea';
+      if (data.success) {
+        resultEl.innerHTML = '<span style="color: var(--a-success-bright);">✅ Trimis! ' + data.sent + ' livrate, ' + data.failed + ' eșuate (din ' + data.tokensCount + ' tokens)</span>';
+      } else {
+        resultEl.innerHTML = '<span style="color: var(--a-danger);">❌ ' + (data.error || 'Eroare necunoscută') + '</span>';
+      }
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'Trimite notificarea';
+      resultEl.innerHTML = '<span style="color: var(--a-danger);">❌ Eroare: ' + err.message + '</span>';
+    });
+}
+</script>
+
 <!-- Token Health -->
 <h2>Token Health</h2>
 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
