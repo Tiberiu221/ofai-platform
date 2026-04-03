@@ -1,0 +1,45 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Utilizatori</h2>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--5">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-text-muted)"></div>
+      <div class="an-kpi__label">Total</div>
+      <div class="an-kpi__value"><%= data.users.total %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Activi 30 zile</div>
+      <div class="an-kpi__value" style="color: var(--a-success-bright)"><%= data.users.active30d %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">Activi 7 zile</div>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= data.users.active7d %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #3b82f6"></div>
+      <div class="an-kpi__label">Noi luna asta</div>
+      <div class="an-kpi__value" style="color: #3b82f6"><%= data.users.newMonth %></div>
+      <% if (data.users.newUsersTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.users.newUsersTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.users.newUsersTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.users.newUsersTrend) %>%</span>
+        </div>
+      <% } %>
+      <canvas class="an-kpi__sparkline" id="spark-signups"></canvas>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-warning-bright)"></div>
+      <div class="an-kpi__label">Dormanti (30d+)</div>
+      <div class="an-kpi__value" style="color: var(--a-warning-bright)"><%= data.users.dormant %></div>
+    </div>
+  </div>
+
+  <div class="an-chart-full">
+    <div class="an-chart-card__title">Inregistrari noi pe saptamana (12 saptamani)</div>
+    <canvas id="chart-signups" height="200"></canvas>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Content Health</h2>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--4">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Oferte create (<%= period %>)</div>
+      <div class="an-kpi__value" style="color: var(--a-success-bright)"><%= data.content.offersCreated %></div>
+      <% if (data.content.offersCreatedTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.content.offersCreatedTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.content.offersCreatedTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.content.offersCreatedTrend) %>%</span>
+        </div>
+      <% } %>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-warning-bright)"></div>
+      <div class="an-kpi__label">Expira in 7 zile</div>
+      <div class="an-kpi__value" style="color: var(--a-warning-bright)"><%= data.content.expiring %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #f59e0b"></div>
+      <div class="an-kpi__label">Moderare pending</div>
+      <div class="an-kpi__value" style="color: #f59e0b"><%= data.content.pending %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">Rating mediu (<%= data.content.reviewCount %> recenzii)</div>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= data.content.avgRating %> &#9733;</div>
+    </div>
+  </div>
+
+  <div class="an-chart-full">
+    <div class="an-chart-card__title">Rata creare oferte (12 saptamani)</div>
+    <canvas id="chart-creation-rate" height="200"></canvas>
+  </div>
+</section>

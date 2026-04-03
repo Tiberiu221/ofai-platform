@@ -1,0 +1,38 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Geographic</h2>
+    <span class="an-section__subtitle">Ultimele <%= period %></span>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--2">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">Orase cu business-uri</div>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= data.geo.citiesWithBiz %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Top oras (vizualizari)</div>
+      <div class="an-kpi__value" style="color: var(--a-success-bright); font-size: 22px;"><%= data.geo.topCity %></div>
+    </div>
+  </div>
+
+  <div class="an-chart-grid an-chart-grid--2">
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Top 10 orase — Vizualizari</div>
+      <% if (data.geo.topCitiesViews.length > 0) { %>
+        <canvas id="chart-geo-views" height="250"></canvas>
+      <% } else { %>
+        <p class="a-text-muted">Nicio vizualizare inregistrata.</p>
+      <% } %>
+    </div>
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Top 10 orase — Oferte active</div>
+      <% if (data.geo.topCitiesOffers.length > 0) { %>
+        <canvas id="chart-geo-offers" height="250"></canvas>
+      <% } else { %>
+        <p class="a-text-muted">Date insuficiente.</p>
+      <% } %>
+    </div>
+  </div>
+</section>

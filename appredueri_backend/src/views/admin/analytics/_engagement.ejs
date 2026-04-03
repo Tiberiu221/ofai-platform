@@ -1,0 +1,62 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Engagement</h2>
+    <span class="an-section__subtitle">Ultimele <%= period %></span>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--4">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #ef4444"></div>
+      <div class="an-kpi__label">Favorite</div>
+      <div class="an-kpi__value" style="color: #ef4444"><%= data.engagement.favorites %></div>
+      <% if (data.engagement.favoritesTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.engagement.favoritesTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.engagement.favoritesTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.engagement.favoritesTrend) %>%</span>
+        </div>
+      <% } %>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">Urmariri</div>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= data.engagement.follows %></div>
+      <% if (data.engagement.followsTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.engagement.followsTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.engagement.followsTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.engagement.followsTrend) %>%</span>
+        </div>
+      <% } %>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #f59e0b"></div>
+      <div class="an-kpi__label">Recenzii</div>
+      <div class="an-kpi__value" style="color: #f59e0b"><%= data.engagement.reviews %></div>
+      <% if (data.engagement.reviewsTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.engagement.reviewsTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.engagement.reviewsTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.engagement.reviewsTrend) %>%</span>
+        </div>
+      <% } %>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Total actiuni</div>
+      <div class="an-kpi__value"><%= data.engagement.favorites + data.engagement.follows + data.engagement.reviews %></div>
+    </div>
+  </div>
+
+  <div class="an-chart-grid an-chart-grid--2">
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Engagement zilnic</div>
+      <canvas id="chart-engagement-daily" height="250"></canvas>
+    </div>
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Top 10 oferte salvate</div>
+      <% if (data.engagement.topFav.length > 0) { %>
+        <canvas id="chart-top-fav" height="250"></canvas>
+      <% } else { %>
+        <p class="a-text-muted">Nicio salvare inregistrata.</p>
+      <% } %>
+    </div>
+  </div>
+</section>

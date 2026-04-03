@@ -1,0 +1,55 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Revenue</h2>
+    <span class="an-section__subtitle">Abonamente active</span>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--4">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">MRR</div>
+      <div class="an-kpi__value" style="color: var(--a-success-bright)"><%= data.revenue.mrr %> RON</div>
+      <% if (data.revenue.newSubsTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.revenue.newSubsTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.revenue.newSubsTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.revenue.newSubsTrend) %>% abonamente noi</span>
+        </div>
+      <% } %>
+      <canvas class="an-kpi__sparkline" id="spark-mrr"></canvas>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">ARR</div>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= data.revenue.arr %> RON</div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #fb923c"></div>
+      <div class="an-kpi__label">Abonati platitori</div>
+      <div class="an-kpi__value"><%= data.revenue.paidCount %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: <%= parseFloat(data.subs.churnRate) > 5 ? 'var(--a-danger)' : 'var(--a-success-bright)' %>"></div>
+      <div class="an-kpi__label">Churn Rate (30 zile)</div>
+      <div class="an-kpi__value" style="color: <%= parseFloat(data.subs.churnRate) > 5 ? 'var(--a-danger)' : 'var(--a-success-bright)' %>"><%= data.subs.churnRate %>%</div>
+    </div>
+  </div>
+
+  <div class="an-chart-grid an-chart-grid--2">
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Distributie Tier-uri</div>
+      <canvas id="chart-tier-dist" height="200"></canvas>
+    </div>
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Free vs Platitori</div>
+      <canvas id="chart-free-vs-paid" height="200"></canvas>
+      <div style="margin-top: 12px;">
+        <% data.revenue.tierDist.forEach(function(t) { %>
+          <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
+            <span><%= t.name %></span>
+            <span style="font-weight: 600;"><%= t.cnt %></span>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</section>

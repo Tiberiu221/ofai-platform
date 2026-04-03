@@ -1,153 +1,24 @@
 <%- include('partials/layout-top', { pageTitle: 'Analytics', activePage: 'analytics', loadChartJs: true }) %>
 
 <h1>Analytics</h1>
-<p class="a-text-muted" style="margin-bottom: 24px;">Date actualizate la fiecare 15 minute.</p>
+<p class="a-text-muted" style="margin-bottom: 16px;">Date actualizate la fiecare 15 minute.</p>
 
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 1: REVENUE
-     ═══════════════════════════════════════════════════════ -->
-<h2 style="margin-bottom: 16px;">Revenue</h2>
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
-  <div class="a-card" style="text-align: center; padding: 20px;">
-    <div style="font-size: 28px; font-weight: 700; color: var(--a-success-bright);"><%= data.revenue.mrr %> RON</div>
-    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">MRR (Monthly Recurring Revenue)</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 20px;">
-    <div style="font-size: 28px; font-weight: 700; color: var(--a-primary);"><%= data.revenue.arr %> RON</div>
-    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">ARR (Annual)</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 20px;">
-    <div style="font-size: 28px; font-weight: 700;"><%= data.subscriptions.paidCount %></div>
-    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">Abonați plătitori</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 20px;">
-    <div style="font-size: 28px; font-weight: 700; color: <%= parseFloat(data.subscriptions.churnRate) > 5 ? 'var(--a-danger)' : 'var(--a-success-bright)' %>;"><%= data.subscriptions.churnRate %>%</div>
-    <div class="a-text-muted" style="font-size: 13px; margin-top: 4px;">Churn Rate (30 zile)</div>
-  </div>
+<!-- Period Picker -->
+<div class="an-period-picker">
+  <a href="?period=7d" class="an-period-btn <%= period === '7d' ? 'an-period-btn--active' : '' %>">7 zile</a>
+  <a href="?period=30d" class="an-period-btn <%= period === '30d' ? 'an-period-btn--active' : '' %>">30 zile</a>
+  <a href="?period=90d" class="an-period-btn <%= period === '90d' ? 'an-period-btn--active' : '' %>">90 zile</a>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
-  <div class="a-card">
-    <h3 style="margin-bottom: 12px;">Distribuție Tier-uri</h3>
-    <canvas id="chart-tier-dist" height="200"></canvas>
-  </div>
-  <div class="a-card">
-    <h3 style="margin-bottom: 12px;">Free vs Plătitori</h3>
-    <canvas id="chart-sub-status" height="200"></canvas>
-    <div style="margin-top: 12px;">
-      <% data.revenue.tierDist.forEach(function(t) { %>
-        <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">
-          <span><%= t.name %></span>
-          <span style="font-weight: 600;"><%= t.cnt %></span>
-        </div>
-      <% }); %>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 2: SUBSCRIPTIONS HISTORY
-     ═══════════════════════════════════════════════════════ -->
-<h2 style="margin-bottom: 16px;">Subscripții — Trend 6 luni</h2>
-<div class="a-card" style="margin-bottom: 40px;">
-  <canvas id="chart-sub-history" height="250"></canvas>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 3: USERS
-     ═══════════════════════════════════════════════════════ -->
-<h2 style="margin-bottom: 16px;">Utilizatori</h2>
-<div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;">
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600;"><%= data.users.total %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Total</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-success-bright);"><%= data.users.active30d %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Activi 30 zile</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-primary);"><%= data.users.active7d %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Activi 7 zile</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-info);"><%= data.users.newMonth %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Noi luna asta</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-warning-bright);"><%= data.users.dormant %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Dormanți (30d+)</div>
-  </div>
-</div>
-
-<div class="a-card" style="margin-bottom: 40px;">
-  <h3 style="margin-bottom: 12px;">Înregistrări noi pe săptămână (12 săptămâni)</h3>
-  <canvas id="chart-signups" height="200"></canvas>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 4: BUSINESS HEALTH
-     ═══════════════════════════════════════════════════════ -->
-<h2 style="margin-bottom: 16px;">Business Health</h2>
-<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600;"><%= data.businessHealth.total %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Total business-uri</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-success-bright);"><%= data.businessHealth.withOffers %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Cu oferte active</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-warning-bright);"><%= data.businessHealth.total - data.businessHealth.withOffers %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Fără oferte</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <% var paidBiz = data.businessHealth.byTier.filter(t => t.tier !== 'free' && t.tier !== null).reduce((s,t) => s + parseInt(t.cnt), 0); %>
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-primary);"><%= paidBiz %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Plătitori</div>
-  </div>
-</div>
-
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px;">
-  <div class="a-card">
-    <h3 style="margin-bottom: 12px;">Distribuție per Tier</h3>
-    <canvas id="chart-biz-tier" height="200"></canvas>
-  </div>
-  <div class="a-card">
-    <h3 style="margin-bottom: 12px;">Top 10 — Vizualizări (30 zile)</h3>
-    <% if (data.businessHealth.topByViews.length > 0) { %>
-      <canvas id="chart-top-views" height="200"></canvas>
-    <% } else { %>
-      <p class="a-text-muted">Nicio vizualizare înregistrată.</p>
-    <% } %>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════
-     SECTION 5: EMAILS
-     ═══════════════════════════════════════════════════════ -->
-<h2 style="margin-bottom: 16px;">Email Engagement (30 zile)</h2>
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600;"><%= data.emails.totalSent %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Trimise (30 zile)</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <div style="font-size: 24px; font-weight: 600; color: var(--a-danger, #ef4444);"><%= data.emails.totalFailed %></div>
-    <div class="a-text-muted" style="font-size: 12px;">Eșuate</div>
-  </div>
-  <div class="a-card" style="text-align: center; padding: 16px;">
-    <% var failRate = data.emails.totalSent > 0 ? ((data.emails.totalFailed / data.emails.totalSent) * 100).toFixed(1) : '0.0'; %>
-    <div style="font-size: 24px; font-weight: 600; color: <%= parseFloat(failRate) > 5 ? 'var(--a-danger, #ef4444)' : 'var(--a-success-bright)' %>;"><%= failRate %>%</div>
-    <div class="a-text-muted" style="font-size: 12px;">Rată eșec</div>
-  </div>
-</div>
-
-<div class="a-card" style="margin-bottom: 40px;">
-  <h3 style="margin-bottom: 12px;">Emailuri per tip</h3>
-  <canvas id="chart-emails" height="250"></canvas>
-</div>
+<%- include('./analytics/_revenue') %>
+<%- include('./analytics/_subscriptions') %>
+<%- include('./analytics/_users') %>
+<%- include('./analytics/_business') %>
+<%- include('./analytics/_offers') %>
+<%- include('./analytics/_engagement') %>
+<%- include('./analytics/_geo') %>
+<%- include('./analytics/_content') %>
+<%- include('./analytics/_emails') %>
 
 <!-- ═══════════════════════════════════════════════════════
      CHART.JS INITIALIZATION
@@ -164,33 +35,91 @@
     }
   };
 
-  // Tier Distribution (Pie)
-  var tierData = <%- JSON.stringify(data.revenue.tierDist) %>;
   var tierColors = { free: '#71717a', standard: '#fb923c', premium: '#a78bfa' };
+
+  // ─── Sparkline helper ───
+  function createSparkline(canvasId, dataPoints, color) {
+    var el = document.getElementById(canvasId);
+    if (!el || !dataPoints || dataPoints.length === 0) return;
+    new Chart(el, {
+      type: 'line',
+      data: {
+        labels: dataPoints.map(function() { return ''; }),
+        datasets: [{
+          data: dataPoints,
+          borderColor: color,
+          backgroundColor: color + '20',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 1.5,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } }
+      }
+    });
+  }
+
+  // ─── Stacked options helper ───
+  function stackedOpts() {
+    return {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#9ca3af' } } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    };
+  }
+
+  // ─── Horizontal bar helper ───
+  function hBarOpts() {
+    return Object.assign({}, chartDefaults, { indexAxis: 'y' });
+  }
+
+  // ─── Doughnut options ───
+  var doughnutOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } };
+
+  // ═══════════════════════════════════════
+  // SECTION 1: REVENUE
+  // ═══════════════════════════════════════
+
+  // Sparkline: new subscriptions
+  createSparkline('spark-mrr', <%- JSON.stringify(data.revenue.sparkNewSubs) %>, '#16a34a');
+
+  // Tier Distribution
+  var tierData = <%- JSON.stringify(data.revenue.tierDist) %>;
   new Chart(document.getElementById('chart-tier-dist'), {
     type: 'doughnut',
     data: {
       labels: tierData.map(function(t) { return t.name; }),
       datasets: [{ data: tierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: tierData.map(function(t) { return tierColors[t.slug] || '#3b82f6'; }) }]
     },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+    options: doughnutOpts
   });
 
-  // Free vs Paid (Doughnut) — uses tier data, grouping standard+premium as "Plătitori"
+  // Free vs Paid
   var freeCount = 0, paidCount = 0;
   tierData.forEach(function(t) { if (t.slug === 'free') freeCount += parseInt(t.cnt); else paidCount += parseInt(t.cnt); });
-  new Chart(document.getElementById('chart-sub-status'), {
+  new Chart(document.getElementById('chart-free-vs-paid'), {
     type: 'doughnut',
     data: {
-      labels: ['Gratuit', 'Plătitori'],
+      labels: ['Gratuit', 'Platitori'],
       datasets: [{ data: [freeCount, paidCount], backgroundColor: ['#71717a', '#22c55e'] }]
     },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+    options: doughnutOpts
   });
 
-  // Subscription History (Stacked Bar)
-  var historyData = <%- JSON.stringify(data.subscriptions.history) %>;
-  var months = [...new Set(historyData.map(function(h) { return h.month; }))].sort();
+  // ═══════════════════════════════════════
+  // SECTION 2: SUBSCRIPTIONS HISTORY
+  // ═══════════════════════════════════════
+  var historyData = <%- JSON.stringify(data.subs.history) %>;
+  var months = []; historyData.forEach(function(h) { if (months.indexOf(h.month) === -1) months.push(h.month); }); months.sort();
   var actions = ['created', 'upgraded', 'downgraded', 'cancelled'];
   var actionColors = { created: '#22c55e', upgraded: '#3b82f6', downgraded: '#f59e0b', cancelled: '#ef4444' };
   new Chart(document.getElementById('chart-sub-history'), {
@@ -205,10 +134,14 @@
         };
       })
     },
-    options: Object.assign({}, chartDefaults, { plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: Object.assign({}, chartDefaults.scales, { x: Object.assign({}, chartDefaults.scales.x, { stacked: true }), y: Object.assign({}, chartDefaults.scales.y, { stacked: true }) }) })
+    options: stackedOpts()
   });
 
-  // User Signups (Line)
+  // ═══════════════════════════════════════
+  // SECTION 3: USERS
+  // ═══════════════════════════════════════
+  createSparkline('spark-signups', <%- JSON.stringify(data.users.sparkSignups) %>, '#3b82f6');
+
   var signupsData = <%- JSON.stringify(data.users.signupsWeekly) %>;
   new Chart(document.getElementById('chart-signups'), {
     type: 'line',
@@ -219,31 +152,154 @@
     options: chartDefaults
   });
 
-  // Business Tier Distribution (Pie)
-  var bizTierData = <%- JSON.stringify(data.businessHealth.byTier) %>;
+  // ═══════════════════════════════════════
+  // SECTION 4: BUSINESS HEALTH
+  // ═══════════════════════════════════════
+  createSparkline('spark-biz-views', <%- JSON.stringify(data.biz.sparkViews) %>, '#9ca3af');
+
+  var bizTierData = <%- JSON.stringify(data.biz.byTier) %>;
   new Chart(document.getElementById('chart-biz-tier'), {
     type: 'doughnut',
     data: {
       labels: bizTierData.map(function(t) { return t.tier || 'free'; }),
       datasets: [{ data: bizTierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: bizTierData.map(function(t) { return tierColors[t.tier] || '#71717a'; }) }]
     },
-    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } }
+    options: doughnutOpts
   });
 
-  // Top 10 Business Views (Horizontal Bar)
-  var topViewsData = <%- JSON.stringify(data.businessHealth.topByViews) %>;
+  var topViewsData = <%- JSON.stringify(data.biz.topByViews) %>;
   if (topViewsData.length > 0) {
     new Chart(document.getElementById('chart-top-views'), {
       type: 'bar',
       data: {
         labels: topViewsData.map(function(b) { return b.name; }),
-        datasets: [{ label: 'Vizualizări', data: topViewsData.map(function(b) { return parseInt(b.views); }), backgroundColor: '#3b82f6' }]
+        datasets: [{ label: 'Vizualizari', data: topViewsData.map(function(b) { return parseInt(b.views); }), backgroundColor: '#3b82f6' }]
       },
-      options: Object.assign({}, chartDefaults, { indexAxis: 'y' })
+      options: hBarOpts()
     });
   }
 
-  // Email Stats (Bar)
+  // ═══════════════════════════════════════
+  // SECTION 5: OFFER ANALYTICS
+  // ═══════════════════════════════════════
+  createSparkline('spark-offer-views', <%- JSON.stringify(data.offers.sparkViews) %>, '#3b82f6');
+
+  var topOffersData = <%- JSON.stringify(data.offers.topOffers) %>;
+  if (topOffersData.length > 0) {
+    new Chart(document.getElementById('chart-top-offers'), {
+      type: 'bar',
+      data: {
+        labels: topOffersData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
+        datasets: [{ label: 'Vizualizari', data: topOffersData.map(function(o) { return parseInt(o.views); }), backgroundColor: '#3b82f6' }]
+      },
+      options: hBarOpts()
+    });
+  }
+
+  var catPerfData = <%- JSON.stringify(data.offers.catPerf) %>;
+  if (catPerfData.length > 0) {
+    new Chart(document.getElementById('chart-cat-perf'), {
+      type: 'radar',
+      data: {
+        labels: catPerfData.map(function(c) { return c.name; }),
+        datasets: [{
+          label: 'Vizualizari',
+          data: catPerfData.map(function(c) { return parseInt(c.views); }),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.15)',
+          pointBackgroundColor: '#3b82f6'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            ticks: { color: '#9ca3af', backdropColor: 'transparent' },
+            grid: { color: 'rgba(255,255,255,0.08)' },
+            pointLabels: { color: '#9ca3af', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  // ═══════════════════════════════════════
+  // SECTION 6: ENGAGEMENT
+  // ═══════════════════════════════════════
+  var dailyEngagement = <%- JSON.stringify(data.engagement.daily) %>;
+  if (dailyEngagement.length > 0) {
+    new Chart(document.getElementById('chart-engagement-daily'), {
+      type: 'line',
+      data: {
+        labels: dailyEngagement.map(function(d) { return new Date(d.day).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+        datasets: [
+          { label: 'Favorite', data: dailyEngagement.map(function(d) { return parseInt(d.favorites); }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3 },
+          { label: 'Urmariri', data: dailyEngagement.map(function(d) { return parseInt(d.follows); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 },
+          { label: 'Coduri', data: dailyEngagement.map(function(d) { return parseInt(d.reveals); }), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3 }
+        ]
+      },
+      options: chartDefaults
+    });
+  }
+
+  var topFavData = <%- JSON.stringify(data.engagement.topFav) %>;
+  if (topFavData.length > 0) {
+    new Chart(document.getElementById('chart-top-fav'), {
+      type: 'bar',
+      data: {
+        labels: topFavData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
+        datasets: [{ label: 'Salvari', data: topFavData.map(function(o) { return parseInt(o.saves); }), backgroundColor: '#ef4444' }]
+      },
+      options: hBarOpts()
+    });
+  }
+
+  // ═══════════════════════════════════════
+  // SECTION 7: GEOGRAPHIC
+  // ═══════════════════════════════════════
+  var geoViewsData = <%- JSON.stringify(data.geo.topCitiesViews) %>;
+  if (geoViewsData.length > 0) {
+    new Chart(document.getElementById('chart-geo-views'), {
+      type: 'bar',
+      data: {
+        labels: geoViewsData.map(function(c) { return c.name; }),
+        datasets: [{ label: 'Vizualizari', data: geoViewsData.map(function(c) { return parseInt(c.views); }), backgroundColor: '#3b82f6' }]
+      },
+      options: hBarOpts()
+    });
+  }
+
+  var geoOffersData = <%- JSON.stringify(data.geo.topCitiesOffers) %>;
+  if (geoOffersData.length > 0) {
+    new Chart(document.getElementById('chart-geo-offers'), {
+      type: 'bar',
+      data: {
+        labels: geoOffersData.map(function(c) { return c.name; }),
+        datasets: [{ label: 'Oferte active', data: geoOffersData.map(function(c) { return parseInt(c.offer_count); }), backgroundColor: '#22c55e' }]
+      },
+      options: hBarOpts()
+    });
+  }
+
+  // ═══════════════════════════════════════
+  // SECTION 8: CONTENT HEALTH
+  // ═══════════════════════════════════════
+  var creationData = <%- JSON.stringify(data.content.creationRate) %>;
+  new Chart(document.getElementById('chart-creation-rate'), {
+    type: 'line',
+    data: {
+      labels: creationData.map(function(r) { return new Date(r.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+      datasets: [{ label: 'Oferte create', data: creationData.map(function(r) { return parseInt(r.cnt); }), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }]
+    },
+    options: chartDefaults
+  });
+
+  // ═══════════════════════════════════════
+  // SECTION 9: EMAILS
+  // ═══════════════════════════════════════
+  createSparkline('spark-emails', <%- JSON.stringify(data.emails.sparkEmails) %>, '#16a34a');
+
   var emailData = <%- JSON.stringify(data.emails.stats) %>;
   new Chart(document.getElementById('chart-emails'), {
     type: 'bar',
@@ -251,10 +307,10 @@
       labels: emailData.map(function(e) { return e.email_type; }),
       datasets: [
         { label: 'Trimise', data: emailData.map(function(e) { return parseInt(e.total) - parseInt(e.failed); }), backgroundColor: '#22c55e' },
-        { label: 'Eșuate', data: emailData.map(function(e) { return parseInt(e.failed); }), backgroundColor: '#ef4444' }
+        { label: 'Esuat', data: emailData.map(function(e) { return parseInt(e.failed); }), backgroundColor: '#ef4444' }
       ]
     },
-    options: Object.assign({}, chartDefaults, { scales: Object.assign({}, chartDefaults.scales, { x: Object.assign({}, chartDefaults.scales.x, { stacked: true }), y: Object.assign({}, chartDefaults.scales.y, { stacked: true }) }) })
+    options: stackedOpts()
   });
 })();
 </script>

@@ -1,0 +1,45 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Business Health</h2>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--4">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-text-muted)"></div>
+      <div class="an-kpi__label">Total business-uri</div>
+      <div class="an-kpi__value"><%= data.biz.total %></div>
+      <canvas class="an-kpi__sparkline" id="spark-biz-views"></canvas>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Cu oferte active</div>
+      <div class="an-kpi__value" style="color: var(--a-success-bright)"><%= data.biz.withOffers %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-warning-bright)"></div>
+      <div class="an-kpi__label">Fara oferte</div>
+      <div class="an-kpi__value" style="color: var(--a-warning-bright)"><%= data.biz.total - data.biz.withOffers %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">Platitori</div>
+      <% var paidBiz = data.biz.byTier.filter(function(t) { return t.tier !== 'free' && t.tier !== null; }).reduce(function(s,t) { return s + parseInt(t.cnt); }, 0); %>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= paidBiz %></div>
+    </div>
+  </div>
+
+  <div class="an-chart-grid an-chart-grid--2">
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Distributie per Tier</div>
+      <canvas id="chart-biz-tier" height="200"></canvas>
+    </div>
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Top 10 — Vizualizari (<%= period %>)</div>
+      <% if (data.biz.topByViews.length > 0) { %>
+        <canvas id="chart-top-views" height="200"></canvas>
+      <% } else { %>
+        <p class="a-text-muted">Nicio vizualizare inregistrata.</p>
+      <% } %>
+    </div>
+  </div>
+</section>

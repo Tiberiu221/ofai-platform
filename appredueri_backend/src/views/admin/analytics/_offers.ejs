@@ -1,0 +1,61 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Oferte — Analytics</h2>
+    <span class="an-section__subtitle">Ultimele <%= period %></span>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--4">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Oferte active</div>
+      <div class="an-kpi__value" style="color: var(--a-success-bright)"><%= data.offers.activeOffers %></div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-primary)"></div>
+      <div class="an-kpi__label">Vizualizari oferte</div>
+      <div class="an-kpi__value" style="color: var(--a-primary)"><%= data.offers.views %></div>
+      <% if (data.offers.viewsTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.offers.viewsTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.offers.viewsTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.offers.viewsTrend) %>%</span>
+        </div>
+      <% } %>
+      <canvas class="an-kpi__sparkline" id="spark-offer-views"></canvas>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #fb923c"></div>
+      <div class="an-kpi__label">Coduri dezvaluite</div>
+      <div class="an-kpi__value" style="color: #fb923c"><%= data.offers.reveals %></div>
+      <% if (data.offers.revealsTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.offers.revealsTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.offers.revealsTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.offers.revealsTrend) %>%</span>
+        </div>
+      <% } %>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: #a78bfa"></div>
+      <div class="an-kpi__label">CTR (reveal/views)</div>
+      <div class="an-kpi__value" style="color: #a78bfa"><%= data.offers.ctr %>%</div>
+    </div>
+  </div>
+
+  <div class="an-chart-grid an-chart-grid--2">
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Top 10 oferte — Vizualizari</div>
+      <% if (data.offers.topOffers.length > 0) { %>
+        <canvas id="chart-top-offers" height="250"></canvas>
+      <% } else { %>
+        <p class="a-text-muted">Nicio vizualizare inregistrata.</p>
+      <% } %>
+    </div>
+    <div class="an-chart-card">
+      <div class="an-chart-card__title">Performanta pe categorii</div>
+      <% if (data.offers.catPerf.length > 0) { %>
+        <canvas id="chart-cat-perf" height="250"></canvas>
+      <% } else { %>
+        <p class="a-text-muted">Date insuficiente.</p>
+      <% } %>
+    </div>
+  </div>
+</section>

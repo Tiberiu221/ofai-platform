@@ -1,0 +1,37 @@
+<section class="an-section">
+  <div class="an-section__header">
+    <h2 class="an-section__title">Email Engagement</h2>
+    <span class="an-section__subtitle">Ultimele <%= period %></span>
+  </div>
+
+  <div class="an-kpi-grid an-kpi-grid--3">
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-success-bright)"></div>
+      <div class="an-kpi__label">Trimise</div>
+      <div class="an-kpi__value"><%= data.emails.totalSent %></div>
+      <% if (data.emails.sentTrend !== 0) { %>
+        <div class="an-kpi__trend an-kpi__trend--<%= data.emails.sentTrend >= 0 ? 'up' : 'down' %>">
+          <span><%- data.emails.sentTrend >= 0 ? '&#9650;' : '&#9660;' %></span>
+          <span><%= Math.abs(data.emails.sentTrend) %>%</span>
+        </div>
+      <% } %>
+      <canvas class="an-kpi__sparkline" id="spark-emails"></canvas>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi__accent" style="background: var(--a-danger)"></div>
+      <div class="an-kpi__label">Esuat</div>
+      <div class="an-kpi__value" style="color: var(--a-danger)"><%= data.emails.totalFailed %></div>
+    </div>
+    <div class="an-kpi">
+      <% var failRate = data.emails.totalSent > 0 ? ((data.emails.totalFailed / data.emails.totalSent) * 100).toFixed(1) : '0.0'; %>
+      <div class="an-kpi__accent" style="background: <%= parseFloat(failRate) > 5 ? 'var(--a-danger)' : 'var(--a-success-bright)' %>"></div>
+      <div class="an-kpi__label">Rata esec</div>
+      <div class="an-kpi__value" style="color: <%= parseFloat(failRate) > 5 ? 'var(--a-danger)' : 'var(--a-success-bright)' %>"><%= failRate %>%</div>
+    </div>
+  </div>
+
+  <div class="an-chart-full">
+    <div class="an-chart-card__title">Emailuri per tip</div>
+    <canvas id="chart-emails" height="250"></canvas>
+  </div>
+</section>
