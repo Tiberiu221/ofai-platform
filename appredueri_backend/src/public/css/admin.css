@@ -1407,6 +1407,7 @@ a.back-link:hover {
 
 /* KPI Grid */
 .an-kpi-grid { display: grid; gap: 16px; margin-bottom: 24px; }
+.an-kpi-grid > * { min-width: 0; }
 .an-kpi-grid--2 { grid-template-columns: repeat(2, 1fr); }
 .an-kpi-grid--3 { grid-template-columns: repeat(3, 1fr); }
 .an-kpi-grid--4 { grid-template-columns: repeat(4, 1fr); }
@@ -1458,6 +1459,7 @@ a.back-link:hover {
 
 /* Chart Grid */
 .an-chart-grid { display: grid; gap: 20px; margin-bottom: 24px; }
+.an-chart-grid > * { min-width: 0; }
 .an-chart-grid--2 { grid-template-columns: 1fr 1fr; }
 .an-chart-card {
   background: var(--a-surface);
@@ -1477,6 +1479,7 @@ a.back-link:hover {
 .an-canvas-wrap {
   position: relative;
   width: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 .an-canvas-wrap--sm { height: 200px; max-height: 200px; }
