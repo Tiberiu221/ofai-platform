@@ -837,7 +837,7 @@ class AppLocalizationsRo extends AppLocalizations {
   String get savedSearches => 'Cautari salvate';
 
   @override
-  String get preferences => 'Preferinte';
+  String get preferences => 'Preferinte & Notificari';
 
   @override
   String get addBusiness => 'Adauga business';
@@ -860,7 +860,7 @@ class AppLocalizationsRo extends AppLocalizations {
   }
 
   @override
-  String get prefTitle => 'Preferinte';
+  String get prefTitle => 'Preferinte & Notificari';
 
   @override
   String get prefCities => 'Orasele preferate';

@@ -1631,7 +1631,7 @@ abstract class AppLocalizations {
   /// No description provided for @preferences.
   ///
   /// In ro, this message translates to:
-  /// **'Preferinte'**
+  /// **'Preferinte & Notificari'**
   String get preferences;
 
   /// No description provided for @addBusiness.
@@ -1673,7 +1673,7 @@ abstract class AppLocalizations {
   /// No description provided for @prefTitle.
   ///
   /// In ro, this message translates to:
-  /// **'Preferinte'**
+  /// **'Preferinte & Notificari'**
   String get prefTitle;
 
   /// No description provided for @prefCities.

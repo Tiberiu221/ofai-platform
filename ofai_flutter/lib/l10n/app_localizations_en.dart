@@ -833,7 +833,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get savedSearches => 'Saved searches';
 
   @override
-  String get preferences => 'Preferences';
+  String get preferences => 'Preferences & Notifications';
 
   @override
   String get addBusiness => 'Add business';
@@ -856,7 +856,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get prefTitle => 'Preferences';
+  String get prefTitle => 'Preferences & Notifications';
 
   @override
   String get prefCities => 'Preferred cities';

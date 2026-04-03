@@ -5,7 +5,8 @@
       "Edit(*)",
       "Write(*)",
       "WebFetch(*)",
-      "mcp__*"
+      "mcp__*",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }

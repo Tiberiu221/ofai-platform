@@ -111,11 +111,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'OFAI',
-                          style: AppTypography.displayLarge.copyWith(
-                            color: AppColors.accent,
-                          ),
+                        Image.asset(
+                          'assets/ofai-wordmark-nobg.png',
+                          height: 36,
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
