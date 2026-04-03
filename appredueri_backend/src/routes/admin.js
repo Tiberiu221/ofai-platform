@@ -2336,10 +2336,12 @@ router.get("/onboarding", async (req, res) => {
   try {
     const statusFilter = req.query.status || 'active'; // 'active' | 'all' | specific status
     let whereClause = '';
+    const queryParams = [];
     if (statusFilter === 'active') {
       whereClause = `WHERE orq.status IN ('pending', 'in_progress')`;
     } else if (['pending', 'in_progress', 'completed', 'cancelled'].includes(statusFilter)) {
-      whereClause = `WHERE orq.status = '${statusFilter}'`;
+      whereClause = `WHERE orq.status = $1`;
+      queryParams.push(statusFilter);
     }
     // 'all' → no WHERE clause
 
@@ -2354,7 +2356,7 @@ router.get("/onboarding", async (req, res) => {
       ${whereClause}
       ORDER BY CASE orq.status WHEN 'pending' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, orq.created_at DESC
       LIMIT 100
-    `);
+    `, queryParams);
 
     // Render as JSON for simplicity (Tiberiu manages via direct DB or simple admin UI)
     if (req.query.format === 'json') {
