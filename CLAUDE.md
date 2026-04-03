@@ -156,6 +156,11 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
   7. Use `maintainAspectRatio: false` on ALL charts (never `true` in flex/grid contexts)
 - **Admin CSS cache busting:** `layout-top.ejs` loads `/css/admin.css?v=<%= cacheBust %>`. `cacheBust = Date.now()` from `app.locals` in index.js. Without this, browser/CDN caches old CSS across deploys → CSS fixes don't take effect
 - **Admin analytics route:** Extracted to `src/routes/admin-analytics.js` (was in admin.js). Mounted via `router.use(require('./admin-analytics'))`. 9 modular fetch functions, ~40 queries in Promise.all(), 15-min cache per period (7d/30d/90d). Template split into 9 partials in `views/admin/analytics/`
+- **share_plus on iOS:** All `Share.shareUri()` and `Share.share()` calls MUST include `sharePositionOrigin: const Rect.fromLTWH(0, 0, 100, 100)` — iPad/iPhone crashes without it (`sharePositionOrigin must be set`). See `launchers.dart`.
+- **Xcode 26 + CocoaPods:** `Podfile` needs `-Wno-quoted-include-in-framework-header` in `OTHER_CFLAGS` for all pod targets — Xcode 26 treats double-quoted includes in framework headers as errors. Also force `IPHONEOS_DEPLOYMENT_TARGET >= 13.0` on all pods.
+- **Save count on cards:** Intentionally REMOVED from all card types (web EJS + Flutter). Save count only shows on detail pages (offer-detail.ejs + offer_detail_screen.dart) as activity pills. Do NOT re-add to cards.
+- **LocationBanner in explore:** Moved from fixed header Column into scrollable ListView content (first item, index 0) to prevent RenderFlex overflow on smaller iPhones. Both offers and businesses tabs include it.
+- **Push service APNs:** `getToken()` wrapped in separate try/catch — fails gracefully on iOS without APNs certificate (free provisioning). Rest of push service (foreground handler, tap handler) still initializes.
 
 ## Language
 - UI text and user-facing strings: Romanian
