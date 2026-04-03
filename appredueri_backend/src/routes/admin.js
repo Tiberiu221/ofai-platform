@@ -2811,6 +2811,68 @@ router.get("/export/:type", async (req, res) => {
 });
 
 // ═════════════════════════════════════════════
+//   PUSH NOTIFICATIONS DASHBOARD
+// ═════════════════════════════════════════════
+router.get("/push-notifications", async (req, res) => {
+  try {
+    const [
+      totalTokens, activeTokens, platformBreakdown, staleTokens,
+      totalNotifs, recentNotifs, notifsByType, dailyNotifs
+    ] = await Promise.all([
+      pool.query("SELECT COUNT(*) as cnt FROM push_tokens"),
+      pool.query("SELECT COUNT(*) as cnt FROM push_tokens WHERE is_active = true"),
+      pool.query("SELECT platform, COUNT(*) as cnt, SUM(CASE WHEN is_active THEN 1 ELSE 0 END) as active_cnt FROM push_tokens GROUP BY platform ORDER BY cnt DESC"),
+      pool.query("SELECT COUNT(*) as cnt FROM push_tokens WHERE is_active = true AND updated_at < NOW() - INTERVAL '90 days'"),
+      pool.query("SELECT COUNT(*) as cnt FROM push_notifications_log"),
+      pool.query("SELECT COUNT(*) as cnt FROM push_notifications_log WHERE created_at >= NOW() - INTERVAL '30 days'"),
+      pool.query(`
+        SELECT target_type, COUNT(*) as cnt,
+               COALESCE(SUM(tokens_count), 0) as total_tokens,
+               COALESCE(SUM(success_count), 0) as total_success,
+               COALESCE(SUM(failure_count), 0) as total_failures
+        FROM push_notifications_log
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY target_type ORDER BY cnt DESC
+      `),
+      pool.query(`
+        SELECT DATE_TRUNC('day', created_at)::date as day, COUNT(*) as cnt,
+               COALESCE(SUM(success_count), 0) as successes,
+               COALESCE(SUM(failure_count), 0) as failures
+        FROM push_notifications_log
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY 1 ORDER BY 1
+      `),
+    ]);
+
+    const totalSuccess = notifsByType.rows.reduce((s, r) => s + parseInt(r.total_success), 0);
+    const totalFailures = notifsByType.rows.reduce((s, r) => s + parseInt(r.total_failures), 0);
+
+    res.render("admin/push-notifications", {
+      stats: {
+        totalTokens: parseInt(totalTokens.rows[0]?.cnt || 0),
+        activeTokens: parseInt(activeTokens.rows[0]?.cnt || 0),
+        staleTokens: parseInt(staleTokens.rows[0]?.cnt || 0),
+        totalNotifs: parseInt(totalNotifs.rows[0]?.cnt || 0),
+        recentNotifs: parseInt(recentNotifs.rows[0]?.cnt || 0),
+        totalSuccess,
+        totalFailures,
+        deliveryRate: (totalSuccess + totalFailures) > 0
+          ? ((totalSuccess / (totalSuccess + totalFailures)) * 100).toFixed(1) : '100.0'
+      },
+      platformBreakdown: platformBreakdown.rows,
+      notifsByType: notifsByType.rows,
+      dailyNotifs: dailyNotifs.rows,
+      pageTitle: "Push Notifications",
+      activePage: "push-notifications",
+      loadChartJs: true
+    });
+  } catch (err) {
+    console.error("[Admin] Push notifications error:", err.message);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// ═════════════════════════════════════════════
 //   REFERRALS DASHBOARD
 // ═════════════════════════════════════════════
 router.get("/referrals", async (req, res) => {

@@ -24,6 +24,7 @@ appredueri_backend/
       web-shared.js           # Shared web utilities
       business-portal.js      # Business owner portal (~1600 lines)
       admin.js                # Admin panel (~2400 lines)
+      admin-analytics.js      # Admin analytics dashboard (extracted, ~450 lines)
       offers.js, businesses.js, reviews.js, users.js  # Mobile API
       auth.js, favorites.js, subscriptions.js         # Mobile API
       push-tokens.js, businessRequests.js             # Mobile API
@@ -128,7 +129,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **web.js split:** Split into 4 sub-routers: `web.js`, `web-auth.js`, `web-account-api.js`, `web-portal-api.js` + `web-shared.js` utility
 - **LLM services:** AI validation/moderation in `services/llm/` (5 files). Uses Anthropic Claude API via `anthropicClient.js`
 - **LLM prompt injection:** All user-supplied text in LLM prompts must be wrapped in `[USER_INPUT]...[/USER_INPUT]` fencing tags to prevent prompt injection
-- **Route count:** 23 route files total, ~256 endpoints — don't forget to update both web and mobile routes when changing shared logic
+- **Route count:** 24 route files total (23 + admin-analytics.js), ~258 endpoints — don't forget to update both web and mobile routes when changing shared logic
 - **Refresh token rotation:** Uses `SELECT ... FOR UPDATE` in a transaction to prevent race conditions from concurrent requests
 - **Lenis smooth scroll:** `window.lenis` is global. Use `lenis.scrollTo(target, { offset: -80 })` instead of `scrollIntoView`. Use `lenis.stop()`/`lenis.start()` for modals. Horizontal scroll containers are NOT affected (Lenis is vertical only). If CDN fails, all code falls back to native via `if (window.lenis)` guards
 - **Portal CSS `.booking-field`:** Has `display: none` in CSS — JS toggle MUST use `display: 'block'` (not `''`) to override
@@ -140,10 +141,21 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Service Worker:** `sw.js` in `src/public/` — never cache API/auth/billing paths. Update `CACHE_NAME` version when changing cached assets.
 - **Search helper:** `buildFuzzySearch(columns, paramIdx)` in `src/helpers/search.js` — apply `similarity: true` only on short columns (title, name), NOT on description (too noisy for trigrams)
 - **businesses.is_active:** Column does NOT exist on `businesses` table. Do NOT use in WHERE clauses. Use subscription status or offer counts to determine activity.
-- **offers.updated_at:** Column does NOT exist. Use `created_at` or `start_date` instead.
+- **offers.updated_at:** Column does NOT exist. Use `start_date` instead.
+- **offers.created_at:** Column does NOT exist on production. Use `start_date` for any date filtering on offers.
 - **review_responses.responded_by:** Column missing from migrations but referenced in INSERT code — will crash on review response submit
 - **Admin pages + CSP nonce:** Admin templates use `layout-top.ejs` (not `partials/head.ejs`). Inline `<script>` tags in admin MUST include `nonce="<%= cspNonce %>"` — `cspNonce` is available via `res.locals`
 - **Multi-platform booking:** `bookingPlatforms.js` has 14 platforms. Portal uses `initBookingMethods()` — must be called AFTER function definition (was bug: called before). Offer form uses `of-input` class (not `form-input` — portal.css not loaded on offer form)
+- **Chart.js + CSS Grid/Flex = infinite growth:** Chart.js `responsive: true` with ResizeObserver creates feedback loops in flex/grid containers. MANDATORY rules when using Chart.js:
+  1. Wrap EVERY `<canvas>` in a `<div>` with `position: relative`, explicit `height` (px), and `overflow: hidden`
+  2. ALL flex/grid children containing charts MUST have `min-width: 0` (CSS default is `auto` which allows infinite growth)
+  3. Init ALL charts inside `requestAnimationFrame(function() { requestAnimationFrame(function() { ... }) })` (double-rAF) — wait for stable layout before Chart.js measures containers
+  4. Sparklines inside cards: lock parent with `el.parentElement.style.height = 'Xpx'; overflow = 'hidden'` BEFORE `new Chart()`
+  5. `Object.assign` for chart options does SHALLOW copy — `scales` object is shared reference. Chart.js mutates it internally → use full inline objects
+  6. Set `canvas { display: block }` to eliminate 4px inline-element gap that causes measurement drift
+  7. Use `maintainAspectRatio: false` on ALL charts (never `true` in flex/grid contexts)
+- **Admin CSS cache busting:** `layout-top.ejs` loads `/css/admin.css?v=<%= cacheBust %>`. `cacheBust = Date.now()` from `app.locals` in index.js. Without this, browser/CDN caches old CSS across deploys → CSS fixes don't take effect
+- **Admin analytics route:** Extracted to `src/routes/admin-analytics.js` (was in admin.js). Mounted via `router.use(require('./admin-analytics'))`. 9 modular fetch functions, ~40 queries in Promise.all(), 15-min cache per period (7d/30d/90d). Template split into 9 partials in `views/admin/analytics/`
 
 ## Language
 - UI text and user-facing strings: Romanian
@@ -154,7 +166,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 23 route files, ~258 endpoints, 20 providers, 75 migrations, 26 screens, 13 models, 24 widgets
+- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 75 migrations, 26 screens, 13 models, 24 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -256,7 +268,14 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **LLM Prompt Injection:** Complete `[USER_INPUT]` fencing on all 5 LLM services (~20 fields)
 - **Onboarding UX:** Explanatory subtitles on city/category selection steps
 - **Multi-Platform Booking:** 14 platforms (Telefon, WhatsApp, Booksy, Fresha, Airbnb, Booking.com, Calendly, Google, Treatwell, Planfy, Setmore, SimplyBook, Website propriu, Altul). Multi-select on business portal + offer form with inherit/custom toggle. Consumer branded buttons with platform colors. Migration 074 + 075.
-- **Admin Analytics Dashboard:** `/admin/analytics` with Chart.js — MRR/ARR/churn cards, tier distribution doughnut, Free vs Paid breakdown, subscription history bar, user signups line chart, business health, email engagement. Cached 15min.
+- **Admin Analytics Dashboard:** `/admin/analytics` — 9 sections, 15 charts, date range picker (7d/30d/90d), KPI cards with trend indicators + sparklines. Route extracted to `admin-analytics.js`, template split into 9 partials in `views/admin/analytics/`. ~40 queries in Promise.all(), cached 15min per period. Expand modal on chart hover. Sections: Revenue, Subscriptions, Users, Business Health, Offer Analytics, Engagement, Geographic, Content Health, Email Engagement.
+- **Admin Subscription Management:** `/admin/subscriptions` list page + subscription card on `/admin/businesses/:id/edit` (plan, status, billing cycle, Stripe IDs, history table). Read-only — no mutations.
+- **Admin Audit Logging:** `adminLog()` helper logs 21 critical POST routes to `audit_log` table (ban, delete, approve, reject, create, edit). `/admin/audit-logs` list page with filters + pagination + color-coded actions + clickable entity links.
+- **Admin CSV Export:** `GET /admin/export/:type` — businesses, users, offers, subscriptions, email-logs, audit-logs. BOM for Excel UTF-8, proper CSV escaping. Export buttons on all 6 list pages.
+- **Admin Bulk Operations:** `initBulkSelect()` reusable JS + 4 bulk POST endpoints. Offer moderation: bulk approve/reject. Business requests: bulk approve/reject. Checkboxes + floating action bar + confirm dialog. Individual audit log per item.
+- **Admin Referral Dashboard:** `/admin/referrals` — KPI cards (total, 30d, points), top 15 leaderboard with medals, monthly trend chart.
+- **Admin Cron Jobs Monitor:** `/admin/cron-jobs` — 18 scheduled jobs list with cron expressions + frequency, runtime stats (expired tokens, old logs, emails 24h), manual trigger for review prompt.
+- **Admin Push Notifications:** `/admin/push-notifications` — token health (total/active/stale/inactive), platform breakdown (Android/iOS/Web), notification stats 30d (sent/delivered/failed/rate), per-type breakdown, daily trend chart.
 - **Web Auth Rate Limiting:** POST /login, /register, /forgot-password, /verify-code, /reset-password all rate-limited
 - **Password Reset Web Flow:** GET /verify-code route + verify-code.ejs template for complete web password reset
 - **Flutter QA Fixes:** SavedSearch DateTime.tryParse crash fix, FollowedBusinesses toggle dedup (_pendingToggles), RadioListTile→RadioGroup migration (Flutter 3.32+), collections provider error propagation, email validation regex strengthened, dead code cleanup (~56 lines removed)

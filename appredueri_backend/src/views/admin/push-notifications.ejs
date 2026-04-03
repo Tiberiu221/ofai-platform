@@ -1,0 +1,152 @@
+<%- include('partials/layout-top', { pageTitle: 'Push Notifications', activePage: 'push-notifications', loadChartJs: true }) %>
+
+<div class="a-page-header">
+  <h1>Push Notifications</h1>
+</div>
+
+<!-- Token Health -->
+<h2>Token Health</h2>
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700;"><%= stats.totalTokens %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Total tokens</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-success-bright);"><%= stats.activeTokens %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Active</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-warning-bright);"><%= stats.staleTokens %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Stale (>90 zile)</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-text-muted);"><%= stats.totalTokens - stats.activeTokens %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Inactive</div>
+  </div>
+</div>
+
+<!-- Platform Breakdown -->
+<% if (platformBreakdown.length > 0) { %>
+<h2>Distributie Platforme</h2>
+<table style="margin-bottom: 24px;">
+  <thead>
+    <tr>
+      <th>Platforma</th>
+      <th>Total tokens</th>
+      <th>Active</th>
+      <th>Inactive</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% platformBreakdown.forEach(function(p) { %>
+      <tr>
+        <td>
+          <% if (p.platform === 'android') { %>
+            <span style="color: #22c55e; font-weight: 500;">Android</span>
+          <% } else if (p.platform === 'ios') { %>
+            <span style="color: #3b82f6; font-weight: 500;">iOS</span>
+          <% } else { %>
+            <span style="color: #f59e0b; font-weight: 500;">Web</span>
+          <% } %>
+        </td>
+        <td><%= p.cnt %></td>
+        <td style="color: var(--a-success-bright);"><%= p.active_cnt %></td>
+        <td style="color: var(--a-text-muted);"><%= parseInt(p.cnt) - parseInt(p.active_cnt) %></td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+
+<!-- Notification Stats (30 days) -->
+<h2>Notificari (30 zile)</h2>
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700;"><%= stats.recentNotifs %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Trimise (30 zile)</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-success-bright);"><%= stats.totalSuccess %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Livrate</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-danger);"><%= stats.totalFailures %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Esuate</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: <%= parseFloat(stats.deliveryRate) < 90 ? 'var(--a-warning-bright)' : 'var(--a-success-bright)' %>;"><%= stats.deliveryRate %>%</div>
+    <div class="a-text-muted" style="font-size: 12px;">Rata livrare</div>
+  </div>
+</div>
+
+<!-- By Type -->
+<% if (notifsByType.length > 0) { %>
+<h2>Per tip (30 zile)</h2>
+<table style="margin-bottom: 24px;">
+  <thead>
+    <tr>
+      <th>Tip target</th>
+      <th>Trimise</th>
+      <th>Tokens</th>
+      <th>Succes</th>
+      <th>Esuat</th>
+      <th>Rata</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% notifsByType.forEach(function(n) { %>
+      <% var total = parseInt(n.total_success) + parseInt(n.total_failures); var rate = total > 0 ? ((parseInt(n.total_success) / total) * 100).toFixed(1) : '100.0'; %>
+      <tr>
+        <td style="font-weight: 500;"><%= n.target_type %></td>
+        <td><%= n.cnt %></td>
+        <td><%= n.total_tokens %></td>
+        <td style="color: var(--a-success-bright);"><%= n.total_success %></td>
+        <td style="color: var(--a-danger);"><%= n.total_failures %></td>
+        <td style="color: <%= parseFloat(rate) < 90 ? 'var(--a-warning-bright)' : 'var(--a-success-bright)' %>;"><%= rate %>%</td>
+      </tr>
+    <% }); %>
+  </tbody>
+</table>
+<% } %>
+
+<!-- Daily Chart -->
+<% if (dailyNotifs.length > 0) { %>
+<h2>Trend zilnic (30 zile)</h2>
+<div class="a-card">
+  <div style="position: relative; height: 260px; overflow: hidden; min-width: 0;">
+    <canvas id="chart-push-daily"></canvas>
+  </div>
+</div>
+
+<script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
+requestAnimationFrame(function() { requestAnimationFrame(function() {
+  var data = <%- JSON.stringify(dailyNotifs) %>;
+  new Chart(document.getElementById('chart-push-daily'), {
+    type: 'line',
+    data: {
+      labels: data.map(function(d) { return new Date(d.day).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+      datasets: [
+        { label: 'Livrate', data: data.map(function(d) { return parseInt(d.successes); }), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 },
+        { label: 'Esuate', data: data.map(function(d) { return parseInt(d.failures); }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#9ca3af' } } },
+      scales: {
+        x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}); });
+</script>
+<% } %>
+
+<div class="a-card" style="margin-top: 24px; padding: 16px;">
+  <p class="a-text-muted" style="font-size: 13px; margin: 0;">
+    Total notificari din toate timpurile: <strong><%= stats.totalNotifs %></strong>
+  </p>
+</div>
+
+<%- include('partials/layout-bottom') %>
