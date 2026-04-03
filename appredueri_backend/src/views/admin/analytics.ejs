@@ -34,10 +34,17 @@
      ═══════════════════════════════════════════════════════ -->
 <script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
 (function() {
-  // Force all canvas wraps to explicit pixel width (prevents Chart.js resize loop)
+  // Double-rAF: wait for 2 layout passes so all containers have stable dimensions
+  // This prevents Chart.js ResizeObserver from creating infinite feedback loops
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+
+  // Lock canvas wraps to explicit pixel dimensions before Chart.js touches them
   document.querySelectorAll('.an-canvas-wrap').forEach(function(wrap) {
-    var w = wrap.parentElement.clientWidth - 40; // account for padding
+    var parent = wrap.parentElement;
+    var w = parent.clientWidth - 40;
     if (w > 0) wrap.style.width = w + 'px';
+    var h = parseInt(window.getComputedStyle(wrap).height, 10);
+    if (h > 0) wrap.style.height = h + 'px';
   });
 
   var chartDefaults = {
@@ -86,6 +93,12 @@
   function createSparkline(canvasId, dataPoints, color) {
     var el = document.getElementById(canvasId);
     if (!el || !dataPoints || dataPoints.length === 0) return;
+    // Lock parent to fixed 32px so Chart.js ResizeObserver can't grow it
+    var p = el.parentElement;
+    p.style.height = '32px';
+    p.style.overflow = 'hidden';
+    p.style.position = 'relative';
+    el.style.display = 'block';
     new Chart(el, {
       type: 'line',
       data: {
@@ -117,7 +130,14 @@
   }
 
   function hBarOpts() {
-    return Object.assign({}, chartDefaults, { indexAxis: 'y' });
+    return {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { labels: { color: '#9ca3af' } } },
+      scales: {
+        x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    };
   }
 
   var doughnutOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } };
@@ -281,6 +301,8 @@
       { label: 'Esuat', data: emailData.map(function(e) { return parseInt(e.failed); }), backgroundColor: '#ef4444' }
     ]
   }, stackedOpts());
+
+  }); }); // end double-rAF
 })();
 </script>
 

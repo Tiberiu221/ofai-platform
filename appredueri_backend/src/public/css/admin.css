@@ -1485,19 +1485,20 @@ a.back-link:hover {
 .an-canvas-wrap {
   position: relative;
   width: 100%;
+  height: 260px; /* safe default — overridden by size modifiers */
   min-width: 0;
   overflow: hidden;
+  display: block;
 }
 .an-canvas-wrap--sm { height: 200px; max-height: 200px; }
 .an-canvas-wrap--md { height: 260px; max-height: 260px; }
 .an-canvas-wrap--lg { height: 300px; max-height: 300px; }
-.an-canvas-wrap canvas { max-height: 100% !important; }
+.an-canvas-wrap canvas {
+  display: block; /* eliminate inline-element 4px gap */
+  max-height: 100% !important;
+}
 
 /* Expand button on chart cards */
-.an-chart-card,
-.an-chart-full {
-  position: relative;
-}
 .an-expand-btn {
   position: absolute;
   top: 12px;
@@ -1571,6 +1572,7 @@ a.back-link:hover {
   justify-content: center;
 }
 .an-modal-chart__close:hover { color: var(--a-text); }
+.an-modal-chart__canvas canvas { display: block; }
 
 /* Full-width chart card */
 .an-chart-full {
@@ -1580,6 +1582,7 @@ a.back-link:hover {
   padding: 20px;
   margin-bottom: 24px;
   overflow: hidden;
+  position: relative; /* for .an-expand-btn */
 }
 
 /* Responsive */
