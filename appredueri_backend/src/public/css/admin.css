@@ -1471,6 +1471,10 @@ a.back-link:hover {
   color: var(--a-text);
   margin-bottom: 16px;
 }
+.an-chart-card canvas,
+.an-chart-full canvas {
+  max-height: 280px;
+}
 
 /* Full-width chart card */
 .an-chart-full {

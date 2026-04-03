@@ -27,7 +27,7 @@
 (function() {
   var chartDefaults = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: { legend: { labels: { color: '#9ca3af' } } },
     scales: {
       x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -68,7 +68,7 @@
   function stackedOpts() {
     return {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: false,
       plugins: { legend: { labels: { color: '#9ca3af' } } },
       scales: {
         x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -83,7 +83,7 @@
   }
 
   // ─── Doughnut options ───
-  var doughnutOpts = { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#9ca3af' } } } };
+  var doughnutOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } };
 
   // ═══════════════════════════════════════
   // SECTION 1: REVENUE
