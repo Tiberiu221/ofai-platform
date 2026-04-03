@@ -2456,6 +2456,184 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
 });
 
 // ═════════════════════════════════════════════
+//   BULK OPERATIONS
+// ═════════════════════════════════════════════
+
+// POST /admin/offer-moderation/bulk/approve
+router.post("/offer-moderation/bulk/approve", async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids required" });
+  if (ids.length > 50) return res.status(400).json({ error: "Maximum 50 items per batch" });
+
+  let approved = 0, skipped = 0, errors = 0;
+  try {
+    for (const rawId of ids) {
+      const id = parseInt(rawId, 10);
+      if (Number.isNaN(id)) { skipped++; continue; }
+      try {
+        const { rowCount } = await pool.query(
+          "UPDATE offers SET moderation_status = 'approved', is_active = true WHERE id = $1 AND moderation_status = 'pending_review'",
+          [id]
+        );
+        if (rowCount === 0) { skipped++; continue; }
+        approved++;
+        adminLog('approve_offer', 'offer', id, req, { bulk: true });
+
+        // Email notification (fire-and-forget)
+        pool.query(
+          `SELECT o.title, b.name AS business_name, u.email, u.first_name
+           FROM offers o JOIN businesses b ON b.id = o.business_id
+           JOIN user_businesses ub ON ub.business_id = o.business_id
+           JOIN users u ON u.id = ub.user_id WHERE o.id = $1`, [id]
+        ).then(r => {
+          for (const row of r.rows) {
+            sendOfferApprovedEmail(row.email, row.first_name, row.title, row.business_name).catch(() => {});
+          }
+        }).catch(() => {});
+      } catch (e) { errors++; console.error("[Bulk] Approve offer error:", id, e.message); }
+    }
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    res.json({ approved, skipped, errors });
+  } catch (err) {
+    console.error("[Admin] Bulk approve error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /admin/offer-moderation/bulk/reject
+router.post("/offer-moderation/bulk/reject", async (req, res) => {
+  const { ids, reason } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids required" });
+  if (ids.length > 50) return res.status(400).json({ error: "Maximum 50 items per batch" });
+  const rejectionReason = (reason || "").trim();
+  if (!rejectionReason) return res.status(400).json({ error: "reason required" });
+
+  let rejected = 0, skipped = 0, errors = 0;
+  try {
+    for (const rawId of ids) {
+      const id = parseInt(rawId, 10);
+      if (Number.isNaN(id)) { skipped++; continue; }
+      try {
+        const { rowCount } = await pool.query(
+          "UPDATE offers SET moderation_status = 'rejected', is_active = false, rejection_reason = $2 WHERE id = $1 AND moderation_status = 'pending_review'",
+          [id, rejectionReason]
+        );
+        if (rowCount === 0) { skipped++; continue; }
+        rejected++;
+        adminLog('reject_offer', 'offer', id, req, { reason: rejectionReason, bulk: true });
+
+        pool.query(
+          `SELECT o.title, b.name AS business_name, u.email, u.first_name
+           FROM offers o JOIN businesses b ON b.id = o.business_id
+           JOIN user_businesses ub ON ub.business_id = o.business_id
+           JOIN users u ON u.id = ub.user_id WHERE o.id = $1`, [id]
+        ).then(r => {
+          for (const row of r.rows) {
+            sendOfferRejectedEmail(row.email, row.first_name, row.title, row.business_name, rejectionReason).catch(() => {});
+          }
+        }).catch(() => {});
+      } catch (e) { errors++; console.error("[Bulk] Reject offer error:", id, e.message); }
+    }
+    cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    res.json({ rejected, skipped, errors });
+  } catch (err) {
+    console.error("[Admin] Bulk reject error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /admin/business-requests/bulk/approve
+router.post("/business-requests/bulk/approve", async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids required" });
+  if (ids.length > 20) return res.status(400).json({ error: "Maximum 20 items per batch" });
+
+  let approved = 0, skipped = 0, errors = 0;
+  try {
+    for (const rawId of ids) {
+      const id = parseInt(rawId, 10);
+      if (Number.isNaN(id)) { skipped++; continue; }
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        const { rows } = await client.query(
+          "SELECT id, user_id, name, category_id, city_id, address, phone, website, description FROM business_requests WHERE id = $1 AND status = 'pending'",
+          [id]
+        );
+        if (rows.length === 0) { await client.query("ROLLBACK"); skipped++; continue; }
+        const request = rows[0];
+
+        const { rows: bizRows } = await client.query(
+          `INSERT INTO businesses (name, city_id, category_id, address, phone, website, description, source)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'user_submitted') RETURNING id`,
+          [request.name, request.city_id, request.category_id, request.address || '', request.phone, request.website, request.description]
+        );
+        const businessId = bizRows[0].id;
+
+        await client.query("INSERT INTO user_businesses (user_id, business_id) VALUES ($1, $2)", [request.user_id, businessId]);
+        await client.query(`INSERT INTO business_subscriptions (business_id, plan_id, status, billing_cycle) SELECT $1, sp.id, 'active', 'none' FROM subscription_plans sp WHERE sp.slug = 'free'`, [businessId]);
+        await syncBadgeType(client, businessId, null);
+        await client.query("UPDATE users SET role = 'business_owner' WHERE id = $1 AND role = 'user'", [request.user_id]);
+        await client.query(`UPDATE business_requests SET status = 'approved', business_id = $1, reviewed_at = NOW(), updated_at = NOW() WHERE id = $2`, [businessId, id]);
+        await client.query("COMMIT");
+        approved++;
+        adminLog('approve_business_request', 'business_request', id, req, { businessId, bulk: true });
+
+        // Email (fire-and-forget)
+        pool.query("SELECT email, first_name FROM users WHERE id = $1", [request.user_id])
+          .then(r => { if (r.rows[0]) sendBusinessApprovedEmail(r.rows[0].email, r.rows[0].first_name, request.name).catch(() => {}); })
+          .catch(() => {});
+      } catch (e) {
+        await client.query("ROLLBACK").catch(() => {});
+        errors++;
+        console.error("[Bulk] Approve business request error:", id, e.message);
+      } finally {
+        client.release();
+      }
+    }
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    res.json({ approved, skipped, errors });
+  } catch (err) {
+    console.error("[Admin] Bulk approve requests error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /admin/business-requests/bulk/reject
+router.post("/business-requests/bulk/reject", async (req, res) => {
+  const { ids, reason } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids required" });
+  if (ids.length > 50) return res.status(400).json({ error: "Maximum 50 items per batch" });
+  const rejectReason = (reason || "").trim().slice(0, 500);
+
+  let rejected = 0, skipped = 0, errors = 0;
+  try {
+    for (const rawId of ids) {
+      const id = parseInt(rawId, 10);
+      if (Number.isNaN(id)) { skipped++; continue; }
+      try {
+        const { rowCount } = await pool.query(
+          `UPDATE business_requests SET status = 'rejected', admin_notes = $1, reviewed_at = NOW(), updated_at = NOW() WHERE id = $2 AND status = 'pending'`,
+          [rejectReason || null, id]
+        );
+        if (rowCount === 0) { skipped++; continue; }
+        rejected++;
+        adminLog('reject_business_request', 'business_request', id, req, { reason: rejectReason, bulk: true });
+
+        pool.query(`SELECT br.name, u.email, u.first_name FROM business_requests br JOIN users u ON u.id = br.user_id WHERE br.id = $1`, [id])
+          .then(r => { if (r.rows[0]) sendBusinessRejectedEmail(r.rows[0].email, r.rows[0].first_name, r.rows[0].name, rejectReason).catch(() => {}); })
+          .catch(() => {});
+      } catch (e) { errors++; console.error("[Bulk] Reject request error:", id, e.message); }
+    }
+    cache.invalidateGroup('businesses'); cache.invalidateGroup('admin');
+    res.json({ rejected, skipped, errors });
+  } catch (err) {
+    console.error("[Admin] Bulk reject requests error:", err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ═════════════════════════════════════════════
 //   AUDIT LOGS
 // ═════════════════════════════════════════════
 router.get("/audit-logs", async (req, res) => {

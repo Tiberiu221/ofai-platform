@@ -1394,6 +1394,35 @@ table tr.clickable:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════
+   BULK OPERATIONS BAR
+   ═══════════════════════════════════════════════════════ */
+.bulk-bar {
+  position: fixed;
+  bottom: -60px;
+  left: 240px;
+  right: 0;
+  height: 56px;
+  background: var(--a-surface-alt);
+  border-top: 1px solid var(--a-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  z-index: 50;
+  transition: bottom 0.2s ease;
+}
+.bulk-bar.active { bottom: 0; }
+.bulk-bar__count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--a-text);
+  margin-right: 8px;
+}
+@media (max-width: 768px) {
+  .bulk-bar { left: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════
    ANALYTICS DASHBOARD
    ═══════════════════════════════════════════════════════ */
 

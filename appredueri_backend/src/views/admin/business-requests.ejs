@@ -17,24 +17,24 @@
     Click pe un rând pentru detalii
   </p>
 
-  <table>
+  <table id="requests-table">
     <thead>
       <tr>
         <th>ID</th>
         <th>Nume Business</th>
         <th>Categorie</th>
-        <th>Oraș</th>
+        <th>Oras</th>
         <th>User</th>
         <th>AI Score</th>
         <th>Flags</th>
         <th>Status</th>
         <th>Data</th>
-        <th style="width: 180px;">Acțiuni</th>
+        <th style="width: 180px;">Actiuni</th>
       </tr>
     </thead>
     <tbody>
       <% requests.forEach(function(r, idx) { %>
-        <tr class="clickable" onclick="toggleDetails(<%= idx %>)">
+        <tr class="clickable" data-bulk-id="<%= r.id %>" onclick="toggleDetails(<%= idx %>)">
           <td><%= r.id %></td>
           <td><strong><%= r.name %></strong></td>
           <td><%= r.category_name || '—' %></td>
@@ -177,6 +177,17 @@
       openRejectModal(this.dataset.rejectId, this.dataset.rejectName);
     });
   });
+
+  // Bulk operations
+  if (typeof initBulkSelect === 'function') {
+    initBulkSelect({
+      tableId: 'requests-table',
+      actions: [
+        { label: 'Aproba selectate', url: '/admin/business-requests/bulk/approve', cssClass: 'a-btn-success', needsReason: false },
+        { label: 'Respinge selectate', url: '/admin/business-requests/bulk/reject', cssClass: 'a-btn-danger', needsReason: true }
+      ]
+    });
+  }
 </script>
 
 <%- include('partials/layout-bottom') %>

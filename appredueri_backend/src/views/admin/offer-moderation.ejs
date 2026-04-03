@@ -18,7 +18,7 @@
     Click pe un rand pentru detalii
   </p>
 
-  <table>
+  <table id="moderation-table">
     <thead>
       <tr>
         <th>ID</th>
@@ -33,7 +33,7 @@
     </thead>
     <tbody>
       <% offers.forEach(function(o, idx) { %>
-        <tr class="clickable" onclick="toggleDetails(<%= idx %>)">
+        <tr class="clickable" data-bulk-id="<%= o.id %>" onclick="toggleDetails(<%= idx %>)">
           <td><%= o.id %></td>
           <td><strong><%= o.title %></strong></td>
           <td>
@@ -162,6 +162,17 @@
   document.getElementById('reject-modal').addEventListener('click', function(e) {
     if (e.target === this) closeRejectModal();
   });
+
+  // Bulk operations
+  if (typeof initBulkSelect === 'function') {
+    initBulkSelect({
+      tableId: 'moderation-table',
+      actions: [
+        { label: 'Aproba selectate', url: '/admin/offer-moderation/bulk/approve', cssClass: 'a-btn-success', needsReason: false },
+        { label: 'Respinge selectate', url: '/admin/offer-moderation/bulk/reject', cssClass: 'a-btn-danger', needsReason: true }
+      ]
+    });
+  }
 </script>
 
 <%- include('partials/layout-bottom') %>

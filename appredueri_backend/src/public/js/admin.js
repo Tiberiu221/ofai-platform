@@ -183,3 +183,129 @@ window.adminToast = adminToast;
 window.adminConfirm = adminConfirm;
 window.closeConfirmModal = closeConfirmModal;
 window.dismissToast = dismissToast;
+
+// ============================================
+// Bulk Select Operations
+// ============================================
+
+/**
+ * Initialize bulk select on a table.
+ * @param {Object} config
+ * @param {string} config.tableId - ID of the table element
+ * @param {Array} config.actions - [{label, url, cssClass, needsReason}]
+ */
+window.initBulkSelect = function(config) {
+  var table = document.getElementById(config.tableId);
+  if (!table) return;
+
+  var csrfToken = document.querySelector('meta[name="csrf-token"]');
+  var csrf = csrfToken ? csrfToken.getAttribute('content') : '';
+
+  // Add select-all checkbox to first <th>
+  var thead = table.querySelector('thead tr');
+  if (!thead) return;
+  var thCheck = document.createElement('th');
+  thCheck.style.width = '36px';
+  thCheck.innerHTML = '<input type="checkbox" id="bulk-select-all" title="Selecteaza tot">';
+  thead.insertBefore(thCheck, thead.firstChild);
+
+  // Add checkbox to each data row
+  var rows = table.querySelectorAll('tbody tr[data-bulk-id]');
+  rows.forEach(function(tr) {
+    var td = document.createElement('td');
+    td.innerHTML = '<input type="checkbox" class="bulk-check" value="' + tr.getAttribute('data-bulk-id') + '">';
+    tr.insertBefore(td, tr.firstChild);
+    // Prevent checkbox click from triggering row click (expandable rows)
+    td.addEventListener('click', function(e) { e.stopPropagation(); });
+  });
+
+  // Create floating bulk bar
+  var bar = document.createElement('div');
+  bar.className = 'bulk-bar';
+  bar.id = 'bulk-bar';
+  var barInner = '<span class="bulk-bar__count" id="bulk-count">0 selectate</span>';
+  config.actions.forEach(function(action) {
+    barInner += '<button class="a-btn a-btn-sm ' + (action.cssClass || '') + '" data-bulk-action="' + action.url + '" data-needs-reason="' + (action.needsReason ? '1' : '0') + '">' + action.label + '</button>';
+  });
+  bar.innerHTML = barInner;
+  document.body.appendChild(bar);
+
+  // Select all logic
+  var selectAll = document.getElementById('bulk-select-all');
+  selectAll.addEventListener('change', function() {
+    var checked = this.checked;
+    table.querySelectorAll('.bulk-check').forEach(function(cb) { cb.checked = checked; });
+    updateBar();
+  });
+
+  // Individual checkbox
+  table.addEventListener('change', function(e) {
+    if (e.target.classList.contains('bulk-check')) updateBar();
+  });
+
+  function getSelectedIds() {
+    var ids = [];
+    table.querySelectorAll('.bulk-check:checked').forEach(function(cb) { ids.push(parseInt(cb.value, 10)); });
+    return ids;
+  }
+
+  function updateBar() {
+    var ids = getSelectedIds();
+    var count = ids.length;
+    document.getElementById('bulk-count').textContent = count + ' selectate';
+    bar.classList.toggle('active', count > 0);
+    // Uncheck select-all if not all checked
+    var total = table.querySelectorAll('.bulk-check').length;
+    selectAll.checked = count > 0 && count === total;
+  }
+
+  // Action buttons
+  bar.querySelectorAll('[data-bulk-action]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var ids = getSelectedIds();
+      if (ids.length === 0) return;
+      var url = this.getAttribute('data-bulk-action');
+      var needsReason = this.getAttribute('data-needs-reason') === '1';
+
+      if (needsReason) {
+        // Prompt for reason
+        var reason = prompt('Motiv respingere (obligatoriu):');
+        if (!reason || !reason.trim()) { adminToast('Trebuie sa specifici un motiv', 'error'); return; }
+        executeBulk(url, ids, reason.trim());
+      } else {
+        adminConfirm('Aplica actiunea pe ' + ids.length + ' elemente?', function() {
+          executeBulk(url, ids, null);
+        });
+      }
+    });
+  });
+
+  function executeBulk(url, ids, reason) {
+    var body = { ids: ids };
+    if (reason) body.reason = reason;
+
+    // Disable buttons during request
+    bar.querySelectorAll('button').forEach(function(b) { b.disabled = true; });
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var parts = [];
+      if (data.approved) parts.push(data.approved + ' aprobate');
+      if (data.rejected) parts.push(data.rejected + ' respinse');
+      if (data.skipped) parts.push(data.skipped + ' ignorate');
+      if (data.errors) parts.push(data.errors + ' erori');
+      adminToast(parts.join(', ') || 'Operatiune completa', data.errors ? 'warning' : 'success');
+      // Reload page after 1s to reflect changes
+      setTimeout(function() { window.location.reload(); }, 1000);
+    })
+    .catch(function(err) {
+      adminToast('Eroare: ' + err.message, 'error');
+      bar.querySelectorAll('button').forEach(function(b) { b.disabled = false; });
+    });
+  }
+};
