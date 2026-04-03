@@ -20,6 +20,15 @@
 <%- include('./analytics/_content') %>
 <%- include('./analytics/_emails') %>
 
+<!-- Chart Expand Modal -->
+<div class="an-modal-chart" id="chart-modal" onclick="if(event.target===this)closeChartModal()">
+  <div class="an-modal-chart__inner">
+    <button class="an-modal-chart__close" onclick="closeChartModal()">&times;</button>
+    <div class="an-modal-chart__title" id="chart-modal-title"></div>
+    <div class="an-modal-chart__canvas"><canvas id="chart-modal-canvas"></canvas></div>
+  </div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════
      CHART.JS INITIALIZATION
      ═══════════════════════════════════════════════════════ -->
@@ -37,6 +46,36 @@
 
   var tierColors = { free: '#71717a', standard: '#fb923c', premium: '#a78bfa' };
 
+  // ─── Chart Registry (for expand modal) ───
+  var chartRegistry = {};
+  var modalChart = null;
+
+  function regChart(canvasId, type, data, options) {
+    var el = document.getElementById(canvasId);
+    if (!el) return null;
+    chartRegistry[canvasId] = { type: type, data: JSON.parse(JSON.stringify(data)), options: JSON.parse(JSON.stringify(options)) };
+    return new Chart(el, { type: type, data: data, options: options });
+  }
+
+  window.expandChart = function(canvasId, title) {
+    var cfg = chartRegistry[canvasId];
+    if (!cfg) return;
+    var modal = document.getElementById('chart-modal');
+    document.getElementById('chart-modal-title').textContent = title || '';
+    var canvas = document.getElementById('chart-modal-canvas');
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+    modalChart = new Chart(canvas, { type: cfg.type, data: JSON.parse(JSON.stringify(cfg.data)), options: JSON.parse(JSON.stringify(cfg.options)) });
+    modal.classList.add('active');
+  };
+
+  window.closeChartModal = function() {
+    var modal = document.getElementById('chart-modal');
+    modal.classList.remove('active');
+    if (modalChart) { modalChart.destroy(); modalChart = null; }
+  };
+
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') window.closeChartModal(); });
+
   // ─── Sparkline helper ───
   function createSparkline(canvasId, dataPoints, color) {
     var el = document.getElementById(canvasId);
@@ -49,26 +88,20 @@
           data: dataPoints,
           borderColor: color,
           backgroundColor: color + '20',
-          fill: true,
-          tension: 0.4,
-          borderWidth: 1.5,
-          pointRadius: 0
+          fill: true, tension: 0.4, borderWidth: 1.5, pointRadius: 0
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
         scales: { x: { display: false }, y: { display: false } }
       }
     });
   }
 
-  // ─── Stacked options helper ───
   function stackedOpts() {
     return {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       plugins: { legend: { labels: { color: '#9ca3af' } } },
       scales: {
         x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
@@ -77,43 +110,29 @@
     };
   }
 
-  // ─── Horizontal bar helper ───
   function hBarOpts() {
     return Object.assign({}, chartDefaults, { indexAxis: 'y' });
   }
 
-  // ─── Doughnut options ───
   var doughnutOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9ca3af' } } } };
 
   // ═══════════════════════════════════════
   // SECTION 1: REVENUE
   // ═══════════════════════════════════════
-
-  // Sparkline: new subscriptions
   createSparkline('spark-mrr', <%- JSON.stringify(data.revenue.sparkNewSubs) %>, '#16a34a');
 
-  // Tier Distribution
   var tierData = <%- JSON.stringify(data.revenue.tierDist) %>;
-  new Chart(document.getElementById('chart-tier-dist'), {
-    type: 'doughnut',
-    data: {
-      labels: tierData.map(function(t) { return t.name; }),
-      datasets: [{ data: tierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: tierData.map(function(t) { return tierColors[t.slug] || '#3b82f6'; }) }]
-    },
-    options: doughnutOpts
-  });
+  regChart('chart-tier-dist', 'doughnut', {
+    labels: tierData.map(function(t) { return t.name; }),
+    datasets: [{ data: tierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: tierData.map(function(t) { return tierColors[t.slug] || '#3b82f6'; }) }]
+  }, doughnutOpts);
 
-  // Free vs Paid
   var freeCount = 0, paidCount = 0;
   tierData.forEach(function(t) { if (t.slug === 'free') freeCount += parseInt(t.cnt); else paidCount += parseInt(t.cnt); });
-  new Chart(document.getElementById('chart-free-vs-paid'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Gratuit', 'Platitori'],
-      datasets: [{ data: [freeCount, paidCount], backgroundColor: ['#71717a', '#22c55e'] }]
-    },
-    options: doughnutOpts
-  });
+  regChart('chart-free-vs-paid', 'doughnut', {
+    labels: ['Gratuit', 'Platitori'],
+    datasets: [{ data: [freeCount, paidCount], backgroundColor: ['#71717a', '#22c55e'] }]
+  }, doughnutOpts);
 
   // ═══════════════════════════════════════
   // SECTION 2: SUBSCRIPTIONS HISTORY
@@ -122,20 +141,16 @@
   var months = []; historyData.forEach(function(h) { if (months.indexOf(h.month) === -1) months.push(h.month); }); months.sort();
   var actions = ['created', 'upgraded', 'downgraded', 'cancelled'];
   var actionColors = { created: '#22c55e', upgraded: '#3b82f6', downgraded: '#f59e0b', cancelled: '#ef4444' };
-  new Chart(document.getElementById('chart-sub-history'), {
-    type: 'bar',
-    data: {
-      labels: months.map(function(m) { return new Date(m).toLocaleDateString('ro-RO', { month: 'short', year: '2-digit' }); }),
-      datasets: actions.map(function(a) {
-        return {
-          label: a.charAt(0).toUpperCase() + a.slice(1),
-          data: months.map(function(m) { var row = historyData.find(function(h) { return h.month === m && h.action === a; }); return row ? parseInt(row.cnt) : 0; }),
-          backgroundColor: actionColors[a]
-        };
-      })
-    },
-    options: stackedOpts()
-  });
+  regChart('chart-sub-history', 'bar', {
+    labels: months.map(function(m) { return new Date(m).toLocaleDateString('ro-RO', { month: 'short', year: '2-digit' }); }),
+    datasets: actions.map(function(a) {
+      return {
+        label: a.charAt(0).toUpperCase() + a.slice(1),
+        data: months.map(function(m) { var row = historyData.find(function(h) { return h.month === m && h.action === a; }); return row ? parseInt(row.cnt) : 0; }),
+        backgroundColor: actionColors[a]
+      };
+    })
+  }, stackedOpts());
 
   // ═══════════════════════════════════════
   // SECTION 3: USERS
@@ -143,14 +158,10 @@
   createSparkline('spark-signups', <%- JSON.stringify(data.users.sparkSignups) %>, '#3b82f6');
 
   var signupsData = <%- JSON.stringify(data.users.signupsWeekly) %>;
-  new Chart(document.getElementById('chart-signups'), {
-    type: 'line',
-    data: {
-      labels: signupsData.map(function(s) { return new Date(s.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
-      datasets: [{ label: 'Utilizatori noi', data: signupsData.map(function(s) { return parseInt(s.cnt); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
-    },
-    options: chartDefaults
-  });
+  regChart('chart-signups', 'line', {
+    labels: signupsData.map(function(s) { return new Date(s.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+    datasets: [{ label: 'Utilizatori noi', data: signupsData.map(function(s) { return parseInt(s.cnt); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
+  }, chartDefaults);
 
   // ═══════════════════════════════════════
   // SECTION 4: BUSINESS HEALTH
@@ -158,25 +169,17 @@
   createSparkline('spark-biz-views', <%- JSON.stringify(data.biz.sparkViews) %>, '#9ca3af');
 
   var bizTierData = <%- JSON.stringify(data.biz.byTier) %>;
-  new Chart(document.getElementById('chart-biz-tier'), {
-    type: 'doughnut',
-    data: {
-      labels: bizTierData.map(function(t) { return t.tier || 'free'; }),
-      datasets: [{ data: bizTierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: bizTierData.map(function(t) { return tierColors[t.tier] || '#71717a'; }) }]
-    },
-    options: doughnutOpts
-  });
+  regChart('chart-biz-tier', 'doughnut', {
+    labels: bizTierData.map(function(t) { return t.tier || 'free'; }),
+    datasets: [{ data: bizTierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: bizTierData.map(function(t) { return tierColors[t.tier] || '#71717a'; }) }]
+  }, doughnutOpts);
 
   var topViewsData = <%- JSON.stringify(data.biz.topByViews) %>;
   if (topViewsData.length > 0) {
-    new Chart(document.getElementById('chart-top-views'), {
-      type: 'bar',
-      data: {
-        labels: topViewsData.map(function(b) { return b.name; }),
-        datasets: [{ label: 'Vizualizari', data: topViewsData.map(function(b) { return parseInt(b.views); }), backgroundColor: '#3b82f6' }]
-      },
-      options: hBarOpts()
-    });
+    regChart('chart-top-views', 'bar', {
+      labels: topViewsData.map(function(b) { return b.name; }),
+      datasets: [{ label: 'Vizualizari', data: topViewsData.map(function(b) { return parseInt(b.views); }), backgroundColor: '#3b82f6' }]
+    }, hBarOpts());
   }
 
   // ═══════════════════════════════════════
@@ -186,41 +189,25 @@
 
   var topOffersData = <%- JSON.stringify(data.offers.topOffers) %>;
   if (topOffersData.length > 0) {
-    new Chart(document.getElementById('chart-top-offers'), {
-      type: 'bar',
-      data: {
-        labels: topOffersData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
-        datasets: [{ label: 'Vizualizari', data: topOffersData.map(function(o) { return parseInt(o.views); }), backgroundColor: '#3b82f6' }]
-      },
-      options: hBarOpts()
-    });
+    regChart('chart-top-offers', 'bar', {
+      labels: topOffersData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
+      datasets: [{ label: 'Vizualizari', data: topOffersData.map(function(o) { return parseInt(o.views); }), backgroundColor: '#3b82f6' }]
+    }, hBarOpts());
   }
 
   var catPerfData = <%- JSON.stringify(data.offers.catPerf) %>;
   if (catPerfData.length > 0) {
-    new Chart(document.getElementById('chart-cat-perf'), {
-      type: 'radar',
-      data: {
-        labels: catPerfData.map(function(c) { return c.name; }),
-        datasets: [{
-          label: 'Vizualizari',
-          data: catPerfData.map(function(c) { return parseInt(c.views); }),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,0.15)',
-          pointBackgroundColor: '#3b82f6'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          r: {
-            ticks: { color: '#9ca3af', backdropColor: 'transparent' },
-            grid: { color: 'rgba(255,255,255,0.08)' },
-            pointLabels: { color: '#9ca3af', font: { size: 11 } }
-          }
-        }
-      }
+    regChart('chart-cat-perf', 'radar', {
+      labels: catPerfData.map(function(c) { return c.name; }),
+      datasets: [{
+        label: 'Vizualizari',
+        data: catPerfData.map(function(c) { return parseInt(c.views); }),
+        borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)', pointBackgroundColor: '#3b82f6'
+      }]
+    }, {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { r: { ticks: { color: '#9ca3af', backdropColor: 'transparent' }, grid: { color: 'rgba(255,255,255,0.08)' }, pointLabels: { color: '#9ca3af', font: { size: 11 } } } }
     });
   }
 
@@ -229,30 +216,22 @@
   // ═══════════════════════════════════════
   var dailyEngagement = <%- JSON.stringify(data.engagement.daily) %>;
   if (dailyEngagement.length > 0) {
-    new Chart(document.getElementById('chart-engagement-daily'), {
-      type: 'line',
-      data: {
-        labels: dailyEngagement.map(function(d) { return new Date(d.day).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
-        datasets: [
-          { label: 'Favorite', data: dailyEngagement.map(function(d) { return parseInt(d.favorites); }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3 },
-          { label: 'Urmariri', data: dailyEngagement.map(function(d) { return parseInt(d.follows); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 },
-          { label: 'Coduri', data: dailyEngagement.map(function(d) { return parseInt(d.reveals); }), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3 }
-        ]
-      },
-      options: chartDefaults
-    });
+    regChart('chart-engagement-daily', 'line', {
+      labels: dailyEngagement.map(function(d) { return new Date(d.day).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+      datasets: [
+        { label: 'Favorite', data: dailyEngagement.map(function(d) { return parseInt(d.favorites); }), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3 },
+        { label: 'Urmariri', data: dailyEngagement.map(function(d) { return parseInt(d.follows); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 },
+        { label: 'Coduri', data: dailyEngagement.map(function(d) { return parseInt(d.reveals); }), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3 }
+      ]
+    }, chartDefaults);
   }
 
   var topFavData = <%- JSON.stringify(data.engagement.topFav) %>;
   if (topFavData.length > 0) {
-    new Chart(document.getElementById('chart-top-fav'), {
-      type: 'bar',
-      data: {
-        labels: topFavData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
-        datasets: [{ label: 'Salvari', data: topFavData.map(function(o) { return parseInt(o.saves); }), backgroundColor: '#ef4444' }]
-      },
-      options: hBarOpts()
-    });
+    regChart('chart-top-fav', 'bar', {
+      labels: topFavData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
+      datasets: [{ label: 'Salvari', data: topFavData.map(function(o) { return parseInt(o.saves); }), backgroundColor: '#ef4444' }]
+    }, hBarOpts());
   }
 
   // ═══════════════════════════════════════
@@ -260,40 +239,28 @@
   // ═══════════════════════════════════════
   var geoViewsData = <%- JSON.stringify(data.geo.topCitiesViews) %>;
   if (geoViewsData.length > 0) {
-    new Chart(document.getElementById('chart-geo-views'), {
-      type: 'bar',
-      data: {
-        labels: geoViewsData.map(function(c) { return c.name; }),
-        datasets: [{ label: 'Vizualizari', data: geoViewsData.map(function(c) { return parseInt(c.views); }), backgroundColor: '#3b82f6' }]
-      },
-      options: hBarOpts()
-    });
+    regChart('chart-geo-views', 'bar', {
+      labels: geoViewsData.map(function(c) { return c.name; }),
+      datasets: [{ label: 'Vizualizari', data: geoViewsData.map(function(c) { return parseInt(c.views); }), backgroundColor: '#3b82f6' }]
+    }, hBarOpts());
   }
 
   var geoOffersData = <%- JSON.stringify(data.geo.topCitiesOffers) %>;
   if (geoOffersData.length > 0) {
-    new Chart(document.getElementById('chart-geo-offers'), {
-      type: 'bar',
-      data: {
-        labels: geoOffersData.map(function(c) { return c.name; }),
-        datasets: [{ label: 'Oferte active', data: geoOffersData.map(function(c) { return parseInt(c.offer_count); }), backgroundColor: '#22c55e' }]
-      },
-      options: hBarOpts()
-    });
+    regChart('chart-geo-offers', 'bar', {
+      labels: geoOffersData.map(function(c) { return c.name; }),
+      datasets: [{ label: 'Oferte active', data: geoOffersData.map(function(c) { return parseInt(c.offer_count); }), backgroundColor: '#22c55e' }]
+    }, hBarOpts());
   }
 
   // ═══════════════════════════════════════
   // SECTION 8: CONTENT HEALTH
   // ═══════════════════════════════════════
   var creationData = <%- JSON.stringify(data.content.creationRate) %>;
-  new Chart(document.getElementById('chart-creation-rate'), {
-    type: 'line',
-    data: {
-      labels: creationData.map(function(r) { return new Date(r.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
-      datasets: [{ label: 'Oferte create', data: creationData.map(function(r) { return parseInt(r.cnt); }), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }]
-    },
-    options: chartDefaults
-  });
+  regChart('chart-creation-rate', 'line', {
+    labels: creationData.map(function(r) { return new Date(r.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
+    datasets: [{ label: 'Oferte create', data: creationData.map(function(r) { return parseInt(r.cnt); }), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }]
+  }, chartDefaults);
 
   // ═══════════════════════════════════════
   // SECTION 9: EMAILS
@@ -301,17 +268,13 @@
   createSparkline('spark-emails', <%- JSON.stringify(data.emails.sparkEmails) %>, '#16a34a');
 
   var emailData = <%- JSON.stringify(data.emails.stats) %>;
-  new Chart(document.getElementById('chart-emails'), {
-    type: 'bar',
-    data: {
-      labels: emailData.map(function(e) { return e.email_type; }),
-      datasets: [
-        { label: 'Trimise', data: emailData.map(function(e) { return parseInt(e.total) - parseInt(e.failed); }), backgroundColor: '#22c55e' },
-        { label: 'Esuat', data: emailData.map(function(e) { return parseInt(e.failed); }), backgroundColor: '#ef4444' }
-      ]
-    },
-    options: stackedOpts()
-  });
+  regChart('chart-emails', 'bar', {
+    labels: emailData.map(function(e) { return e.email_type; }),
+    datasets: [
+      { label: 'Trimise', data: emailData.map(function(e) { return parseInt(e.total) - parseInt(e.failed); }), backgroundColor: '#22c55e' },
+      { label: 'Esuat', data: emailData.map(function(e) { return parseInt(e.failed); }), backgroundColor: '#ef4444' }
+    ]
+  }, stackedOpts());
 })();
 </script>
 

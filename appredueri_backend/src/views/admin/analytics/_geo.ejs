@@ -19,17 +19,19 @@
 
   <div class="an-chart-grid an-chart-grid--2">
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-geo-views','Top 10 orase — Vizualizari')">&#x26F6;</button>
       <div class="an-chart-card__title">Top 10 orase — Vizualizari</div>
       <% if (data.geo.topCitiesViews.length > 0) { %>
-        <canvas id="chart-geo-views" height="250"></canvas>
+        <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-geo-views"></canvas></div>
       <% } else { %>
         <p class="a-text-muted">Nicio vizualizare inregistrata.</p>
       <% } %>
     </div>
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-geo-offers','Top 10 orase — Oferte active')">&#x26F6;</button>
       <div class="an-chart-card__title">Top 10 orase — Oferte active</div>
       <% if (data.geo.topCitiesOffers.length > 0) { %>
-        <canvas id="chart-geo-offers" height="250"></canvas>
+        <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-geo-offers"></canvas></div>
       <% } else { %>
         <p class="a-text-muted">Date insuficiente.</p>
       <% } %>

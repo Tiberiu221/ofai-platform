@@ -30,13 +30,15 @@
 
   <div class="an-chart-grid an-chart-grid--2">
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-biz-tier','Distributie per Tier')">&#x26F6;</button>
       <div class="an-chart-card__title">Distributie per Tier</div>
-      <canvas id="chart-biz-tier" height="200"></canvas>
+      <div class="an-canvas-wrap an-canvas-wrap--sm"><canvas id="chart-biz-tier"></canvas></div>
     </div>
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-top-views','Top 10 — Vizualizari')">&#x26F6;</button>
       <div class="an-chart-card__title">Top 10 — Vizualizari (<%= period %>)</div>
       <% if (data.biz.topByViews.length > 0) { %>
-        <canvas id="chart-top-views" height="200"></canvas>
+        <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-top-views"></canvas></div>
       <% } else { %>
         <p class="a-text-muted">Nicio vizualizare inregistrata.</p>
       <% } %>

@@ -36,12 +36,14 @@
 
   <div class="an-chart-grid an-chart-grid--2">
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-tier-dist','Distributie Tier-uri')">&#x26F6;</button>
       <div class="an-chart-card__title">Distributie Tier-uri</div>
-      <canvas id="chart-tier-dist" height="200"></canvas>
+      <div class="an-canvas-wrap an-canvas-wrap--sm"><canvas id="chart-tier-dist"></canvas></div>
     </div>
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-free-vs-paid','Free vs Platitori')">&#x26F6;</button>
       <div class="an-chart-card__title">Free vs Platitori</div>
-      <canvas id="chart-free-vs-paid" height="200"></canvas>
+      <div class="an-canvas-wrap an-canvas-wrap--sm"><canvas id="chart-free-vs-paid"></canvas></div>
       <div style="margin-top: 12px;">
         <% data.revenue.tierDist.forEach(function(t) { %>
           <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;">

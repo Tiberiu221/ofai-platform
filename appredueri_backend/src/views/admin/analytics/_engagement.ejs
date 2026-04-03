@@ -47,13 +47,15 @@
 
   <div class="an-chart-grid an-chart-grid--2">
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-engagement-daily','Engagement zilnic')">&#x26F6;</button>
       <div class="an-chart-card__title">Engagement zilnic</div>
-      <canvas id="chart-engagement-daily" height="250"></canvas>
+      <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-engagement-daily"></canvas></div>
     </div>
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-top-fav','Top 10 oferte salvate')">&#x26F6;</button>
       <div class="an-chart-card__title">Top 10 oferte salvate</div>
       <% if (data.engagement.topFav.length > 0) { %>
-        <canvas id="chart-top-fav" height="250"></canvas>
+        <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-top-fav"></canvas></div>
       <% } else { %>
         <p class="a-text-muted">Nicio salvare inregistrata.</p>
       <% } %>

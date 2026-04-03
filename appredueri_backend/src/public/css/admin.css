@@ -1471,10 +1471,94 @@ a.back-link:hover {
   color: var(--a-text);
   margin-bottom: 16px;
 }
-.an-chart-card canvas,
-.an-chart-full canvas {
-  max-height: 280px;
+
+/* Canvas container — official Chart.js responsive pattern */
+.an-canvas-wrap {
+  position: relative;
+  width: 100%;
 }
+.an-canvas-wrap--sm { height: 200px; }
+.an-canvas-wrap--md { height: 260px; }
+.an-canvas-wrap--lg { height: 300px; }
+
+/* Expand button on chart cards */
+.an-chart-card,
+.an-chart-full {
+  position: relative;
+}
+.an-expand-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius-sm);
+  background: var(--a-surface);
+  color: var(--a-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+}
+.an-chart-card:hover .an-expand-btn,
+.an-chart-full:hover .an-expand-btn { opacity: 1; }
+.an-expand-btn:hover { color: var(--a-text); border-color: var(--a-text-muted); }
+
+/* Chart expand modal */
+.an-modal-chart {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.an-modal-chart.active { display: flex; }
+.an-modal-chart__inner {
+  background: var(--a-surface);
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius-lg);
+  padding: 24px;
+  width: 90vw;
+  max-width: 1200px;
+  max-height: 80vh;
+  position: relative;
+}
+.an-modal-chart__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--a-text);
+  margin-bottom: 16px;
+}
+.an-modal-chart__canvas {
+  position: relative;
+  height: 60vh;
+  max-height: 600px;
+}
+.an-modal-chart__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--a-border);
+  border-radius: var(--a-radius-sm);
+  background: var(--a-surface);
+  color: var(--a-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.an-modal-chart__close:hover { color: var(--a-text); }
 
 /* Full-width chart card */
 .an-chart-full {

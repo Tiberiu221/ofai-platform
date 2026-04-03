@@ -42,17 +42,19 @@
 
   <div class="an-chart-grid an-chart-grid--2">
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-top-offers','Top 10 oferte — Vizualizari')">&#x26F6;</button>
       <div class="an-chart-card__title">Top 10 oferte — Vizualizari</div>
       <% if (data.offers.topOffers.length > 0) { %>
-        <canvas id="chart-top-offers" height="250"></canvas>
+        <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-top-offers"></canvas></div>
       <% } else { %>
         <p class="a-text-muted">Nicio vizualizare inregistrata.</p>
       <% } %>
     </div>
     <div class="an-chart-card">
+      <button class="an-expand-btn" onclick="expandChart('chart-cat-perf','Performanta pe categorii')">&#x26F6;</button>
       <div class="an-chart-card__title">Performanta pe categorii</div>
       <% if (data.offers.catPerf.length > 0) { %>
-        <canvas id="chart-cat-perf" height="250"></canvas>
+        <div class="an-canvas-wrap an-canvas-wrap--md"><canvas id="chart-cat-perf"></canvas></div>
       <% } else { %>
         <p class="a-text-muted">Date insuficiente.</p>
       <% } %>
