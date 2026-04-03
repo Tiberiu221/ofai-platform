@@ -1,0 +1,95 @@
+<%- include('partials/layout-top', { pageTitle: 'Audit Log', activePage: 'audit-logs' }) %>
+
+<div class="a-page-header">
+  <h1>Audit Log</h1>
+</div>
+
+<!-- Filters -->
+<form method="get" action="/admin/audit-logs" class="filters">
+  <div class="filters-row">
+    <label>
+      Actiune
+      <select name="action">
+        <option value="">Toate</option>
+        <% (actionOptions || []).forEach(function(a) { %>
+          <option value="<%= a %>" <%= filters.action === a ? 'selected' : '' %>><%= a %></option>
+        <% }); %>
+      </select>
+    </label>
+    <label>
+      Entitate
+      <select name="entity_type">
+        <option value="">Toate</option>
+        <% (entityTypeOptions || []).forEach(function(t) { %>
+          <option value="<%= t %>" <%= filters.entity_type === t ? 'selected' : '' %>><%= t %></option>
+        <% }); %>
+      </select>
+    </label>
+    <div class="filters-actions">
+      <button type="submit" class="a-btn">Aplica</button>
+      <a href="/admin/audit-logs" class="a-btn a-btn-secondary">Reseteaza</a>
+    </div>
+  </div>
+</form>
+
+<% if (!logs || logs.length === 0) { %>
+  <div class="a-card" style="text-align: center; padding: 40px;">
+    <p class="a-text-muted">Nicio intrare in audit log.</p>
+  </div>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Actiune</th>
+        <th>Entitate</th>
+        <th>ID</th>
+        <th>IP</th>
+        <th>Detalii</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% logs.forEach(function(log) { %>
+        <tr>
+          <td style="white-space: nowrap; font-size: 12px;">
+            <%= new Date(log.created_at).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+            <span class="a-text-muted"><%= new Date(log.created_at).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' }) %></span>
+          </td>
+          <td>
+            <% var actionColor = log.action.includes('delete') || log.action.includes('ban') || log.action.includes('reject') || log.action.includes('deactivate') ? 'var(--a-danger)' : log.action.includes('create') || log.action.includes('approve') || log.action.includes('unban') ? 'var(--a-success-bright)' : 'var(--a-primary)'; %>
+            <span style="color: <%= actionColor %>; font-weight: 500;"><%= log.action %></span>
+          </td>
+          <td><%= log.entity_type || '-' %></td>
+          <td>
+            <% if (log.entity_id) { %>
+              <% if (log.entity_type === 'business') { %>
+                <a href="/admin/businesses/<%= log.entity_id %>/edit"><%= log.entity_id %></a>
+              <% } else if (log.entity_type === 'offer') { %>
+                <a href="/admin/offers/<%= log.entity_id %>/edit"><%= log.entity_id %></a>
+              <% } else if (log.entity_type === 'user') { %>
+                <a href="/admin/users/<%= log.entity_id %>/edit"><%= log.entity_id %></a>
+              <% } else { %>
+                <%= log.entity_id %>
+              <% } %>
+            <% } else { %>
+              -
+            <% } %>
+          </td>
+          <td style="font-size: 11px; font-family: monospace; color: var(--a-text-muted);"><%= log.ip_address || '-' %></td>
+          <td style="font-size: 11px; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <% if (log.details && Object.keys(log.details).length > 0) { %>
+              <span title="<%= JSON.stringify(log.details) %>"><%= JSON.stringify(log.details).substring(0, 80) %></span>
+            <% } else { %>
+              <span class="a-text-muted">-</span>
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/audit-logs', currentQuery: _qs }) %>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

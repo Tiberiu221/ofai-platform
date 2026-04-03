@@ -108,7 +108,8 @@
     </tbody>
   </table>
 
-  <%- include('partials/pagination', { pagination, baseUrl: '/admin/subscriptions', query: filters }) %>
+  <% const _qs = Object.entries(filters || {}).filter(([k,v]) => v).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&'); %>
+  <%- include('partials/pagination', { pagination, baseUrl: '/admin/subscriptions', currentQuery: _qs }) %>
 <% } %>
 
 <%- include('partials/layout-bottom') %>

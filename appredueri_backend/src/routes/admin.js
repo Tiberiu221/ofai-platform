@@ -32,6 +32,21 @@ function escHtml(s) {
 }
 
 // =====================================
+//   AUDIT LOG HELPER
+// =====================================
+async function adminLog(action, entityType, entityId, req, details = {}) {
+  try {
+    await pool.query(
+      `INSERT INTO audit_log (action, entity_type, entity_id, user_id, ip_address, details)
+       VALUES ($1, $2, $3, NULL, $4, $5)`,
+      [action, entityType, entityId || null, req.ip, JSON.stringify(details)]
+    );
+  } catch (e) {
+    console.error('[AuditLog] Failed to log:', action, entityType, entityId, e.message);
+  }
+}
+
+// =====================================
 //   CONFIG UPLOADS (Memory Storage → Cloudinary)
 // =====================================
 
@@ -525,6 +540,7 @@ router.post("/businesses/new", async (req, res) => {
 
     await client.query("COMMIT");
     cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('create_business', 'business', rows[0].id, req, { name: req.body.name });
     res.redirect("/admin/businesses");
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
@@ -766,6 +782,7 @@ router.post("/businesses/:id/edit", async (req, res) => {
     }
 
     cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('edit_business', 'business', id, req, { name: req.body.name });
     res.redirect("/admin/businesses");
   } catch (err) {
     console.error("Eroare la POST /admin/businesses/:id/edit:", err);
@@ -895,6 +912,7 @@ router.post("/businesses/:id/delete", async (req, res) => {
     }
 
     cache.invalidateGroup('businesses'); cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('delete_business', 'business', id, req, { name: bInfo.rows[0]?.name });
     res.redirect("/admin/businesses");
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
@@ -1249,6 +1267,7 @@ router.post(
         });
       }
 
+      adminLog('create_offer', 'offer', insertResult.rows[0].id, req);
       res.redirect("/admin/offers");
     } catch (err) {
       console.error(err);
@@ -1432,6 +1451,7 @@ router.post(
         await deleteImage(oldLogoUrl);
       }
 
+      adminLog('edit_offer', 'offer', offerId, req);
       return res.redirect("/admin/offers");
     } catch (err) {
       await client.query("ROLLBACK");
@@ -1458,6 +1478,7 @@ router.post("/offers/:id/delete", async (req, res) => {
     }
     await pool.query("DELETE FROM offers WHERE id = $1", [id]);
     cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('delete_offer', 'offer', id, req);
     res.redirect("/admin/offers");
   } catch (err) {
     console.error(err);
@@ -1739,6 +1760,7 @@ router.post("/business-requests/:id/approve", async (req, res) => {
     }
 
     cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('approve_business_request', 'business_request', requestId, req);
     res.redirect("/admin/business-requests?success=approved");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1781,6 +1803,7 @@ router.post("/business-requests/:id/reject", async (req, res) => {
         .catch(err => console.error("[Admin] Failed to send rejected email:", err));
     }
 
+    adminLog('reject_business_request', 'business_request', requestId, req, { reason });
     res.redirect("/admin/business-requests?success=rejected");
   } catch (err) {
     console.error("[Admin] Reject business request error:", err);
@@ -1903,6 +1926,7 @@ router.post("/users/:id/edit", async (req, res) => {
       [first_name || null, last_name || null, role, id]
     );
 
+    adminLog('edit_user', 'user', id, req, { first_name, last_name, role });
     res.redirect(`/admin/users/${id}/edit?message=${encodeURIComponent("Utilizator actualizat cu succes")}`);
   } catch (err) {
     console.error("[Admin] User update error:", err);
@@ -1917,6 +1941,7 @@ router.post("/users/:id/ban", async (req, res) => {
 
   try {
     await pool.query("UPDATE users SET banned_at = NOW() WHERE id = $1", [id]);
+    adminLog('ban_user', 'user', id, req);
     res.redirect(`/admin/users/${id}/edit?message=${encodeURIComponent("Utilizator banat")}`);
   } catch (err) {
     console.error("[Admin] Ban error:", err);
@@ -1931,6 +1956,7 @@ router.post("/users/:id/unban", async (req, res) => {
 
   try {
     await pool.query("UPDATE users SET banned_at = NULL WHERE id = $1", [id]);
+    adminLog('unban_user', 'user', id, req);
     res.redirect(`/admin/users/${id}/edit?message=${encodeURIComponent("Ban ridicat")}`);
   } catch (err) {
     console.error("[Admin] Unban error:", err);
@@ -2164,6 +2190,7 @@ router.post("/reviews/:id/delete", async (req, res) => {
     // Delete associated review responses first
     await pool.query("DELETE FROM review_responses WHERE review_id = $1", [id]);
     await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+    adminLog('delete_review', 'review', id, req);
     res.redirect(`/admin/reviews?message=${encodeURIComponent("Recenzie ștearsă")}`);
   } catch (err) {
     console.error("[Admin] Delete review error:", err);
@@ -2255,6 +2282,7 @@ router.post("/reports/:id/review", async (req, res) => {
        WHERE id = $2 AND status = 'pending'`,
       [adminNotes || null, id]
     );
+    adminLog('review_report', 'report', id, req);
     res.redirect(`/admin/reports?message=${encodeURIComponent("Raport marcat ca revizuit")}`);
   } catch (err) {
     console.error("[Admin] Review report error:", err);
@@ -2274,6 +2302,7 @@ router.post("/reports/:id/dismiss", async (req, res) => {
        WHERE id = $2 AND status = 'pending'`,
       [adminNotes || null, id]
     );
+    adminLog('dismiss_report', 'report', id, req);
     res.redirect(`/admin/reports?message=${encodeURIComponent("Raport respins")}`);
   } catch (err) {
     console.error("[Admin] Dismiss report error:", err);
@@ -2307,6 +2336,7 @@ router.post("/reports/:id/deactivate-target", async (req, res) => {
     );
 
     const action = target_type === "offer" ? "Ofertă dezactivată" : "Rapoarte procesate";
+    adminLog('deactivate_target', 'report', id, req);
     res.redirect(`/admin/reports?message=${encodeURIComponent(action)}`);
   } catch (err) {
     console.error("[Admin] Deactivate target error:", err);
@@ -2378,6 +2408,7 @@ router.post("/offer-moderation/:id/approve", async (req, res) => {
     }
 
     cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('approve_offer', 'offer', id, req);
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă aprobată și activată")}`);
   } catch (err) {
     console.error("[Admin] Approve offer error:", err);
@@ -2416,10 +2447,68 @@ router.post("/offer-moderation/:id/reject", async (req, res) => {
     }
 
     cache.invalidateGroup('offers'); cache.invalidateGroup('homepage'); cache.invalidateGroup('admin');
+    adminLog('reject_offer', 'offer', id, req, { reason: rejectionReason });
     res.redirect(`/admin/offer-moderation?message=${encodeURIComponent("Ofertă respinsă")}`);
   } catch (err) {
     console.error("[Admin] Reject offer error:", err);
     res.redirect(`/admin/offer-moderation?err=${encodeURIComponent("Eroare la respingere")}`);
+  }
+});
+
+// ═════════════════════════════════════════════
+//   AUDIT LOGS
+// ═════════════════════════════════════════════
+router.get("/audit-logs", async (req, res) => {
+  try {
+    const { page, limit, offset } = parsePagination(req.query, { defaultLimit: 25 });
+    const { action, entity_type } = req.query;
+
+    const filters = [];
+    const values = [];
+    let idx = 1;
+
+    if (action && action.trim()) {
+      filters.push(`a.action = $${idx++}`);
+      values.push(action.trim());
+    }
+    if (entity_type && entity_type.trim()) {
+      filters.push(`a.entity_type = $${idx++}`);
+      values.push(entity_type.trim());
+    }
+
+    const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    const countRes = await pool.query(
+      `SELECT COUNT(*) FROM audit_log a ${whereClause}`, values
+    );
+    const total = parseInt(countRes.rows[0].count);
+
+    const result = await pool.query(`
+      SELECT a.id, a.action, a.entity_type, a.entity_id, a.ip_address, a.details, a.created_at
+      FROM audit_log a
+      ${whereClause}
+      ORDER BY a.created_at DESC
+      LIMIT $${idx} OFFSET $${idx + 1}
+    `, [...values, limit, offset]);
+
+    // Get distinct actions and entity types for filter dropdowns
+    const [actionsRes, typesRes] = await Promise.all([
+      pool.query("SELECT DISTINCT action FROM audit_log ORDER BY action"),
+      pool.query("SELECT DISTINCT entity_type FROM audit_log WHERE entity_type IS NOT NULL ORDER BY entity_type")
+    ]);
+
+    res.render("admin/audit-logs", {
+      logs: result.rows,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      filters: { action: action || "", entity_type: entity_type || "" },
+      actionOptions: actionsRes.rows.map(r => r.action),
+      entityTypeOptions: typesRes.rows.map(r => r.entity_type),
+      pageTitle: "Audit Log",
+      activePage: "audit-logs"
+    });
+  } catch (err) {
+    console.error("[Admin] Audit logs error:", err.message);
+    res.status(500).send("Eroare server");
   }
 });
 
@@ -2571,6 +2660,7 @@ router.post("/collections", async (req, res) => {
       [title, description || null, image_url || null, sort_order || 0]
     );
     cache.invalidateGroup('collections');
+    adminLog('create_collection', 'collection', rows[0].id, req, { title });
     res.status(201).json(rows[0]);
   } catch (err) {
     console.error("[Admin] Create collection error:", err);
@@ -2780,14 +2870,16 @@ router.post("/blog/new", upload.single("image"), async (req, res) => {
     const published = is_published === 'on' || is_published === 'true';
     const safeContent = sanitizeHtml(content || '', BLOG_SANITIZE_OPTS);
 
-    await pool.query(`
+    const { rows: newPost } = await pool.query(`
       INSERT INTO blog_posts (slug, title, excerpt, content, image_url, category_id, author_name, meta_title, meta_description, is_published, published_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id
     `, [slug, title, excerpt || null, safeContent, image_url, category_id || null, author_name || 'Echipa OFAI',
         meta_title || null, meta_description || null, published, published ? new Date() : null]);
 
     cache.invalidateGroup('blog');
     cache.invalidateGroup('admin');
+    adminLog('create_blog_post', 'blog_post', newPost[0].id, req, { title });
     res.redirect("/admin/blog");
   } catch (err) {
     console.error("[Admin] Blog create error:", err);
@@ -2873,6 +2965,7 @@ router.post("/blog/:id/toggle-publish", async (req, res) => {
       [newPublished, publishedAt, id]);
 
     cache.invalidateGroup('blog');
+    adminLog('toggle_blog_publish', 'blog_post', id, req);
     res.redirect("/admin/blog");
   } catch (err) {
     console.error("[Admin] Blog toggle error:", err);
@@ -2892,6 +2985,7 @@ router.post("/blog/:id/delete", async (req, res) => {
     await pool.query('DELETE FROM blog_posts WHERE id = $1', [id]);
     cache.invalidateGroup('blog');
     cache.invalidateGroup('admin');
+    adminLog('delete_blog_post', 'blog_post', id, req);
     res.redirect("/admin/blog");
   } catch (err) {
     console.error("[Admin] Blog delete error:", err);

@@ -45,7 +45,7 @@
                 <form method="POST" action="/admin/blog/<%= post.id %>/toggle-publish" style="display: inline;">
                   <button type="submit" class="a-btn a-btn-sm a-btn-outline"><%= post.is_published ? 'Unpublish' : 'Publish' %></button>
                 </form>
-                <form method="POST" action="/admin/blog/<%= post.id %>/delete" style="display: inline;" onsubmit="return confirm('Ești sigur că vrei să ștergi acest articol?');">
+                <form method="POST" action="/admin/blog/<%= post.id %>/delete" style="display: inline;" data-confirm="Sigur vrei sa stergi acest articol? Aceasta actiune este definitiva.">
                   <button type="submit" class="a-btn a-btn-sm a-btn-danger">Șterge</button>
                 </form>
               </div>
