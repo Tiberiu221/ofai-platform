@@ -1362,6 +1362,38 @@ a.back-link:hover {
 }
 
 /* ═══════════════════════════════════════════════════════
+   ACCESSIBILITY
+   ═══════════════════════════════════════════════════════ */
+
+/* Focus-visible for all interactive elements */
+.a-nav-item:focus-visible,
+.a-btn:focus-visible,
+.a-btn-sm:focus-visible,
+.a-pagination-btn:focus-visible,
+.an-period-btn:focus-visible,
+.an-expand-btn:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--a-primary);
+  outline-offset: 2px;
+}
+
+/* Clickable table rows */
+table tr.clickable:focus-visible {
+  outline: 2px solid var(--a-primary);
+  outline-offset: -2px;
+}
+
+/* Color contrast fixes (WCAG AA 4.5:1) */
+/* .a-nav-group was #6b7280 on #18181b = 3.5:1 → bump to #9ca3af = 5.5:1 */
+.a-nav-group { color: var(--a-text-muted); }
+
+/* Responsive table wrapper — prevents horizontal overflow on mobile */
+.a-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ═══════════════════════════════════════════════════════
    ANALYTICS DASHBOARD
    ═══════════════════════════════════════════════════════ */
 

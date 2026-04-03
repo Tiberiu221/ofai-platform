@@ -1170,7 +1170,7 @@ router.get("/offers", async (req, res) => {
         pool.query("SELECT id, name FROM cities ORDER BY name"),
         pool.query("SELECT id, name FROM categories ORDER BY name"),
         pool.query(
-          `SELECT b.id, b.name, c.name AS city_name FROM businesses b LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name LIMIT 5000`
+          `SELECT b.id, b.name, c.name AS city_name FROM businesses b LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name LIMIT 500`
         ),
       ]);
 
@@ -1200,7 +1200,7 @@ router.get("/offers/new", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT b.id, b.name, c.name AS city_name FROM businesses b
-      LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name LIMIT 5000
+      LEFT JOIN cities c ON c.id = b.city_id ORDER BY c.name, b.name LIMIT 500
     `);
     res.render("admin/offers-new", { businesses: result.rows });
   } catch (err) {
@@ -1295,7 +1295,7 @@ router.get("/offers/:id/edit", async (req, res) => {
 
     // 2. Luăm listele necesare
     const businessesRes = await pool.query(
-      "SELECT id, name, city_id FROM businesses ORDER BY name LIMIT 5000"
+      "SELECT id, name, city_id FROM businesses ORDER BY name LIMIT 500"
     );
     const categoriesRes = await pool.query(
       "SELECT id, name FROM categories ORDER BY name"
