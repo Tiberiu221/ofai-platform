@@ -1,0 +1,98 @@
+<%- include('partials/layout-top', { pageTitle: 'Referrals', activePage: 'referrals' }) %>
+
+<div class="a-page-header">
+  <h1>Referrals</h1>
+</div>
+
+<!-- KPI Cards -->
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-success-bright);"><%= stats.totalReferrals %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Total referrals</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: var(--a-primary);"><%= stats.last30d %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Ultimele 30 zile</div>
+  </div>
+  <div class="a-card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 28px; font-weight: 700; color: #fb923c;"><%= stats.totalPoints %></div>
+    <div class="a-text-muted" style="font-size: 12px;">Puncte acordate</div>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<h2>Top Referrers</h2>
+<% if (leaderboard.length === 0) { %>
+  <div class="a-card" style="text-align: center; padding: 40px;">
+    <p class="a-text-muted">Niciun referral inregistrat.</p>
+  </div>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Utilizator</th>
+        <th>Email</th>
+        <th>Cod referral</th>
+        <th>Referrals</th>
+        <th>Puncte</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% leaderboard.forEach(function(u, i) { %>
+        <tr>
+          <td>
+            <% if (i === 0) { %>
+              <span style="font-size: 18px;">&#127942;</span>
+            <% } else if (i === 1) { %>
+              <span style="font-size: 18px;">&#129352;</span>
+            <% } else if (i === 2) { %>
+              <span style="font-size: 18px;">&#129353;</span>
+            <% } else { %>
+              <%= i + 1 %>
+            <% } %>
+          </td>
+          <td>
+            <a href="/admin/users/<%= u.id %>/edit"><%= u.first_name || '' %> <%= u.last_name || '' %></a>
+          </td>
+          <td style="font-size: 12px; color: var(--a-text-muted);"><%= u.email %></td>
+          <td><code><%= u.referral_code %></code></td>
+          <td style="font-weight: 600; color: var(--a-success-bright);"><%= u.referral_count %></td>
+          <td style="color: #fb923c;"><%= u.total_points %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } %>
+
+<% if (monthly.length > 0) { %>
+  <h2 style="margin-top: 32px;">Trend lunar (6 luni)</h2>
+  <div class="a-card">
+    <div style="position: relative; height: 200px; overflow: hidden;">
+      <canvas id="chart-referrals"></canvas>
+    </div>
+  </div>
+
+  <script nonce="<%= typeof cspNonce !== 'undefined' ? cspNonce : '' %>">
+  requestAnimationFrame(function() { requestAnimationFrame(function() {
+    var data = <%- JSON.stringify(monthly) %>;
+    new Chart(document.getElementById('chart-referrals'), {
+      type: 'bar',
+      data: {
+        labels: data.map(function(d) { return new Date(d.month).toLocaleDateString('ro-RO', { month: 'short', year: '2-digit' }); }),
+        datasets: [{ label: 'Referrals', data: data.map(function(d) { return parseInt(d.cnt); }), backgroundColor: '#22c55e' }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }); });
+  </script>
+<% } %>
+
+<%- include('partials/layout-bottom') %>

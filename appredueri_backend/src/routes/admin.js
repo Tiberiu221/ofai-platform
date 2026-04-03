@@ -2811,6 +2811,103 @@ router.get("/export/:type", async (req, res) => {
 });
 
 // ═════════════════════════════════════════════
+//   REFERRALS DASHBOARD
+// ═════════════════════════════════════════════
+router.get("/referrals", async (req, res) => {
+  try {
+    const [totalRes, recentRes, leaderboardRes, monthlyRes] = await Promise.all([
+      // Total referrals + total points
+      pool.query(`SELECT COUNT(*) as total_referrals, COALESCE(SUM(points_awarded), 0) as total_points FROM referral_rewards`),
+      // Last 30 days
+      pool.query(`SELECT COUNT(*) as cnt FROM referral_rewards WHERE created_at >= NOW() - INTERVAL '30 days'`),
+      // Top 15 referrers
+      pool.query(`
+        SELECT u.id, u.first_name, u.last_name, u.email, u.referral_code,
+               COUNT(rr.id) as referral_count,
+               COALESCE(SUM(rr.points_awarded), 0) as total_points
+        FROM referral_rewards rr
+        JOIN users u ON u.id = rr.referrer_id
+        GROUP BY u.id, u.first_name, u.last_name, u.email, u.referral_code
+        ORDER BY referral_count DESC
+        LIMIT 15
+      `),
+      // Monthly trend (last 6 months)
+      pool.query(`
+        SELECT DATE_TRUNC('month', created_at)::date as month, COUNT(*) as cnt
+        FROM referral_rewards
+        WHERE created_at >= NOW() - INTERVAL '6 months'
+        GROUP BY 1 ORDER BY 1
+      `)
+    ]);
+
+    res.render("admin/referrals", {
+      stats: {
+        totalReferrals: parseInt(totalRes.rows[0]?.total_referrals || 0),
+        totalPoints: parseInt(totalRes.rows[0]?.total_points || 0),
+        last30d: parseInt(recentRes.rows[0]?.cnt || 0)
+      },
+      leaderboard: leaderboardRes.rows,
+      monthly: monthlyRes.rows,
+      pageTitle: "Referrals",
+      activePage: "referrals"
+    });
+  } catch (err) {
+    console.error("[Admin] Referrals error:", err.message);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// ═════════════════════════════════════════════
+//   CRON JOBS MONITOR
+// ═════════════════════════════════════════════
+router.get("/cron-jobs", async (req, res) => {
+  // Static list of all cron jobs (from cronJobs.js)
+  const jobs = [
+    { name: 'Token cleanup', schedule: '0 3 * * *', description: 'Refresh tokens > 60 zile' },
+    { name: 'Push log cleanup', schedule: '15 3 * * *', description: 'Push logs > 90 zile' },
+    { name: 'Password reset cleanup', schedule: '30 3 * * *', description: 'Tokens reset > 7 zile' },
+    { name: 'Audit log cleanup', schedule: '0 4 * * 0', description: 'Audit logs > 365 zile (duminica)' },
+    { name: 'Business clicks cleanup', schedule: '30 4 1 * *', description: 'Clicks > 180 zile (1 luna)' },
+    { name: 'Expire offers', schedule: '45 3 * * *', description: 'Dezactiveaza oferte expirate' },
+    { name: 'Subscription expiry', schedule: '0 4 * * *', description: 'Check subscriptii expirate → downgrade free' },
+    { name: 'Category rankings', schedule: '0 5 1 * *', description: 'Recalculeaza ranking categorii (1 luna)' },
+    { name: 'Trial warning emails', schedule: '5 0 * * *', description: 'Email avertizare trial 3 zile' },
+    { name: 'Re-engagement emails', schedule: '15 0 * * *', description: 'Email re-engagement useri inactivi 14-90 zile' },
+    { name: 'Flash deal check', schedule: '*/5 * * * *', description: 'Verifica flash deals expirate (la 5 min)' },
+    { name: 'Review prompt push', schedule: '0 10 * * *', description: 'Push notificare review dupa redemption' },
+    { name: 'Weekly digest push', schedule: '0 17 * * 0', description: 'Digest saptamanal push + email (duminica 19:00 RO)' },
+    { name: 'Saved search alerts', schedule: '0 11 * * *', description: 'Alerte saved searches cu oferte noi' },
+    { name: 'Auto-redemption cleanup', schedule: '0 2 */2 * *', description: 'Cleanup auto-redemption (la 2 zile)' },
+    { name: 'Orphan images cleanup', schedule: '0 9 * * *', description: 'Cleanup imagini orfane Cloudinary' },
+    { name: 'Category rankings v2', schedule: '0 10 * * 2', description: 'Rebuild ranking categorii (marti)' },
+    { name: 'Review summary batch', schedule: '0 5 * * 0', description: 'Batch generare review summaries AI (duminica)' },
+  ];
+
+  // Get some runtime stats
+  try {
+    const [tokenCount, pushLogCount, emailCount] = await Promise.all([
+      pool.query("SELECT COUNT(*) as cnt FROM refresh_tokens WHERE expires_at < NOW()").catch(() => ({ rows: [{ cnt: 0 }] })),
+      pool.query("SELECT COUNT(*) as cnt FROM push_notifications_log WHERE created_at < NOW() - INTERVAL '90 days'").catch(() => ({ rows: [{ cnt: 0 }] })),
+      pool.query("SELECT COUNT(*) as cnt FROM email_logs WHERE created_at >= NOW() - INTERVAL '24 hours'").catch(() => ({ rows: [{ cnt: 0 }] })),
+    ]);
+
+    res.render("admin/cron-jobs", {
+      jobs,
+      runtimeStats: {
+        expiredTokens: parseInt(tokenCount.rows[0]?.cnt || 0),
+        oldPushLogs: parseInt(pushLogCount.rows[0]?.cnt || 0),
+        emailsLast24h: parseInt(emailCount.rows[0]?.cnt || 0),
+      },
+      pageTitle: "Cron Jobs",
+      activePage: "cron-jobs"
+    });
+  } catch (err) {
+    console.error("[Admin] Cron jobs error:", err.message);
+    res.status(500).send("Eroare server");
+  }
+});
+
+// ═════════════════════════════════════════════
 //   CONCIERGE ONBOARDING REQUESTS
 // ═════════════════════════════════════════════
 
