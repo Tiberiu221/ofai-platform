@@ -435,13 +435,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
               );
             }),
 
-            // Location banner (shown only when location NOT granted)
-            LocationBanner(key: ValueKey(_locationCheckKey)),
                       ],
                     ),
             ),
-
-            const SizedBox(height: AppSpacing.sm),
 
             // Tab content
             Expanded(
@@ -494,6 +490,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
     final displayOffers = (_isDistanceSort && _distanceSortedOffers != null)
         ? _distanceSortedOffers!
         : state.offers;
+    final totalCount = displayOffers.length + (state.isLoadingMore ? 1 : 0);
     return RefreshIndicator(
       color: AppColors.accent,
       backgroundColor: AppColors.bgCard,
@@ -506,18 +503,23 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.huge,
         ),
-        itemCount: displayOffers.length + (state.isLoadingMore ? 1 : 0),
+        // +1 for LocationBanner at index 0
+        itemCount: totalCount + 1,
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
-          if (index >= displayOffers.length) {
+          if (index == 0) {
+            return LocationBanner(key: ValueKey(_locationCheckKey));
+          }
+          final offerIndex = index - 1;
+          if (offerIndex >= displayOffers.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
             );
           }
           return FadeInItem(
-            index: index,
-            child: OfferCard(offer: displayOffers[index]),
+            index: offerIndex,
+            child: OfferCard(offer: displayOffers[offerIndex]),
           );
         },
       ),
@@ -546,6 +548,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
         onAction: _clearFilters,
       );
     }
+    final totalCount = state.businesses.length + (state.isLoadingMore ? 1 : 0);
     return RefreshIndicator(
       color: AppColors.accent,
       backgroundColor: AppColors.bgCard,
@@ -555,18 +558,23 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> with SingleTicker
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.pagePadding, 0, AppSpacing.pagePadding, AppSpacing.huge,
         ),
-        itemCount: state.businesses.length + (state.isLoadingMore ? 1 : 0),
+        // +1 for LocationBanner at index 0
+        itemCount: totalCount + 1,
         separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
         itemBuilder: (context, index) {
-          if (index >= state.businesses.length) {
+          if (index == 0) {
+            return LocationBanner(key: ValueKey(_locationCheckKey));
+          }
+          final bizIndex = index - 1;
+          if (bizIndex >= state.businesses.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
               child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
             );
           }
           return FadeInItem(
-            index: index,
-            child: BusinessCard(business: state.businesses[index]),
+            index: bizIndex,
+            child: BusinessCard(business: state.businesses[bizIndex]),
           );
         },
       ),

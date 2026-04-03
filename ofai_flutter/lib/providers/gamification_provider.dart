@@ -58,9 +58,11 @@ class GamificationNotifier extends StateNotifier<GamificationState> {
   GamificationNotifier(this._api) : super(const GamificationState());
 
   Future<void> fetch() async {
+    if (!mounted) return;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final response = await _api.dio.get(ApiEndpoints.gamification);
+      if (!mounted) return;
       final data = response.data as Map<String, dynamic>;
       state = GamificationState(
         points: data['points'] as int? ?? 0,
@@ -73,6 +75,7 @@ class GamificationNotifier extends StateNotifier<GamificationState> {
         isLoading: false,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }

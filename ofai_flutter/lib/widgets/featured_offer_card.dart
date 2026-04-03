@@ -391,17 +391,6 @@ class FeaturedOfferCard extends ConsumerWidget {
                           ),
                         ],
 
-                        // Saves count
-                        if (offer.saveCount != null && offer.saveCount! >= 1) ...[
-                          if (hasLeftContent || isNew)
-                            Text(' \u2022 ', style: AppTypography.labelSmall.copyWith(color: AppColors.textTertiary)),
-                          Icon(Icons.bookmark_outline, size: 12, color: AppColors.textTertiary),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${offer.saveCount}',
-                            style: AppTypography.labelSmall.copyWith(color: AppColors.textTertiary),
-                          ),
-                        ],
 
                         const Spacer(),
 

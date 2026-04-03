@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -5,14 +6,21 @@ import 'package:url_launcher/url_launcher.dart';
 class Launchers {
   Launchers._();
 
+  /// Default share origin rect for iPad/iPhone compatibility
+  static const _shareOrigin = Rect.fromLTWH(0, 0, 100, 100);
+
   static Future<void> shareOffer(String title, int offerId) async {
-    final url = Uri.parse('https://ofai.ro/oferta/$offerId');
-    await Share.shareUri(url);
+    await Share.shareUri(
+      Uri.parse('https://ofai.ro/oferta/$offerId'),
+      sharePositionOrigin: _shareOrigin,
+    );
   }
 
   static Future<void> shareBusiness(String name, int businessId) async {
-    final url = Uri.parse('https://ofai.ro/business/$businessId');
-    await Share.shareUri(url);
+    await Share.shareUri(
+      Uri.parse('https://ofai.ro/business/$businessId'),
+      sharePositionOrigin: _shareOrigin,
+    );
   }
 
   static Future<void> call(String phone) async {
@@ -46,6 +54,6 @@ class Launchers {
   }
 
   static Future<void> shareText(String text) async {
-    await Share.share(text);
+    await Share.share(text, sharePositionOrigin: _shareOrigin);
   }
 }

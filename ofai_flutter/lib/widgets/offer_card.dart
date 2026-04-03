@@ -368,11 +368,10 @@ class OfferCard extends ConsumerWidget {
     final locationLabel = hasDistance ? '$dist distanță' : biz.city;
     final hasLocation = locationLabel != null && locationLabel.isNotEmpty;
     final hasCategory = biz.category != null && biz.category!.isNotEmpty;
-    final hasSaves = offer.saveCount != null && offer.saveCount! >= 1;
     final startParsed = offer.startDate != null ? DateTime.tryParse(offer.startDate!) : null;
     final isNew = startParsed != null && DateTime.now().difference(startParsed).inDays <= 3;
 
-    if (!hasLocation && !hasCategory && !hasSaves && !isNew) {
+    if (!hasLocation && !hasCategory && !isNew) {
       return const SizedBox.shrink();
     }
 
@@ -425,17 +424,6 @@ class OfferCard extends ConsumerWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
-        if (hasSaves) ...[
-          const Spacer(),
-          const Icon(Icons.bookmark, size: 12, color: AppColors.textTertiary),
-          const SizedBox(width: 2),
-          Text(
-            offer.saveCount == 1
-                ? l10n.saveSingular
-                : l10n.savePlural(offer.saveCount!),
-            style: AppTypography.captionMuted,
           ),
         ],
       ],

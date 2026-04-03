@@ -51,14 +51,19 @@ class PushNotificationService {
         return;
       }
 
-      // Get FCM token
+      // Get FCM token (may fail on iOS without APNs certificate)
       print('[Push] Getting FCM token...');
-      _currentToken = await _messaging.getToken();
-      if (_currentToken != null) {
-        print('[Push] FCM Token: ${_currentToken!.substring(0, 30)}...');
-        await _registerTokenWithBackend(_currentToken!);
-      } else {
-        print('[Push] FCM token is null!');
+      try {
+        _currentToken = await _messaging.getToken();
+        if (_currentToken != null) {
+          print('[Push] FCM Token: ${_currentToken!.substring(0, 30)}...');
+          await _registerTokenWithBackend(_currentToken!);
+        } else {
+          print('[Push] FCM token is null — push notifications unavailable');
+        }
+      } catch (tokenError) {
+        print('[Push] FCM token unavailable (APNs not configured): $tokenError');
+        // Continue initialization — foreground message handling still works
       }
 
       // Listen for token refresh — store subscription so it can be cancelled on logout
