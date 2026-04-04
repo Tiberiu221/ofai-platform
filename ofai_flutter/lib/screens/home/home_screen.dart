@@ -13,6 +13,7 @@ import '../../widgets/offer_card.dart';
 import '../../widgets/business_card.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/skeleton_loader.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
 import '../../widgets/section_header.dart';
@@ -296,7 +297,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                       ),
                     );
                   },
-                  loading: () => const SizedBox.shrink(),
+                  loading: () => Padding(
+                    padding: AppSpacing.pageH,
+                    child: Shimmer.fromColors(
+                      baseColor: AppColors.bgSecondary,
+                      highlightColor: AppColors.bgCard,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 140,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: AppColors.bgSecondary,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Container(
+                            width: double.infinity,
+                            height: 180,
+                            decoration: BoxDecoration(
+                              color: AppColors.bgSecondary,
+                              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
