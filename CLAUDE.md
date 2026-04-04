@@ -161,17 +161,23 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Save count on cards:** Intentionally REMOVED from all card types (web EJS + Flutter). Save count only shows on detail pages (offer-detail.ejs + offer_detail_screen.dart) as activity pills. Do NOT re-add to cards.
 - **LocationBanner in explore:** Moved from fixed header Column into scrollable ListView content (first item, index 0) to prevent RenderFlex overflow on smaller iPhones. Both offers and businesses tabs include it.
 - **Push service APNs:** `getToken()` wrapped in separate try/catch — fails gracefully on iOS without APNs certificate (free provisioning). Rest of push service (foreground handler, tap handler) still initializes.
+- **Deal of Day rotation:** Uses `hashtext(offer_id || CURRENT_DATE)` for deterministic daily rotation — same offer all day, different tomorrow. Scoring: recency 30% + engagement 7d 25% + discount 15% + tier 20% + date-hash 10%. Both mobile API (`offers.js`) + web (`web.js _getDealOfDay`) use identical algorithm. Manual admin override via `is_deal_of_day` flag still works. Business portal nominations (Premium only) take priority.
+- **Popular Offers sort:** Has `RANDOM() * 0.1` in scoring — results vary per request by design. Not deterministic, not cached.
+- **Category Feed cron:** Daily at 02:00 UTC (was every 2 days). Per-category offers have `RANDOM() * 0.3` for variety.
+- **Business detail scroll spy:** Single scrollable page with ALL sections visible + pinned tab bar that auto-highlights current section via `ScrollController` + `GlobalKey` positions. NOT TabBarView (was changed from TabBarView to scroll spy in commit 891e612).
+- **Business detail credibility:** `denumire_legala`, `cui`, `founded_year` columns on businesses table (migration 077). Portal form "Date legale" in `_tab-info.ejs`. Shown in Detalii section on business detail page.
+- **Home screen section order (Flutter):** Deal of Day → Flash Deals → Categories → Popular/Feed → Recently Viewed → Promoted → Collections → Cities → Category Feed → Marquee → Businesses. Deal of Day has shimmer skeleton placeholder while loading to prevent layout shift.
 
 ## Language
 - UI text and user-facing strings: Romanian
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (30 March 2026, post-masterplan)
+## Current State (4 April 2026, post-detail-redesign + smart-offers)
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 75 migrations, 26 screens, 13 models, 24 widgets
+- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 77 migrations, 26 screens, 13 models, 28 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
