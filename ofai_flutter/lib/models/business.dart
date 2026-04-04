@@ -38,6 +38,10 @@ class Business {
   final int? followerCount;
   final Map<int, int>? ratingDistribution; // {1: count, 2: count, ...5: count}
   final bool isOwner;
+  // Credibility fields
+  final String? denumireLegala;
+  final String? cui;
+  final int? foundedYear;
 
   Business({
     required this.id,
@@ -70,6 +74,9 @@ class Business {
     this.followerCount,
     this.ratingDistribution,
     this.isOwner = false,
+    this.denumireLegala,
+    this.cui,
+    this.foundedYear,
   });
 
   /// Whether this business has any badge
@@ -138,6 +145,9 @@ class Business {
       followerCount: json['follower_count'] as int?,
       isOwner: json['is_owner'] as bool? ?? false,
       ratingDistribution: _parseRatingDistribution(json['rating_distribution']),
+      denumireLegala: json['denumire_legala'] as String?,
+      cui: json['cui'] as String?,
+      foundedYear: json['founded_year'] as int?,
     );
   }
 

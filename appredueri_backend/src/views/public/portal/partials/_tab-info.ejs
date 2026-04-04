@@ -130,6 +130,26 @@
           </div>
         </div>
 
+        <!-- Date legale -->
+        <div class="glass-card" style="margin-top: 16px;">
+          <h3 class="section-title">Date legale</h3>
+          <p class="img-upload-hint" style="margin-bottom: 16px;">Aceste informații cresc încrederea clienților și vor fi afișate pe pagina business-ului.</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Denumire legală</label>
+              <input type="text" name="denumire_legala" class="form-input" value="<%= business.denumire_legala || '' %>" placeholder="ex: GIOVANOTTI S.R.L." maxlength="255">
+            </div>
+            <div class="form-group">
+              <label class="form-label">CUI / CIF</label>
+              <input type="text" name="cui" class="form-input" value="<%= business.cui || '' %>" placeholder="ex: RO35713783" maxlength="15">
+            </div>
+          </div>
+          <div class="form-group" style="max-width: 200px;">
+            <label class="form-label">An înființare</label>
+            <input type="number" name="founded_year" class="form-input" value="<%= business.founded_year || '' %>" placeholder="ex: 2015" min="1900" max="2026">
+          </div>
+        </div>
+
         <div style="margin-top: 24px; text-align: right;">
           <button type="submit" class="btn-accent" id="save-info-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>

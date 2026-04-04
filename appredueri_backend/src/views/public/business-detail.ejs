@@ -229,6 +229,17 @@
   <% } %>
 </div>
 
+<!-- Tab Navigation -->
+<nav class="bd-tab-bar" id="bd-tabs">
+  <a href="#bd-sec-oferte" class="bd-tab active" data-section="bd-sec-oferte">Oferte</a>
+  <a href="#bd-sec-galerie" class="bd-tab" data-section="bd-sec-galerie">Galerie</a>
+  <a href="#bd-sec-meniu" class="bd-tab" data-section="bd-sec-meniu">Meniu</a>
+  <a href="#bd-sec-program" class="bd-tab" data-section="bd-sec-program">Program</a>
+  <a href="#bd-sec-recenzii" class="bd-tab" data-section="bd-sec-recenzii">Recenzii</a>
+  <a href="#bd-sec-contact" class="bd-tab" data-section="bd-sec-contact">Contact</a>
+  <a href="#bd-sec-detalii" class="bd-tab" data-section="bd-sec-detalii">Detalii</a>
+</nav>
+
 <!-- Geo Banner -->
 <div class="bd-content">
   <div id="geo-banner" class="geo-banner" style="display:none;">
@@ -243,6 +254,7 @@
 <!-- ═══════════════════════════════════════════════════════
      1. OFERTE ACTIVE (with location tabs when applicable)
      ═══════════════════════════════════════════════════════ -->
+<div id="bd-sec-oferte">
 <%
   // Only use real business_locations rows (filter out synthetic 'main' fallback)
   var locs = (business.locations || []).filter(function(loc) { return typeof loc.id === 'number'; });
@@ -428,10 +440,12 @@
   </div>
 </div>
 <% } %>
+</div><!-- /#bd-sec-oferte -->
 
 <!-- ═══════════════════════════════════════════════════════
      2. LOCAȚII
      ═══════════════════════════════════════════════════════ -->
+<div id="bd-sec-contact">
 <% if (business.locations && business.locations.length > 0) { %>
 <div class="bd-content">
   <div class="detail-card">
@@ -497,9 +511,12 @@
 </div>
 <% } %>
 
+</div><!-- /#bd-sec-contact -->
+
 <!-- ═══════════════════════════════════════════════════════
      2b. PROGRAM DE LUCRU
      ═══════════════════════════════════════════════════════ -->
+<div id="bd-sec-program">
 <%
   /* Collect locations that have at least one hours entry */
   var locsWithHours = (business.locations || []).filter(function(loc) {
@@ -568,9 +585,12 @@
 </div>
 <% } %>
 
+</div><!-- /#bd-sec-program -->
+
 <!-- ═══════════════════════════════════════════════════════
      2c. CATALOG — Servicii & Produse
      ═══════════════════════════════════════════════════════ -->
+<div id="bd-sec-meniu">
 <% if (typeof catalog !== 'undefined' && catalog && catalog.length > 0) { %>
 <%
   /* Flatten all items to compute total count */
@@ -636,9 +656,12 @@
 </div>
 <% } %>
 
+</div><!-- /#bd-sec-meniu -->
+
 <!-- ═══════════════════════════════════════════════════════
      3. SUMAR AI — Ce spun clienții
      ═══════════════════════════════════════════════════════ -->
+<div id="bd-sec-detalii">
 <% if (reviewSummary) { %>
 <div class="bd-content">
   <div class="detail-card" style="background: rgba(251, 146, 60, 0.04);">
@@ -671,25 +694,73 @@
 </div>
 <% } %>
 
-<!-- ═══════════════════════════════════════════════════════
-     5. GALERIE (horizontal scroll strip)
-     ═══════════════════════════════════════════════════════ -->
-<% if (business.images && business.images.length > 0) { %>
+<% if (business.denumire_legala || business.cui || business.founded_year) { %>
 <div class="bd-content">
   <div class="detail-card">
     <div class="detail-card-header">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <span><%= t('businessDetail.gallery') %></span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      <h2>Informații legale</h2>
+    </div>
+    <div class="bd-credibility-list">
+      <% if (business.denumire_legala) { %>
+      <div class="bd-credibility-row">
+        <div class="bd-credibility-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+        <div><span class="bd-credibility-label">Denumire legală</span><br><span class="bd-credibility-value"><%= business.denumire_legala %></span></div>
+      </div>
+      <% } %>
+      <% if (business.cui) { %>
+      <div class="bd-credibility-row">
+        <div class="bd-credibility-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+        <div><span class="bd-credibility-label">CUI / CIF</span><br><span class="bd-credibility-value"><%= business.cui %></span></div>
+      </div>
+      <% } %>
+      <% if (business.founded_year) { %>
+      <div class="bd-credibility-row">
+        <div class="bd-credibility-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></div>
+        <div><span class="bd-credibility-label">An înfiintare</span><br><span class="bd-credibility-value"><%= business.founded_year %></span></div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+<% } %>
+</div><!-- /#bd-sec-detalii -->
+
+<!-- ═══════════════════════════════════════════════════════
+     5. GALERIE (masonry layout)
+     ═══════════════════════════════════════════════════════ -->
+<% if (business.images && business.images.length > 0) { %>
+<div id="bd-sec-galerie" class="bd-content">
+  <div class="detail-card">
+    <div class="detail-card-header">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <h2><%= t('businessDetail.gallery') %></h2>
       <span class="detail-card-badge"><%= business.images.length %> <%= business.images.length === 1 ? t('businessDetail.image_one') : t('businessDetail.image_other') %></span>
     </div>
-    <div class="bd-gallery-strip">
+    <div class="bd-gallery-masonry">
+      <div class="bd-gallery-large" style="background-image: url('<%= business.images[0].url %>');" onclick="trackClick(<%= business.id %>,'gallery'); openGallery(0)" role="button" tabindex="0" aria-label="Deschide galeria - imagine 1"></div>
+      <div class="bd-gallery-small-stack">
+        <% if (business.images[1]) { %>
+          <div class="bd-gallery-small" style="background-image: url('<%= business.images[1].url %>');" onclick="trackClick(<%= business.id %>,'gallery'); openGallery(1)" role="button" tabindex="0" aria-label="Deschide galeria - imagine 2"></div>
+        <% } %>
+        <% if (business.images[2]) { %>
+          <div class="bd-gallery-small bd-gallery-more" style="background-image: url('<%= business.images[2].url %>');" onclick="trackClick(<%= business.id %>,'gallery'); openGallery(2)" role="button" tabindex="0" aria-label="Deschide galeria - imagine 3">
+            <% if (business.images.length > 3) { %>
+              <span class="bd-gallery-count">+<%= business.images.length - 3 %></span>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+    <!-- Strip for lightbox navigation (hidden) -->
+    <div style="display:none;">
       <% business.images.forEach((img, i) => { %>
-        <button class="bd-gallery-strip-item" onclick="trackClick(<%= business.id %>,'gallery'); openGallery(<%= i %>)" aria-label="Deschide galeria - imagine <%= i + 1 %>">
+        <button class="bd-gallery-strip-item" onclick="openGallery(<%= i %>)" aria-label="Deschide galeria - imagine <%= i + 1 %>">
           <img src="<%= img.url %>" alt="<%= business.name %> - imagine <%= i + 1 %>" width="200" height="150" loading="lazy">
         </button>
       <% }); %>
     </div>
-  </div>
+    </div>
 </div>
 
 <!-- Lightbox Modal -->
@@ -713,6 +784,7 @@
 <!-- ═══════════════════════════════════════════════════════
      6. RECENZII
      ═══════════════════════════════════════════════════════ -->
+<div id="bd-sec-recenzii">
 <section id="reviews-section">
 <div class="bd-content">
   <div class="detail-card">
@@ -829,6 +901,7 @@
   </div>
 </div>
 </section>
+</div><!-- /#bd-sec-recenzii -->
 
 <!-- ═══════════════════════════════════════════════════════
      PAGE SCRIPTS
@@ -1313,6 +1386,69 @@ function bdCatalogExpand(idx) {
     if (btn) btn.style.display = 'none';
   }
 }
+</script>
+
+<!-- Sticky CTA (mobile only) -->
+<% if (business.phone || business.website) { %>
+<div class="bd-sticky-cta">
+  <% if (business.phone) { %>
+    <a href="tel:<%= business.phone %>" class="bd-cta-btn" onclick="trackClick(<%= business.id %>,'phone')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Sună acum
+    </a>
+  <% } else { %>
+    <% var safeCtaWebsite = (business.website || '').match(/^https?:\/\//) ? business.website : '#'; %>
+    <a href="<%= safeCtaWebsite %>" target="_blank" rel="noopener noreferrer" class="bd-cta-btn" onclick="trackClick(<%= business.id %>,'website')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      Vizitează website-ul
+    </a>
+  <% } %>
+</div>
+<% } %>
+
+<!-- Tab navigation JS -->
+<script nonce="<%= cspNonce %>">
+(function() {
+  var tabs = document.querySelectorAll('.bd-tab');
+  var sections = {};
+  tabs.forEach(function(tab) {
+    var id = tab.getAttribute('data-section');
+    if (id) sections[id] = document.getElementById(id);
+  });
+
+  // Click handler
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-section');
+      var el = document.getElementById(id);
+      if (el) {
+        if (window.lenis) {
+          window.lenis.scrollTo(el, { offset: -120 });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        this.classList.add('active');
+      }
+    });
+  });
+
+  // Scroll spy with IntersectionObserver
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        var tab = document.querySelector('.bd-tab[data-section="' + entry.target.id + '"]');
+        if (tab) tab.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-120px 0px -60% 0px', threshold: 0.1 });
+
+  Object.values(sections).forEach(function(sec) {
+    if (sec) observer.observe(sec);
+  });
+})();
 </script>
 
 <%- include('partials/footer') %>

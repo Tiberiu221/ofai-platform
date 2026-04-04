@@ -1399,4 +1399,108 @@ class AppLocalizationsRo extends AppLocalizations {
   @override
   String get savedSearchesEmptySubtitle =>
       'Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi.';
+
+  @override
+  String get tabOffers => 'Oferte';
+
+  @override
+  String get tabGallery => 'Galerie';
+
+  @override
+  String get tabMenu => 'Meniu';
+
+  @override
+  String get tabSchedule => 'Program';
+
+  @override
+  String get tabReviews => 'Recenzii';
+
+  @override
+  String get tabContact => 'Contact';
+
+  @override
+  String get tabDetails => 'Detalii';
+
+  @override
+  String get seeAllPhotos => 'Toate >';
+
+  @override
+  String photosCount(int count) {
+    return 'Foto ($count)';
+  }
+
+  @override
+  String get expandHours => 'Vezi programul complet';
+
+  @override
+  String get collapseHours => 'Ascunde';
+
+  @override
+  String get legalEntity => 'Denumire legală';
+
+  @override
+  String get cuiLabel => 'CUI / CIF';
+
+  @override
+  String get foundedYearLabel => 'An înfiintare';
+
+  @override
+  String get verifiedSince => 'Verificat din';
+
+  @override
+  String get callNowCta => 'Sună acum';
+
+  @override
+  String get bookNowCta => 'Rezervă';
+
+  @override
+  String get navigateCta => 'Navighează';
+
+  @override
+  String get noPhotos => 'Nicio fotografie încă';
+
+  @override
+  String get credibilityTitle => 'Informații legale';
+
+  @override
+  String get stepChooseOffer => 'Alege oferta';
+
+  @override
+  String get stepChooseOfferDesc => 'Verifică detaliile și condițiile';
+
+  @override
+  String get stepContact => 'Contactează';
+
+  @override
+  String get stepContactDesc => 'Sună sau rezervă online';
+
+  @override
+  String get stepEnjoy => 'Profită!';
+
+  @override
+  String get stepEnjoyDesc => 'Prezintă oferta și bucură-te de reducere';
+
+  @override
+  String get stepCopyCode => 'Copiază codul';
+
+  @override
+  String get stepCopyCodeDesc => 'Copiază codul promoțional';
+
+  @override
+  String get stepUseCode => 'Folosește codul';
+
+  @override
+  String get stepUseCodeDesc => 'Folosește codul la plată';
+
+  @override
+  String get enjoyNowCta => 'Profită acum';
+
+  @override
+  String get revealCodeCta => 'Dezvăluie codul';
+
+  @override
+  String get openNow => 'Deschis acum';
+
+  @override
+  String get closedNow => 'Închis';
 }

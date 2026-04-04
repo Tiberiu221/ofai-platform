@@ -2695,6 +2695,210 @@ abstract class AppLocalizations {
   /// In ro, this message translates to:
   /// **'Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi.'**
   String get savedSearchesEmptySubtitle;
+
+  /// No description provided for @tabOffers.
+  ///
+  /// In ro, this message translates to:
+  /// **'Oferte'**
+  String get tabOffers;
+
+  /// No description provided for @tabGallery.
+  ///
+  /// In ro, this message translates to:
+  /// **'Galerie'**
+  String get tabGallery;
+
+  /// No description provided for @tabMenu.
+  ///
+  /// In ro, this message translates to:
+  /// **'Meniu'**
+  String get tabMenu;
+
+  /// No description provided for @tabSchedule.
+  ///
+  /// In ro, this message translates to:
+  /// **'Program'**
+  String get tabSchedule;
+
+  /// No description provided for @tabReviews.
+  ///
+  /// In ro, this message translates to:
+  /// **'Recenzii'**
+  String get tabReviews;
+
+  /// No description provided for @tabContact.
+  ///
+  /// In ro, this message translates to:
+  /// **'Contact'**
+  String get tabContact;
+
+  /// No description provided for @tabDetails.
+  ///
+  /// In ro, this message translates to:
+  /// **'Detalii'**
+  String get tabDetails;
+
+  /// No description provided for @seeAllPhotos.
+  ///
+  /// In ro, this message translates to:
+  /// **'Toate >'**
+  String get seeAllPhotos;
+
+  /// No description provided for @photosCount.
+  ///
+  /// In ro, this message translates to:
+  /// **'Foto ({count})'**
+  String photosCount(int count);
+
+  /// No description provided for @expandHours.
+  ///
+  /// In ro, this message translates to:
+  /// **'Vezi programul complet'**
+  String get expandHours;
+
+  /// No description provided for @collapseHours.
+  ///
+  /// In ro, this message translates to:
+  /// **'Ascunde'**
+  String get collapseHours;
+
+  /// No description provided for @legalEntity.
+  ///
+  /// In ro, this message translates to:
+  /// **'Denumire legală'**
+  String get legalEntity;
+
+  /// No description provided for @cuiLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'CUI / CIF'**
+  String get cuiLabel;
+
+  /// No description provided for @foundedYearLabel.
+  ///
+  /// In ro, this message translates to:
+  /// **'An înfiintare'**
+  String get foundedYearLabel;
+
+  /// No description provided for @verifiedSince.
+  ///
+  /// In ro, this message translates to:
+  /// **'Verificat din'**
+  String get verifiedSince;
+
+  /// No description provided for @callNowCta.
+  ///
+  /// In ro, this message translates to:
+  /// **'Sună acum'**
+  String get callNowCta;
+
+  /// No description provided for @bookNowCta.
+  ///
+  /// In ro, this message translates to:
+  /// **'Rezervă'**
+  String get bookNowCta;
+
+  /// No description provided for @navigateCta.
+  ///
+  /// In ro, this message translates to:
+  /// **'Navighează'**
+  String get navigateCta;
+
+  /// No description provided for @noPhotos.
+  ///
+  /// In ro, this message translates to:
+  /// **'Nicio fotografie încă'**
+  String get noPhotos;
+
+  /// No description provided for @credibilityTitle.
+  ///
+  /// In ro, this message translates to:
+  /// **'Informații legale'**
+  String get credibilityTitle;
+
+  /// No description provided for @stepChooseOffer.
+  ///
+  /// In ro, this message translates to:
+  /// **'Alege oferta'**
+  String get stepChooseOffer;
+
+  /// No description provided for @stepChooseOfferDesc.
+  ///
+  /// In ro, this message translates to:
+  /// **'Verifică detaliile și condițiile'**
+  String get stepChooseOfferDesc;
+
+  /// No description provided for @stepContact.
+  ///
+  /// In ro, this message translates to:
+  /// **'Contactează'**
+  String get stepContact;
+
+  /// No description provided for @stepContactDesc.
+  ///
+  /// In ro, this message translates to:
+  /// **'Sună sau rezervă online'**
+  String get stepContactDesc;
+
+  /// No description provided for @stepEnjoy.
+  ///
+  /// In ro, this message translates to:
+  /// **'Profită!'**
+  String get stepEnjoy;
+
+  /// No description provided for @stepEnjoyDesc.
+  ///
+  /// In ro, this message translates to:
+  /// **'Prezintă oferta și bucură-te de reducere'**
+  String get stepEnjoyDesc;
+
+  /// No description provided for @stepCopyCode.
+  ///
+  /// In ro, this message translates to:
+  /// **'Copiază codul'**
+  String get stepCopyCode;
+
+  /// No description provided for @stepCopyCodeDesc.
+  ///
+  /// In ro, this message translates to:
+  /// **'Copiază codul promoțional'**
+  String get stepCopyCodeDesc;
+
+  /// No description provided for @stepUseCode.
+  ///
+  /// In ro, this message translates to:
+  /// **'Folosește codul'**
+  String get stepUseCode;
+
+  /// No description provided for @stepUseCodeDesc.
+  ///
+  /// In ro, this message translates to:
+  /// **'Folosește codul la plată'**
+  String get stepUseCodeDesc;
+
+  /// No description provided for @enjoyNowCta.
+  ///
+  /// In ro, this message translates to:
+  /// **'Profită acum'**
+  String get enjoyNowCta;
+
+  /// No description provided for @revealCodeCta.
+  ///
+  /// In ro, this message translates to:
+  /// **'Dezvăluie codul'**
+  String get revealCodeCta;
+
+  /// No description provided for @openNow.
+  ///
+  /// In ro, this message translates to:
+  /// **'Deschis acum'**
+  String get openNow;
+
+  /// No description provided for @closedNow.
+  ///
+  /// In ro, this message translates to:
+  /// **'Închis'**
+  String get closedNow;
 }
 
 class _AppLocalizationsDelegate

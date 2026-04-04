@@ -589,5 +589,45 @@
 
   "savedSearchesTitle": "Cautari salvate",
   "savedSearchesEmpty": "Nicio cautare salvata",
-  "savedSearchesEmptySubtitle": "Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi."
+  "savedSearchesEmptySubtitle": "Salveaza cautarile din Exploreaza pentru a primi notificari cand apar oferte noi.",
+
+  "tabOffers": "Oferte",
+  "tabGallery": "Galerie",
+  "tabMenu": "Meniu",
+  "tabSchedule": "Program",
+  "tabReviews": "Recenzii",
+  "tabContact": "Contact",
+  "tabDetails": "Detalii",
+  "seeAllPhotos": "Toate >",
+  "photosCount": "Foto ({count})",
+  "@photosCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "expandHours": "Vezi programul complet",
+  "collapseHours": "Ascunde",
+  "legalEntity": "Denumire legală",
+  "cuiLabel": "CUI / CIF",
+  "foundedYearLabel": "An înfiintare",
+  "verifiedSince": "Verificat din",
+  "callNowCta": "Sună acum",
+  "bookNowCta": "Rezervă",
+  "navigateCta": "Navighează",
+  "noPhotos": "Nicio fotografie încă",
+  "credibilityTitle": "Informații legale",
+  "stepChooseOffer": "Alege oferta",
+  "stepChooseOfferDesc": "Verifică detaliile și condițiile",
+  "stepContact": "Contactează",
+  "stepContactDesc": "Sună sau rezervă online",
+  "stepEnjoy": "Profită!",
+  "stepEnjoyDesc": "Prezintă oferta și bucură-te de reducere",
+  "stepCopyCode": "Copiază codul",
+  "stepCopyCodeDesc": "Copiază codul promoțional",
+  "stepUseCode": "Folosește codul",
+  "stepUseCodeDesc": "Folosește codul la plată",
+  "enjoyNowCta": "Profită acum",
+  "revealCodeCta": "Dezvăluie codul",
+  "openNow": "Deschis acum",
+  "closedNow": "Închis"
 }

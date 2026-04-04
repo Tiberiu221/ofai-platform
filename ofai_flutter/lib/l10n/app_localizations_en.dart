@@ -1394,4 +1394,108 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get savedSearchesEmptySubtitle =>
       'Save searches from Explore to get notified when new offers appear.';
+
+  @override
+  String get tabOffers => 'Offers';
+
+  @override
+  String get tabGallery => 'Gallery';
+
+  @override
+  String get tabMenu => 'Menu';
+
+  @override
+  String get tabSchedule => 'Schedule';
+
+  @override
+  String get tabReviews => 'Reviews';
+
+  @override
+  String get tabContact => 'Contact';
+
+  @override
+  String get tabDetails => 'Details';
+
+  @override
+  String get seeAllPhotos => 'All >';
+
+  @override
+  String photosCount(int count) {
+    return 'Photos ($count)';
+  }
+
+  @override
+  String get expandHours => 'See full schedule';
+
+  @override
+  String get collapseHours => 'Collapse';
+
+  @override
+  String get legalEntity => 'Legal entity';
+
+  @override
+  String get cuiLabel => 'CUI / CIF';
+
+  @override
+  String get foundedYearLabel => 'Founded';
+
+  @override
+  String get verifiedSince => 'Verified since';
+
+  @override
+  String get callNowCta => 'Call now';
+
+  @override
+  String get bookNowCta => 'Book now';
+
+  @override
+  String get navigateCta => 'Navigate';
+
+  @override
+  String get noPhotos => 'No photos yet';
+
+  @override
+  String get credibilityTitle => 'Legal information';
+
+  @override
+  String get stepChooseOffer => 'Choose offer';
+
+  @override
+  String get stepChooseOfferDesc => 'Check details and conditions';
+
+  @override
+  String get stepContact => 'Contact';
+
+  @override
+  String get stepContactDesc => 'Call or book online';
+
+  @override
+  String get stepEnjoy => 'Enjoy!';
+
+  @override
+  String get stepEnjoyDesc => 'Show the offer and enjoy the discount';
+
+  @override
+  String get stepCopyCode => 'Copy code';
+
+  @override
+  String get stepCopyCodeDesc => 'Copy the promo code';
+
+  @override
+  String get stepUseCode => 'Use code';
+
+  @override
+  String get stepUseCodeDesc => 'Use the code at checkout';
+
+  @override
+  String get enjoyNowCta => 'Get it now';
+
+  @override
+  String get revealCodeCta => 'Reveal code';
+
+  @override
+  String get openNow => 'Open now';
+
+  @override
+  String get closedNow => 'Closed';
 }

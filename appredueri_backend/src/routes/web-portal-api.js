@@ -1123,10 +1123,20 @@ router.post("/api/web/portal/:businessId/catalog/import-csv/confirm", requireBus
 router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res) => {
   try {
     const businessId = req.businessId;
-    const { name, description, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions } = req.body || {};
+    const { name, description, address, phone, website, city_id, category_id, booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions, denumire_legala, cui, founded_year } = req.body || {};
 
     const sanitizedDesc = description !== undefined ? (description || '').substring(0, 2000) || null : undefined;
     const bookingGated = process.env.TIER_GATING_DISABLED !== 'true' && req.tier && !req.tier.plan.has_booking;
+
+    // Sanitize credibility fields
+    const sanitizedDenumire = denumire_legala !== undefined ? ((denumire_legala || '').trim().substring(0, 255) || null) : undefined;
+    const sanitizedCui = cui !== undefined ? ((cui || '').replace(/[^A-Za-z0-9]/g, '').substring(0, 15) || null) : undefined;
+    const sanitizedFoundedYear = founded_year !== undefined
+      ? (founded_year ? (parseInt(founded_year, 10) || null) : null)
+      : undefined;
+    const validatedFoundedYear = sanitizedFoundedYear !== undefined
+      ? (sanitizedFoundedYear !== null && (sanitizedFoundedYear < 1900 || sanitizedFoundedYear > 2026) ? null : sanitizedFoundedYear)
+      : undefined;
 
     if (bookingGated) {
       await pool.query(`
@@ -1137,9 +1147,16 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
           phone = COALESCE($4, phone),
           website = COALESCE($5, website),
           city_id = COALESCE($6, city_id),
-          category_id = COALESCE($7, category_id)
-        WHERE id = $8
-      `, [name, sanitizedDesc, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null, businessId]);
+          category_id = COALESCE($7, category_id),
+          denumire_legala = $8,
+          cui = $9,
+          founded_year = $10
+        WHERE id = $11
+      `, [name, sanitizedDesc, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
+          sanitizedDenumire !== undefined ? sanitizedDenumire : null,
+          sanitizedCui !== undefined ? sanitizedCui : null,
+          validatedFoundedYear !== undefined ? validatedFoundedYear : null,
+          businessId]);
     } else {
       await pool.query(`
         UPDATE businesses SET
@@ -1154,14 +1171,21 @@ router.put("/api/web/portal/:businessId", requireBusinessOwner, async (req, res)
           booking_phone = $9,
           booking_whatsapp = $10,
           booking_url = $11,
-          booking_instructions = $12
-        WHERE id = $13
+          booking_instructions = $12,
+          denumire_legala = $13,
+          cui = $14,
+          founded_year = $15
+        WHERE id = $16
       `, [name, sanitizedDesc, address, phone, website, city_id ? parseInt(city_id) : null, category_id ? parseInt(category_id) : null,
           booking_type,
           booking_phone || (booking_type === 'phone' ? phone : null) || null,
           booking_whatsapp || (booking_type === 'whatsapp' ? phone : null) || null,
           booking_url || (booking_type === 'url' ? website : null) || null,
-          booking_instructions || null, businessId]);
+          booking_instructions || null,
+          sanitizedDenumire !== undefined ? sanitizedDenumire : null,
+          sanitizedCui !== undefined ? sanitizedCui : null,
+          validatedFoundedYear !== undefined ? validatedFoundedYear : null,
+          businessId]);
     }
 
     cache.invalidateGroup('businesses'); cache.invalidateGroup('homepage');

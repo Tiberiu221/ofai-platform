@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,13 +9,12 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/launchers.dart';
 
+import '../../models/offer.dart';
 import '../../providers/offers_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/error_state.dart' as w;
-import '../../widgets/fullscreen_gallery.dart';
 import '../../widgets/offer_card.dart';
-import '../../widgets/animated_toggle_fab.dart';
 import '../../widgets/subscription_badge.dart';
 import '../../core/network/api_client.dart';
 import '../../core/network/api_endpoints.dart';
@@ -26,6 +24,9 @@ import '../../providers/followed_businesses_provider.dart';
 import '../../providers/recently_viewed_provider.dart';
 import '../../widgets/report_dialog.dart';
 import '../../widgets/flash_countdown_badge.dart';
+import '../../widgets/stepper_how_to.dart';
+import '../../widgets/masonry_gallery.dart';
+import '../../widgets/sticky_bottom_cta.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:ofai_flutter/l10n/app_localizations.dart';
 
@@ -75,6 +76,22 @@ class OfferDetailScreen extends ConsumerWidget {
                     backgroundColor: AppColors.bgPrimary,
                     stretch: true,
                     actions: [
+                      if (isLoggedIn)
+                        Semantics(
+                          label: isFav
+                              ? AppLocalizations.of(context)!.saved
+                              : AppLocalizations.of(context)!.save,
+                          button: true,
+                          child: IconButton(
+                            icon: Icon(
+                              isFav ? Icons.bookmark : Icons.bookmark_border,
+                              color: isFav ? AppColors.accent : null,
+                            ),
+                            onPressed: () => ref
+                                .read(favoritesProvider.notifier)
+                                .toggleFavorite(offer.id),
+                          ),
+                        ),
                       Semantics(
                         label: AppLocalizations.of(context)!.shareOffer,
                         button: true,
@@ -324,6 +341,125 @@ class OfferDetailScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.xxl),
                           ],
 
+                          // How to use — Bolt-style stepper
+                          StepperHowTo(
+                            title: AppLocalizations.of(context)!.howToUseOffer,
+                            steps: [
+                              StepData(
+                                icon: Icons.assignment_outlined,
+                                title: 'Alege oferta',
+                                subtitle: 'Verifică detaliile și condițiile',
+                              ),
+                              StepData(
+                                icon: offer.hasPromoCode
+                                    ? Icons.content_copy
+                                    : (booking != null && booking.hasBooking)
+                                        ? Icons.phone_outlined
+                                        : Icons.touch_app_outlined,
+                                title: offer.hasPromoCode
+                                    ? 'Copiază codul'
+                                    : 'Contactează',
+                                subtitle: offer.hasPromoCode
+                                    ? 'Copiază codul promoțional'
+                                    : 'Sună sau rezervă online',
+                              ),
+                              StepData(
+                                icon: Icons.check_circle_outline,
+                                title: offer.hasPromoCode
+                                    ? 'Folosește codul'
+                                    : 'Profită!',
+                                subtitle: offer.hasPromoCode
+                                    ? 'Folosește codul la plată'
+                                    : 'Prezintă oferta și bucură-te de reducere',
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: AppSpacing.xxl),
+
+                          // Booking buttons (kept after stepper)
+                          if (offer.bookingMethods != null && offer.bookingMethods!.isNotEmpty) ...[
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: offer.bookingMethods!.map((bm) {
+                                return _ActionChip(
+                                  icon: bm.isPhone ? Icons.phone : bm.isWhatsApp ? Icons.message : Icons.language,
+                                  label: bm.label,
+                                  color: bm.color,
+                                  onTap: () {
+                                    if (bm.isPhone) {
+                                      Launchers.call(bm.value);
+                                    } else if (bm.isWhatsApp) {
+                                      Launchers.whatsApp(bm.value);
+                                    } else {
+                                      Launchers.website(bm.href);
+                                    }
+                                    final biz = offer.business;
+                                    if (biz != null) {
+                                      AnalyticsService.trackClick(
+                                        businessId: biz.id,
+                                        offerId: offer.id,
+                                        actionType: bm.isPhone ? 'phone' : bm.isWhatsApp ? 'whatsapp' : 'booking_url',
+                                      );
+                                    }
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ] else if (booking != null && booking.hasBooking) ...[
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                if (booking.phone != null)
+                                  _ActionChip(
+                                    icon: Icons.phone,
+                                    label: AppLocalizations.of(context)!.callNow,
+                                    color: AppColors.accent,
+                                    onTap: () {
+                                      Launchers.call(booking.phone!);
+                                      final biz = offer.business;
+                                      if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'phone');
+                                    },
+                                  ),
+                                if (booking.whatsapp != null)
+                                  _ActionChip(
+                                    icon: Icons.message,
+                                    label: 'WhatsApp',
+                                    color: const Color(0xFF25D366),
+                                    onTap: () {
+                                      Launchers.whatsApp(booking.whatsapp!);
+                                      final biz = offer.business;
+                                      if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'whatsapp');
+                                    },
+                                  ),
+                                if (booking.url != null)
+                                  _ActionChip(
+                                    icon: Icons.language,
+                                    label: AppLocalizations.of(context)!.bookOnline,
+                                    color: AppColors.accent,
+                                    onTap: () {
+                                      Launchers.website(booking.url!);
+                                      final biz = offer.business;
+                                      if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'booking_url');
+                                    },
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+
+                          // Booking instructions
+                          if (booking != null && booking.instructions != null && booking.instructions!.isNotEmpty) ...[
+                            Text(
+                              booking.instructions!,
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+
                           // Description
                           if (offer.description != null && offer.description!.isNotEmpty) ...[
                             _SectionCard(
@@ -349,173 +485,6 @@ class OfferDetailScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: AppSpacing.lg),
                           ],
-
-                          // How to use the offer
-                          Builder(builder: (context) {
-                            String tipText;
-                            IconData tipIcon;
-
-                            // Redemption method map (predefined keys → messages)
-                            final l10n = AppLocalizations.of(context)!;
-                            final redemptionMap = {
-                              'call': l10n.redemptionCall,
-                              'whatsapp': l10n.redemptionWhatsapp,
-                              'online': l10n.redemptionOnline,
-                              'booking': l10n.redemptionBooking,
-                              'appointment': l10n.redemptionAppointment,
-                              'order': l10n.redemptionOrder,
-                              'checkout': l10n.redemptionCheckout,
-                              'show_page': l10n.redemptionShowPage,
-                            };
-                            const redemptionIcons = {
-                              'call': Icons.phone_in_talk,
-                              'whatsapp': Icons.message_outlined,
-                              'online': Icons.language,
-                              'booking': Icons.hotel_outlined,
-                              'appointment': Icons.content_cut,
-                              'order': Icons.restaurant_outlined,
-                              'checkout': Icons.shopping_cart_outlined,
-                              'show_page': Icons.smartphone,
-                            };
-
-                            final rm = offer.redemptionMethod;
-                            if (rm != null && redemptionMap.containsKey(rm)) {
-                              // Predefined key chosen by owner
-                              tipText = redemptionMap[rm]!;
-                              tipIcon = redemptionIcons[rm] ?? Icons.info_outline;
-                            } else if (rm != null) {
-                              // Custom text from owner
-                              tipText = rm;
-                              tipIcon = Icons.info_outline;
-                            } else if (booking != null && booking.hasBooking) {
-                              // Auto-detection fallback from booking type
-                              switch (booking.type) {
-                                case 'phone':
-                                  tipText = l10n.redemptionCall;
-                                  tipIcon = Icons.phone_in_talk;
-                                  break;
-                                case 'whatsapp':
-                                  tipText = l10n.redemptionWhatsapp;
-                                  tipIcon = Icons.message_outlined;
-                                  break;
-                                case 'url':
-                                  tipText = l10n.redemptionOnline;
-                                  tipIcon = Icons.language;
-                                  break;
-                                default:
-                                  tipText = l10n.redemptionDefault;
-                                  tipIcon = Icons.info_outline;
-                              }
-                            } else {
-                              tipText = l10n.redemptionDefault;
-                              tipIcon = Icons.info_outline;
-                            }
-                            // Single unified card: message + booking buttons + instructions
-                            return _SectionCard(
-                              icon: Icons.check_circle_outline,
-                              title: l10n.howToUseOffer,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Redemption message
-                                  Row(
-                                    children: [
-                                      Icon(tipIcon, size: 18, color: AppColors.accent),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      Expanded(
-                                        child: Text(tipText, style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)),
-                                      ),
-                                    ],
-                                  ),
-
-                                  // Booking buttons
-                                  if (offer.bookingMethods != null && offer.bookingMethods!.isNotEmpty) ...[
-                                    const SizedBox(height: AppSpacing.md),
-                                    Wrap(
-                                      spacing: AppSpacing.sm,
-                                      runSpacing: AppSpacing.sm,
-                                      children: offer.bookingMethods!.map((bm) {
-                                        return _ActionChip(
-                                          icon: bm.isPhone ? Icons.phone : bm.isWhatsApp ? Icons.message : Icons.language,
-                                          label: bm.label,
-                                          color: bm.color,
-                                          onTap: () {
-                                            if (bm.isPhone) {
-                                              Launchers.call(bm.value);
-                                            } else if (bm.isWhatsApp) {
-                                              Launchers.whatsApp(bm.value);
-                                            } else {
-                                              Launchers.website(bm.href);
-                                            }
-                                            final biz = offer.business;
-                                            if (biz != null) {
-                                              AnalyticsService.trackClick(
-                                                businessId: biz.id,
-                                                offerId: offer.id,
-                                                actionType: bm.isPhone ? 'phone' : bm.isWhatsApp ? 'whatsapp' : 'booking_url',
-                                              );
-                                            }
-                                          },
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ] else if (booking != null && booking.hasBooking) ...[
-                                    const SizedBox(height: AppSpacing.md),
-                                    Wrap(
-                                      spacing: AppSpacing.sm,
-                                      runSpacing: AppSpacing.sm,
-                                      children: [
-                                        if (booking.phone != null)
-                                          _ActionChip(
-                                            icon: Icons.phone,
-                                            label: l10n.callNow,
-                                            color: AppColors.accent,
-                                            onTap: () {
-                                              Launchers.call(booking.phone!);
-                                              final biz = offer.business;
-                                              if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'phone');
-                                            },
-                                          ),
-                                        if (booking.whatsapp != null)
-                                          _ActionChip(
-                                            icon: Icons.message,
-                                            label: 'WhatsApp',
-                                            color: const Color(0xFF25D366),
-                                            onTap: () {
-                                              Launchers.whatsApp(booking.whatsapp!);
-                                              final biz = offer.business;
-                                              if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'whatsapp');
-                                            },
-                                          ),
-                                        if (booking.url != null)
-                                          _ActionChip(
-                                            icon: Icons.language,
-                                            label: l10n.bookOnline,
-                                            color: AppColors.accent,
-                                            onTap: () {
-                                              Launchers.website(booking.url!);
-                                              final biz = offer.business;
-                                              if (biz != null) AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'booking_url');
-                                            },
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-
-                                  // Booking instructions
-                                  if (booking != null && booking.instructions != null && booking.instructions!.isNotEmpty) ...[
-                                    const SizedBox(height: AppSpacing.sm),
-                                    Text(
-                                      booking.instructions!,
-                                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            );
-                          }),
-
-                          const SizedBox(height: 40),
 
                           // Promo Code
                           if (offer.hasPromoCode) ...[
@@ -824,6 +793,15 @@ class OfferDetailScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.lg),
                           ],
 
+                          // MasonryGallery — replaces horizontal strip
+                          if (offer.gallery != null && offer.gallery!.isNotEmpty) ...[
+                            MasonryGallery(
+                              imageUrls: offer.gallery!.map((g) => g.url).toList(),
+                              headerLabel: AppLocalizations.of(context)!.galleryCount(offer.gallery!.length),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+
                           // Similar offers
                           Builder(
                             builder: (_) {
@@ -858,88 +836,23 @@ class OfferDetailScreen extends ConsumerWidget {
                             },
                           ),
 
-                          // Gallery
-                          if (offer.gallery != null && offer.gallery!.isNotEmpty) ...[
-                            Text(
-                              AppLocalizations.of(context)!.galleryCount(offer.gallery!.length),
-                              style: AppTypography.headlineSmall,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                          ],
+                          // Bottom padding for sticky CTA
+                          const SizedBox(height: 100),
                         ],
                       ),
-                    ),
-                  ),
-
-                  // Gallery horizontal
-                  if (offer.gallery != null && offer.gallery!.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 160,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                          itemCount: offer.gallery!.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) => Semantics(
-                            label: AppLocalizations.of(context)!.galleryImage,
-                            image: true,
-                            child: GestureDetector(
-                              onTap: () {
-                                FullscreenGallery.open(
-                                  context,
-                                  offer.gallery!.map((g) => g.url).toList(),
-                                  initialIndex: i,
-                                );
-                                final biz = offer.business;
-                                if (biz != null) {
-                                  AnalyticsService.trackClick(businessId: biz.id, offerId: offer.id, actionType: 'gallery');
-                                }
-                              },
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(AppSpacing.cardRadiusSm),
-                                child: CachedNetworkImage(
-                                  imageUrl: offer.gallery![i].url,
-                                width: 220,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(width: 220, color: AppColors.bgSecondary),
-                                errorWidget: (_, __, ___) => Container(
-                                  width: 220,
-                                  color: AppColors.bgSecondary,
-                                  child: const Icon(Icons.broken_image_outlined, color: AppColors.textTertiary),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Bottom padding for FAB
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 100,
                     ),
                   ),
                 ],
               ),
               ),
 
-              // Favorite FAB with bounce animation
-              if (isLoggedIn)
-                Positioned(
-                  bottom: MediaQuery.of(context).padding.bottom + AppSpacing.xxl,
-                  right: AppSpacing.pagePadding,
-                  child: AnimatedToggleFab(
-                    isActive: isFav,
-                    onTap: () => ref.read(favoritesProvider.notifier).toggleFavorite(offer.id),
-                    activeIcon: Icons.bookmark,
-                    inactiveIcon: Icons.bookmark_border,
-                    activeLabel: AppLocalizations.of(context)!.saved,
-                    inactiveLabel: AppLocalizations.of(context)!.save,
-                  ),
-                ),
+              // Sticky bottom CTA
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _buildOfferCta(context, offer),
+              ),
             ],
           );
         },
@@ -953,6 +866,89 @@ class OfferDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildOfferCta(BuildContext context, Offer offer) {
+    // Promo code offer — user reveals code inline
+    if (offer.hasPromoCode) {
+      return StickyBottomCta(
+        label: 'Profită acum',
+        icon: Icons.local_offer,
+        onTap: () {
+          // No-op: promo reveal button is inline on the screen
+        },
+      );
+    }
+
+    // Multi-platform booking methods (preferred)
+    final methods = offer.bookingMethods;
+    if (methods != null && methods.isNotEmpty) {
+      final first = methods.first;
+      if (first.isPhone) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.phone,
+          onTap: () => Launchers.call(first.value),
+        );
+      } else if (first.isWhatsApp) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.message,
+          onTap: () => Launchers.whatsApp(first.value),
+        );
+      } else {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.open_in_new,
+          onTap: () => Launchers.website(first.href),
+        );
+      }
+    }
+
+    // Legacy single booking object
+    final booking = offer.booking;
+    if (booking != null && booking.hasBooking) {
+      if (booking.phone != null) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.phone,
+          onTap: () => Launchers.call(booking.phone!),
+        );
+      } else if (booking.whatsapp != null) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.message,
+          onTap: () => Launchers.whatsApp(booking.whatsapp!),
+        );
+      } else if (booking.url != null) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.open_in_new,
+          onTap: () => Launchers.website(booking.url!),
+        );
+      }
+    }
+
+    // Fallback: business phone / website
+    final biz = offer.business;
+    if (biz != null) {
+      if (biz.phone != null && biz.phone!.isNotEmpty) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.phone,
+          onTap: () => Launchers.call(biz.phone!),
+        );
+      }
+      if (biz.website != null && biz.website!.isNotEmpty) {
+        return StickyBottomCta(
+          label: 'Profită acum',
+          icon: Icons.open_in_new,
+          onTap: () => Launchers.website(biz.website!),
+        );
+      }
+    }
+
+    return const SizedBox.shrink();
   }
 }
 

@@ -1272,6 +1272,7 @@ router.get("/business/:id", async (req, res) => {
       SELECT b.id, b.name, b.description, b.address, b.phone, b.website, b.lat, b.lng,
              b.logo_url, b.cover_image_url, b.is_verified, b.subscription_badge_type,
              b.booking_type, b.booking_phone, b.booking_whatsapp, b.booking_url, b.booking_instructions,
+             b.denumire_legala, b.cui, b.founded_year,
              c.id as city_id, c.name as city_name,
              cat.id as cat_id, cat.name as cat_name,
              COALESCE(AVG(r.rating), 0) as rating_avg,

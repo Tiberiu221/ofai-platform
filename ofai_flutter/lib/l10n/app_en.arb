@@ -467,5 +467,45 @@
 
   "savedSearchesTitle": "Saved Searches",
   "savedSearchesEmpty": "No saved searches",
-  "savedSearchesEmptySubtitle": "Save searches from Explore to get notified when new offers appear."
+  "savedSearchesEmptySubtitle": "Save searches from Explore to get notified when new offers appear.",
+
+  "tabOffers": "Offers",
+  "tabGallery": "Gallery",
+  "tabMenu": "Menu",
+  "tabSchedule": "Schedule",
+  "tabReviews": "Reviews",
+  "tabContact": "Contact",
+  "tabDetails": "Details",
+  "seeAllPhotos": "All >",
+  "photosCount": "Photos ({count})",
+  "@photosCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "expandHours": "See full schedule",
+  "collapseHours": "Collapse",
+  "legalEntity": "Legal entity",
+  "cuiLabel": "CUI / CIF",
+  "foundedYearLabel": "Founded",
+  "verifiedSince": "Verified since",
+  "callNowCta": "Call now",
+  "bookNowCta": "Book now",
+  "navigateCta": "Navigate",
+  "noPhotos": "No photos yet",
+  "credibilityTitle": "Legal information",
+  "stepChooseOffer": "Choose offer",
+  "stepChooseOfferDesc": "Check details and conditions",
+  "stepContact": "Contact",
+  "stepContactDesc": "Call or book online",
+  "stepEnjoy": "Enjoy!",
+  "stepEnjoyDesc": "Show the offer and enjoy the discount",
+  "stepCopyCode": "Copy code",
+  "stepCopyCodeDesc": "Copy the promo code",
+  "stepUseCode": "Use code",
+  "stepUseCodeDesc": "Use the code at checkout",
+  "enjoyNowCta": "Get it now",
+  "revealCodeCta": "Reveal code",
+  "openNow": "Open now",
+  "closedNow": "Closed"
 }
