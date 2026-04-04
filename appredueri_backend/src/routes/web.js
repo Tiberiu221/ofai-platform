@@ -123,6 +123,7 @@ async function _getDealOfDay() {
         AND o.moderation_status IN ('approved', 'auto_approved')
       LIMIT 1
     `);
+    // Fallback: smart daily rotation (same algorithm as mobile API)
     if (dodResult.rows.length === 0) {
       dodResult = await pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
@@ -131,15 +132,32 @@ async function _getDealOfDay() {
                ci2.name as city_name,
                b.subscription_badge_type as business_badge_type,
                b.is_verified as business_verified,
-               COALESCE(fav_agg.cnt, 0) as save_count
+               COALESCE(fav_recent.cnt, 0) as save_count
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities ci2 ON b.city_id = ci2.id
-        LEFT JOIN (SELECT offer_id, COUNT(*) AS cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
-        LEFT JOIN (SELECT offer_id, COUNT(*) AS cnt FROM business_clicks GROUP BY offer_id) click_agg ON click_agg.offer_id = o.id
+        LEFT JOIN (
+          SELECT offer_id, COUNT(*) as cnt FROM favorite_offers
+          WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY offer_id
+        ) fav_recent ON fav_recent.offer_id = o.id
+        LEFT JOIN (
+          SELECT offer_id, COUNT(*) as cnt FROM business_clicks
+          WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY offer_id
+        ) click_recent ON click_recent.offer_id = o.id
+        LEFT JOIN business_subscriptions bsub
+          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+        LEFT JOIN subscription_plans splan
+          ON splan.id = bsub.plan_id
         WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND o.moderation_status IN ('approved', 'auto_approved')
-        ORDER BY COALESCE(fav_agg.cnt, 0) + COALESCE(click_agg.cnt, 0) DESC
+          AND o.start_date <= CURRENT_DATE
+        ORDER BY (
+          (1.0 - LEAST(30, EXTRACT(EPOCH FROM (NOW() - o.start_date)) / 86400.0) / 30.0) * 0.3
+          + LEAST(1.0, (COALESCE(fav_recent.cnt, 0) + COALESCE(click_recent.cnt, 0)) / 20.0) * 0.25
+          + LEAST(1.0, COALESCE(o.discount_value, 0) / 50.0) * 0.15
+          + CASE WHEN splan.slug = 'premium' THEN 0.2 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
+          + (hashtext(o.id::text || CURRENT_DATE::text) & x'7FFFFFFF'::int)::float / 2147483647.0 * 0.1
+        ) DESC
         LIMIT 1
       `);
     }
@@ -239,8 +257,11 @@ async function _getPromotedOffers(dealOfDay) {
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                b.subscription_badge_type, b.is_verified,
                ci.name, cat.name, o.logo_url
-      ORDER BY RANDOM()
-      LIMIT 3
+      ORDER BY (
+        CASE WHEN splan.slug = 'premium' THEN 0.6 ELSE 0 END
+        + RANDOM() * 0.4
+      ) DESC
+      LIMIT 4
     `, params);
     return result.rows;
   } catch (e) { return []; /* promoted section is non-critical */ }

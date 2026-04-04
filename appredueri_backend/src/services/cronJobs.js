@@ -711,8 +711,8 @@ function initCronJobs() {
     }
   });
 
-  // 15. Update category rankings for home feed — Every 2 days at 02:00 UTC
-  cron.schedule('0 2 */2 * *', async () => {
+  // 15. Update category rankings for home feed — Daily at 02:00 UTC
+  cron.schedule('0 2 * * *', async () => {
     try {
       const count = await computeCategoryRankings();
       console.log(`[Cron] Category rankings updated: ${count} categories ranked`);

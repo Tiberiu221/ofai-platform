@@ -181,102 +181,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
 
-              // Categorii
-              SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        title: AppLocalizations.of(context)!.categories,
-                        onViewAll: () => context.push('/categories'),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      categoriesAsync.when(
-                        data: (categories) => SizedBox(
-                          height: 44,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                            itemCount: categories.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                            itemBuilder: (context, index) {
-                              final cat = categories[index];
-                              return CategoryChip(
-                                category: cat,
-                                onTap: () => context.go('/explore?category=${cat.id}'),
-                              );
-                            },
-                          ),
-                        ),
-                        loading: () => const SizedBox(height: 44),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-
-              // Orase
-              SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        title: AppLocalizations.of(context)!.discoverCities,
-                        onViewAll: () => context.push('/cities'),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      citiesAsync.when(
-                        data: (cities) => SizedBox(
-                          height: 40,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                            itemCount: cities.length,
-                            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-                            itemBuilder: (context, index) {
-                              final city = cities[index];
-                              return GestureDetector(
-                                onTap: () => context.push('/explore?city=${city.id}'),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.lg,
-                                    vertical: AppSpacing.sm,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.bgCard,
-                                    borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
-                                    border: Border.all(color: AppColors.border),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.location_on_outlined, size: 16, color: AppColors.accent),
-                                      const SizedBox(width: AppSpacing.xs),
-                                      Text(city.name, style: AppTypography.labelMedium),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        loading: () => const SizedBox(height: 40),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-
               // Deal of the Day
               SliverToBoxAdapter(
                 child: dealAsync.when(
@@ -359,6 +263,183 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                   offer: offers[index],
                                   horizontal: true,
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ),
+
+              // Categorii
+              SliverToBoxAdapter(
+                child: FadeInItem(
+                  index: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        title: AppLocalizations.of(context)!.categories,
+                        onViewAll: () => context.push('/categories'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      categoriesAsync.when(
+                        data: (categories) => SizedBox(
+                          height: 44,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                            itemCount: categories.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                            itemBuilder: (context, index) {
+                              final cat = categories[index];
+                              return CategoryChip(
+                                category: cat,
+                                onTap: () => context.go('/explore?category=${cat.id}'),
+                              );
+                            },
+                          ),
+                        ),
+                        loading: () => const SizedBox(height: 44),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+              // Location banner (hidden when location granted or dismissed)
+              SliverToBoxAdapter(child: LocationBanner()),
+
+              // Offers section
+              SliverToBoxAdapter(
+                child: FadeInItem(
+                  index: 6,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SectionHeader(
+                        title: isLoggedIn ? AppLocalizations.of(context)!.forYou : AppLocalizations.of(context)!.popularOffers,
+                        onViewAll: () => context.go('/explore'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      offersAsync.when(
+                        data: (offers) {
+                          if (offers.isEmpty) {
+                            return EmptyState(
+                              icon: Icons.local_offer_outlined,
+                              title: AppLocalizations.of(context)!.noOffersAvailable,
+                              subtitle: AppLocalizations.of(context)!.checkBackLater,
+                            );
+                          }
+                          return SizedBox(
+                            height: 288,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                              itemCount: offers.length,
+                              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+                              itemBuilder: (context, index) => OfferCard(
+                                offer: offers[index],
+                                horizontal: true,
+                              ),
+                            ),
+                          );
+                        },
+                        loading: () => const SkeletonHorizontalList(),
+                        error: (err, _) => Padding(
+                          padding: AppSpacing.pageH,
+                          child: w.ErrorState(
+                            message: AppLocalizations.of(context)!.errorLoadingOffers,
+                            onRetry: () {
+                              ref.invalidate(feedProvider);
+                              ref.invalidate(popularOffersProvider);
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+
+              // Recently Viewed (hidden when empty)
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final recentAsync = ref.watch(recentlyViewedOffersProvider);
+                    return recentAsync.when(
+                      data: (offers) {
+                        if (offers.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(title: AppLocalizations.of(context)!.recentlyViewed),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              height: 288,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppSpacing.pagePadding,
+                                ),
+                                itemCount: offers.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(width: AppSpacing.md),
+                                itemBuilder: (context, index) => OfferCard(
+                                  offer: offers[index],
+                                  horizontal: true,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ),
+
+              // Promoted Offers (Premium businesses)
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final promotedAsync = ref.watch(promotedOffersProvider);
+                    return promotedAsync.when(
+                      data: (promoted) {
+                        if (promoted.isEmpty) return const SizedBox.shrink();
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(title: AppLocalizations.of(context)!.promotedOffers),
+                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(
+                              height: 288,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                                itemCount: promoted.length,
+                                separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
+                                itemBuilder: (_, i) {
+                                  final screenWidth = MediaQuery.of(context).size.width;
+                                  final cardWidth = screenWidth * 0.7 < 280 ? screenWidth * 0.7 : 280.0;
+                                  return SizedBox(
+                                    width: cardWidth,
+                                    child: OfferCard(offer: promoted[i], horizontal: true),
+                                  );
+                                },
                               ),
                             ),
                             const SizedBox(height: AppSpacing.xxl),
@@ -462,95 +543,55 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 ),
               ),
 
-              // Recently Viewed (hidden when empty)
-              SliverToBoxAdapter(
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final recentAsync = ref.watch(recentlyViewedOffersProvider);
-                    return recentAsync.when(
-                      data: (offers) {
-                        if (offers.isEmpty) return const SizedBox.shrink();
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(title: AppLocalizations.of(context)!.recentlyViewed),
-                            const SizedBox(height: AppSpacing.md),
-                            SizedBox(
-                              height: 288,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.pagePadding,
-                                ),
-                                itemCount: offers.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(width: AppSpacing.md),
-                                itemBuilder: (context, index) => OfferCard(
-                                  offer: offers[index],
-                                  horizontal: true,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxl),
-                          ],
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    );
-                  },
-                ),
-              ),
-
-              // Location banner (hidden when location granted or dismissed)
-              SliverToBoxAdapter(child: LocationBanner()),
-
-              // Offers section
+              // Orase
               SliverToBoxAdapter(
                 child: FadeInItem(
-                  index: 6,
+                  index: 4,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SectionHeader(
-                        title: isLoggedIn ? AppLocalizations.of(context)!.forYou : AppLocalizations.of(context)!.popularOffers,
-                        onViewAll: () => context.go('/explore'),
+                        title: AppLocalizations.of(context)!.discoverCities,
+                        onViewAll: () => context.push('/cities'),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      offersAsync.when(
-                        data: (offers) {
-                          if (offers.isEmpty) {
-                            return EmptyState(
-                              icon: Icons.local_offer_outlined,
-                              title: AppLocalizations.of(context)!.noOffersAvailable,
-                              subtitle: AppLocalizations.of(context)!.checkBackLater,
-                            );
-                          }
-                          return SizedBox(
-                            height: 288,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                              itemCount: offers.length,
-                              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
-                              itemBuilder: (context, index) => OfferCard(
-                                offer: offers[index],
-                                horizontal: true,
-                              ),
-                            ),
-                          );
-                        },
-                        loading: () => const SkeletonHorizontalList(),
-                        error: (err, _) => Padding(
-                          padding: AppSpacing.pageH,
-                          child: w.ErrorState(
-                            message: AppLocalizations.of(context)!.errorLoadingOffers,
-                            onRetry: () {
-                              ref.invalidate(feedProvider);
-                              ref.invalidate(popularOffersProvider);
+                      citiesAsync.when(
+                        data: (cities) => SizedBox(
+                          height: 40,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
+                            itemCount: cities.length,
+                            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+                            itemBuilder: (context, index) {
+                              final city = cities[index];
+                              return GestureDetector(
+                                onTap: () => context.push('/explore?city=${city.id}'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.lg,
+                                    vertical: AppSpacing.sm,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.bgCard,
+                                    borderRadius: BorderRadius.circular(AppSpacing.pillRadius),
+                                    border: Border.all(color: AppColors.border),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.location_on_outlined, size: 16, color: AppColors.accent),
+                                      const SizedBox(width: AppSpacing.xs),
+                                      Text(city.name, style: AppTypography.labelMedium),
+                                    ],
+                                  ),
+                                ),
+                              );
                             },
                           ),
                         ),
+                        loading: () => const SizedBox(height: 40),
+                        error: (_, __) => const SizedBox.shrink(),
                       ),
                     ],
                   ),
@@ -558,47 +599,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
-
-              // Promoted Offers (Premium businesses)
-              SliverToBoxAdapter(
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final promotedAsync = ref.watch(promotedOffersProvider);
-                    return promotedAsync.when(
-                      data: (promoted) {
-                        if (promoted.isEmpty) return const SizedBox.shrink();
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SectionHeader(title: AppLocalizations.of(context)!.promotedOffers),
-                            const SizedBox(height: AppSpacing.md),
-                            SizedBox(
-                              height: 288,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.pagePadding),
-                                itemCount: promoted.length,
-                                separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.md),
-                                itemBuilder: (_, i) {
-                                  final screenWidth = MediaQuery.of(context).size.width;
-                                  final cardWidth = screenWidth * 0.7 < 280 ? screenWidth * 0.7 : 280.0;
-                                  return SizedBox(
-                                    width: cardWidth,
-                                    child: OfferCard(offer: promoted[i], horizontal: true),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxl),
-                          ],
-                        );
-                      },
-                      loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    );
-                  },
-                ),
-              ),
 
               // Category Feed sections
               SliverToBoxAdapter(

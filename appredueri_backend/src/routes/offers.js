@@ -157,9 +157,12 @@ router.get("/", optionalAuth, async (req, res) => {
     if (sort === "ending_soon") orderBy = searchBoost + "o.end_date ASC";
     // splan.slug is NULL when business has no active subscription (LEFT JOIN);
     // NULL comparisons fall through to ELSE 0 — free businesses get no boost.
+    // Popular sort: rating (35%) + tier boost + recent engagement (15%) + light random (10%)
     if (sort === "popular") orderBy = `(
-      (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id)
+      (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE business_id = b.id) * 0.35
       + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
+      + LEAST(1.0, COALESCE(fav_agg.recent_favs, 0) / 10.0) * 0.15
+      + RANDOM() * 0.1
     ) DESC NULLS LAST, o.id DESC`;
 
     const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
@@ -450,7 +453,10 @@ router.get("/feed", auth, async (req, res) => {
           AND (NOT EXISTS (SELECT 1 FROM offer_locations ol WHERE ol.offer_id = o.id) OR bl.id IN (SELECT ol.location_id FROM offer_locations ol WHERE ol.offer_id = o.id))
       ) locs ON true
       ${whereClause}
-      ORDER BY o.id DESC
+      ORDER BY (
+        CASE WHEN o.start_date > CURRENT_DATE - INTERVAL '3 days' THEN 0.3 ELSE 0 END
+        + RANDOM() * 0.15
+      ) DESC, o.id DESC
       LIMIT 50
     `;
 
@@ -586,6 +592,7 @@ router.get("/category-feed", searchLimiter, async (req, res) => {
         ORDER BY (
           COALESCE(rev_agg.rating_avg, 0)
           + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
+          + RANDOM() * 0.3
         ) DESC NULLS LAST, o.id DESC
         LIMIT 20
       `, [cat.category_id]);
@@ -672,7 +679,9 @@ router.get("/deal-of-day", async (req, res) => {
       LIMIT 1
     `);
 
-    // Fallback: most engagement
+    // Fallback: smart daily rotation with scoring algorithm
+    // Uses hashtext(offer_id + date) for deterministic daily rotation —
+    // same offer all day, different offer tomorrow, no tracking table needed
     if (result.rows.length === 0) {
       result = await pool.query(`
         SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
@@ -681,15 +690,40 @@ router.get("/deal-of-day", async (req, res) => {
                b.cover_image_url as business_cover, b.is_verified as business_verified,
                b.subscription_badge_type as business_badge_type,
                c.name as city_name,
-               COALESCE(fav_agg.cnt, 0) as save_count
+               COALESCE(fav_recent.cnt, 0) as save_count
         FROM offers o
         JOIN businesses b ON o.business_id = b.id
         LEFT JOIN cities c ON b.city_id = c.id
-        LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
-        LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM business_clicks GROUP BY offer_id) click_agg ON click_agg.offer_id = o.id
+        LEFT JOIN (
+          SELECT offer_id, COUNT(*) as cnt FROM favorite_offers
+          WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY offer_id
+        ) fav_recent ON fav_recent.offer_id = o.id
+        LEFT JOIN (
+          SELECT offer_id, COUNT(*) as cnt FROM business_clicks
+          WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY offer_id
+        ) click_recent ON click_recent.offer_id = o.id
+        LEFT JOIN business_subscriptions bsub
+          ON bsub.business_id = b.id AND bsub.status IN ('active', 'trial')
+        LEFT JOIN subscription_plans splan
+          ON splan.id = bsub.plan_id
         WHERE o.is_active = TRUE
+          AND o.moderation_status IN ('approved', 'auto_approved')
           AND (o.end_date IS NULL OR o.end_date > CURRENT_DATE)
-        ORDER BY COALESCE(fav_agg.cnt, 0) + COALESCE(click_agg.cnt, 0) DESC
+          AND o.start_date <= CURRENT_DATE
+        ORDER BY (
+          -- Recency: newer offers score higher (0-0.3)
+          (1.0 - LEAST(30, EXTRACT(EPOCH FROM (NOW() - o.start_date)) / 86400.0) / 30.0) * 0.3
+          -- Recent engagement 7d: saves + clicks (0-0.25)
+          + LEAST(1.0, (COALESCE(fav_recent.cnt, 0) + COALESCE(click_recent.cnt, 0)) / 20.0) * 0.25
+          -- Discount value (0-0.15)
+          + LEAST(1.0, COALESCE(o.discount_value, 0) / 50.0) * 0.15
+          -- Tier boost (0-0.2)
+          + CASE WHEN splan.slug = 'premium' THEN 0.2
+                 WHEN splan.slug = 'standard' THEN 0.1
+                 ELSE 0 END
+          -- Date-hash rotation: deterministic daily shuffle (0-0.1)
+          + (hashtext(o.id::text || CURRENT_DATE::text) & x'7FFFFFFF'::int)::float / 2147483647.0 * 0.1
+        ) DESC
         LIMIT 1
       `);
     }
