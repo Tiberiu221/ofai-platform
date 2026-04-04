@@ -43,17 +43,93 @@ class BusinessDetailScreen extends ConsumerStatefulWidget {
 class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
     with TickerProviderStateMixin {
   late final TabController _tabController;
+  late final ScrollController _scrollController;
+
+  // GlobalKeys for each section — used for scroll-to and scroll spy
+  final _offersKey = GlobalKey();
+  final _galleryKey = GlobalKey();
+  final _menuKey = GlobalKey();
+  final _scheduleKey = GlobalKey();
+  final _reviewsKey = GlobalKey();
+  final _contactKey = GlobalKey();
+  final _detailsKey = GlobalKey();
+
+  bool _isScrollingToSection = false;
+
+  List<GlobalKey> get _sectionKeys => [
+        _offersKey,
+        _galleryKey,
+        _menuKey,
+        _scheduleKey,
+        _reviewsKey,
+        _contactKey,
+        _detailsKey,
+      ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 7, vsync: this);
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scroll spy — update tab index as user scrolls
+  // ---------------------------------------------------------------------------
+
+  void _onScroll() {
+    if (_isScrollingToSection) return;
+    if (!mounted) return;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final threshold = screenHeight * 0.4;
+
+    for (int i = _sectionKeys.length - 1; i >= 0; i--) {
+      final keyContext = _sectionKeys[i].currentContext;
+      if (keyContext != null) {
+        final box = keyContext.findRenderObject() as RenderBox?;
+        if (box == null) continue;
+        final position = box.localToGlobal(Offset.zero);
+        if (position.dy < threshold) {
+          if (_tabController.index != i) {
+            _tabController.animateTo(i);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tab tap — scroll to section
+  // ---------------------------------------------------------------------------
+
+  void _onTabTapped(int index) {
+    final keyContext = _sectionKeys[index].currentContext;
+    if (keyContext == null) return;
+
+    _isScrollingToSection = true;
+    _tabController.animateTo(index);
+
+    Scrollable.ensureVisible(
+      keyContext,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+      alignment: 0.0,
+    ).then((_) {
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) _isScrollingToSection = false;
+      });
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -80,383 +156,398 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
 
           return Stack(
             children: [
-              NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) => [
-                  // Cover with parallax
-                  SliverAppBar(
-                    expandedHeight: 220,
-                    pinned: true,
-                    stretch: true,
-                    backgroundColor: AppColors.bgPrimary,
-                    actions: [
-                      // Follow / unfollow icon button in app bar
-                      if (isLoggedIn)
+              RefreshIndicator(
+                color: AppColors.accent,
+                backgroundColor: AppColors.bgCard,
+                onRefresh: () async {
+                  ref.invalidate(businessDetailProvider(widget.businessId));
+                },
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    // Cover with parallax
+                    SliverAppBar(
+                      expandedHeight: 220,
+                      pinned: true,
+                      stretch: true,
+                      backgroundColor: AppColors.bgPrimary,
+                      actions: [
+                        // Follow / unfollow icon button in app bar
+                        if (isLoggedIn)
+                          Semantics(
+                            label: isSub
+                                ? AppLocalizations.of(context)!.followed
+                                : AppLocalizations.of(context)!.follow,
+                            button: true,
+                            child: IconButton(
+                              icon: Icon(
+                                isSub
+                                    ? Icons.notifications_active
+                                    : Icons.notifications_none,
+                                color: isSub ? AppColors.accent : null,
+                              ),
+                              onPressed: () => ref
+                                  .read(followedBusinessesProvider.notifier)
+                                  .toggleFollow(business.id),
+                            ),
+                          ),
                         Semantics(
-                          label: isSub
-                              ? AppLocalizations.of(context)!.followed
-                              : AppLocalizations.of(context)!.follow,
+                          label: AppLocalizations.of(context)!.shareBusiness,
                           button: true,
                           child: IconButton(
-                            icon: Icon(
-                              isSub
-                                  ? Icons.notifications_active
-                                  : Icons.notifications_none,
-                              color: isSub ? AppColors.accent : null,
-                            ),
-                            onPressed: () => ref
-                                .read(followedBusinessesProvider.notifier)
-                                .toggleFollow(business.id),
+                            icon: const Icon(Icons.share_outlined),
+                            onPressed: () {
+                              Launchers.shareBusiness(business.name, business.id);
+                              AnalyticsService.trackClick(
+                                  businessId: business.id, actionType: 'share');
+                            },
                           ),
                         ),
-                      Semantics(
-                        label: AppLocalizations.of(context)!.shareBusiness,
-                        button: true,
-                        child: IconButton(
-                          icon: const Icon(Icons.share_outlined),
-                          onPressed: () {
-                            Launchers.shareBusiness(business.name, business.id);
-                            AnalyticsService.trackClick(
-                                businessId: business.id, actionType: 'share');
-                          },
+                        if (isLoggedIn)
+                          Semantics(
+                            label: AppLocalizations.of(context)!.reportBusiness,
+                            button: true,
+                            child: PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert),
+                              onSelected: (value) async {
+                                if (value == 'report') {
+                                  final sent = await showReportDialog(
+                                    context: context,
+                                    targetType: 'business',
+                                    targetId: business.id,
+                                  );
+                                  if (sent && context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(AppLocalizations.of(
+                                                  context)!
+                                              .reportSent)),
+                                    );
+                                  }
+                                }
+                              },
+                              itemBuilder: (ctx) => [
+                                PopupMenuItem(
+                                  value: 'report',
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.flag_outlined,
+                                          size: 20,
+                                          color: AppColors.textSecondary),
+                                      const SizedBox(width: 8),
+                                      Text(AppLocalizations.of(ctx)!.report),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                      flexibleSpace: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final top = constraints.biggest.height;
+                          final expandedHeight =
+                              220 + MediaQuery.of(context).padding.top;
+                          final collapsedHeight =
+                              kToolbarHeight + MediaQuery.of(context).padding.top;
+                          final scrollFraction =
+                              ((expandedHeight - top) / (expandedHeight - collapsedHeight))
+                                  .clamp(0.0, 1.0);
+                          final parallaxOffset = scrollFraction * 30;
+
+                          return FlexibleSpaceBar(
+                            background: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Transform.translate(
+                                  offset: Offset(0, parallaxOffset),
+                                  child: coverUrl != null && coverUrl.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: coverUrl,
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) => Container(
+                                              color: AppColors.bgSecondary),
+                                          errorWidget: (_, __, ___) => Container(
+                                              color: AppColors.bgSecondary),
+                                        )
+                                      : Container(color: AppColors.bgSecondary),
+                                ),
+                                const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Color(0xCC080808)
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Logo overlay — bottom left on cover
+                                Positioned(
+                                  bottom: 16,
+                                  left: 20,
+                                  child: Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color: AppColors.bgPrimary, width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color:
+                                              Colors.black.withValues(alpha: 0.3),
+                                          blurRadius: 6,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: business.logoUrl != null
+                                          ? CachedNetworkImage(
+                                              imageUrl: business.logoUrl!,
+                                              fit: BoxFit.cover,
+                                              errorWidget: (_, __, ___) =>
+                                                  _Initial(business.name),
+                                            )
+                                          : _Initial(business.name),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // Profile header
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.pagePadding,
+                            AppSpacing.pagePadding,
+                            AppSpacing.pagePadding,
+                            0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // "Manage on Web" banner for business owners
+                            if (business.isOwner) ...[
+                              GestureDetector(
+                                onTap: () => Launchers.website(
+                                    'https://ofai.ro/portal/${business.id}'),
+                                child: Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(
+                                      bottom: AppSpacing.lg),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.md, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(
+                                        AppSpacing.cardRadiusSm),
+                                    border: Border.all(
+                                        color: AppColors.accent
+                                            .withValues(alpha: 0.25)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_outlined,
+                                          size: 20, color: AppColors.accent),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              AppLocalizations.of(context)!
+                                                  .thisIsYourBusiness,
+                                              style:
+                                                  AppTypography.labelMedium
+                                                      .copyWith(
+                                                          color: AppColors.accent),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              AppLocalizations.of(context)!
+                                                  .manageOnWeb,
+                                              style: AppTypography.bodySmall
+                                                  .copyWith(
+                                                      color: AppColors
+                                                          .textSecondary),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(Icons.open_in_new,
+                                          size: 18, color: AppColors.accent),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            // Name with badge
+                            Row(
+                              children: [
+                                if (business.hasBadge) ...[
+                                  GestureDetector(
+                                    onTap: () => _showBadgeInfo(
+                                        context, business.badgeType!),
+                                    child: SubscriptionBadge(
+                                        badgeType: business.badgeType, size: 24),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Expanded(
+                                  child: Semantics(
+                                    label: 'Business: ${business.name}',
+                                    header: true,
+                                    child: Text(business.name,
+                                        style: AppTypography.headlineLarge),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Semantics(
+                              label:
+                                  '${business.categoryName}, ${business.cityName}',
+                              child: Text(
+                                [business.categoryName, business.cityName]
+                                    .where((s) => s.isNotEmpty)
+                                    .join(' \u2022 '),
+                                style: AppTypography.bodyMedium
+                                    .copyWith(color: AppColors.textSecondary),
+                              ),
+                            ),
+
+                            // Follower count
+                            if (business.followerCount != null &&
+                                business.followerCount! >= 3) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.people_outline,
+                                      size: 14, color: AppColors.textTertiary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    AppLocalizations.of(context)!.followersCount(
+                                        business.followerCount!),
+                                    style: AppTypography.caption,
+                                  ),
+                                ],
+                              ),
+                            ],
+
+                            // Rating row
+                            const SizedBox(height: AppSpacing.lg),
+                            Builder(builder: (_) {
+                              final hasRating =
+                                  business.rating != null && business.rating! > 0;
+                              final rating = business.rating ?? 0.0;
+                              return Row(
+                                children: [
+                                  ...List.generate(
+                                      5,
+                                      (i) => Icon(
+                                            i < rating.round()
+                                                ? Icons.star
+                                                : Icons.star_border,
+                                            size: 20,
+                                            color: i < rating.round()
+                                                ? AppColors.accent
+                                                : AppColors.textTertiary,
+                                          )),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  if (hasRating) ...[
+                                    Text(
+                                      rating.toStringAsFixed(1),
+                                      style: AppTypography.labelLarge
+                                          .copyWith(color: AppColors.accent),
+                                    ),
+                                    if (business.ratingCount != null)
+                                      Text(
+                                        ' ${AppLocalizations.of(context)!.reviewsCount(business.ratingCount!)}',
+                                        style: AppTypography.caption,
+                                      ),
+                                  ] else ...[
+                                    Text(
+                                      'Nicio recenzie',
+                                      style: AppTypography.caption.copyWith(
+                                          color: AppColors.textTertiary),
+                                    ),
+                                  ],
+                                ],
+                              );
+                            }),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
                         ),
                       ),
-                      if (isLoggedIn)
-                        Semantics(
-                          label: AppLocalizations.of(context)!.reportBusiness,
-                          button: true,
-                          child: PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert),
-                            onSelected: (value) async {
-                              if (value == 'report') {
-                                final sent = await showReportDialog(
-                                  context: context,
-                                  targetType: 'business',
-                                  targetId: business.id,
-                                );
-                                if (sent && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text(AppLocalizations.of(
-                                                context)!
-                                            .reportSent)),
-                                  );
-                                }
-                              }
-                            },
-                            itemBuilder: (ctx) => [
-                              PopupMenuItem(
-                                value: 'report',
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.flag_outlined,
-                                        size: 20,
-                                        color: AppColors.textSecondary),
-                                    const SizedBox(width: 8),
-                                    Text(AppLocalizations.of(ctx)!.report),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                    flexibleSpace: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final top = constraints.biggest.height;
-                        final expandedHeight =
-                            220 + MediaQuery.of(context).padding.top;
-                        final collapsedHeight =
-                            kToolbarHeight + MediaQuery.of(context).padding.top;
-                        final scrollFraction =
-                            ((expandedHeight - top) / (expandedHeight - collapsedHeight))
-                                .clamp(0.0, 1.0);
-                        final parallaxOffset = scrollFraction * 30;
-
-                        return FlexibleSpaceBar(
-                          background: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              Transform.translate(
-                                offset: Offset(0, parallaxOffset),
-                                child: coverUrl != null && coverUrl.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: coverUrl,
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(
-                                            color: AppColors.bgSecondary),
-                                        errorWidget: (_, __, ___) => Container(
-                                            color: AppColors.bgSecondary),
-                                      )
-                                    : Container(color: AppColors.bgSecondary),
-                              ),
-                              const DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Color(0xCC080808)
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              // Logo overlay — bottom left on cover
-                              Positioned(
-                                bottom: 16,
-                                left: 20,
-                                child: Container(
-                                  width: 56,
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: AppColors.bgPrimary, width: 2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color:
-                                            Colors.black.withValues(alpha: 0.3),
-                                        blurRadius: 6,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: business.logoUrl != null
-                                        ? CachedNetworkImage(
-                                            imageUrl: business.logoUrl!,
-                                            fit: BoxFit.cover,
-                                            errorWidget: (_, __, ___) =>
-                                                _Initial(business.name),
-                                          )
-                                        : _Initial(business.name),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
                     ),
-                  ),
 
-                  // Profile header
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.pagePadding,
-                          AppSpacing.pagePadding,
-                          AppSpacing.pagePadding,
-                          0),
+                    // Pinned tab bar
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _TabBarDelegate(
+                        TabBar(
+                          controller: _tabController,
+                          isScrollable: true,
+                          labelColor: AppColors.accent,
+                          unselectedLabelColor: AppColors.textSecondary,
+                          indicatorColor: AppColors.accent,
+                          indicatorSize: TabBarIndicatorSize.tab,
+                          indicatorWeight: 2,
+                          labelStyle: AppTypography.labelMedium,
+                          splashFactory: NoSplash.splashFactory,
+                          dividerColor: Colors.transparent,
+                          tabAlignment: TabAlignment.start,
+                          onTap: _onTabTapped,
+                          tabs: const [
+                            Tab(text: 'Oferte'),
+                            Tab(text: 'Galerie'),
+                            Tab(text: 'Meniu'),
+                            Tab(text: 'Program'),
+                            Tab(text: 'Recenzii'),
+                            Tab(text: 'Contact'),
+                            Tab(text: 'Detalii'),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // All sections in a single scrollable column
+                    SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // "Manage on Web" banner for business owners
-                          if (business.isOwner) ...[
-                            GestureDetector(
-                              onTap: () => Launchers.website(
-                                  'https://ofai.ro/portal/${business.id}'),
-                              child: Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(
-                                    bottom: AppSpacing.lg),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.md, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(
-                                      AppSpacing.cardRadiusSm),
-                                  border: Border.all(
-                                      color: AppColors.accent
-                                          .withValues(alpha: 0.25)),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_outlined,
-                                        size: 20, color: AppColors.accent),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            AppLocalizations.of(context)!
-                                                .thisIsYourBusiness,
-                                            style:
-                                                AppTypography.labelMedium
-                                                    .copyWith(
-                                                        color: AppColors.accent),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            AppLocalizations.of(context)!
-                                                .manageOnWeb,
-                                            style: AppTypography.bodySmall
-                                                .copyWith(
-                                                    color: AppColors
-                                                        .textSecondary),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(Icons.open_in_new,
-                                        size: 18, color: AppColors.accent),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-
-                          // Name with badge
-                          Row(
-                            children: [
-                              if (business.hasBadge) ...[
-                                GestureDetector(
-                                  onTap: () => _showBadgeInfo(
-                                      context, business.badgeType!),
-                                  child: SubscriptionBadge(
-                                      badgeType: business.badgeType, size: 24),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              Expanded(
-                                child: Semantics(
-                                  label: 'Business: ${business.name}',
-                                  header: true,
-                                  child: Text(business.name,
-                                      style: AppTypography.headlineLarge),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Semantics(
-                            label:
-                                '${business.categoryName}, ${business.cityName}',
-                            child: Text(
-                              [business.categoryName, business.cityName]
-                                  .where((s) => s.isNotEmpty)
-                                  .join(' \u2022 '),
-                              style: AppTypography.bodyMedium
-                                  .copyWith(color: AppColors.textSecondary),
-                            ),
-                          ),
-
-                          // Follower count
-                          if (business.followerCount != null &&
-                              business.followerCount! >= 3) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.people_outline,
-                                    size: 14, color: AppColors.textTertiary),
-                                const SizedBox(width: 4),
-                                Text(
-                                  AppLocalizations.of(context)!.followersCount(
-                                      business.followerCount!),
-                                  style: AppTypography.caption,
-                                ),
-                              ],
-                            ),
-                          ],
-
-                          // Rating row
-                          const SizedBox(height: AppSpacing.lg),
-                          Builder(builder: (_) {
-                            final hasRating =
-                                business.rating != null && business.rating! > 0;
-                            final rating = business.rating ?? 0.0;
-                            return Row(
-                              children: [
-                                ...List.generate(
-                                    5,
-                                    (i) => Icon(
-                                          i < rating.round()
-                                              ? Icons.star
-                                              : Icons.star_border,
-                                          size: 20,
-                                          color: i < rating.round()
-                                              ? AppColors.accent
-                                              : AppColors.textTertiary,
-                                        )),
-                                const SizedBox(width: AppSpacing.sm),
-                                if (hasRating) ...[
-                                  Text(
-                                    rating.toStringAsFixed(1),
-                                    style: AppTypography.labelLarge
-                                        .copyWith(color: AppColors.accent),
-                                  ),
-                                  if (business.ratingCount != null)
-                                    Text(
-                                      ' ${AppLocalizations.of(context)!.reviewsCount(business.ratingCount!)}',
-                                      style: AppTypography.caption,
-                                    ),
-                                ] else ...[
-                                  Text(
-                                    'Nicio recenzie',
-                                    style: AppTypography.caption.copyWith(
-                                        color: AppColors.textTertiary),
-                                  ),
-                                ],
-                              ],
-                            );
-                          }),
-                          const SizedBox(height: AppSpacing.md),
+                          _buildOffersSection(context, business, isLoggedIn),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildGallerySection(context, business),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildMenuSection(context, business),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildScheduleSection(context, business),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildReviewsSection(
+                              context, ref, business, reviewsState, isLoggedIn),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildContactSection(context, business),
+                          const SizedBox(height: AppSpacing.xxl),
+                          _buildDetailsSection(context, business),
+                          // Bottom clearance for sticky CTA
+                          const SizedBox(height: 100),
                         ],
                       ),
                     ),
-                  ),
-
-                  // Pinned tab bar
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _TabBarDelegate(
-                      TabBar(
-                        controller: _tabController,
-                        isScrollable: true,
-                        labelColor: AppColors.accent,
-                        unselectedLabelColor: AppColors.textSecondary,
-                        indicatorColor: AppColors.accent,
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        indicatorWeight: 2,
-                        labelStyle: AppTypography.labelMedium,
-                        splashFactory: NoSplash.splashFactory,
-                        dividerColor: Colors.transparent,
-                        tabAlignment: TabAlignment.start,
-                        tabs: const [
-                          Tab(text: 'Oferte'),
-                          Tab(text: 'Galerie'),
-                          Tab(text: 'Meniu'),
-                          Tab(text: 'Program'),
-                          Tab(text: 'Recenzii'),
-                          Tab(text: 'Contact'),
-                          Tab(text: 'Detalii'),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                body: RefreshIndicator(
-                  color: AppColors.accent,
-                  backgroundColor: AppColors.bgCard,
-                  onRefresh: () async {
-                    ref.invalidate(businessDetailProvider(widget.businessId));
-                  },
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildOffersTab(context, business, isLoggedIn),
-                      _buildGalleryTab(context, business),
-                      _buildMenuTab(context, business),
-                      _buildScheduleTab(context, business),
-                      _buildReviewsTab(context, ref, business, reviewsState,
-                          isLoggedIn),
-                      _buildContactTab(context, business),
-                      _buildDetailsTab(context, business),
-                    ],
-                  ),
+                  ],
                 ),
               ),
 
@@ -486,12 +577,13 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 0 — Oferte
+  // Section 0 — Oferte
   // ---------------------------------------------------------------------------
 
-  Widget _buildOffersTab(
+  Widget _buildOffersSection(
       BuildContext context, Business business, bool isLoggedIn) {
-    return SingleChildScrollView(
+    return Container(
+      key: _offersKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,102 +696,84 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
               subtitle: 'Momentan nu există oferte active pentru acest business.',
             ),
           ],
-          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 1 — Galerie
+  // Section 1 — Galerie
   // ---------------------------------------------------------------------------
 
-  Widget _buildGalleryTab(BuildContext context, Business business) {
+  Widget _buildGallerySection(BuildContext context, Business business) {
     final imageUrls = business.images?.map((img) => img.url).toList() ?? [];
 
-    if (imageUrls.isEmpty) {
-      return EmptyState(
-        icon: Icons.photo_library_outlined,
-        title: 'Nicio fotografie',
-        subtitle: 'Business-ul nu a adăugat fotografii încă.',
-      );
-    }
-
-    return SingleChildScrollView(
+    return Container(
+      key: _galleryKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(
-        children: [
-          MasonryGallery(imageUrls: imageUrls),
-          const SizedBox(height: 100),
-        ],
-      ),
+      child: imageUrls.isEmpty
+          ? EmptyState(
+              icon: Icons.photo_library_outlined,
+              title: 'Nicio fotografie',
+              subtitle: 'Business-ul nu a adăugat fotografii încă.',
+            )
+          : MasonryGallery(imageUrls: imageUrls),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 2 — Meniu
+  // Section 2 — Meniu
   // ---------------------------------------------------------------------------
 
-  Widget _buildMenuTab(BuildContext context, Business business) {
-    if (business.catalog == null || business.catalog!.isEmpty) {
-      return EmptyState(
-        icon: Icons.menu_book_outlined,
-        title: 'Niciun meniu',
-        subtitle: 'Business-ul nu a adăugat servicii sau produse încă.',
-      );
-    }
-
-    return SingleChildScrollView(
+  Widget _buildMenuSection(BuildContext context, Business business) {
+    return Container(
+      key: _menuKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(
-        children: [
-          _CatalogSection(categories: business.catalog!),
-          const SizedBox(height: 100),
-        ],
-      ),
+      child: business.catalog == null || business.catalog!.isEmpty
+          ? EmptyState(
+              icon: Icons.menu_book_outlined,
+              title: 'Niciun meniu',
+              subtitle: 'Business-ul nu a adăugat servicii sau produse încă.',
+            )
+          : _CatalogSection(categories: business.catalog!),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 3 — Program
+  // Section 3 — Program
   // ---------------------------------------------------------------------------
 
-  Widget _buildScheduleTab(BuildContext context, Business business) {
+  Widget _buildScheduleSection(BuildContext context, Business business) {
     final hasHours = business.locations != null &&
         business.locations!.any(
             (loc) => loc.hours != null && loc.hours!.isNotEmpty);
 
-    if (!hasHours) {
-      return EmptyState(
-        icon: Icons.schedule_outlined,
-        title: 'Program nedisponibil',
-        subtitle: 'Business-ul nu a adăugat programul de lucru.',
-      );
-    }
-
-    return SingleChildScrollView(
+    return Container(
+      key: _scheduleKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(
-        children: [
-          _OpeningHoursSection(locations: business.locations!),
-          const SizedBox(height: 100),
-        ],
-      ),
+      child: hasHours
+          ? _OpeningHoursSection(locations: business.locations!)
+          : EmptyState(
+              icon: Icons.schedule_outlined,
+              title: 'Program nedisponibil',
+              subtitle: 'Business-ul nu a adăugat programul de lucru.',
+            ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 4 — Recenzii
+  // Section 4 — Recenzii
   // ---------------------------------------------------------------------------
 
-  Widget _buildReviewsTab(
+  Widget _buildReviewsSection(
     BuildContext context,
     WidgetRef ref,
     Business business,
     dynamic reviewsState,
     bool isLoggedIn,
   ) {
-    return SingleChildScrollView(
+    return Container(
+      key: _reviewsKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -840,18 +914,16 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
                 ),
               ),
           ],
-
-          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 5 — Contact
+  // Section 5 — Contact
   // ---------------------------------------------------------------------------
 
-  Widget _buildContactTab(BuildContext context, Business business) {
+  Widget _buildContactSection(BuildContext context, Business business) {
     final hasContact = business.phone != null ||
         business.website != null ||
         (business.lat != null && business.lng != null) ||
@@ -860,363 +932,358 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
         (business.booking != null && business.booking!.hasBooking) ||
         (business.locations != null && business.locations!.length > 1);
 
-    if (!hasContact) {
-      return EmptyState(
-        icon: Icons.contact_page_outlined,
-        title: 'Fără date de contact',
-        subtitle: 'Business-ul nu a adăugat date de contact.',
-      );
-    }
-
-    return SingleChildScrollView(
+    return Container(
+      key: _contactKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Contact rows
-          if (business.phone != null)
-            VenueDetailRow(
-              icon: Icons.phone_outlined,
-              label: 'Telefon',
-              value: business.phone,
-              onTap: () {
-                Launchers.call(business.phone!);
-                AnalyticsService.trackClick(
-                    businessId: business.id, actionType: 'phone');
-              },
-            ),
-          if (business.website != null)
-            VenueDetailRow(
-              icon: Icons.language_outlined,
-              label: 'Website',
-              value: business.website,
-              onTap: () {
-                Launchers.website(business.website!);
-                AnalyticsService.trackClick(
-                    businessId: business.id, actionType: 'website');
-              },
-            ),
-          if (business.address != null)
-            VenueDetailRow(
-              icon: Icons.location_on_outlined,
-              label: 'Adresă',
-              value: business.address,
-              onTap: business.lat != null && business.lng != null
-                  ? () {
-                      Launchers.maps(business.lat!, business.lng!,
-                          address: business.address);
-                      AnalyticsService.trackClick(
-                          businessId: business.id, actionType: 'navigate');
-                    }
-                  : null,
-            ),
-
-          // Navigation button
-          if (business.lat != null && business.lng != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            _ActionButton(
-              icon: Icons.navigation_outlined,
-              label: 'Navighează',
-              onTap: () {
-                Launchers.maps(business.lat!, business.lng!,
-                    address: business.address);
-                AnalyticsService.trackClick(
-                    businessId: business.id, actionType: 'navigate');
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-
-          // Booking methods (multi-platform)
-          if (business.bookingMethods != null &&
-              business.bookingMethods!.isNotEmpty) ...[
-            Text(AppLocalizations.of(context)!.booking,
-                style: AppTypography.headlineSmall),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: business.bookingMethods!.map((bm) {
-                return _BookingChip(
-                  icon: bm.isPhone
-                      ? Icons.phone
-                      : bm.isWhatsApp
-                          ? Icons.message
-                          : Icons.language,
-                  label: bm.label,
-                  color: bm.color,
-                  onTap: () {
-                    if (bm.isPhone) {
-                      Launchers.call(bm.value);
-                    } else if (bm.isWhatsApp) {
-                      Launchers.whatsApp(bm.value);
-                    } else {
-                      Launchers.website(bm.href);
-                    }
-                    AnalyticsService.trackClick(
-                      businessId: business.id,
-                      actionType: bm.isPhone
-                          ? 'phone'
-                          : bm.isWhatsApp
-                              ? 'whatsapp'
-                              : 'booking_url',
-                    );
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ] else if (business.booking != null &&
-              business.booking!.hasBooking) ...[
-            Text(AppLocalizations.of(context)!.booking,
-                style: AppTypography.headlineSmall),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
+      child: hasContact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (business.booking!.phone != null)
-                  _BookingChip(
-                    icon: Icons.phone,
-                    label: AppLocalizations.of(context)!.phone,
+                // Contact rows
+                if (business.phone != null)
+                  VenueDetailRow(
+                    icon: Icons.phone_outlined,
+                    label: 'Telefon',
+                    value: business.phone,
                     onTap: () {
-                      Launchers.call(business.booking!.phone!);
+                      Launchers.call(business.phone!);
                       AnalyticsService.trackClick(
                           businessId: business.id, actionType: 'phone');
                     },
                   ),
-                if (business.booking!.whatsapp != null)
-                  _BookingChip(
-                    icon: Icons.message,
-                    label: 'WhatsApp',
+                if (business.website != null)
+                  VenueDetailRow(
+                    icon: Icons.language_outlined,
+                    label: 'Website',
+                    value: business.website,
                     onTap: () {
-                      Launchers.whatsApp(business.booking!.whatsapp!);
+                      Launchers.website(business.website!);
                       AnalyticsService.trackClick(
-                          businessId: business.id, actionType: 'whatsapp');
+                          businessId: business.id, actionType: 'website');
                     },
                   ),
-                if (business.booking!.url != null)
-                  _BookingChip(
-                    icon: Icons.language,
-                    label: AppLocalizations.of(context)!.online,
-                    onTap: () {
-                      Launchers.website(business.booking!.url!);
-                      AnalyticsService.trackClick(
-                          businessId: business.id, actionType: 'booking_url');
-                    },
+                if (business.address != null)
+                  VenueDetailRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Adresă',
+                    value: business.address,
+                    onTap: business.lat != null && business.lng != null
+                        ? () {
+                            Launchers.maps(business.lat!, business.lng!,
+                                address: business.address);
+                            AnalyticsService.trackClick(
+                                businessId: business.id, actionType: 'navigate');
+                          }
+                        : null,
                   ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
 
-          // Multiple locations
-          if (business.locations != null &&
-              business.locations!.length > 1) ...[
-            Text(AppLocalizations.of(context)!.locations,
-                style: AppTypography.headlineSmall),
-            const SizedBox(height: AppSpacing.sm),
-            ...business.locations!.map((loc) {
-              final hasLocBooking =
-                  _hasLocationBooking(loc, business.booking);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgCard,
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.cardRadiusSm),
-                    border: Border.all(color: AppColors.border),
+                // Navigation button
+                if (business.lat != null && business.lng != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _ActionButton(
+                    icon: Icons.navigation_outlined,
+                    label: 'Navighează',
+                    onTap: () {
+                      Launchers.maps(business.lat!, business.lng!,
+                          address: business.address);
+                      AnalyticsService.trackClick(
+                          businessId: business.id, actionType: 'navigate');
+                    },
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // Booking methods (multi-platform)
+                if (business.bookingMethods != null &&
+                    business.bookingMethods!.isNotEmpty) ...[
+                  Text(AppLocalizations.of(context)!.booking,
+                      style: AppTypography.headlineSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: business.bookingMethods!.map((bm) {
+                      return _BookingChip(
+                        icon: bm.isPhone
+                            ? Icons.phone
+                            : bm.isWhatsApp
+                                ? Icons.message
+                                : Icons.language,
+                        label: bm.label,
+                        color: bm.color,
+                        onTap: () {
+                          if (bm.isPhone) {
+                            Launchers.call(bm.value);
+                          } else if (bm.isWhatsApp) {
+                            Launchers.whatsApp(bm.value);
+                          } else {
+                            Launchers.website(bm.href);
+                          }
+                          AnalyticsService.trackClick(
+                            businessId: business.id,
+                            actionType: bm.isPhone
+                                ? 'phone'
+                                : bm.isWhatsApp
+                                    ? 'whatsapp'
+                                    : 'booking_url',
+                          );
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ] else if (business.booking != null &&
+                    business.booking!.hasBooking) ...[
+                  Text(AppLocalizations.of(context)!.booking,
+                      style: AppTypography.headlineSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
                     children: [
-                      GestureDetector(
-                        onTap: loc.lat != null && loc.lng != null
-                            ? () => Launchers.maps(loc.lat!, loc.lng!,
-                                address: loc.address)
-                            : null,
-                        child: Row(
+                      if (business.booking!.phone != null)
+                        _BookingChip(
+                          icon: Icons.phone,
+                          label: AppLocalizations.of(context)!.phone,
+                          onTap: () {
+                            Launchers.call(business.booking!.phone!);
+                            AnalyticsService.trackClick(
+                                businessId: business.id, actionType: 'phone');
+                          },
+                        ),
+                      if (business.booking!.whatsapp != null)
+                        _BookingChip(
+                          icon: Icons.message,
+                          label: 'WhatsApp',
+                          onTap: () {
+                            Launchers.whatsApp(business.booking!.whatsapp!);
+                            AnalyticsService.trackClick(
+                                businessId: business.id, actionType: 'whatsapp');
+                          },
+                        ),
+                      if (business.booking!.url != null)
+                        _BookingChip(
+                          icon: Icons.language,
+                          label: AppLocalizations.of(context)!.online,
+                          onTap: () {
+                            Launchers.website(business.booking!.url!);
+                            AnalyticsService.trackClick(
+                                businessId: business.id,
+                                actionType: 'booking_url');
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // Multiple locations
+                if (business.locations != null &&
+                    business.locations!.length > 1) ...[
+                  Text(AppLocalizations.of(context)!.locations,
+                      style: AppTypography.headlineSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  ...business.locations!.map((loc) {
+                    final hasLocBooking =
+                        _hasLocationBooking(loc, business.booking);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: AppColors.bgCard,
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.cardRadiusSm),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.location_on_outlined,
-                                size: 18,
-                                color: AppColors.textTertiary),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                            GestureDetector(
+                              onTap: loc.lat != null && loc.lng != null
+                                  ? () => Launchers.maps(loc.lat!, loc.lng!,
+                                      address: loc.address)
+                                  : null,
+                              child: Row(
                                 children: [
-                                  if (loc.address != null)
-                                    Text(loc.address!,
-                                        style: AppTypography.bodyMedium),
-                                  if (loc.city != null)
-                                    Text(loc.city!.name,
-                                        style: AppTypography.captionMuted),
+                                  Icon(Icons.location_on_outlined,
+                                      size: 18,
+                                      color: AppColors.textTertiary),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (loc.address != null)
+                                          Text(loc.address!,
+                                              style: AppTypography.bodyMedium),
+                                        if (loc.city != null)
+                                          Text(loc.city!.name,
+                                              style: AppTypography.captionMuted),
+                                      ],
+                                    ),
+                                  ),
+                                  if (loc.lat != null)
+                                    Icon(Icons.map_outlined,
+                                        size: 18, color: AppColors.accent),
                                 ],
                               ),
                             ),
-                            if (loc.lat != null)
-                              Icon(Icons.map_outlined,
-                                  size: 18, color: AppColors.accent),
+                            if (hasLocBooking) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Wrap(
+                                spacing: AppSpacing.xs,
+                                runSpacing: AppSpacing.xs,
+                                children: [
+                                  if (loc.bookingPhone != null)
+                                    _BookingChip(
+                                      icon: Icons.phone,
+                                      label: AppLocalizations.of(context)!.phone,
+                                      onTap: () {
+                                        Launchers.call(loc.bookingPhone!);
+                                        AnalyticsService.trackClick(
+                                            businessId: business.id,
+                                            actionType: 'phone');
+                                      },
+                                    ),
+                                  if (loc.bookingWhatsapp != null)
+                                    _BookingChip(
+                                      icon: Icons.message,
+                                      label: 'WhatsApp',
+                                      onTap: () {
+                                        Launchers.whatsApp(loc.bookingWhatsapp!);
+                                        AnalyticsService.trackClick(
+                                            businessId: business.id,
+                                            actionType: 'whatsapp');
+                                      },
+                                    ),
+                                  if (loc.bookingUrl != null)
+                                    _BookingChip(
+                                      icon: Icons.language,
+                                      label: AppLocalizations.of(context)!.online,
+                                      onTap: () {
+                                        Launchers.website(loc.bookingUrl!);
+                                        AnalyticsService.trackClick(
+                                            businessId: business.id,
+                                            actionType: 'booking_url');
+                                      },
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
-                      if (hasLocBooking) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        Wrap(
-                          spacing: AppSpacing.xs,
-                          runSpacing: AppSpacing.xs,
-                          children: [
-                            if (loc.bookingPhone != null)
-                              _BookingChip(
-                                icon: Icons.phone,
-                                label: AppLocalizations.of(context)!.phone,
-                                onTap: () {
-                                  Launchers.call(loc.bookingPhone!);
-                                  AnalyticsService.trackClick(
-                                      businessId: business.id,
-                                      actionType: 'phone');
-                                },
-                              ),
-                            if (loc.bookingWhatsapp != null)
-                              _BookingChip(
-                                icon: Icons.message,
-                                label: 'WhatsApp',
-                                onTap: () {
-                                  Launchers.whatsApp(loc.bookingWhatsapp!);
-                                  AnalyticsService.trackClick(
-                                      businessId: business.id,
-                                      actionType: 'whatsapp');
-                                },
-                              ),
-                            if (loc.bookingUrl != null)
-                              _BookingChip(
-                                icon: Icons.language,
-                                label: AppLocalizations.of(context)!.online,
-                                onTap: () {
-                                  Launchers.website(loc.bookingUrl!);
-                                  AnalyticsService.trackClick(
-                                      businessId: business.id,
-                                      actionType: 'booking_url');
-                                },
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
-
-          const SizedBox(height: 100),
-        ],
-      ),
+                    );
+                  }),
+                ],
+              ],
+            )
+          : EmptyState(
+              icon: Icons.contact_page_outlined,
+              title: 'Fără date de contact',
+              subtitle: 'Business-ul nu a adăugat date de contact.',
+            ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Tab 6 — Detalii
+  // Section 6 — Detalii
   // ---------------------------------------------------------------------------
 
-  Widget _buildDetailsTab(BuildContext context, Business business) {
+  Widget _buildDetailsSection(BuildContext context, Business business) {
     final hasDescription = business.description != null &&
         business.description!.isNotEmpty;
     final hasLegal = business.denumireLegala != null ||
         business.cui != null ||
         business.foundedYear != null;
 
-    if (!hasDescription && !hasLegal) {
-      return EmptyState(
-        icon: Icons.info_outline,
-        title: 'Fără detalii',
-        subtitle: 'Business-ul nu a adăugat informații suplimentare.',
-      );
-    }
-
-    return SingleChildScrollView(
+    return Container(
+      key: _detailsKey,
       padding: const EdgeInsets.all(AppSpacing.pagePadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // About / Description
-          if (hasDescription) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(children: [
-                    Icon(Icons.info_outline,
-                        size: 20, color: AppColors.accent),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text('Despre ${business.name}',
-                        style: AppTypography.headlineSmall),
-                  ]),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    business.description!,
-                    style: AppTypography.bodyMedium
-                        .copyWith(color: AppColors.textSecondary),
+      child: (!hasDescription && !hasLegal)
+          ? EmptyState(
+              icon: Icons.info_outline,
+              title: 'Fără detalii',
+              subtitle: 'Business-ul nu a adăugat informații suplimentare.',
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // About / Description
+                if (hasDescription) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSecondary,
+                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Icon(Icons.info_outline,
+                              size: 20, color: AppColors.accent),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text('Despre ${business.name}',
+                              style: AppTypography.headlineSmall),
+                        ]),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          business.description!,
+                          style: AppTypography.bodyMedium
+                              .copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // Legal info
+                if (hasLegal) ...[
+                  Text('Informații legale', style: AppTypography.headlineSmall),
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.bgCard,
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.cardRadiusSm),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: [
+                        if (business.denumireLegala != null)
+                          VenueDetailRow(
+                            icon: Icons.business_outlined,
+                            label: 'Denumire legală',
+                            value: business.denumireLegala,
+                            showDivider: business.cui != null ||
+                                business.foundedYear != null,
+                          ),
+                        if (business.cui != null)
+                          VenueDetailRow(
+                            icon: Icons.badge_outlined,
+                            label: 'CUI / CIF',
+                            value: business.cui,
+                            showDivider: business.foundedYear != null,
+                          ),
+                        if (business.foundedYear != null)
+                          VenueDetailRow(
+                            icon: Icons.calendar_today_outlined,
+                            label: 'An înfiintare',
+                            value: '${business.foundedYear}',
+                            showDivider: false,
+                          ),
+                      ],
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-
-          // Legal info
-          if (hasLegal) ...[
-            Text('Informații legale', style: AppTypography.headlineSmall),
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.bgCard,
-                borderRadius:
-                    BorderRadius.circular(AppSpacing.cardRadiusSm),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                children: [
-                  if (business.denumireLegala != null)
-                    VenueDetailRow(
-                      icon: Icons.business_outlined,
-                      label: 'Denumire legală',
-                      value: business.denumireLegala,
-                      showDivider: business.cui != null ||
-                          business.foundedYear != null,
-                    ),
-                  if (business.cui != null)
-                    VenueDetailRow(
-                      icon: Icons.badge_outlined,
-                      label: 'CUI / CIF',
-                      value: business.cui,
-                      showDivider: business.foundedYear != null,
-                    ),
-                  if (business.foundedYear != null)
-                    VenueDetailRow(
-                      icon: Icons.calendar_today_outlined,
-                      label: 'An înfiintare',
-                      value: '${business.foundedYear}',
-                      showDivider: false,
-                    ),
-                ],
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 100),
-        ],
-      ),
     );
   }
 
