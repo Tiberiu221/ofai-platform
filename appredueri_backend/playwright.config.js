@@ -54,7 +54,7 @@ module.exports = defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/protected\.spec/, /mobile\.spec/, /auth\.setup/],
+      testIgnore: [/protected\.spec/, /mobile\.spec/, /auth\.setup/, /pentest\//],
     },
 
     // Step 3: Protected pages — SKIPPED until auth setup CSRF is fixed
@@ -79,6 +79,14 @@ module.exports = defineConfig({
         hasTouch: true,
       },
       testMatch: /mobile\.spec/,
+    },
+
+    // Step 5: Security pen tests — OWASP Top 10 checks
+    // Run separately with: npm run test:pentest
+    {
+      name: 'pentest',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /pentest\/.*/,
     },
   ],
 });
