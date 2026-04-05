@@ -1210,6 +1210,19 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: middle; margin-left: 4px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </a>
       <% } %>
+
+      <% /* Mini map — show if business has coordinates */
+         const _mapLat = offer.business.lat || (offer.locations && offer.locations[0] && offer.locations[0].lat);
+         const _mapLng = offer.business.lng || (offer.locations && offer.locations[0] && offer.locations[0].lng);
+         if (_mapLat && _mapLng) { %>
+        <div style="margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);">
+          <iframe
+            src="https://maps.google.com/maps?q=<%= _mapLat %>,<%= _mapLng %>&z=15&output=embed&hl=ro"
+            width="100%" height="160" style="border:0; display:block; filter: brightness(0.85) contrast(1.1);"
+            loading="lazy" referrerpolicy="no-referrer" title="<%= t('offerDetail.location') || 'Locație' %>">
+          </iframe>
+        </div>
+      <% } %>
     </div>
   </aside>
 

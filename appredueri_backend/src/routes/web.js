@@ -1065,6 +1065,8 @@ router.get("/oferta/:id", async (req, res) => {
         phone: row.business_phone,
         website: row.business_website,
         logo_url: row.business_logo,
+        lat: row.business_lat ? parseFloat(row.business_lat) : null,
+        lng: row.business_lng ? parseFloat(row.business_lng) : null,
         city: { id: row.city_id, name: row.city_name },
         category: { id: row.cat_id, name: row.cat_name },
         rating: parseFloat(avg.toFixed(1)),
