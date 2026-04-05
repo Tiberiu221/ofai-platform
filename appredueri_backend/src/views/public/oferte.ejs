@@ -140,7 +140,7 @@
               <img src="<%= offer.image_url %>" alt="<%= offer.title %>" class="offer-image" loading="lazy" width="400" height="225">
             <% } else if (offer.business_logo) { %>
               <div class="offer-image-placeholder">
-                <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" class="offer-placeholder-logo" width="40" height="40">
+                <img src="<%= offer.business_logo %>" alt="<%= offer.business_name %>" class="offer-placeholder-logo" width="40" height="40" loading="lazy">
               </div>
             <% } else { %>
               <div class="offer-image-placeholder">
