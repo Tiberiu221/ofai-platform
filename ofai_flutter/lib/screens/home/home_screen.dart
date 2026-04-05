@@ -16,6 +16,8 @@ import '../../widgets/skeleton_loader.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/fade_in_item.dart';
+import '../../widgets/blur_fade.dart';
+import '../../widgets/border_beam.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/featured_offer_card.dart';
 import '../../widgets/empty_state.dart';
@@ -100,8 +102,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
             slivers: [
               // Header
               SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 0,
+                child: BlurFade(
+                  delayMs: 0,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.pagePadding,
@@ -133,8 +135,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               // Search bar — submit navigates to Explore with query
               SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 1,
+                child: BlurFade(
+                  delayMs: 0,
                   child: Padding(
                     padding: AppSpacing.pageH,
                     child: TextField(
@@ -186,8 +188,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                 child: dealAsync.when(
                   data: (deal) {
                     if (deal == null) return const SizedBox.shrink();
-                    return FadeInItem(
-                      index: 5,
+                    return BlurFade(
+                      delayMs: 0,
+                      duration: const Duration(milliseconds: 100),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -195,7 +198,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                           const SizedBox(height: AppSpacing.md),
                           Padding(
                             padding: AppSpacing.pageH,
-                            child: FeaturedOfferCard(offer: deal),
+                            child: BorderBeam(
+                              duration: const Duration(milliseconds: 8000),
+                              child: FeaturedOfferCard(offer: deal),
+                            ),
                           ),
                         ],
                       ),
@@ -278,8 +284,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               // Categorii
               SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 3,
+                child: BlurFade(
+                  delayMs: 0,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -320,8 +326,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               // Offers section
               SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 6,
+                child: BlurFade(
+                  delayMs: 0,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -547,8 +553,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               // Orase
               SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 4,
+                child: BlurFade(
+                  delayMs: 0,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -702,8 +708,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
 
               // Businesses section header
               SliverToBoxAdapter(
-                child: FadeInItem(
-                  index: 7,
+                child: BlurFade(
+                  delayMs: 0,
                   child: SectionHeader(
                     title: AppLocalizations.of(context)!.businesses,
                     onViewAll: () => context.go('/explore'),

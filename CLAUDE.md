@@ -177,6 +177,8 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Business detail scroll spy:** Single scrollable page with ALL sections visible + pinned tab bar that auto-highlights current section via `ScrollController` + `GlobalKey` positions. NOT TabBarView (was changed from TabBarView to scroll spy in commit 891e612).
 - **Business detail credibility:** `denumire_legala`, `cui`, `founded_year` columns on businesses table (migration 077). Portal form "Date legale" in `_tab-info.ejs`. Shown in Detalii section on business detail page.
 - **Home screen section order (Flutter):** Deal of Day → Flash Deals → Categories → Popular/Feed → Recently Viewed → Promoted → Collections → Cities → Category Feed → Marquee → Businesses. Deal of Day has shimmer skeleton placeholder while loading to prevent layout shift.
+- **BlurFade widget:** Modern blur→sharp entrance animation (replaces FadeInItem on home screen). Uses `ImageFiltered` (NOT `BackdropFilter` — Impeller-safe). Skips `ImageFiltered` when sigma < 0.5 (animation complete) for zero overhead. Do NOT use `delayMs > 0` on items in scrollable lists (causes invisible items). Keep `delayMs: 0` on home screen sections.
+- **BorderBeam widget:** Animated beam on card border via CustomPainter + `PathMetric.extractSegment()`. Used only on Deal of Day `FeaturedOfferCard`. Duration 8s per loop, `RepaintBoundary` wrapping. Do NOT apply on more than 1-2 cards simultaneously (performance).
 
 ## Language
 - UI text and user-facing strings: Romanian

@@ -21,6 +21,7 @@ import '../../widgets/empty_state.dart';
 import '../../widgets/error_state.dart' as w;
 import '../../widgets/search_suggest_dropdown.dart';
 import '../../widgets/fade_in_item.dart';
+import '../../widgets/blur_fade.dart';
 import '../../providers/search_suggest_provider.dart';
 import '../../providers/search_history_provider.dart';
 import '../../core/utils/distance.dart';
