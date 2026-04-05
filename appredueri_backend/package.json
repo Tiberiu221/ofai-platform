@@ -15,7 +15,10 @@
     "scrape:cleanup": "node scripts/scraping/04-cleanup.js",
     "scrape:images": "node scripts/scraping/05-assign-images.js",
     "test": "jest --detectOpenHandles --forceExit",
-    "test:coverage": "jest --coverage --detectOpenHandles --forceExit"
+    "test:coverage": "jest --coverage --detectOpenHandles --forceExit",
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:ui": "npx playwright test --ui"
   },
   "keywords": [],
   "author": "",
@@ -49,6 +52,7 @@
     "stripe": "^20.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "jest": "^30.3.0",
     "nodemon": "^3.1.11",
     "playwright": "^1.58.2",

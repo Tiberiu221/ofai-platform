@@ -31,3 +31,8 @@ nul
 # Google OAuth credentials
 credentials.json
 token.json
+
+# Playwright
+playwright/.auth/
+playwright-report/
+test-results/
