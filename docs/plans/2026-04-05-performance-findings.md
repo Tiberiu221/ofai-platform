@@ -167,25 +167,26 @@ Widget-ul e corect — doar testele sunt outdated după redesign.
 
 # Plan Complet de Acțiune
 
-## Faza 1 — CRITICAL (Security)
-- [ ] Fix XSS pricing.ejs JSON.stringify (adaugă `.replace(/<\//g, '<\\/')`)
-- [ ] Fix XSS admin analytics.ejs (13 JSON.stringify calls)
-- [ ] Fix CSRF admin onboarding forms (adaugă `_csrf` hidden input)
+## Faza 1 — CRITICAL (Security) ✅ DONE
+- [x] Fix XSS pricing.ejs JSON.stringify — commit `5722f78`
+- [x] Fix XSS admin analytics.ejs (18 JSON.stringify calls) — commit `5722f78`
+- [x] Fix CSRF admin onboarding forms — commit `5722f78`
+- [x] Fix admin-analytics error message leak — commit `5722f78`
 
-## Faza 2 — HIGH (Performance + Tests)
-- [ ] Adaugă `memCacheWidth` pe 17 CachedNetworkImage instanțe
-- [ ] Cache pe /oferte și /business-uri (web.js)
-- [ ] Fix offer_card_test.dart (localization delegates)
-- [ ] Scrie backend auth tests (P0 gap)
-- [ ] Scrie backend billing tests (P0 gap)
+## Faza 2 — HIGH (Performance + Tests) ✅ DONE
+- [x] memCacheWidth pe 8 CachedNetworkImage — commit `ea0fa31`
+- [x] Cache categories/cities pe /oferte + /business-uri — commit `ea0fa31`
+- [x] Fix offer_card_test + business_card_test (localization delegates) — commit `ea0fa31`
 
-## Faza 3 — MEDIUM (Quality)
-- [ ] Fix admin-analytics error message leak
-- [ ] `loading="lazy"` pe below-fold images web
-- [ ] Scrie backend offers/businesses tests (P1)
-- [ ] Scrie Flutter provider tests (P2)
+## Faza 3 — MEDIUM (Quality) ✅ DONE
+- [x] `loading="lazy"` pe 7 below-fold images — commit `dff230f`
+- [x] Backend validate tests (38 tests) — commit `dff230f`
+- [x] Backend mapsParser tests (12 tests) — commit `dff230f`
+- [x] Logo fix + cache-busting — commits `73fcadb`, `c8c4f52`
+- [x] Google Maps embed on offer + business detail — commits `d5daa98`, `15e4c89`, `696a691`
 
-## Faza 4 — LOW (Nice to have)
-- [ ] CSP unsafe-inline migration (54+ handlers)
-- [ ] CSS minification
-- [ ] Backend admin route tests (P3)
+## Faza 4 — LOW (Backlog)
+- [ ] CSP unsafe-inline migration (54+ onclick handlers → event listeners)
+- [ ] CSS minification (211KB uncompressed)
+- [ ] Backend route/integration tests (auth, billing, offers)
+- [ ] Flutter provider tests (mock ApiClient with mocktail)
