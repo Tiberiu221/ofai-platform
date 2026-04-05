@@ -97,6 +97,13 @@ cd ofai_flutter && flutter run                  # Run app
 psql $DATABASE_URL                              # Connect to DB
 ```
 
+## Claude Code Tooling
+Custom agents, commands, and hooks adapted from [luongnv89/claude-howto](https://github.com/luongnv89/claude-howto):
+- **Subagents** (`.claude/agents/`): 11 agents — test-engineer (Jest+flutter_test), secure-reviewer (read-only security audit), debugger (OFAI-specific root cause analysis), + 8 built-in (backend-dev, code-reviewer, db-architect, devops, frontend-mobile, scraping-engineer, security-auditor, ui-designer)
+- **Slash commands** (`.claude/commands/`): 22 commands — `/push-all` (stage+commit+push with safety checks), `/optimize` (performance analysis: N+1, cache, memCacheWidth), `/test-expand` (find+write missing tests), + 19 domain-specific (audit, fix, investigate, review, deploy-verify, etc.)
+- **Hooks** (`.claude/hooks/` + `settings.json`): PostToolUse Edit|Write triggers: `security-scan.sh` (secrets, SQL injection, LLM fencing, CSP nonce), `format-check.sh` (console.log, print(), EJS tags). `context-tracker.py` (token estimation, ready but not wired to hooks)
+- **Audit plan:** `docs/plans/2026-04-05-performance-findings.md` — performance + security + test findings with 4 prioritized phases
+
 ## Investigation Workflow
 When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 1. **Explore** — Trace the full data flow (form → API → DB → display). Read actual code.
@@ -173,7 +180,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - Code, comments, commit messages: English
 - Docs/plans: Romanian
 
-## Current State (4 April 2026, post-detail-redesign + smart-offers)
+## Current State (5 April 2026, post-audit + tooling)
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
@@ -262,7 +269,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Analytics Tier Gating:** Period buttons (7/30/90 zile) now respect tier's `analytics_days` limit. Default period matches tier max (was hardcoded 30 for all). Backend already enforced via Math.min cap.
 - **Fuzzy Search:** pg_trgm extension + `buildFuzzySearch()` helper combining ILIKE + similarity() across 5 search routes (web offers, web businesses, mobile offers, mobile businesses, search suggest). Typo tolerance with 0.15 threshold.
 - **Backend Testing:** Jest + Supertest infrastructure with 19 tests (jwt helpers, tier normalization, search helper). `npm test` / `npm run test:coverage`. App exports via `require.main === module` guard.
-- **Flutter Testing:** flutter_test + mocktail, 11 test files (7 model + 4 widget), 66 model tests passing. Tests cover: offer, business, saved_search, collection, user, report models + formatters.
+- **Flutter Testing:** flutter_test + mocktail, 10 test files (7 model + 3 widget), 106 tests passing. Tests cover: offer, business, collection, user, report models + formatters + offer_card + business_card + tap_scale widgets.
 - **Referral Dashboard:** `GET /users/me/referral-stats` API returns total referrals, points, recent list. Flutter bottom sheet enhanced with stat chips + referral history.
 - **PWA Support:** Web app manifest (`/manifest.json`), service worker (`/sw.js`) with cache strategies (static=cache-first, HTML=network-first, API=network-only), offline fallback page, apple-touch-icon, theme-color meta.
 - **i18n Complete:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~717 keys, 26 namespaces), ALL 25 consumer EJS templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~430 keys RO + EN), ALL 26 screens + widgets fully localized (including help FAQ, report dialog, business request form). Default locale: RO. Provider/utility error strings remain hardcoded (no BuildContext available).
@@ -345,7 +352,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Resolved Gaps (as of 30 Mar 2026)
 - **Fuzzy search:** ✅ pg_trgm + `buildFuzzySearch()` across 5 routes, trigram indexes, 0.15 threshold
-- **Backend testing:** ✅ Jest + Supertest — 19 tests across 3 suites (jwt, tiers, search)
+- **Backend testing:** ✅ Jest + Supertest — 69 tests across 5 suites (jwt, tiers, search, validate, mapsParser)
 - **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
 - **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
 - **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
@@ -361,7 +368,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Search distance filtering:** pg_trgm done but no PostGIS/distance-based filtering yet
 - **PWA icons:** Files exist but are 64x64 — need proper 192x192 and 512x512 icons
 - **GA4 conversion funnel:** Basic events tracked (promo_reveal, business_action), full funnel missing
-- **Backend test coverage:** Infrastructure exists but only helpers tested — no route/integration tests
-- **Flutter test coverage:** Model tests exist (66 passing), but no provider tests or integration tests yet
+- **Backend test coverage:** 69 helper tests (5 suites) — no route/integration tests yet
+- **Flutter test coverage:** 106 tests passing (models + widgets), but no provider tests or integration tests yet
 - **Accessibility:** Basic Semantics added, but many icon buttons still lack labels; touch targets not fully audited
 - **Offline caching:** No API response cache (architectural change, needs Hive/Isar + Dio cache interceptor)
