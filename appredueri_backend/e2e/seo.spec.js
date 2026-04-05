@@ -30,9 +30,7 @@ test.describe('SEO', () => {
     expect(text.toLowerCase()).toContain('sitemap');
   });
 
-  // Known bug: businesses table has no updated_at column → sitemap query crashes
-  // TODO: Fix sitemap query to use created_at instead of updated_at
-  test.fixme('sitemap.xml is accessible and valid XML', async ({ request }) => {
+  test('sitemap.xml is accessible and valid XML', async ({ request }) => {
     const response = await request.get('/sitemap.xml', { timeout: 15000 });
     expect(response.status()).toBe(200);
     const xml = await response.text();

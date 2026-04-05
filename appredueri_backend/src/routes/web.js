@@ -68,7 +68,7 @@ router.get('/sitemap.xml', async (req, res) => {
         "SELECT id, start_date::date as lastmod FROM offers WHERE is_active = true AND moderation_status IN ('approved', 'auto_approved') AND (end_date IS NULL OR end_date >= CURRENT_DATE) ORDER BY id DESC LIMIT 5000"
       ),
       pool.query(
-        "SELECT id, COALESCE(updated_at, created_at)::date as lastmod FROM businesses ORDER BY id DESC LIMIT 5000"
+        "SELECT id, CURRENT_DATE as lastmod FROM businesses ORDER BY id DESC LIMIT 5000"
       ),
       pool.query(
         "SELECT slug, COALESCE(updated_at, published_at)::date as lastmod FROM blog_posts WHERE is_published = true ORDER BY published_at DESC LIMIT 1000"
