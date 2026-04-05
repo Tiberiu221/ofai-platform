@@ -1074,7 +1074,7 @@ router.get("/oferta/:id", async (req, res) => {
         badge_type: row.subscription_badge_type || (row.business_verified ? 'verified' : null),
       },
       locations: locations.map(l => ({
-        id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, cityName: l.city_name,
+        id: l.id, address: l.address, lat: l.lat, lng: l.lng, phone: l.phone, maps_url: l.maps_url, cityName: l.city_name,
         booking_type: (l.booking_type || 'none').toLowerCase().replace('link', 'url'),
         booking_phone: l.booking_phone, booking_whatsapp: l.booking_whatsapp,
         booking_url: l.booking_url, booking_instructions: l.booking_instructions,

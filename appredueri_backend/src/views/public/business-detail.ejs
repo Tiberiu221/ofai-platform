@@ -504,14 +504,22 @@
           <% if (loc.booking_instructions) { %>
             <p class="bc-instructions"><%= loc.booking_instructions %></p>
           <% } %>
-          <% if (loc.lat && loc.lng) { %>
-            <div style="margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06);">
+          <% if (loc.lat && loc.lng) {
+               const _locMapUrl = (loc.maps_url && /^https?:\/\//.test(loc.maps_url))
+                 ? loc.maps_url
+                 : 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng;
+          %>
+            <a href="<%= _locMapUrl %>" target="_blank" rel="noopener noreferrer" style="display:block; margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); position: relative;">
               <iframe
                 src="https://maps.google.com/maps?q=<%= loc.lat %>,<%= loc.lng %>&z=15&output=embed&hl=ro"
-                width="100%" height="140" style="border:0; display:block; filter: brightness(0.85) contrast(1.1);"
+                width="100%" height="140" style="border:0; display:block; filter: brightness(0.85) contrast(1.1); pointer-events: none;"
                 loading="lazy" referrerpolicy="no-referrer" title="<%= loc.address %>">
               </iframe>
-            </div>
+              <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;font-size:0.6875rem;font-weight:600;padding:4px 12px;border-radius:6px;white-space:nowrap;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <%= t('businessDetail.navigate') %>
+              </div>
+            </a>
           <% } %>
         </div>
       <% }); %>
