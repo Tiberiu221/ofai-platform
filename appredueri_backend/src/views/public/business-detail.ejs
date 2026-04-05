@@ -229,16 +229,7 @@
   <% } %>
 </div>
 
-<!-- Tab Navigation -->
-<nav class="bd-tab-bar" id="bd-tabs">
-  <a href="#bd-sec-oferte" class="bd-tab active" data-section="bd-sec-oferte">Oferte</a>
-  <a href="#bd-sec-galerie" class="bd-tab" data-section="bd-sec-galerie">Galerie</a>
-  <a href="#bd-sec-meniu" class="bd-tab" data-section="bd-sec-meniu">Meniu</a>
-  <a href="#bd-sec-program" class="bd-tab" data-section="bd-sec-program">Program</a>
-  <a href="#bd-sec-recenzii" class="bd-tab" data-section="bd-sec-recenzii">Recenzii</a>
-  <a href="#bd-sec-contact" class="bd-tab" data-section="bd-sec-contact">Contact</a>
-  <a href="#bd-sec-detalii" class="bd-tab" data-section="bd-sec-detalii">Detalii</a>
-</nav>
+<!-- Tab navigation removed — Flutter-only feature (scroll spy with pinned tab bar) -->
 
 <!-- Geo Banner -->
 <div class="bd-content">
@@ -1423,49 +1414,6 @@ function bdCatalogExpand(idx) {
 </div>
 <% } %>
 
-<!-- Tab navigation JS -->
-<script nonce="<%= cspNonce %>">
-(function() {
-  var tabs = document.querySelectorAll('.bd-tab');
-  var sections = {};
-  tabs.forEach(function(tab) {
-    var id = tab.getAttribute('data-section');
-    if (id) sections[id] = document.getElementById(id);
-  });
-
-  // Click handler
-  tabs.forEach(function(tab) {
-    tab.addEventListener('click', function(e) {
-      e.preventDefault();
-      var id = this.getAttribute('data-section');
-      var el = document.getElementById(id);
-      if (el) {
-        if (window.lenis) {
-          window.lenis.scrollTo(el, { offset: -120 });
-        } else {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        tabs.forEach(function(t) { t.classList.remove('active'); });
-        this.classList.add('active');
-      }
-    });
-  });
-
-  // Scroll spy with IntersectionObserver
-  var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        tabs.forEach(function(t) { t.classList.remove('active'); });
-        var tab = document.querySelector('.bd-tab[data-section="' + entry.target.id + '"]');
-        if (tab) tab.classList.add('active');
-      }
-    });
-  }, { rootMargin: '-120px 0px -60% 0px', threshold: 0.1 });
-
-  Object.values(sections).forEach(function(sec) {
-    if (sec) observer.observe(sec);
-  });
-})();
-</script>
+<!-- Tab scroll spy JS removed — Flutter-only feature -->
 
 <%- include('partials/footer') %>
