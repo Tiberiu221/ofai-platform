@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 import 'package:ofai_flutter/models/offer.dart';
 import 'package:ofai_flutter/providers/auth_provider.dart';
 import 'package:ofai_flutter/providers/favorites_provider.dart';
@@ -26,6 +27,9 @@ Widget _buildTestApp(Widget child) {
       ),
     ],
     child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('ro'),
       home: Scaffold(
         body: SingleChildScrollView(child: child),
       ),

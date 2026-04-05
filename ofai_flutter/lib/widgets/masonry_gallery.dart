@@ -146,6 +146,7 @@ class MasonryGallery extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: imageUrls[index],
           fit: BoxFit.cover,
+          memCacheWidth: 600,
           width: double.infinity,
           height: double.infinity,
           placeholder: (_, __) => Container(

@@ -625,19 +625,26 @@ router.get("/oferte", async (req, res) => {
       }
     }
 
-    const categoriesResult = await pool.query("SELECT c.id, c.name FROM categories c ORDER BY c.name");
-
-    const citiesResult = await pool.query(`
-      SELECT c.id, c.name FROM cities c
-      INNER JOIN businesses b ON b.city_id = c.id
-      GROUP BY c.id, c.name
-      ORDER BY COUNT(b.id) DESC
-      LIMIT 15
-    `);
-
-    const totalCitiesResult = await pool.query(
-      "SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"
-    );
+    const [categoriesResult, citiesResult, totalCitiesResult] = await Promise.all([
+      cache.cached('listing:categories', 10 * 60 * 1000, () =>
+        pool.query("SELECT c.id, c.name FROM categories c ORDER BY c.name"),
+        { groups: ['static'] }
+      ),
+      cache.cached('listing:topCities', 10 * 60 * 1000, () =>
+        pool.query(`
+          SELECT c.id, c.name FROM cities c
+          INNER JOIN businesses b ON b.city_id = c.id
+          GROUP BY c.id, c.name
+          ORDER BY COUNT(b.id) DESC
+          LIMIT 15
+        `),
+        { groups: ['businesses', 'static'] }
+      ),
+      cache.cached('listing:totalCities', 10 * 60 * 1000, () =>
+        pool.query("SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"),
+        { groups: ['businesses', 'static'] }
+      ),
+    ]);
 
     const selectedCityName = selectedCity ? (citiesResult.rows.find(c => c.id === parseInt(selectedCity, 10)) || {}).name : null;
 
@@ -848,19 +855,26 @@ router.get("/business-uri", async (req, res) => {
       [...params, limit, offset]
     );
 
-    const categoriesResult = await pool.query("SELECT c.id, c.name FROM categories c ORDER BY c.name");
-
-    const citiesResult = await pool.query(`
-      SELECT c.id, c.name FROM cities c
-      INNER JOIN businesses b ON b.city_id = c.id
-      GROUP BY c.id, c.name
-      ORDER BY COUNT(b.id) DESC
-      LIMIT 15
-    `);
-
-    const totalCitiesResult = await pool.query(
-      "SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"
-    );
+    const [categoriesResult, citiesResult, totalCitiesResult] = await Promise.all([
+      cache.cached('listing:categories', 10 * 60 * 1000, () =>
+        pool.query("SELECT c.id, c.name FROM categories c ORDER BY c.name"),
+        { groups: ['static'] }
+      ),
+      cache.cached('listing:topCities', 10 * 60 * 1000, () =>
+        pool.query(`
+          SELECT c.id, c.name FROM cities c
+          INNER JOIN businesses b ON b.city_id = c.id
+          GROUP BY c.id, c.name
+          ORDER BY COUNT(b.id) DESC
+          LIMIT 15
+        `),
+        { groups: ['businesses', 'static'] }
+      ),
+      cache.cached('listing:totalCities', 10 * 60 * 1000, () =>
+        pool.query("SELECT COUNT(DISTINCT c.id) as total FROM cities c INNER JOIN businesses b ON b.city_id = c.id"),
+        { groups: ['businesses', 'static'] }
+      ),
+    ]);
 
     // Fetch user followed IDs for card heart buttons
     let userFollowedIds = [];

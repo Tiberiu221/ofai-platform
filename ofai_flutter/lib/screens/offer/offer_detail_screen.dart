@@ -161,6 +161,7 @@ class OfferDetailScreen extends ConsumerWidget {
                                       ? CachedNetworkImage(
                                           imageUrl: heroImage,
                                           fit: BoxFit.cover,
+                                          memCacheWidth: 800,
                                           placeholder: (_, __) => Container(color: AppColors.bgSecondary),
                                           errorWidget: (_, __, ___) => Container(
                                             color: AppColors.bgSecondary,
@@ -575,6 +576,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                             ? CachedNetworkImage(
                                                 imageUrl: biz.logoUrl!,
                                                 fit: BoxFit.cover,
+                                                memCacheWidth: 128,
+                                                memCacheHeight: 128,
                                                 errorWidget: (_, __, ___) => _BusinessInitial(biz.name),
                                               )
                                             : _BusinessInitial(biz.name),

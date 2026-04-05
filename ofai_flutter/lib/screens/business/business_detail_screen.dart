@@ -266,6 +266,7 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
                                       ? CachedNetworkImage(
                                           imageUrl: coverUrl,
                                           fit: BoxFit.cover,
+                                          memCacheWidth: 800,
                                           placeholder: (_, __) => Container(
                                               color: AppColors.bgSecondary),
                                           errorWidget: (_, __, ___) => Container(
@@ -311,6 +312,8 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
                                           ? CachedNetworkImage(
                                               imageUrl: business.logoUrl!,
                                               fit: BoxFit.cover,
+                                              memCacheWidth: 112,
+                                              memCacheHeight: 112,
                                               errorWidget: (_, __, ___) =>
                                                   _Initial(business.name),
                                             )

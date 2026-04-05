@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ofai_flutter/l10n/app_localizations.dart';
 import 'package:ofai_flutter/models/business.dart';
 import 'package:ofai_flutter/widgets/business_card.dart';
 
@@ -8,6 +9,9 @@ import 'package:ofai_flutter/widgets/business_card.dart';
 Widget _buildTestApp(Widget child) {
   return ProviderScope(
     child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('ro'),
       home: Scaffold(
         body: SingleChildScrollView(child: child),
       ),

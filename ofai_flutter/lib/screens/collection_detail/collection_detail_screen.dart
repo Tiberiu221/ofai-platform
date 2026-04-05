@@ -40,6 +40,7 @@ class CollectionDetailScreen extends ConsumerWidget {
                       background: CachedNetworkImage(
                         imageUrl: collection.imageUrl!,
                         fit: BoxFit.cover,
+                        memCacheWidth: 800,
                         color: Colors.black.withValues(alpha: 0.3),
                         colorBlendMode: BlendMode.darken,
                       ),

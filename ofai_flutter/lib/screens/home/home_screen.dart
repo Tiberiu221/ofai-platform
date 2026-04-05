@@ -497,6 +497,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with AutomaticKeepAlive
                                             CachedNetworkImage(
                                               imageUrl: coll.imageUrl!,
                                               fit: BoxFit.cover,
+                                              memCacheWidth: 480,
+                                              memCacheHeight: 320,
                                               color: Colors.black.withValues(alpha: 0.4),
                                               colorBlendMode: BlendMode.darken,
                                             ),
@@ -836,6 +838,8 @@ class _MarqueeLogosState extends State<_MarqueeLogos> with SingleTickerProviderS
                               ? CachedNetworkImage(
                                   imageUrl: logoUrl,
                                   fit: BoxFit.cover,
+                                  memCacheWidth: 96,
+                                  memCacheHeight: 96,
                                   errorWidget: (_, __, ___) => _MarqueeInitial(name),
                                 )
                               : _MarqueeInitial(name),
