@@ -9,6 +9,18 @@
             "command": "cd /e/Projects/OFAI/ofai_flutter && export PATH=\"/c/dev/flutter/bin:$PATH\" && flutter analyze --no-pub 2>&1 | grep -E '(error|warning|No issues)' | head -20",
             "timeout": 30,
             "statusMessage": "Analyzing Flutter code..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"/c/Users/tiber/Desktop/Dev Projects/AppReduceri/.claude/hooks/security-scan.sh\"",
+            "timeout": 10,
+            "statusMessage": "Security scan..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"/c/Users/tiber/Desktop/Dev Projects/AppReduceri/.claude/hooks/format-check.sh\"",
+            "timeout": 10,
+            "statusMessage": "Format check..."
           }
         ]
       }
