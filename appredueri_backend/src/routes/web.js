@@ -496,13 +496,13 @@ router.get("/oferte", async (req, res) => {
       searchOrderClause = fuzzy.orderClause;
     }
 
-    if (selectedCategory) {
+    if (selectedCategory && !isNaN(parseInt(selectedCategory))) {
       conditions.push(`b.category_id = $${paramIdx}`);
       params.push(parseInt(selectedCategory));
       paramIdx++;
     }
 
-    if (selectedCity) {
+    if (selectedCity && !isNaN(parseInt(selectedCity))) {
       conditions.push(`(b.city_id = $${paramIdx} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       params.push(parseInt(selectedCity));
       paramIdx++;
@@ -753,13 +753,13 @@ router.get("/business-uri", async (req, res) => {
       searchOrderClauseBiz = fuzzy.orderClause;
     }
 
-    if (selectedCategory) {
+    if (selectedCategory && !isNaN(parseInt(selectedCategory))) {
       conditions.push(`b.category_id = $${paramIdx}`);
       params.push(parseInt(selectedCategory));
       paramIdx++;
     }
 
-    if (selectedCity) {
+    if (selectedCity && !isNaN(parseInt(selectedCity))) {
       conditions.push(`(b.city_id = $${paramIdx} OR b.category_id = (SELECT id FROM categories WHERE name = 'Magazine Online'))`);
       params.push(parseInt(selectedCity));
       paramIdx++;
