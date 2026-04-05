@@ -355,7 +355,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Resolved Gaps (as of 30 Mar 2026)
 - **Fuzzy search:** ✅ pg_trgm + `buildFuzzySearch()` across 5 routes, trigram indexes, 0.15 threshold
-- **Backend testing:** ✅ Jest + Supertest — 69 tests across 5 suites (jwt, tiers, search, validate, mapsParser)
+- **Backend testing:** ✅ Jest + Supertest — 69 unit tests (5 suites: jwt, tiers, search, validate, mapsParser). Playwright E2E — 42 tests (smoke, auth, navigation, search, mobile, SEO, API). `npm test` for unit, `npm run test:e2e` for E2E.
 - **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
 - **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
 - **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
