@@ -172,10 +172,12 @@ app.use('/api', (req, res, next) => {
 });
 
 // ============================================
-// RATE LIMITING (Global)
+// RATE LIMITING (Global) — relaxed in dev/test to allow Playwright E2E
 // ============================================
-app.use(generalLimiter);
-app.use(writeLimiter);
+if (isProduction) {
+  app.use(generalLimiter);
+  app.use(writeLimiter);
+}
 
 // ============================================
 // MIDDLEWARE-URI GLOBALE
@@ -389,6 +391,7 @@ app.use((err, req, res, next) => {
       pageTitle: 'Eroare',
       activePage: null,
       webUser: req.webUser || null,
+      t: res.locals.t || ((k) => k),
       error: 'Sesiunea a expirat. Reîncarcă pagina.'
     });
   }
@@ -431,6 +434,7 @@ app.use((err, req, res, next) => {
       pageTitle: 'Eroare Server',
       activePage: null,
       webUser: req.webUser || null,
+      t: res.locals.t || ((k) => k),
       errorMessage: isProduction ? null : err.message,
       errorStack: isProduction ? null : err.stack,
     });
@@ -452,7 +456,7 @@ app.use((req, res) => {
   // Web pages render 404 EJS — try to pass webUser if cookie exists
   const { optionalWebAuth } = require("./middleware/webAuth");
   optionalWebAuth(req, res, () => {
-    res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null });
+    res.status(404).render("public/404", { activePage: null, webUser: req.webUser || null, t: res.locals.t || ((k) => k) });
   });
 });
 

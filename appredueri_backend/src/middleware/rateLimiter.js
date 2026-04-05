@@ -1,5 +1,9 @@
 const rateLimit = require("express-rate-limit");
 
+// Skip rate limiting in test environment (Playwright E2E tests hit many pages fast)
+const isTest = process.env.NODE_ENV === 'test';
+const skipIfTest = isTest ? { skip: () => true } : {};
+
 // ============================================
 // RATE LIMITERS
 // ============================================
@@ -10,7 +14,7 @@ const rateLimit = require("express-rate-limit");
  */
 const generalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minut
-  max: 100, // max 100 requests per windowMs
+  max: isTest ? 10000 : 100, // Relaxed for E2E tests, strict in production
   message: {
     message: "Prea multe cereri. Te rugăm să aștepți un minut.",
     retryAfter: 60,
