@@ -5,7 +5,7 @@
   <canvas class="particle-canvas auth-particles"></canvas>
   <div class="auth-card">
     <div class="auth-logo">
-      <img src="/images/ofai-wordmark-nobg.png" alt="OFAI" style="display:block;margin:0 auto 16px;height:56px;width:auto">
+      <img src="/images/ofai-wordmark-nobg.png?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '' %>" alt="OFAI" style="display:block;margin:0 auto 16px;height:56px;width:auto">
     </div>
 
     <h1 class="auth-title"><%= t('auth.verifyCode') %></h1>
