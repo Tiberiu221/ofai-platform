@@ -3069,6 +3069,7 @@ router.get("/onboarding", async (req, res) => {
 
     // Simple HTML list for admin
     const requests = result.rows;
+    const csrfToken = res.locals.csrfToken || '';
     const statusColors = { pending: '#f59e0b', in_progress: '#3b82f6', completed: '#22c55e', cancelled: '#71717a' };
     const typeLabels = { catalog: 'Catalog', hours: 'Program', full_setup: 'Setup complet' };
 
@@ -3104,9 +3105,9 @@ router.get("/onboarding", async (req, res) => {
         ${attachments.length > 0 ? '<div style="margin-top:8px">' + attachments.map(a => `<a class="att" href="${escHtml(a.url)}" target="_blank">${escHtml(a.name || 'fișier')}</a>`).join('') + '</div>' : ''}
         ${r.admin_notes ? `<div class="meta" style="margin-top:8px"><strong>Note admin:</strong> ${escHtml(r.admin_notes)}</div>` : ''}
         <div class="actions">
-          ${r.status === 'pending' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="in_progress"><button class="btn btn-blue" type="submit">Marchează în lucru</button></form>` : ''}
-          ${r.status === 'in_progress' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="completed"><button class="btn btn-green" type="submit">Finalizează</button></form>` : ''}
-          ${['pending','in_progress'].includes(r.status) ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="status" value="cancelled"><button class="btn btn-gray" type="submit">Anulează</button></form>` : ''}
+          ${r.status === 'pending' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="status" value="in_progress"><button class="btn btn-blue" type="submit">Marchează în lucru</button></form>` : ''}
+          ${r.status === 'in_progress' ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="status" value="completed"><button class="btn btn-green" type="submit">Finalizează</button></form>` : ''}
+          ${['pending','in_progress'].includes(r.status) ? `<form method="POST" action="/admin/onboarding/${r.id}" style="display:inline"><input type="hidden" name="_csrf" value="${csrfToken}"><input type="hidden" name="status" value="cancelled"><button class="btn btn-gray" type="submit">Anulează</button></form>` : ''}
         </div>
       </div>`;
     }

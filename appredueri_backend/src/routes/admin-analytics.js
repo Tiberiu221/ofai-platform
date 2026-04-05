@@ -438,7 +438,7 @@ router.get("/analytics", async (req, res) => {
     });
   } catch (err) {
     console.error("[Admin] Analytics error:", err.message, err.stack);
-    res.status(500).send("Eroare la incarcarea analytics: " + (process.env.NODE_ENV !== 'production' ? err.message : 'Verifica logurile serverului.'));
+    res.status(500).send("Eroare la incarcarea analytics: " + (process.env.NODE_ENV === 'development' ? err.message : 'Verifica logurile serverului.'));
   }
 });
 

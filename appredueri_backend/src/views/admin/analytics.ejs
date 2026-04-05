@@ -145,9 +145,9 @@
   // ═══════════════════════════════════════
   // SECTION 1: REVENUE
   // ═══════════════════════════════════════
-  createSparkline('spark-mrr', <%- JSON.stringify(data.revenue.sparkNewSubs) %>, '#16a34a');
+  createSparkline('spark-mrr', <%- JSON.stringify(data.revenue.sparkNewSubs).replace(/<\//g, '<\\/') %>, '#16a34a');
 
-  var tierData = <%- JSON.stringify(data.revenue.tierDist) %>;
+  var tierData = <%- JSON.stringify(data.revenue.tierDist).replace(/<\//g, '<\\/') %>;
   regChart('chart-tier-dist', 'doughnut', {
     labels: tierData.map(function(t) { return t.name; }),
     datasets: [{ data: tierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: tierData.map(function(t) { return tierColors[t.slug] || '#3b82f6'; }) }]
@@ -163,7 +163,7 @@
   // ═══════════════════════════════════════
   // SECTION 2: SUBSCRIPTIONS HISTORY
   // ═══════════════════════════════════════
-  var historyData = <%- JSON.stringify(data.subs.history) %>;
+  var historyData = <%- JSON.stringify(data.subs.history).replace(/<\//g, '<\\/') %>;
   var months = []; historyData.forEach(function(h) { if (months.indexOf(h.month) === -1) months.push(h.month); }); months.sort();
   var actions = ['created', 'upgraded', 'downgraded', 'cancelled'];
   var actionColors = { created: '#22c55e', upgraded: '#3b82f6', downgraded: '#f59e0b', cancelled: '#ef4444' };
@@ -181,9 +181,9 @@
   // ═══════════════════════════════════════
   // SECTION 3: USERS
   // ═══════════════════════════════════════
-  createSparkline('spark-signups', <%- JSON.stringify(data.users.sparkSignups) %>, '#3b82f6');
+  createSparkline('spark-signups', <%- JSON.stringify(data.users.sparkSignups).replace(/<\//g, '<\\/') %>, '#3b82f6');
 
-  var signupsData = <%- JSON.stringify(data.users.signupsWeekly) %>;
+  var signupsData = <%- JSON.stringify(data.users.signupsWeekly).replace(/<\//g, '<\\/') %>;
   regChart('chart-signups', 'line', {
     labels: signupsData.map(function(s) { return new Date(s.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
     datasets: [{ label: 'Utilizatori noi', data: signupsData.map(function(s) { return parseInt(s.cnt); }), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }]
@@ -192,15 +192,15 @@
   // ═══════════════════════════════════════
   // SECTION 4: BUSINESS HEALTH
   // ═══════════════════════════════════════
-  createSparkline('spark-biz-views', <%- JSON.stringify(data.biz.sparkViews) %>, '#9ca3af');
+  createSparkline('spark-biz-views', <%- JSON.stringify(data.biz.sparkViews).replace(/<\//g, '<\\/') %>, '#9ca3af');
 
-  var bizTierData = <%- JSON.stringify(data.biz.byTier) %>;
+  var bizTierData = <%- JSON.stringify(data.biz.byTier).replace(/<\//g, '<\\/') %>;
   regChart('chart-biz-tier', 'doughnut', {
     labels: bizTierData.map(function(t) { return t.tier || 'free'; }),
     datasets: [{ data: bizTierData.map(function(t) { return parseInt(t.cnt); }), backgroundColor: bizTierData.map(function(t) { return tierColors[t.tier] || '#71717a'; }) }]
   }, doughnutOpts);
 
-  var topViewsData = <%- JSON.stringify(data.biz.topByViews) %>;
+  var topViewsData = <%- JSON.stringify(data.biz.topByViews).replace(/<\//g, '<\\/') %>;
   if (topViewsData.length > 0) {
     regChart('chart-top-views', 'bar', {
       labels: topViewsData.map(function(b) { return b.name; }),
@@ -211,9 +211,9 @@
   // ═══════════════════════════════════════
   // SECTION 5: OFFER ANALYTICS
   // ═══════════════════════════════════════
-  createSparkline('spark-offer-views', <%- JSON.stringify(data.offers.sparkViews) %>, '#3b82f6');
+  createSparkline('spark-offer-views', <%- JSON.stringify(data.offers.sparkViews).replace(/<\//g, '<\\/') %>, '#3b82f6');
 
-  var topOffersData = <%- JSON.stringify(data.offers.topOffers) %>;
+  var topOffersData = <%- JSON.stringify(data.offers.topOffers).replace(/<\//g, '<\\/') %>;
   if (topOffersData.length > 0) {
     regChart('chart-top-offers', 'bar', {
       labels: topOffersData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
@@ -221,7 +221,7 @@
     }, hBarOpts());
   }
 
-  var catPerfData = <%- JSON.stringify(data.offers.catPerf) %>;
+  var catPerfData = <%- JSON.stringify(data.offers.catPerf).replace(/<\//g, '<\\/') %>;
   if (catPerfData.length > 0) {
     regChart('chart-cat-perf', 'radar', {
       labels: catPerfData.map(function(c) { return c.name; }),
@@ -240,7 +240,7 @@
   // ═══════════════════════════════════════
   // SECTION 6: ENGAGEMENT
   // ═══════════════════════════════════════
-  var dailyEngagement = <%- JSON.stringify(data.engagement.daily) %>;
+  var dailyEngagement = <%- JSON.stringify(data.engagement.daily).replace(/<\//g, '<\\/') %>;
   if (dailyEngagement.length > 0) {
     regChart('chart-engagement-daily', 'line', {
       labels: dailyEngagement.map(function(d) { return new Date(d.day).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
@@ -252,7 +252,7 @@
     }, chartDefaults);
   }
 
-  var topFavData = <%- JSON.stringify(data.engagement.topFav) %>;
+  var topFavData = <%- JSON.stringify(data.engagement.topFav).replace(/<\//g, '<\\/') %>;
   if (topFavData.length > 0) {
     regChart('chart-top-fav', 'bar', {
       labels: topFavData.map(function(o) { return o.title.length > 30 ? o.title.substring(0, 27) + '...' : o.title; }),
@@ -263,7 +263,7 @@
   // ═══════════════════════════════════════
   // SECTION 7: GEOGRAPHIC
   // ═══════════════════════════════════════
-  var geoViewsData = <%- JSON.stringify(data.geo.topCitiesViews) %>;
+  var geoViewsData = <%- JSON.stringify(data.geo.topCitiesViews).replace(/<\//g, '<\\/') %>;
   if (geoViewsData.length > 0) {
     regChart('chart-geo-views', 'bar', {
       labels: geoViewsData.map(function(c) { return c.name; }),
@@ -271,7 +271,7 @@
     }, hBarOpts());
   }
 
-  var geoOffersData = <%- JSON.stringify(data.geo.topCitiesOffers) %>;
+  var geoOffersData = <%- JSON.stringify(data.geo.topCitiesOffers).replace(/<\//g, '<\\/') %>;
   if (geoOffersData.length > 0) {
     regChart('chart-geo-offers', 'bar', {
       labels: geoOffersData.map(function(c) { return c.name; }),
@@ -282,7 +282,7 @@
   // ═══════════════════════════════════════
   // SECTION 8: CONTENT HEALTH
   // ═══════════════════════════════════════
-  var creationData = <%- JSON.stringify(data.content.creationRate) %>;
+  var creationData = <%- JSON.stringify(data.content.creationRate).replace(/<\//g, '<\\/') %>;
   regChart('chart-creation-rate', 'line', {
     labels: creationData.map(function(r) { return new Date(r.week).toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' }); }),
     datasets: [{ label: 'Oferte create', data: creationData.map(function(r) { return parseInt(r.cnt); }), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }]
@@ -291,9 +291,9 @@
   // ═══════════════════════════════════════
   // SECTION 9: EMAILS
   // ═══════════════════════════════════════
-  createSparkline('spark-emails', <%- JSON.stringify(data.emails.sparkEmails) %>, '#16a34a');
+  createSparkline('spark-emails', <%- JSON.stringify(data.emails.sparkEmails).replace(/<\//g, '<\\/') %>, '#16a34a');
 
-  var emailData = <%- JSON.stringify(data.emails.stats) %>;
+  var emailData = <%- JSON.stringify(data.emails.stats).replace(/<\//g, '<\\/') %>;
   regChart('chart-emails', 'bar', {
     labels: emailData.map(function(e) { return e.email_type; }),
     datasets: [
