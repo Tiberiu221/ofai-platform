@@ -148,7 +148,7 @@ app.use((req, res, next) => {
         imgSrc: ["'self'", "data:", "https:", "blob:", "https://www.google-analytics.com", "https://www.googletagmanager.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         connectSrc: ["'self'", "https://accounts.google.com", "https://www.google-analytics.com", "https://analytics.google.com", "https://*.google-analytics.com", "https://*.analytics.google.com"],
-        frameSrc: ["https://accounts.google.com"],
+        frameSrc: ["https://accounts.google.com", "https://maps.google.com", "https://www.google.com"],
         workerSrc: ["'self'"],
       },
     },
