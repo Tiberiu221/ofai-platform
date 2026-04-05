@@ -148,6 +148,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Service Worker:** `sw.js` in `src/public/` — never cache API/auth/billing paths. Update `CACHE_NAME` version when changing cached assets.
 - **Search helper:** `buildFuzzySearch(columns, paramIdx)` in `src/helpers/search.js` — apply `similarity: true` only on short columns (title, name), NOT on description (too noisy for trigrams)
 - **businesses.is_active:** Column does NOT exist on `businesses` table. Do NOT use in WHERE clauses. Use subscription status or offer counts to determine activity.
+- **businesses.created_at / businesses.updated_at:** Columns do NOT exist. Sitemap uses `CURRENT_DATE` as fallback. Do NOT reference in queries.
 - **offers.updated_at:** Column does NOT exist. Use `start_date` instead.
 - **offers.created_at:** Column does NOT exist on production. Use `start_date` for any date filtering on offers.
 - **review_responses.responded_by:** Column missing from migrations but referenced in INSERT code — will crash on review response submit
@@ -355,7 +356,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Resolved Gaps (as of 30 Mar 2026)
 - **Fuzzy search:** ✅ pg_trgm + `buildFuzzySearch()` across 5 routes, trigram indexes, 0.15 threshold
-- **Backend testing:** ✅ Jest + Supertest — 69 unit tests (5 suites: jwt, tiers, search, validate, mapsParser). Playwright E2E — 42 tests (smoke, auth, navigation, search, mobile, SEO, API). `npm test` for unit, `npm run test:e2e` for E2E.
+- **Backend testing:** ✅ Jest + Supertest — 69 unit tests (5 suites: jwt, tiers, search, validate, mapsParser). Playwright E2E — 43 tests (smoke, auth, navigation, search, mobile, SEO, API). Playwright Pentest — 42 OWASP security tests (XSS, SQLi, CSRF, auth-bypass, cookies, headers, open-redirect, error-disclosure, rate-limit, IDOR, path-traversal). `npm test` for unit, `npm run test:e2e` for E2E, `npm run test:pentest` for security.
 - **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
 - **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
 - **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
