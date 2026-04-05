@@ -358,7 +358,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Resolved Gaps (as of 30 Mar 2026)
 - **Fuzzy search:** ✅ pg_trgm + `buildFuzzySearch()` across 5 routes, trigram indexes, 0.15 threshold
-- **Backend testing:** ✅ Jest + Supertest — 69 unit tests (5 suites: jwt, tiers, search, validate, mapsParser). Playwright E2E — 43 tests (smoke, auth, navigation, search, mobile, SEO, API). Playwright Pentest — 42 OWASP security tests (XSS, SQLi, CSRF, auth-bypass, cookies, headers, open-redirect, error-disclosure, rate-limit, IDOR, path-traversal). `npm test` for unit, `npm run test:e2e` for E2E, `npm run test:pentest` for security.
+- **Backend testing:** ✅ Jest + Supertest — 69 unit tests (5 suites: jwt, tiers, search, validate, mapsParser). Playwright E2E — 43 tests (smoke, auth, navigation, search, mobile, SEO, API). Playwright Pentest — 42 OWASP security tests (XSS, SQLi, CSRF, auth-bypass, cookies, headers, open-redirect, error-disclosure, rate-limit, IDOR, path-traversal). Visual Regression — 7 screenshot comparisons. Regression Guards — 9 known bug guards. `npm test` for unit, `npm run test:e2e` for ALL (101 tests), `npm run test:pentest` for security only.
 - **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
 - **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
 - **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
