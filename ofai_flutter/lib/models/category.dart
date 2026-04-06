@@ -41,8 +41,6 @@ class Category {
         return Icons.hot_tub;
       case 'optica':
         return Icons.visibility;
-      case 'farmacie':
-        return Icons.local_pharmacy;
       case 'veterinar':
         return Icons.pets;
       case 'stomatologie':

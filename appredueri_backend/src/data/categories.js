@@ -7,7 +7,7 @@ const categories = [
   { id: 6, name: "Fitness" },
   { id: 7, name: "Spa & Wellness" },
   { id: 8, name: "Optica" },
-  { id: 9, name: "Farmacie" },
+
   { id: 10, name: "Veterinar" },
   { id: 11, name: "Stomatologie" },
   { id: 12, name: "Florarie" },
