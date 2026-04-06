@@ -718,6 +718,7 @@
   };
 
   window.loc_create = function() {
+    var name = document.getElementById('loc-add-name').value.trim();
     var address = document.getElementById('loc-add-address').value.trim();
     var cityId = document.getElementById('loc-add-city').value;
     var phone = document.getElementById('loc-add-phone').value.trim();
@@ -733,7 +734,7 @@
     apiFetch('/api/web/portal/' + businessId + '/locations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: address, city_id: cityId, phone: phone, maps_url: mapsUrl, lat: lat, lng: lng })
+      body: JSON.stringify({ name: name, address: address, city_id: cityId, phone: phone, maps_url: mapsUrl, lat: lat, lng: lng })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
@@ -752,6 +753,7 @@
 
   window.loc_update = function(locId) {
     var card = document.getElementById('loc-card-' + locId);
+    var name = card.querySelector('.loc-name').value.trim();
     var address = card.querySelector('.loc-address').value.trim();
     var cityId = card.querySelector('.loc-city').value;
     var phone = card.querySelector('.loc-phone').value.trim();
@@ -767,7 +769,7 @@
     apiFetch('/api/web/portal/' + businessId + '/locations/' + locId, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: address, city_id: cityId, phone: phone, maps_url: mapsUrl, lat: lat, lng: lng })
+      body: JSON.stringify({ name: name, address: address, city_id: cityId, phone: phone, maps_url: mapsUrl, lat: lat, lng: lng })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {

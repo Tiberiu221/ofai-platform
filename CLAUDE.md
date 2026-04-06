@@ -41,7 +41,7 @@ appredueri_backend/
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
       llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, reviewSuggestions, prompts)
-    migrations/     # SQL migration files (006-071)
+    migrations/     # SQL migration files (006-079)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
       public/portal/partials/           # 8 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support, _tab-tools)
@@ -190,7 +190,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 77 migrations, 26 screens, 13 models, 28 widgets
+- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 79 migrations, 26 screens, 13 models, 28 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -220,7 +220,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Concierge Onboarding:** Standard+ tier, request form + file upload, admin queue
 - **Report System:** User reports with categories, admin review queue, Flutter "My Reports" screen
 - **AI Validation:** Business validation (two-pass), offer moderation, review summarization, review suggestions via Claude API
-- **Location Management:** Multi-location support, Google Maps URL parsing
+- **Location Management:** Multi-location support, Google Maps URL parsing, location names (migration 079)
 - **Flash Deals:** flash_expires_at on offers, countdown badge widget, Home section
 - **Notification Preferences:** Granular per-category toggles (daily, flash, weekly, marketing)
 - **Saved Searches:** Save query+filters, alert on new matches, Flutter screen + provider

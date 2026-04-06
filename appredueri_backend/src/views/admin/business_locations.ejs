@@ -10,6 +10,11 @@
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
     <div class="form-group">
+      <label>Nume locație (opțional)</label>
+      <input type="text" name="name" placeholder="ex: Sediu Central, Punct de lucru Brașov" maxlength="100">
+    </div>
+
+    <div class="form-group">
       <label>Oraș</label>
       <select name="city_id" required>
         <% cities.forEach(city => { %>
@@ -63,6 +68,7 @@
   <table>
     <thead>
       <tr>
+        <th style="min-width: 140px;">Nume</th>
         <th style="min-width: 160px;">Oraș</th>
         <th>Adresă</th>
         <th style="min-width: 140px;">Telefon</th>
@@ -82,6 +88,9 @@
         </form>
 
         <tr>
+          <td>
+            <input type="text" name="name" value="<%= loc.name || '' %>" placeholder="Nume locație..." form="<%= formId %>" maxlength="100" />
+          </td>
           <td>
             <select name="city_id" required form="<%= formId %>">
               <% cities.forEach(city => { %>

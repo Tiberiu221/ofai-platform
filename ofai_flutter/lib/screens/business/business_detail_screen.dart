@@ -1118,6 +1118,12 @@ class _BusinessDetailScreenState extends ConsumerState<BusinessDetailScreen>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
+                                        if (loc.name != null)
+                                          Text(loc.name!,
+                                              style: AppTypography.bodyMedium
+                                                  .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600)),
                                         if (loc.address != null)
                                           Text(loc.address!,
                                               style: AppTypography.bodyMedium),
@@ -2152,7 +2158,7 @@ class _OpeningHoursSection extends StatelessWidget {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          loc.address ?? 'Locație ${locIdx + 1}',
+                          loc.name ?? loc.address ?? 'Locație ${locIdx + 1}',
                           style: AppTypography.labelSmall
                               .copyWith(color: AppColors.textSecondary),
                           maxLines: 1,

@@ -213,6 +213,7 @@ router.get("/", optionalAuth, async (req, res) => {
           json_agg(
             json_build_object(
               'id', bl.id,
+              'name', bl.name,
               'address', bl.address,
               'lat', bl.lat,
               'lng', bl.lng,
@@ -444,7 +445,7 @@ router.get("/feed", auth, async (req, res) => {
       LEFT JOIN categories cat ON b.category_id = cat.id
       LEFT JOIN LATERAL (
         SELECT COALESCE(
-          json_agg(json_build_object('id', bl.id, 'address', bl.address, 'lat', bl.lat, 'lng', bl.lng, 'city_name', c2.name) ORDER BY bl.id)
+          json_agg(json_build_object('id', bl.id, 'name', bl.name, 'address', bl.address, 'lat', bl.lat, 'lng', bl.lng, 'city_name', c2.name) ORDER BY bl.id)
           FILTER (WHERE bl.id IS NOT NULL), '[]'::json
         ) AS locations
         FROM business_locations bl
@@ -568,6 +569,7 @@ router.get("/category-feed", searchLimiter, async (req, res) => {
             json_agg(
               json_build_object(
                 'id', bl.id,
+                'name', bl.name,
                 'address', bl.address,
                 'lat', bl.lat,
                 'lng', bl.lng,

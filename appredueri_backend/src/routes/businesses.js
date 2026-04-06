@@ -285,7 +285,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
     // 3. Locații + BOOKING INFO (de pe locații)
     const locationsRes = await pool.query(
       `SELECT
-        bl.id, bl.address, bl.lat, bl.lng, bl.phone,
+        bl.id, bl.name, bl.address, bl.lat, bl.lng, bl.phone,
         bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
         c.id as city_id, c.name as city_name
        FROM business_locations bl
@@ -326,6 +326,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
       // Avem locații multiple definite - le folosim pe ele
       locations = locationsRes.rows.map((row) => ({
         id: row.id,
+        name: row.name,
         address: row.address,
         lat: row.lat,
         lng: row.lng,
@@ -346,6 +347,7 @@ router.get("/:id", optionalAuth, async (req, res) => {
       // cu booking info de pe business
       locations = [{
         id: 'main',
+        name: null,
         address: b.address,
         lat: b.lat,
         lng: b.lng,

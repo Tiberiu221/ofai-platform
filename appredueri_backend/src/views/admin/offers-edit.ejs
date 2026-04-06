@@ -86,7 +86,7 @@
           <label class="checkbox-label">
             <input type="checkbox" name="locations" value="<%= loc.id %>" style="width: auto;" <%= isChecked ? 'checked' : '' %>>
             <span>
-              <%= loc.address %> (<%= loc.city_name || 'N/A' %>)
+              <%= loc.name ? loc.name + ' — ' : '' %><%= loc.address %> (<%= loc.city_name || 'N/A' %>)
             </span>
           </label>
         <% }) %>

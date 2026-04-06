@@ -267,7 +267,7 @@
           return o.locationIds && o.locationIds.indexOf(loc.id) !== -1;
         });
         if (locOffers.length > 0) {
-          offerTabs.push({ id: 'loc-' + loc.id, label: loc.address, offers: locOffers });
+          offerTabs.push({ id: 'loc-' + loc.id, label: loc.name || loc.address, offers: locOffers });
         }
       });
       // Safety: if no tabs were generated (data mismatch), fall back to all offers
@@ -449,6 +449,12 @@
     <div class="bd-locations-grid">
       <% business.locations.forEach((loc, i) => { %>
         <div class="booking-card reveal reveal-delay-<%= Math.min(i + 1, 5) %>">
+          <% if (loc.name) { %>
+            <div class="bc-row" style="font-weight: 600; font-size: 0.9375rem;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span><%= loc.name %></span>
+            </div>
+          <% } %>
           <div class="bc-row">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
             <span><%= loc.address %></span>
@@ -551,7 +557,7 @@
       <% if (locsWithHours.length > 1) { %>
         <div class="bd-hours-loc-label<%= locIdx > 0 ? ' bd-hours-loc-divider' : '' %>">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          <%= loc.address %>
+          <%= loc.name || loc.address %>
         </div>
       <% } %>
 

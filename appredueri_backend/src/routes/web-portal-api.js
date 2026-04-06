@@ -418,16 +418,16 @@ function toNullableFloat(v) {
 router.post("/api/web/portal/:businessId/locations", requireBusinessOwner, requireLimit('max_locations', countLocations), async (req, res) => {
   try {
     const businessId = req.businessId;
-    const { address, city_id, phone, lat, lng, maps_url } = req.body || {};
+    const { name, address, city_id, phone, lat, lng, maps_url } = req.body || {};
 
     if (!address || !city_id) {
       return res.status(400).json({ message: "Adresa și orașul sunt obligatorii" });
     }
 
     const result = await pool.query(
-      `INSERT INTO business_locations (business_id, city_id, address, phone, lat, lng, maps_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-      [businessId, parseInt(city_id), address.trim(), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null]
+      `INSERT INTO business_locations (business_id, city_id, name, address, phone, lat, lng, maps_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      [businessId, parseInt(city_id), (name || '').trim() || null, address.trim(), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null]
     );
 
     res.json({ success: true, locationId: result.rows[0].id, message: "Locație adăugată!" });
@@ -443,7 +443,7 @@ router.put("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner,
     const businessId = req.businessId;
     const locId = parseInt(req.params.locId, 10);
     if (isNaN(locId)) return res.status(400).json({ message: "ID invalid" });
-    const { address, city_id, phone, lat, lng, maps_url } = req.body || {};
+    const { name, address, city_id, phone, lat, lng, maps_url } = req.body || {};
 
     if (!address || !city_id) {
       return res.status(400).json({ message: "Adresa și orașul sunt obligatorii" });
@@ -451,10 +451,10 @@ router.put("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner,
 
     const result = await pool.query(
       `UPDATE business_locations SET
-        address = $1, city_id = $2, phone = $3, lat = $4, lng = $5, maps_url = $6, updated_at = NOW()
-       WHERE id = $7 AND business_id = $8
+        name = $1, address = $2, city_id = $3, phone = $4, lat = $5, lng = $6, maps_url = $7, updated_at = NOW()
+       WHERE id = $8 AND business_id = $9
        RETURNING id`,
-      [address.trim(), parseInt(city_id), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null, locId, businessId]
+      [(name || '').trim() || null, address.trim(), parseInt(city_id), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null, locId, businessId]
     );
 
     if (result.rows.length === 0) {

@@ -577,7 +577,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       ),
       pool.query(
         `SELECT
-          bl.id, bl.address, bl.lat, bl.lng, bl.phone, bl.city_id, bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions, c.name AS city_name
+          bl.id, bl.name, bl.address, bl.lat, bl.lng, bl.phone, bl.city_id, bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions, c.name AS city_name
         FROM business_locations bl
         LEFT JOIN cities c ON c.id = bl.city_id
         WHERE bl.business_id = $1
@@ -702,6 +702,7 @@ router.post("/businesses/:id/edit", async (req, res) => {
         const locId = parseInt(locData.id, 10);
         if (Number.isNaN(locId)) continue;
 
+        const locName = (locData.name || "").trim() || null;
         const locAddress = (locData.address || "").trim() || null;
         const locPhone = (locData.phone || "").trim() || null;
         const bookingType = (locData.booking_type || "NONE").trim();
@@ -715,16 +716,18 @@ router.post("/businesses/:id/edit", async (req, res) => {
           `
           UPDATE business_locations
           SET
-            address = $1,
-            phone = $2,
-            booking_type = $3,
-            booking_phone = $4,
-            booking_whatsapp = $5,
-            booking_url = $6,
-            booking_instructions = $7
-          WHERE id = $8 AND business_id = $9
+            name = $1,
+            address = $2,
+            phone = $3,
+            booking_type = $4,
+            booking_phone = $5,
+            booking_whatsapp = $6,
+            booking_url = $7,
+            booking_instructions = $8
+          WHERE id = $9 AND business_id = $10
           `,
           [
+            locName,
             locAddress,
             locPhone,
             bookingType,
@@ -745,6 +748,7 @@ router.post("/businesses/:id/edit", async (req, res) => {
         const locId = parseInt(rawLocId || locData.id, 10);
         if (Number.isNaN(locId)) continue;
 
+        const locName = (locData.name || "").trim() || null;
         const locAddress = (locData.address || "").trim() || null;
         const locPhone = (locData.phone || "").trim() || null;
         const bookingType = (locData.booking_type || "NONE").trim();
@@ -758,16 +762,18 @@ router.post("/businesses/:id/edit", async (req, res) => {
           `
           UPDATE business_locations
           SET
-            address = $1,
-            phone = $2,
-            booking_type = $3,
-            booking_phone = $4,
-            booking_whatsapp = $5,
-            booking_url = $6,
-            booking_instructions = $7
-          WHERE id = $8 AND business_id = $9
+            name = $1,
+            address = $2,
+            phone = $3,
+            booking_type = $4,
+            booking_phone = $5,
+            booking_whatsapp = $6,
+            booking_url = $7,
+            booking_instructions = $8
+          WHERE id = $9 AND business_id = $10
           `,
           [
+            locName,
             locAddress,
             locPhone,
             bookingType,
@@ -1305,7 +1311,7 @@ router.get("/offers/:id/edit", async (req, res) => {
     // 3. Luăm locațiile business-ului curent
     const locationsRes = await pool.query(
       `
-      SELECT bl.id, bl.address, c.name as city_name 
+      SELECT bl.id, bl.name, bl.address, c.name as city_name
       FROM business_locations bl
       LEFT JOIN cities c ON bl.city_id = c.id
       WHERE bl.business_id = $1 
@@ -1535,7 +1541,7 @@ router.get("/businesses/:id/locations", async (req, res) => {
 // POST: Update existing location (inline edit from locations page)
 router.post("/businesses/:businessId/locations/:locationId", async (req, res) => {
   const { businessId, locationId } = req.params;
-  const { city_id, address, phone, lat, lng, maps_url } = req.body;
+  const { name, city_id, address, phone, lat, lng, maps_url } = req.body;
 
   const toNullableFloat = (v) => {
     if (v === "" || v == null) return null;
@@ -1551,16 +1557,18 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
     const result = await pool.query(
       `
       UPDATE business_locations
-      SET city_id = $1,
-          address = $2,
-          phone = $3,
-          lat = $4,
-          lng = $5,
-          maps_url = $6
-      WHERE id = $7 AND business_id = $8
+      SET name = $1,
+          city_id = $2,
+          address = $3,
+          phone = $4,
+          lat = $5,
+          lng = $6,
+          maps_url = $7
+      WHERE id = $8 AND business_id = $9
       RETURNING id
       `,
       [
+        (name || '').trim() || null,
         Number(city_id),
         address,
         phone || null,
@@ -1587,7 +1595,7 @@ router.post("/businesses/:businessId/locations/:locationId", async (req, res) =>
 // POST: Create new location for a business
 router.post("/businesses/:id/locations", async (req, res) => {
   const businessId = req.params.id;
-  const { city_id, address, phone, lat, lng, maps_url } = req.body;
+  const { name, city_id, address, phone, lat, lng, maps_url } = req.body;
 
   const toNullableFloat = (v) => {
     if (v === "" || v == null) return null;
@@ -1607,11 +1615,12 @@ router.post("/businesses/:id/locations", async (req, res) => {
     const overLimit = locationLimit !== null && currentCount >= locationLimit;
 
     await pool.query(
-      `INSERT INTO business_locations (business_id, city_id, address, phone, lat, lng, maps_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO business_locations (business_id, city_id, name, address, phone, lat, lng, maps_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         Number(businessId),
         Number(city_id),
+        (name || '').trim() || null,
         address,
         phone || null,
         toNullableFloat(lat),

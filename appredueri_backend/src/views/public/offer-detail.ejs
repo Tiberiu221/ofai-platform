@@ -1102,6 +1102,9 @@
         <div class="offer-locations-grid">
           <% offer.locations.forEach(function(loc) { %>
             <div class="booking-card">
+              <% if (loc.name) { %>
+                <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 4px; color: var(--text-primary);"><%= loc.name %></div>
+              <% } %>
               <div class="booking-card-address">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span><%= loc.address %><% if (loc.cityName) { %>, <%= loc.cityName %><% } %></span>

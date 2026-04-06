@@ -249,6 +249,9 @@
 
         <input type="hidden" name="locations[<%= loc.id %>][id]" value="<%= loc.id %>" />
 
+        <label>Nume locație</label>
+        <input type="text" name="locations[<%= loc.id %>][name]" value="<%= loc.name || '' %>" placeholder="ex: Sediu Central" maxlength="100" />
+
         <label>Adresă locație</label>
         <input type="text" name="locations[<%= loc.id %>][address]" value="<%= loc.address || '' %>" />
 

@@ -756,7 +756,7 @@
               %>
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg);">
                   <input type="checkbox" class="of-loc-checkbox" value="<%= loc.id %>" <%= isChecked ? 'checked' : '' %>>
-                  <span style="font-size: 0.875rem; color: var(--text-primary);"><%= loc.address %></span>
+                  <span style="font-size: 0.875rem; color: var(--text-primary);"><%= loc.name ? loc.name + ' — ' : '' %><%= loc.address %></span>
                   <% if (loc.city_name) { %>
                     <span style="font-size: 0.75rem; color: var(--text-secondary);">(<%= loc.city_name %>)</span>
                   <% } %>

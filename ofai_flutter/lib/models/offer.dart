@@ -184,6 +184,7 @@ class OfferBusiness {
 
 class OfferLocation {
   final int id;
+  final String? name;
   final String? address;
   final double? lat;
   final double? lng;
@@ -191,6 +192,7 @@ class OfferLocation {
 
   OfferLocation({
     required this.id,
+    this.name,
     this.address,
     this.lat,
     this.lng,
@@ -200,6 +202,7 @@ class OfferLocation {
   factory OfferLocation.fromJson(Map<String, dynamic> json) {
     return OfferLocation(
       id: json['id'] as int,
+      name: json['name'] as String?,
       address: json['address'] as String?,
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),

@@ -739,6 +739,8 @@ class OfferDetailScreen extends ConsumerWidget {
                                               child: Column(
                                                 crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
+                                                  if (loc.name != null)
+                                                    Text(loc.name!, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                                                   if (loc.address != null)
                                                     Text(loc.address!, style: AppTypography.bodyMedium),
                                                   if (loc.cityName != null)

@@ -209,6 +209,7 @@ class BusinessHours {
 
 class BusinessLocation {
   final dynamic id; // can be int or "main"
+  final String? name;
   final String? address;
   final double? lat;
   final double? lng;
@@ -223,6 +224,7 @@ class BusinessLocation {
 
   BusinessLocation({
     required this.id,
+    this.name,
     this.address,
     this.lat,
     this.lng,
@@ -239,6 +241,7 @@ class BusinessLocation {
   factory BusinessLocation.fromJson(Map<String, dynamic> json) {
     return BusinessLocation(
       id: json['id'],
+      name: json['name'] as String?,
       address: json['address'] as String?,
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),

@@ -1028,7 +1028,7 @@ router.get("/oferta/:id", async (req, res) => {
     const specificLocationIds = linkRes.rows.map(r => r.location_id);
 
     let locations = [];
-    const baseLocQuery = `SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone, bl.maps_url,
+    const baseLocQuery = `SELECT bl.id, bl.name, bl.address, bl.lat, bl.lng, bl.phone, bl.maps_url,
       bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
       c.name as city_name
       FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id`;
@@ -1364,7 +1364,7 @@ router.get("/business/:id", async (req, res) => {
 
     // Locations
     const locationsRes = await pool.query(`
-      SELECT bl.id, bl.address, bl.lat, bl.lng, bl.phone, bl.maps_url,
+      SELECT bl.id, bl.name, bl.address, bl.lat, bl.lng, bl.phone, bl.maps_url,
              bl.booking_type, bl.booking_phone, bl.booking_whatsapp, bl.booking_url, bl.booking_instructions,
              c.id as city_id, c.name as city_name
       FROM business_locations bl
@@ -1396,7 +1396,7 @@ router.get("/business/:id", async (req, res) => {
     let locations = [];
     if (locationsRes.rows.length > 0) {
       locations = locationsRes.rows.map(row => ({
-        id: row.id, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
+        id: row.id, name: row.name, address: row.address, lat: row.lat, lng: row.lng, phone: row.phone,
         maps_url: row.maps_url || null,
         city: { id: row.city_id, name: row.city_name },
         booking_type: (row.booking_type || 'none').toLowerCase().replace('link', 'url'),
@@ -1405,7 +1405,7 @@ router.get("/business/:id", async (req, res) => {
         hours: hoursMap[row.id] || [],
       }));
     } else if (b.address) {
-      locations = [{ id: 'main', address: b.address, lat: b.lat, lng: b.lng, phone: b.phone,
+      locations = [{ id: 'main', name: null, address: b.address, lat: b.lat, lng: b.lng, phone: b.phone,
         city: { id: b.city_id, name: b.city_name },
         booking_type: 'none', booking_phone: null, booking_whatsapp: null, booking_url: null, booking_instructions: null,
         hours: [] }];
@@ -2212,7 +2212,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
       pool.query(
-        `SELECT bl.id, bl.address, bl.phone, bl.lat, bl.lng, bl.maps_url, bl.city_id,
+        `SELECT bl.id, bl.name, bl.address, bl.phone, bl.lat, bl.lng, bl.maps_url, bl.city_id,
                 c.name AS city_name
          FROM business_locations bl
          LEFT JOIN cities c ON bl.city_id = c.id
@@ -2293,7 +2293,7 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, attachTier()
         [businessId]
       ),
       pool.query(
-        `SELECT bl.id, bl.address, c.name AS city_name
+        `SELECT bl.id, bl.name, bl.address, c.name AS city_name
          FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id
          WHERE bl.business_id = $1 ORDER BY bl.id`,
         [businessId]
@@ -2341,7 +2341,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, attachTi
         [offerId]
       ),
       pool.query(
-        `SELECT bl.id, bl.address, c.name AS city_name
+        `SELECT bl.id, bl.name, bl.address, c.name AS city_name
          FROM business_locations bl LEFT JOIN cities c ON bl.city_id = c.id
          WHERE bl.business_id = $1 ORDER BY bl.id`,
         [businessId]
