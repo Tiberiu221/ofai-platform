@@ -82,14 +82,14 @@ function initCountdowns() {
       // Show the element (must be 'block' to override CSS display:none)
       el.style.display = 'block';
 
-      // Build display text
+      // Build display text (short to fit small cards)
       var text;
       if (days > 0) {
-        text = 'Oferta expiră în ' + days + 'z și ' + hours + 'h';
+        text = 'Expir\u0103 \u00een ' + days + 'z \u0219i ' + hours + 'h';
       } else if (hours > 0) {
-        text = 'Oferta expiră în ' + hours + 'h și ' + mins + 'm';
+        text = 'Expir\u0103 \u00een ' + hours + 'h \u0219i ' + mins + 'm';
       } else {
-        text = 'Oferta expiră în ' + mins + 'm';
+        text = 'Expir\u0103 \u00een ' + mins + 'm';
       }
       el.textContent = text;
 
