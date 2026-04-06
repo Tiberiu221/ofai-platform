@@ -41,6 +41,19 @@ Disallow: /reset-password
 Disallow: /verify-code
 Disallow: /api/
 
+# AI Crawlers — explicitly allowed for AI search visibility
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://ofai.ro/sitemap.xml`);
 });
 
