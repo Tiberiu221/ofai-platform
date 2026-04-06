@@ -292,6 +292,17 @@ app.set("views", path.join(__dirname, "views"));
 const uploadsPath = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsPath));
 
+// Dynamic service worker — CACHE_NAME changes on each deploy (server restart)
+app.get('/sw.js', (req, res) => {
+  const swPath = path.join(__dirname, 'public', 'sw.js');
+  const fs = require('fs');
+  let content = fs.readFileSync(swPath, 'utf8');
+  content = content.replace(/const CACHE_NAME = '[^']+';/, `const CACHE_NAME = 'ofai-${app.locals.cacheBust}';`);
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.send(content);
+});
+
 // Configurare Folder Static (Public — CSS, JS, Images)
 app.use(express.static(path.join(__dirname, "public"), { maxAge: "1d" }));
 

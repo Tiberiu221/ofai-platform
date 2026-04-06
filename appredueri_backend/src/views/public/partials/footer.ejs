@@ -106,7 +106,7 @@ window.trackClick = function(businessId, actionType, offerId) {
 <!-- Service Worker -->
 <script nonce="<%= cspNonce %>">
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function() {});
+  navigator.serviceWorker.register('/sw.js?v=<%= typeof cacheBust !== "undefined" ? cacheBust : "" %>').catch(function() {});
 }
 </script>
 </body>
