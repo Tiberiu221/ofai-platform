@@ -14,7 +14,7 @@ i18next
       loadPath: path.join(__dirname, 'locales/{{lng}}.json'),
     },
     detection: {
-      order: ['querystring', 'cookie', 'header'],
+      order: ['querystring', 'cookie'],  // NO 'header' — don't use browser Accept-Language (default is always RO)
       lookupQuerystring: 'lang',
       lookupCookie: 'ofai_lang',
       caches: ['cookie'],
