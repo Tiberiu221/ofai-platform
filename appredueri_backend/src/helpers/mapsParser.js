@@ -102,7 +102,16 @@ function extractCoordinates(urlString) {
     if (isValidCoordinate(lat, lng)) return { lat, lng };
   }
 
-  // Pattern 4: ll=lat,lng
+  // Pattern 4: /maps/search/lat,lng or /maps/search/lat,+lng
+  const searchPathPattern = /\/maps\/search\/(-?\d+\.?\d*),\+?(-?\d+\.?\d*)/;
+  const searchPathMatch = urlString.match(searchPathPattern);
+  if (searchPathMatch) {
+    const lat = parseFloat(searchPathMatch[1]);
+    const lng = parseFloat(searchPathMatch[2]);
+    if (isValidCoordinate(lat, lng)) return { lat, lng };
+  }
+
+  // Pattern 5: ll=lat,lng
   const llPattern = /[?&]ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/;
   const llMatch = urlString.match(llPattern);
   if (llMatch) {
