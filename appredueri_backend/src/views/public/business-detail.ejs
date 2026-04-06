@@ -812,7 +812,7 @@
           <%= t('businessDetail.writeReview') %>
         </button>
       <% } else { %>
-        <a href="/login?returnTo=/business/<%= business.id %>#reviews-section" class="btn btn-secondary" style="margin-left: auto; font-size: 0.8125rem; padding: 8px 16px; text-decoration: none;">
+        <a href="/login?returnTo=/business/<%= business.id %>#reviews-section" class="btn btn-secondary" style="margin-left: auto; font-size: 0.75rem; padding: 6px 12px; text-decoration: none; white-space: nowrap;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           <%= t('businessDetail.loginToReview') %>
         </a>
@@ -908,7 +908,7 @@
         <% }); %>
       <% } else { %>
         <div class="bd-empty-state">
-          <p><%= t('businessDetail.noReviews') %> <%= t('businessDetail.noReviewsHint') %></p>
+          <p><%= t('businessDetail.noReviews') %>. <%= t('businessDetail.noReviewsHint') %></p>
         </div>
       <% } %>
     </div>
