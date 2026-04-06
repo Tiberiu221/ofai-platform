@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ofai-v1';
+const CACHE_NAME = 'ofai-v2';
 const PRECACHE_URLS = [
   '/offline.html',
   '/images/ofai-favicon.png',
