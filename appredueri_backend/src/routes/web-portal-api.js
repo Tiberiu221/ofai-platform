@@ -451,7 +451,7 @@ router.put("/api/web/portal/:businessId/locations/:locId", requireBusinessOwner,
 
     const result = await pool.query(
       `UPDATE business_locations SET
-        name = $1, address = $2, city_id = $3, phone = $4, lat = $5, lng = $6, maps_url = $7, updated_at = NOW()
+        name = $1, address = $2, city_id = $3, phone = $4, lat = $5, lng = $6, maps_url = $7
        WHERE id = $8 AND business_id = $9
        RETURNING id`,
       [(name || '').trim() || null, address.trim(), parseInt(city_id), phone || null, toNullableFloat(lat), toNullableFloat(lng), maps_url || null, locId, businessId]
