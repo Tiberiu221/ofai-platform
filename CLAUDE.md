@@ -147,6 +147,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **i18n Flutter:** Use `AppLocalizations.of(context)!.key` to access translations. Import `package:flutter_gen/gen_l10n/app_localizations.dart`. Run `flutter gen-l10n` after modifying ARB files.
 - **Service Worker:** `sw.js` in `src/public/` — never cache API/auth/billing paths. Update `CACHE_NAME` version when changing cached assets.
 - **Search helper:** `buildFuzzySearch(columns, paramIdx)` in `src/helpers/search.js` — apply `similarity: true` only on short columns (title, name), NOT on description (too noisy for trigrams)
+- **Category IDs differ between `categories.js` and production DB!** The hardcoded list in `src/data/categories.js` uses sequential IDs that DO NOT match production. ALWAYS query `SELECT id, name FROM categories` on production DB before using hardcoded IDs. Lesson learned: ID=9 was Optica in prod, not Farmacie (which was ID=10).
 - **businesses.is_active:** Column does NOT exist on `businesses` table. Do NOT use in WHERE clauses. Use subscription status or offer counts to determine activity.
 - **businesses.created_at / businesses.updated_at:** Columns do NOT exist. Sitemap uses `CURRENT_DATE` as fallback. Do NOT reference in queries.
 - **offers.updated_at:** Column does NOT exist. Use `start_date` instead.

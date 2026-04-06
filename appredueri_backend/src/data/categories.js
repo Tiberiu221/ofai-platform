@@ -7,13 +7,12 @@ const categories = [
   { id: 6, name: "Fitness" },
   { id: 7, name: "Spa & Wellness" },
   { id: 8, name: "Optica" },
-
-  { id: 10, name: "Veterinar" },
-  { id: 11, name: "Stomatologie" },
-  { id: 12, name: "Florarie" },
-  { id: 13, name: "Curatatorie" },
-  { id: 14, name: "Foto & Video" },
-  { id: 15, name: "Magazine Online" }
+  { id: 9, name: "Veterinar" },
+  { id: 10, name: "Stomatologie" },
+  { id: 11, name: "Florarie" },
+  { id: 12, name: "Curatatorie" },
+  { id: 13, name: "Foto & Video" },
+  { id: 14, name: "Magazine Online" }
 ];
 
 module.exports = categories;
