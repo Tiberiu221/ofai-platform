@@ -186,8 +186,8 @@
 /* Overlay variant: on card images (absolute positioned, top-left) */
 .countdown-overlay {
   position: absolute;
-  top: 48px; /* below heart button (8px top + 36px height + 4px gap) */
-  left: 12px;
+  bottom: 12px;
+  right: 12px;
   display: none; /* JS shows when <=7 days remain */
   font-size: 0.6875rem;
   font-weight: 600;
@@ -202,9 +202,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* On featured cards (deal-of-day), offset further down for "Oferta Zilei" badge */
+/* On featured cards (deal-of-day), position below the price badge */
 .offer-card.featured .countdown-overlay {
-  top: 56px;
+  bottom: auto;
+  top: 48px; /* below .offer-badge (12px top + ~28px height + 8px gap) */
+  right: 12px;
 }
 /* Inline variant: in content flow (NOT absolute positioned) */
 .countdown-inline {
