@@ -39,8 +39,6 @@ class Category {
         return Icons.fitness_center;
       case 'spa & wellness':
         return Icons.hot_tub;
-      case 'optica':
-        return Icons.visibility;
       case 'veterinar':
         return Icons.pets;
       case 'stomatologie':

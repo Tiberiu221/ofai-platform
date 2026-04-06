@@ -6,7 +6,6 @@ const categories = [
   { id: 5, name: "Cafenea" },
   { id: 6, name: "Fitness" },
   { id: 7, name: "Spa & Wellness" },
-  { id: 8, name: "Optica" },
   { id: 9, name: "Veterinar" },
   { id: 10, name: "Stomatologie" },
   { id: 11, name: "Florarie" },
