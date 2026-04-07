@@ -165,10 +165,9 @@ async function _getDealOfDay() {
           AND o.moderation_status IN ('approved', 'auto_approved')
           AND o.start_date <= CURRENT_DATE
         ORDER BY (
-          (1.0 - LEAST(30, EXTRACT(EPOCH FROM (NOW() - o.start_date)) / 86400.0) / 30.0) * 0.3
-          + LEAST(1.0, (COALESCE(fav_recent.cnt, 0) + COALESCE(click_recent.cnt, 0)) / 20.0) * 0.25
+          COALESCE(o.performance_score, 0) * 0.6
           + LEAST(1.0, COALESCE(o.discount_value, 0) / 50.0) * 0.15
-          + CASE WHEN splan.slug = 'premium' THEN 0.2 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END
+          + CASE WHEN o.end_date <= CURRENT_DATE + 3 THEN 0.15 ELSE 0 END
           + (hashtext(o.id::text || CURRENT_DATE::text) & x'7FFFFFFF'::int)::float / 2147483647.0 * 0.1
         ) DESC
         LIMIT 1
@@ -228,7 +227,7 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
              b.subscription_badge_type, b.is_verified,
              ci.name, cat.name, o.logo_url, splan.slug,
              fav_agg.favorite_count, fav_agg.recent_favs
-    ORDER BY (RANDOM() * 0.4 + LEAST(o.discount_value, 100) / 100.0 * 0.3 + CASE WHEN o.end_date <= CURRENT_DATE + INTERVAL '3 days' THEN 0.3 ELSE 0.1 END + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC
+    ORDER BY (o.performance_score * 0.7 + RANDOM() * 0.3) DESC NULLS LAST
     LIMIT 6
   `, params);
   return result.rows;
@@ -270,10 +269,7 @@ async function _getPromotedOffers(dealOfDay) {
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                b.subscription_badge_type, b.is_verified,
                ci.name, cat.name, o.logo_url
-      ORDER BY (
-        CASE WHEN splan.slug = 'premium' THEN 0.6 ELSE 0 END
-        + RANDOM() * 0.4
-      ) DESC
+      ORDER BY o.performance_score DESC NULLS LAST
       LIMIT 4
     `, params);
     return result.rows;
@@ -365,7 +361,7 @@ router.get("/", async (req, res) => {
             ON splan.id = bsub.plan_id
           GROUP BY b.id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng, b.is_verified, b.subscription_badge_type, ci.name, cat.name, splan.slug, splan.has_promoted_placement
           HAVING COUNT(DISTINCT o.id) > 0
-          ORDER BY (COUNT(DISTINCT o.id) + RANDOM() * 2 + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC
+          ORDER BY b.performance_score DESC NULLS LAST, b.id DESC
           LIMIT 8
         `);
         return tbRes;
@@ -581,7 +577,7 @@ router.get("/oferte", async (req, res) => {
 
     const sortOptions = {
       newest: "o.id DESC",
-      popular: `(COALESCE(AVG(r.rating), 0) + CASE WHEN splan.slug = 'premium' THEN 0.4 WHEN splan.slug = 'standard' THEN 0.1 ELSE 0 END) DESC, COUNT(DISTINCT r.id) DESC`,
+      popular: `o.performance_score DESC NULLS LAST, o.id DESC`,
       discount: "CASE WHEN o.discount_type IN ('percent','percentage') THEN o.discount_value ELSE 0 END DESC, o.discount_value DESC",
       ending_soon: "o.end_date ASC NULLS LAST, o.id DESC",
     };
@@ -837,7 +833,7 @@ router.get("/business-uri", async (req, res) => {
     const totalPages = Math.ceil(totalBusinesses / limit);
 
     const sortOptions = {
-      popular: `(COUNT(DISTINCT o.id) + CASE WHEN splan.slug = 'premium' THEN 3 WHEN splan.slug = 'standard' THEN 1 ELSE 0 END) DESC, COALESCE(AVG(r.rating), 0) DESC`,
+      popular: `b.performance_score DESC NULLS LAST, b.id DESC`,
       rating: "COALESCE(AVG(r.rating), 0) DESC, COUNT(DISTINCT r.id) DESC",
       newest: "b.id DESC",
       offers: "COUNT(DISTINCT o.id) DESC, b.id DESC",

@@ -851,7 +851,261 @@ function initCronJobs() {
     }
   });
 
-  console.log('[Cron] All 18 scheduled jobs registered.');
+  // 19. Compute performance scores — Daily 02:30 UTC (after category rankings at 02:00)
+  cron.schedule('30 2 * * *', async () => {
+    try {
+      const result = await computePerformanceScores();
+      console.log(`[Cron] Performance scores updated: ${result.offers} offers, ${result.businesses} businesses`);
+    } catch (err) {
+      console.error('[Cron] Performance scores computation failed:', err.message);
+    }
+  });
+
+  // Seed performance scores on first startup if all zeros (fire-and-forget)
+  (async () => {
+    try {
+      const check = await pool.query(
+        "SELECT COUNT(*) as cnt FROM offers WHERE performance_score > 0"
+      );
+      if (parseInt(check.rows[0].cnt) === 0) {
+        console.log('[Cron] Performance scores empty — seeding now...');
+        const result = await computePerformanceScores();
+        console.log(`[Cron] Performance scores seeded: ${result.offers} offers, ${result.businesses} businesses`);
+      }
+    } catch (err) {
+      // Column may not exist yet (migration not run) — ignore gracefully
+      if (!err.message.includes('does not exist')) {
+        console.error('[Cron] Performance score seed check failed:', err.message);
+      }
+    }
+  })();
+
+  console.log('[Cron] All 19 scheduled jobs registered.');
 }
 
-module.exports = { initCronJobs, computeCategoryRankings, runReviewPromptCron };
+/**
+ * Compute performance scores for all active offers and businesses.
+ * Uses Bayesian rating, engagement, conversion, recency, views, tier, and completeness.
+ * Called by cron (every 2h) and admin recompute endpoint.
+ * @returns {Promise<{offers: number, businesses: number}>}
+ */
+async function computePerformanceScores() {
+  const client = await pool.connect();
+  try {
+    // Extend timeout for bulk computation (default 10s is too short)
+    await client.query("SET statement_timeout = '60000'");
+    await client.query('BEGIN');
+
+    // ═══ OFFER SCORES ═══
+    const offerResult = await client.query(`
+      WITH global AS (
+        SELECT COALESCE(AVG(rating), 3.0) AS avg_rating FROM reviews
+      ),
+      offer_stats AS (
+        SELECT
+          o.id,
+          -- Bayesian rating: (C*M + sum) / (C + count) / 5
+          (5.0 * g.avg_rating + COALESCE(r_agg.sum_rating, 0)) / (5.0 + COALESCE(r_agg.cnt, 0)) / 5.0 AS bayesian,
+          -- Engagement 14d: favorites(2x) + clicks
+          LEAST(1.0, (COALESCE(f_agg.fav14, 0) * 2 + COALESCE(bc_agg.clicks7, 0)) / 30.0) AS engagement,
+          -- Conversion rate 30d: reveals / views
+          LEAST(1.0, COALESCE(cr_agg.reveals30, 0)::float / GREATEST(COALESCE(ov_agg.views30, 0), 1) * 5.0) AS conversion,
+          -- Recency: 1.0 at day 0, decays to 0 at 60 days
+          GREATEST(0, 1.0 - LEAST(1.0, EXTRACT(EPOCH FROM (NOW() - o.start_date)) / 86400.0 / 60.0)) AS recency,
+          -- View velocity 14d
+          LEAST(1.0, COALESCE(ov_agg.views14, 0) / 50.0) AS velocity,
+          -- Tier boost: premium=1.0, standard=0.4, free=0
+          CASE WHEN sp.slug = 'premium' THEN 1.0
+               WHEN sp.slug = 'standard' THEN 0.4
+               ELSE 0 END AS tier,
+          -- Completeness: image + description + promo
+          (CASE WHEN o.image_url IS NOT NULL OR b.cover_image_url IS NOT NULL THEN 0.4 ELSE 0 END
+           + CASE WHEN LENGTH(COALESCE(o.description, '')) > 50 THEN 0.3 ELSE 0 END
+           + CASE WHEN pc_agg.has_promo THEN 0.3 ELSE 0 END
+          ) AS completeness
+        FROM offers o
+        JOIN businesses b ON b.id = o.business_id
+        CROSS JOIN global g
+        LEFT JOIN (
+          SELECT business_id, SUM(rating) AS sum_rating, COUNT(*) AS cnt
+          FROM reviews GROUP BY business_id
+        ) r_agg ON r_agg.business_id = o.business_id
+        LEFT JOIN (
+          SELECT offer_id,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '14 days') AS fav14
+          FROM favorite_offers GROUP BY offer_id
+        ) f_agg ON f_agg.offer_id = o.id
+        LEFT JOIN (
+          SELECT COALESCE(offer_id, business_id) AS ref_id,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') AS clicks7
+          FROM business_clicks WHERE offer_id IS NOT NULL GROUP BY COALESCE(offer_id, business_id)
+        ) bc_agg ON bc_agg.ref_id = o.id
+        LEFT JOIN (
+          SELECT offer_id,
+            COUNT(*) FILTER (WHERE revealed_at > NOW() - INTERVAL '30 days') AS reveals30
+          FROM code_reveals GROUP BY offer_id
+        ) cr_agg ON cr_agg.offer_id = o.id
+        LEFT JOIN (
+          SELECT offer_id,
+            COUNT(*) FILTER (WHERE viewed_at > NOW() - INTERVAL '30 days') AS views30,
+            COUNT(*) FILTER (WHERE viewed_at > NOW() - INTERVAL '14 days') AS views14
+          FROM offer_views GROUP BY offer_id
+        ) ov_agg ON ov_agg.offer_id = o.id
+        LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active', 'trial')
+        LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
+        LEFT JOIN (
+          SELECT pc.offer_id, TRUE AS has_promo
+          FROM promo_codes pc WHERE pc.is_active = TRUE
+          GROUP BY pc.offer_id
+        ) pc_agg ON pc_agg.offer_id = o.id
+        WHERE o.is_active = TRUE
+          AND o.moderation_status IN ('approved', 'auto_approved')
+      )
+      UPDATE offers SET
+        performance_score = ROUND((
+          os.bayesian * 0.25
+          + os.engagement * 0.20
+          + os.conversion * 0.15
+          + os.recency * 0.15
+          + os.velocity * 0.10
+          + os.tier * 0.10
+          + os.completeness * 0.05
+        )::numeric, 4),
+        score_components = jsonb_build_object(
+          'bayesian_rating', ROUND(os.bayesian::numeric, 4),
+          'engagement', ROUND(os.engagement::numeric, 4),
+          'conversion', ROUND(os.conversion::numeric, 4),
+          'recency', ROUND(os.recency::numeric, 4),
+          'view_velocity', ROUND(os.velocity::numeric, 4),
+          'tier_boost', os.tier,
+          'completeness', ROUND(os.completeness::numeric, 4)
+        ),
+        score_updated_at = NOW()
+      FROM offer_stats os
+      WHERE offers.id = os.id
+    `);
+
+    // Reset inactive offers to 0
+    await client.query(`
+      UPDATE offers SET performance_score = 0, score_updated_at = NOW()
+      WHERE is_active = FALSE AND performance_score > 0
+    `);
+
+    // ═══ BUSINESS SCORES ═══
+    const bizResult = await client.query(`
+      WITH global AS (
+        SELECT COALESCE(AVG(rating), 3.0) AS avg_rating FROM reviews
+      ),
+      biz_stats AS (
+        SELECT
+          b.id,
+          -- Bayesian rating
+          (5.0 * g.avg_rating + COALESCE(r_agg.sum_rating, 0)) / (5.0 + COALESCE(r_agg.cnt, 0)) / 5.0 AS bayesian,
+          -- Completeness (8 factors, each weighted)
+          (CASE WHEN b.logo_url IS NOT NULL THEN 0.20 ELSE 0 END
+           + CASE WHEN b.cover_image_url IS NOT NULL THEN 0.10 ELSE 0 END
+           + CASE WHEN LENGTH(COALESCE(b.description, '')) > 50 THEN 0.15 ELSE 0 END
+           + CASE WHEN b.phone IS NOT NULL THEN 0.10 ELSE 0 END
+           + CASE WHEN COALESCE(img_agg.img_count, 0) > 0 THEN 0.10 ELSE 0 END
+           + CASE WHEN COALESCE(hrs_agg.has_hours, FALSE) THEN 0.15 ELSE 0 END
+           + CASE WHEN COALESCE(cat_agg.has_catalog, FALSE) THEN 0.10 ELSE 0 END
+           + CASE WHEN b.denumire_legala IS NOT NULL OR b.cui IS NOT NULL THEN 0.10 ELSE 0 END
+          ) AS completeness,
+          -- Offer activity
+          LEAST(1.0, COALESCE(o_agg.active_offers, 0) / 5.0) AS offer_activity,
+          -- Engagement 30d: views + clicks
+          LEAST(1.0, (COALESCE(bv_agg.views30, 0) + COALESCE(bc_agg.clicks30, 0)) / 100.0) AS engagement,
+          -- Tier boost
+          CASE WHEN sp.slug = 'premium' THEN 1.0
+               WHEN sp.slug = 'standard' THEN 0.4
+               ELSE 0 END AS tier,
+          -- Review volume
+          LEAST(1.0, COALESCE(r_agg.cnt, 0) / 20.0) AS review_volume,
+          -- Followers
+          LEAST(1.0, COALESCE(fb_agg.follower_count, 0) / 50.0) AS followers
+        FROM businesses b
+        CROSS JOIN global g
+        LEFT JOIN (
+          SELECT business_id, SUM(rating) AS sum_rating, COUNT(*) AS cnt
+          FROM reviews GROUP BY business_id
+        ) r_agg ON r_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT business_id, COUNT(*) AS img_count
+          FROM business_images GROUP BY business_id
+        ) img_agg ON img_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT bl.business_id, TRUE AS has_hours
+          FROM business_locations bl
+          JOIN business_hours bh ON bh.location_id = bl.id
+          GROUP BY bl.business_id
+        ) hrs_agg ON hrs_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT business_id, TRUE AS has_catalog
+          FROM business_catalog_items WHERE is_active = TRUE
+          GROUP BY business_id
+        ) cat_agg ON cat_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT business_id,
+            COUNT(*) FILTER (WHERE is_active = TRUE
+              AND moderation_status IN ('approved', 'auto_approved')
+              AND (end_date IS NULL OR end_date >= CURRENT_DATE)) AS active_offers
+          FROM offers GROUP BY business_id
+        ) o_agg ON o_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT business_id,
+            COUNT(*) FILTER (WHERE viewed_at > NOW() - INTERVAL '30 days') AS views30
+          FROM business_views GROUP BY business_id
+        ) bv_agg ON bv_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT business_id,
+            COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') AS clicks30
+          FROM business_clicks GROUP BY business_id
+        ) bc_agg ON bc_agg.business_id = b.id
+        LEFT JOIN (
+          SELECT business_id, COUNT(*) AS follower_count
+          FROM followed_businesses GROUP BY business_id
+        ) fb_agg ON fb_agg.business_id = b.id
+        LEFT JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status IN ('active', 'trial')
+        LEFT JOIN subscription_plans sp ON sp.id = bs.plan_id
+      )
+      UPDATE businesses SET
+        performance_score = ROUND((
+          bs.bayesian * 0.25
+          + bs.completeness * 0.20
+          + bs.offer_activity * 0.15
+          + bs.engagement * 0.15
+          + bs.tier * 0.10
+          + bs.review_volume * 0.10
+          + bs.followers * 0.05
+        )::numeric, 4),
+        completeness_score = ROUND(bs.completeness::numeric, 2),
+        score_components = jsonb_build_object(
+          'bayesian_rating', ROUND(bs.bayesian::numeric, 4),
+          'completeness', ROUND(bs.completeness::numeric, 4),
+          'offer_activity', ROUND(bs.offer_activity::numeric, 4),
+          'engagement', ROUND(bs.engagement::numeric, 4),
+          'tier_boost', bs.tier,
+          'review_volume', ROUND(bs.review_volume::numeric, 4),
+          'followers', ROUND(bs.followers::numeric, 4)
+        ),
+        score_updated_at = NOW()
+      FROM biz_stats bs
+      WHERE businesses.id = bs.id
+    `);
+
+    await client.query('COMMIT');
+
+    cache.invalidateGroup('offers');
+    cache.invalidateGroup('businesses');
+    cache.invalidateGroup('homepage');
+
+    return { offers: offerResult.rowCount, businesses: bizResult.rowCount };
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { initCronJobs, computeCategoryRankings, runReviewPromptCron, computePerformanceScores };

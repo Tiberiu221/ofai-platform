@@ -3525,7 +3525,7 @@ router.post("/blog/:id/delete", async (req, res) => {
 // ============================================
 // Cron Test Endpoints (admin-only)
 // ============================================
-const { runReviewPromptCron } = require("../services/cronJobs");
+const { runReviewPromptCron, computePerformanceScores } = require("../services/cronJobs");
 
 router.post("/test-cron/review-prompt", async (req, res) => {
   try {
@@ -3533,6 +3533,17 @@ router.post("/test-cron/review-prompt", async (req, res) => {
     res.json({ success: true, ...result });
   } catch (err) {
     console.error("[Admin] Test cron review-prompt error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Manual recompute performance scores (for debugging/after data changes)
+router.post("/performance-scores/recompute", async (req, res) => {
+  try {
+    const result = await computePerformanceScores();
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("[Admin] Performance score recompute error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });

@@ -153,7 +153,7 @@ router.get("/", optionalAuth, async (req, res) => {
       ORDER BY
         ${searchOrderClause ? searchOrderClause + ',' : ''}
         CASE WHEN COALESCE(splan.has_search_priority, FALSE) OR COALESCE(splan.has_promoted_placement, FALSE) THEN 0 ELSE 1 END,
-        c.name, cat.name, b.name
+        b.performance_score DESC NULLS LAST, b.name
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
     values.push(limit, offset);
