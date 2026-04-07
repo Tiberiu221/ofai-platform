@@ -1271,6 +1271,41 @@
       </div>
     </section>
   <% } %>
+
+  <%# ── Oferte Recomandate (ALWAYS shown) ── %>
+  <% if (typeof recommendedOffers !== 'undefined' && recommendedOffers && recommendedOffers.length > 0) { %>
+    <section class="similar-offers-section" style="grid-column: 1 / -1;">
+      <h3><%= t('offerDetail.recommendedOffers') %></h3>
+      <div class="similar-offers-grid">
+        <% recommendedOffers.forEach(function(ro) { %>
+          <%- include('partials/offer-card-compact', { card: ro, userFavoriteIds }) %>
+        <% }); %>
+      </div>
+    </section>
+  <% } %>
+
+  <%# ── Din Istoricul Tău (ALWAYS last) ── %>
+  <section class="similar-offers-section" style="grid-column: 1 / -1;">
+    <h3><%= t('offerDetail.fromYourHistory') %></h3>
+    <% if (webUser && typeof historyOffers !== 'undefined' && historyOffers && historyOffers.length > 0) { %>
+      <div class="similar-offers-grid">
+        <% historyOffers.forEach(function(ho) { %>
+          <%- include('partials/offer-card-compact', { card: ho, userFavoriteIds }) %>
+        <% }); %>
+      </div>
+    <% } else if (!webUser) { %>
+      <div class="history-login-prompt">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5; margin-bottom: 12px;">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <p><%= t('offerDetail.loginForHistory') %></p>
+        <a href="/login" class="history-login-btn"><%= t('nav.login') %></a>
+      </div>
+    <% } else { %>
+      <p style="color: var(--text-tertiary); font-size: 0.875rem;"><%= t('offerDetail.noHistoryYet') %></p>
+    <% } %>
+  </section>
 </div>
 
 <% if (offer.has_promo_code && webUser) { %>

@@ -997,10 +997,10 @@ router.get("/oferta/:id", async (req, res) => {
 
     const row = result.rows[0];
 
-    // Fire-and-forget view tracking
+    // Fire-and-forget view tracking (includes user_id for history feature)
     pool.query(
-      "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent) VALUES ($1, $2, $3, $4)",
-      [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
+      "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent, user_id) VALUES ($1, $2, $3, $4, $5)",
+      [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500), req.webUser?.id || null]
     ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     // Effective booking (inherit logic)
@@ -1115,78 +1115,113 @@ router.get("/oferta/:id", async (req, res) => {
       offer.bookingMethods = mapBM(bizBmRes.rows);
     }
 
-    // Similar offers (same category, respecting competitor blocking)
+    // Check if the current offer's business has competitor blocking enabled
+    let blockCompetitors = false;
+
+    // Check competitor blocking BEFORE building sections (used by similar + recommended)
+    try {
+      const tierCheck = await pool.query(`
+        SELECT splan.has_competitor_blocking, b.competitor_blocking_enabled
+        FROM business_subscriptions bsub
+        JOIN subscription_plans splan ON splan.id = bsub.plan_id
+        JOIN businesses b ON b.id = bsub.business_id
+        WHERE bsub.business_id = $1
+          AND bsub.status IN ('active', 'trial')
+        LIMIT 1
+      `, [row.business_id]);
+      if (tierCheck.rows.length > 0
+          && tierCheck.rows[0].has_competitor_blocking
+          && tierCheck.rows[0].competitor_blocking_enabled) {
+        blockCompetitors = true;
+      }
+    } catch (e) { /* fail open — don't block on tier errors */ }
+
+    // Similar offers (same category, NOT shown if competitor blocking active)
     let similarOffers = [];
-    if (row.cat_id) {
+    if (row.cat_id && !blockCompetitors) {
       try {
-        // Check if the current offer's business has competitor blocking enabled
-        let blockCompetitors = false;
-        try {
-          const tierCheck = await pool.query(`
-            SELECT splan.has_competitor_blocking, b.competitor_blocking_enabled
-            FROM business_subscriptions bsub
-            JOIN subscription_plans splan ON splan.id = bsub.plan_id
-            JOIN businesses b ON b.id = bsub.business_id
-            WHERE bsub.business_id = $1
-              AND bsub.status IN ('active', 'trial')
-            LIMIT 1
-          `, [row.business_id]);
-          if (tierCheck.rows.length > 0
-              && tierCheck.rows[0].has_competitor_blocking
-              && tierCheck.rows[0].competitor_blocking_enabled) {
-            blockCompetitors = true;
-          }
-        } catch (e) { /* fail open — don't block on tier errors */ }
-
-        let simQuery;
-        let simParams;
-
-        if (blockCompetitors) {
-          // Show only offers from the SAME business (no competitors)
-          simQuery = `
-            SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
-                   b.name as business_name, b.logo_url as business_logo,
-                   COALESCE(o.logo_url, b.cover_image_url) as image_url,
-                   c2.name as city_name,
-                   b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
-            FROM offers o
-            JOIN businesses b ON o.business_id = b.id
-            LEFT JOIN cities c2 ON b.city_id = c2.id
-            LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
-            WHERE o.id != $1 AND o.is_active = TRUE
-              AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-              AND o.business_id = $2
-            ORDER BY COALESCE(fav_agg.cnt, 0) DESC
-            LIMIT 4
-          `;
-          simParams = [id, row.business_id];
-        } else {
-          // Default: show offers from any business in the same category
-          simQuery = `
-            SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
-                   b.name as business_name, b.logo_url as business_logo,
-                   COALESCE(o.logo_url, b.cover_image_url) as image_url,
-                   c2.name as city_name,
-                   b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
-            FROM offers o
-            JOIN businesses b ON o.business_id = b.id
-            LEFT JOIN cities c2 ON b.city_id = c2.id
-            LEFT JOIN (SELECT offer_id, COUNT(*) as cnt FROM favorite_offers GROUP BY offer_id) fav_agg ON fav_agg.offer_id = o.id
-            WHERE o.id != $1 AND o.is_active = TRUE
-              AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
-              AND b.category_id = $2
-            ORDER BY COALESCE(fav_agg.cnt, 0) DESC
-            LIMIT 4
-          `;
-          simParams = [id, row.cat_id];
-        }
-
-        const simResult = await pool.query(simQuery, simParams);
+        const simResult = await pool.query(`
+          SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
+                 b.name as business_name, b.logo_url as business_logo,
+                 COALESCE(o.logo_url, b.cover_image_url) as image_url,
+                 c2.name as city_name,
+                 b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
+          FROM offers o
+          JOIN businesses b ON o.business_id = b.id
+          LEFT JOIN cities c2 ON b.city_id = c2.id
+          WHERE o.id != $1 AND o.is_active = TRUE
+            AND o.moderation_status IN ('approved', 'auto_approved')
+            AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+            AND b.category_id = $2
+          ORDER BY o.performance_score DESC NULLS LAST, o.id DESC
+          LIMIT 4
+        `, [id, row.cat_id]);
         similarOffers = simResult.rows;
       } catch (e) { /* silently fail */ }
     }
 
-    // Fetch user favorite IDs for similar offer heart buttons
+    // Collect IDs already shown (current + similar) to exclude from next sections
+    const shownIds = [offer.id, ...(similarOffers || []).map(s => s.id)];
+
+    // ── Recommended Offers (ALWAYS shown, by performance_score) ──
+    let recommendedOffers = [];
+    try {
+      const recParams = [offer.id, shownIds];
+      let recWhere = '';
+      if (blockCompetitors && row.cat_id) {
+        recWhere = 'AND b.category_id != $3';
+        recParams.push(row.cat_id);
+      }
+      const recResult = await pool.query(`
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
+               b.name as business_name, b.logo_url as business_logo,
+               COALESCE(o.logo_url, b.cover_image_url) as image_url,
+               c2.name as city_name,
+               b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
+        FROM offers o
+        JOIN businesses b ON o.business_id = b.id
+        LEFT JOIN cities c2 ON b.city_id = c2.id
+        WHERE o.id != $1
+          AND o.id != ALL($2::int[])
+          AND o.is_active = TRUE
+          AND o.moderation_status IN ('approved', 'auto_approved')
+          AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+          ${recWhere}
+        ORDER BY o.performance_score DESC NULLS LAST, o.id DESC
+        LIMIT 4
+      `, recParams);
+      recommendedOffers = recResult.rows;
+    } catch (e) { /* recommended section is non-critical */ }
+
+    // ── History Offers (logged-in users — from recently viewed businesses) ──
+    let historyOffers = [];
+    const allShownIds = [...shownIds, ...recommendedOffers.map(r => r.id)];
+    if (req.webUser) {
+      try {
+        const histResult = await pool.query(`
+          SELECT DISTINCT ON (o.id) o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
+                 b.name as business_name, b.logo_url as business_logo,
+                 COALESCE(o.logo_url, b.cover_image_url) as image_url,
+                 c2.name as city_name,
+                 b.subscription_badge_type as business_badge_type, b.is_verified as business_verified
+          FROM offer_views ov
+          JOIN offers o ON o.business_id = ov.business_id AND o.id != $1
+          JOIN businesses b ON b.id = o.business_id
+          LEFT JOIN cities c2 ON b.city_id = c2.id
+          WHERE ov.user_id = $2
+            AND ov.viewed_at > NOW() - INTERVAL '30 days'
+            AND o.is_active = TRUE
+            AND o.moderation_status IN ('approved', 'auto_approved')
+            AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
+            AND o.id != ALL($3::int[])
+          ORDER BY o.id
+          LIMIT 4
+        `, [offer.id, req.webUser.id, allShownIds]);
+        historyOffers = histResult.rows;
+      } catch (e) { /* history section is non-critical */ }
+    }
+
+    // Fetch user favorite IDs for heart buttons on all sections
     let userFavoriteIds = [];
     if (req.webUser) {
       const favRes = await pool.query("SELECT offer_id FROM favorite_offers WHERE user_id = $1 LIMIT 500", [req.webUser.id]);
@@ -1196,6 +1231,8 @@ router.get("/oferta/:id", async (req, res) => {
     res.render("public/offer-detail", {
       offer,
       similarOffers,
+      recommendedOffers,
+      historyOffers,
       isFavorite,
       userFavoriteIds,
       activePage: null,

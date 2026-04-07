@@ -267,6 +267,10 @@
     "reviewsCount_other": "{{count}} reviews",
     "noReviews": "No reviews",
     "similarOffers": "Similar offers",
+    "recommendedOffers": "Recommended Offers",
+    "fromYourHistory": "From Your History",
+    "loginForHistory": "Log in to see offers from your browsing history",
+    "noHistoryYet": "You haven't viewed any offers yet. Start exploring!",
     "bookOn": "Book on {{platform}}"
   },
   "businessDetail": {

@@ -293,6 +293,31 @@
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
 }
+/* History login prompt */
+.history-login-prompt {
+  text-align: center;
+  padding: 32px 24px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+.history-login-prompt p {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0 0 16px;
+}
+.history-login-btn {
+  display: inline-block;
+  padding: 8px 24px;
+  background: var(--accent);
+  color: #000;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.history-login-btn:hover { opacity: 0.9; text-decoration: none; color: #000; }
 /* Compact offer card variant (similar offers on detail page) */
 .offer-card.offer-card-compact .offer-image-wrapper { aspect-ratio: 16/9; }
 .offer-card.offer-card-compact .offer-content { padding: 12px 14px 14px; }

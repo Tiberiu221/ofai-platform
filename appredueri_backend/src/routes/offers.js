@@ -807,10 +807,10 @@ router.get("/:id", async (req, res) => {
 
     const row = result.rows[0];
 
-    // Fire-and-forget view tracking
+    // Fire-and-forget view tracking (includes user_id for history feature)
     pool.query(
-      "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent) VALUES ($1, $2, $3, $4)",
-      [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500)]
+      "INSERT INTO offer_views (offer_id, business_id, viewer_ip, user_agent, user_id) VALUES ($1, $2, $3, $4, $5)",
+      [id, row.business_id, req.ip || null, (req.get("user-agent") || "").substring(0, 500), req.user?.id || null]
     ).catch(err => console.error('[Analytics] Tracking failed:', err.message));
 
     // 2. Determină Booking-ul efectiv (inherit logic)

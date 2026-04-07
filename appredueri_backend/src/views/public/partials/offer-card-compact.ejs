@@ -1,0 +1,25 @@
+<%# Compact offer card used in Similar, Recommended, and History sections %>
+<%# Expects: card (offer object), userFavoriteIds (array) %>
+<a href="/oferta/<%= card.id %>" class="offer-card offer-card-compact">
+  <div class="offer-image-wrapper">
+    <img src="<%= card.image_url || '/images/placeholder.jpg' %>" alt="<%= card.title %>" class="offer-image" loading="lazy" width="400" height="225">
+    <% if (card.discount_value || card.discount_text) { %>
+      <div class="offer-badge">
+        <%= card.discount_type === 'special' && card.discount_text ? card.discount_text : (card.discount_type === 'percentage' || card.discount_type === 'percent' ? '-' + card.discount_value + '%' : card.discount_value + ' lei') %>
+      </div>
+    <% } %>
+    <div class="card-heart-btn<%= (userFavoriteIds || []).includes(card.id) ? ' is-active' : '' %>" data-offer-id="<%= card.id %>" data-favorited="<%= (userFavoriteIds || []).includes(card.id) ? 'true' : 'false' %>" onclick="window.toggleCardFavorite(<%= card.id %>, event)" role="button" tabindex="0" aria-label="Favorite"><svg class="heart-outline" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><svg class="heart-filled" width="18" height="18" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+  </div>
+  <div class="offer-content">
+    <div class="offer-title"><%= card.title %></div>
+    <div class="offer-business"><%= card.business_name %><% const _bt = card.business_badge_type || (card.business_verified ? 'verified' : null); if (_bt === 'premium') { %> <svg class="premium-badge-icon" width="14" height="14" viewBox="0 0 24 24" fill="#a78bfa"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } else if (_bt === 'verified') { %> <svg class="verified-badge" width="14" height="14" viewBox="0 0 24 24" fill="#fb923c"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg><% } %></div>
+    <% if (card.city_name) { %>
+      <div class="offer-meta">
+        <span class="offer-meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <%= card.city_name %>
+        </span>
+      </div>
+    <% } %>
+  </div>
+</a>

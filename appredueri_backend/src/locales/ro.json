@@ -267,6 +267,10 @@
     "reviewsCount_other": "{{count}} recenzii",
     "noReviews": "Nicio recenzie",
     "similarOffers": "Oferte similare",
+    "recommendedOffers": "Oferte Recomandate",
+    "fromYourHistory": "Din Istoricul Tău",
+    "loginForHistory": "Conectează-te pentru a vedea ofertele din istoricul tău",
+    "noHistoryYet": "Nu ai vizitat încă oferte. Explorează platforma!",
     "bookOn": "Rezervă pe {{platform}}"
   },
   "businessDetail": {
