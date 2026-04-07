@@ -39,7 +39,7 @@ function escHtml(s) {
 router.use(async (req, res, next) => {
   try {
     const [offers, requests, reports] = await Promise.all([
-      pool.query("SELECT COUNT(*) FROM offers WHERE moderation_status = 'pending'"),
+      pool.query("SELECT COUNT(*) FROM offers WHERE moderation_status = 'pending_review'"),
       pool.query("SELECT COUNT(*) FROM business_requests WHERE status = 'pending'"),
       pool.query("SELECT COUNT(*) FROM reports WHERE status = 'pending'"),
     ]);
@@ -2391,11 +2391,15 @@ router.get("/offer-moderation", async (req, res) => {
 
     const result = await pool.query(`
       SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
-             o.conditions, o.start_date, o.end_date, o.logo_url,
+             o.conditions, o.start_date, o.end_date, o.logo_url, o.image_url,
              o.moderation_status, o.ai_score, o.ai_flags, o.ai_reasoning,
-             b.id AS business_id, b.name AS business_name
+             b.id AS business_id, b.name AS business_name,
+             b.logo_url AS business_logo, b.cover_image_url AS business_cover,
+             cat.name AS category_name,
+             (SELECT ci.name FROM business_locations bl JOIN cities ci ON ci.id = bl.city_id WHERE bl.business_id = b.id LIMIT 1) AS city_name
       FROM offers o
       JOIN businesses b ON b.id = o.business_id
+      LEFT JOIN categories cat ON cat.id = b.category_id
       WHERE o.moderation_status = 'pending_review'
       ORDER BY o.id DESC
       LIMIT $1 OFFSET $2

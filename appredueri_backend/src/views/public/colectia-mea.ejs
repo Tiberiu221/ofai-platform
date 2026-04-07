@@ -137,7 +137,9 @@
                   <% } %>
                   <div class="collection-card-cover-gradient"></div>
                   <span class="collection-discount-badge">
-                    <% if (o.discount_type === 'percent' || o.discount_type === 'percentage') { %>
+                    <% if (o.discount_type === 'special' && o.discount_text) { %>
+                      <%= o.discount_text %>
+                    <% } else if (o.discount_type === 'percent' || o.discount_type === 'percentage') { %>
                       -<%= o.discount_value %>%
                     <% } else { %>
                       -<%= o.discount_value %> lei

@@ -1,0 +1,10 @@
+<%# Renders discount badge text. Expects: type, value, text (all from offer) %>
+<% if (type === 'special' && text) { %>
+  <%= text %>
+<% } else if (type === 'percent' || type === 'percentage') { %>
+  -<%= value %>%
+<% } else if (value) { %>
+  -<%= value %> lei
+<% } else { %>
+  Ofertă
+<% } %>

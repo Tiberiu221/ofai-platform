@@ -171,9 +171,11 @@
               <span class="offer-placeholder-letter"><%= (dealOfDay.business_name || 'O').charAt(0) %></span>
             </div>
           <% } %>
-          <% if (dealOfDay.discount_value) { %>
+          <% if (dealOfDay.discount_value || dealOfDay.discount_text) { %>
             <div class="offer-badge">
-              <% if (dealOfDay.discount_type === 'percent' || dealOfDay.discount_type === 'percentage') { %>
+              <% if (dealOfDay.discount_type === 'special' && dealOfDay.discount_text) { %>
+                <%= dealOfDay.discount_text %>
+              <% } else if (dealOfDay.discount_type === 'percent' || dealOfDay.discount_type === 'percentage') { %>
                 -<%= dealOfDay.discount_value %>%
               <% } else { %>
                 <%= dealOfDay.discount_value %> lei
@@ -235,7 +237,9 @@
               <div class="trending-badge"><%= t('common.trending') %></div>
             <% } %>
             <div class="offer-badge">
-              <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
+              <% if (offer.discount_type === 'special' && offer.discount_text) { %>
+                <%= offer.discount_text %>
+              <% } else if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
                 -<%= offer.discount_value %>%
               <% } else { %>
                 <%= offer.discount_value %> lei
@@ -318,9 +322,11 @@
               </div>
             <% } %>
             <span class="promoted-badge"><%= t('common.promoted') %></span>
-            <% if (offer.discount_value) { %>
+            <% if (offer.discount_value || offer.discount_text) { %>
               <div class="offer-badge">
-                <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
+                <% if (offer.discount_type === 'special' && offer.discount_text) { %>
+                  <%= offer.discount_text %>
+                <% } else if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
                   -<%= offer.discount_value %>%
                 <% } else { %>
                   <%= offer.discount_value %> lei
@@ -482,7 +488,9 @@
               </div>
             <% } %>
             <div class="offer-badge">
-              <% if (fo.discount_type === 'percent' || fo.discount_type === 'percentage') { %>
+              <% if (fo.discount_type === 'special' && fo.discount_text) { %>
+                <%= fo.discount_text %>
+              <% } else if (fo.discount_type === 'percent' || fo.discount_type === 'percentage') { %>
                 -<%= fo.discount_value %>%
               <% } else { %>
                 <%= fo.discount_value %> lei

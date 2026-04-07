@@ -350,7 +350,9 @@
                 </div>
               <% } %>
               <div class="offer-badge">
-                <% if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
+                <% if (offer.discount_type === 'special' && offer.discount_text) { %>
+                  <%= offer.discount_text %>
+                <% } else if (offer.discount_type === 'percent' || offer.discount_type === 'percentage') { %>
                   -<%= offer.discount_value %>%
                 <% } else { %>
                   <%= offer.discount_value %> lei

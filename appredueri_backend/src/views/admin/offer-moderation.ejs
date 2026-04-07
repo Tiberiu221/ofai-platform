@@ -78,42 +78,95 @@
         </tr>
         <tr class="details-row" id="details-<%= idx %>">
           <td colspan="8">
-            <div class="detail-grid">
-              <% if (o.logo_url) { %>
-                <div style="grid-column: 1 / -1; margin-bottom: 8px;">
-                  <img src="<%= o.logo_url %>" alt="<%= o.title %>" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:1px solid #374151;">
+            <div class="mod-detail-layout">
+              <!-- Preview Card -->
+              <div class="mod-preview">
+                <div class="mod-card">
+                  <div class="mod-card-image">
+                    <% var offerImg = o.image_url || o.logo_url || o.business_cover; %>
+                    <% if (offerImg) { %>
+                      <img src="<%= offerImg %>" alt="<%= o.title %>">
+                    <% } else { %>
+                      <div class="mod-card-placeholder">
+                        <span><%= (o.business_name || 'O')[0].toUpperCase() %></span>
+                      </div>
+                    <% } %>
+                    <% if (o.discount_value) { %>
+                      <div class="mod-card-badge">
+                        <% if (o.discount_type === 'percentage') { %>
+                          -<%= o.discount_value %>%
+                        <% } else if (o.discount_type === 'fixed') { %>
+                          -<%= o.discount_value %> RON
+                        <% } else { %>
+                          <%= o.discount_type %>
+                        <% } %>
+                      </div>
+                    <% } %>
+                  </div>
+                  <div class="mod-card-content">
+                    <div class="mod-card-row">
+                      <% if (o.business_logo) { %>
+                        <img src="<%= o.business_logo %>" alt="" class="mod-card-logo">
+                      <% } %>
+                      <div>
+                        <div class="mod-card-biz"><%= o.business_name %></div>
+                        <div class="mod-card-title"><%= o.title %></div>
+                        <div class="mod-card-meta">
+                          <% if (o.city_name) { %>
+                            <span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 7 8 11.7z"/></svg>
+                              <%= o.city_name %>
+                            </span>
+                          <% } %>
+                          <% if (o.category_name) { %>
+                            <span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                              <%= o.category_name %>
+                            </span>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              <% } %>
-              <div>
-                <div class="detail-label">Descriere</div>
-                <div class="detail-value"><%= o.description || '(fara descriere)' %></div>
+                <div class="mod-preview-label">Previzualizare card</div>
               </div>
-              <div>
-                <div class="detail-label">Conditii</div>
-                <div class="detail-value"><%= o.conditions || '(fara conditii)' %></div>
-              </div>
-              <div>
-                <div class="detail-label">Perioada</div>
-                <div class="detail-value">
-                  <% if (o.start_date && o.end_date) { %>
-                    <%= new Date(o.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
-                    &nbsp;—&nbsp;
-                    <%= new Date(o.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
-                  <% } else if (o.start_date) { %>
-                    De la <%= new Date(o.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
-                  <% } else if (o.end_date) { %>
-                    Pana la <%= new Date(o.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
-                  <% } else { %>
-                    (fara perioada)
-                  <% } %>
+
+              <!-- Details -->
+              <div class="mod-details">
+                <div class="detail-grid">
+                  <div>
+                    <div class="detail-label">Descriere</div>
+                    <div class="detail-value"><%= o.description || '(fara descriere)' %></div>
+                  </div>
+                  <div>
+                    <div class="detail-label">Conditii</div>
+                    <div class="detail-value"><%= o.conditions || '(fara conditii)' %></div>
+                  </div>
+                  <div>
+                    <div class="detail-label">Perioada</div>
+                    <div class="detail-value">
+                      <% if (o.start_date && o.end_date) { %>
+                        <%= new Date(o.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                        &nbsp;—&nbsp;
+                        <%= new Date(o.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                      <% } else if (o.start_date) { %>
+                        De la <%= new Date(o.start_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                      <% } else if (o.end_date) { %>
+                        Pana la <%= new Date(o.end_date).toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }) %>
+                      <% } else { %>
+                        (fara perioada)
+                      <% } %>
+                    </div>
+                  </div>
                 </div>
+                <% if (o.ai_reasoning) { %>
+                  <div class="ai-reasoning">
+                    <strong>AI Reasoning:</strong> <%= o.ai_reasoning %>
+                  </div>
+                <% } %>
               </div>
             </div>
-            <% if (o.ai_reasoning) { %>
-              <div class="ai-reasoning">
-                <strong>AI Reasoning:</strong> <%= o.ai_reasoning %>
-              </div>
-            <% } %>
           </td>
         </tr>
       <% }); %>

@@ -121,7 +121,7 @@ router.get('/sitemap.xml', async (req, res) => {
 async function _getDealOfDay() {
   try {
     let dodResult = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
              COALESCE(o.logo_url, b.cover_image_url) as image_url,
              ci2.name as city_name,
@@ -139,7 +139,7 @@ async function _getDealOfDay() {
     // Fallback: smart daily rotation (same algorithm as mobile API)
     if (dodResult.rows.length === 0) {
       dodResult = await pool.query(`
-        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                b.name as business_name, b.logo_url as business_logo,
                COALESCE(o.logo_url, b.cover_image_url) as image_url,
                ci2.name as city_name,
@@ -194,7 +194,7 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
     params.push(dealOfDay.id);
   }
   const result = await pool.query(`
-    SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+    SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
            b.name as business_name, b.logo_url as business_logo,
            b.cover_image_url as business_cover,
            b.lat as business_lat, b.lng as business_lng,
@@ -222,7 +222,7 @@ async function _getFeaturedOffers(userPrefs, dealOfDay) {
     LEFT JOIN subscription_plans splan
       ON splan.id = bsub.plan_id
     WHERE ${where.join(" AND ")}
-    GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+    GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
              b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
              b.subscription_badge_type, b.is_verified,
              ci.name, cat.name, o.logo_url, splan.slug,
@@ -242,7 +242,7 @@ async function _getPromotedOffers(dealOfDay) {
       exclude = `AND o.id != $1`;
     }
     const result = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover,
              b.lat as business_lat, b.lng as business_lng,
@@ -265,7 +265,7 @@ async function _getPromotedOffers(dealOfDay) {
       WHERE o.is_active = TRUE AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
         AND o.moderation_status IN ('approved', 'auto_approved')
         ${exclude}
-      GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                b.subscription_badge_type, b.is_verified,
                ci.name, cat.name, o.logo_url
@@ -369,7 +369,7 @@ router.get("/", async (req, res) => {
       // 8. Followed offers (null if not logged in)
       isLoggedIn
         ? pool.query(`
-            SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+            SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
                    COALESCE(o.logo_url, b.cover_image_url) as image_url,
                    b.subscription_badge_type as business_badge_type,
@@ -586,7 +586,7 @@ router.get("/oferte", async (req, res) => {
     const orderBy = sortOptions[sortKey];
 
     const offersResult = await pool.query(
-      `SELECT o.id, o.title, o.description, o.discount_type, o.discount_value, o.end_date,
+      `SELECT o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text, o.end_date,
               o.business_id,
               b.name as business_name, b.logo_url as business_logo,
               b.cover_image_url as business_cover,
@@ -609,7 +609,7 @@ router.get("/oferte", async (req, res) => {
        LEFT JOIN subscription_plans splan
          ON splan.id = bsub.plan_id
        WHERE ${whereClause}
-       GROUP BY o.id, o.title, o.description, o.discount_type, o.discount_value, o.end_date,
+       GROUP BY o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                 o.business_id, b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                 b.is_verified, b.subscription_badge_type,
                 ci.name, cat.name, o.logo_url, splan.slug, splan.has_promoted_placement
@@ -956,7 +956,7 @@ router.get("/oferta/:id", async (req, res) => {
     const result = await pool.query(`
       SELECT
         o.id, o.business_id, o.title, o.description,
-        o.discount_type, o.discount_value, o.conditions,
+        o.discount_type, o.discount_value, o.discount_text, o.conditions,
         o.start_date, o.end_date, o.is_active,
         o.logo_url as offer_logo,
         EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
@@ -1056,6 +1056,7 @@ router.get("/oferta/:id", async (req, res) => {
       description: row.description,
       discount_type: row.discount_type,
       discount_value: row.discount_value,
+      discount_text: row.discount_text,
       conditions: row.conditions,
       start_date: row.start_date,
       end_date: row.end_date,
@@ -1143,7 +1144,7 @@ router.get("/oferta/:id", async (req, res) => {
         if (blockCompetitors) {
           // Show only offers from the SAME business (no competitors)
           simQuery = `
-            SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+            SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
                    COALESCE(o.logo_url, b.cover_image_url) as image_url,
                    c2.name as city_name,
@@ -1162,7 +1163,7 @@ router.get("/oferta/:id", async (req, res) => {
         } else {
           // Default: show offers from any business in the same category
           simQuery = `
-            SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+            SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                    b.name as business_name, b.logo_url as business_logo,
                    COALESCE(o.logo_url, b.cover_image_url) as image_url,
                    c2.name as city_name,
@@ -1793,7 +1794,7 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
     }
 
     const favoritesRes = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
              b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover, b.lat, b.lng,
              COALESCE(o.logo_url, b.cover_image_url, b.logo_url) as image_url,
@@ -1806,7 +1807,7 @@ router.get("/colectia-mea", requireWebAuth, async (req, res) => {
       LEFT JOIN categories cat ON cat.id = b.category_id
       LEFT JOIN reviews r ON r.business_id = b.id
       WHERE f.user_id = $1 ${favCategoryFilter}
-      GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      GROUP BY o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                b.name, b.logo_url, b.cover_image_url, b.lat, b.lng,
                ci.name, cat.name, f.created_at
       ORDER BY ${favoritesOrderBy}

@@ -1693,6 +1693,159 @@ table tr.clickable:focus-visible {
   position: relative; /* for .an-expand-btn */
 }
 
+/* ============================================
+   OFFER MODERATION PREVIEW CARD
+   ============================================ */
+
+.mod-detail-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mod-preview {
+  flex-shrink: 0;
+  width: 280px;
+}
+
+.mod-preview-label {
+  text-align: center;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mod-details {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Card shell */
+.mod-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #1a1a2e;
+  border: 1px solid #2d2d44;
+}
+
+.mod-card-image {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #111;
+}
+
+.mod-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mod-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #fb923c22, #27272a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mod-card-placeholder span {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c, #f97316);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mod-card-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #fb923c;
+  color: #000;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.mod-card-content {
+  padding: 14px;
+}
+
+.mod-card-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.mod-card-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid #374151;
+}
+
+.mod-card-biz {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #fb923c;
+  margin-bottom: 2px;
+}
+
+.mod-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f3f4f6;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mod-card-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.mod-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mod-card-meta svg {
+  opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+  .mod-detail-layout {
+    flex-direction: column;
+  }
+  .mod-preview {
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .an-section { max-width: calc(100vw - 24px); }

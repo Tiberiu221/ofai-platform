@@ -40,6 +40,7 @@ async function createOffer(pool, params) {
     description,
     discountType,
     discountValue,
+    discountText,
     conditions,
     startDate,
     endDate,
@@ -134,19 +135,20 @@ async function createOffer(pool, params) {
 
     const result = await client.query(`
       INSERT INTO offers (
-        business_id, title, description, discount_type, discount_value,
+        business_id, title, description, discount_type, discount_value, discount_text,
         conditions, start_date, end_date, is_active, logo_url,
         booking_type, booking_phone, booking_whatsapp, booking_url, booking_instructions,
         max_reveals, redemption_method, moderation_status, ai_score, ai_flags, ai_reasoning
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
       RETURNING id
     `, [
       businessId,
       title,
       description || null,
       discountType || null,
-      discountValue ?? null,
+      discountType === 'special' ? 0 : (discountValue ?? null),
+      discountType === 'special' ? (discountText || discountValue || null) : null,
       conditions || null,
       startDate || null,
       endDate || null,

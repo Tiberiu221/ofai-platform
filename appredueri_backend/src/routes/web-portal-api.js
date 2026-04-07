@@ -1240,7 +1240,8 @@ router.post("/api/web/portal/:businessId/offers", requireBusinessOwner, requireL
       title: sanitizeString(title, 200),
       description: sanitizeString(description, 2000),
       discountType: discount_type || 'percentage',
-      discountValue: discount_value || 0,
+      discountValue: discount_type === 'special' ? 0 : (discount_value || 0),
+      discountText: discount_type === 'special' ? sanitizeString(discount_value, 100) : null,
       conditions: sanitizeString(conditions, 2000),
       startDate: start_date,
       endDate: end_date,
@@ -1349,11 +1350,13 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
     }
 
     // Update offer fields + reset to pending_review for admin re-review
-    const parsedDiscountValue = discount_value != null && discount_value !== '' ? parseInt(discount_value, 10) : 0;
+    const isSpecialDiscount = discount_type === 'special';
+    const parsedDiscountValue = isSpecialDiscount ? 0 : (discount_value != null && discount_value !== '' ? parseInt(discount_value, 10) : 0);
+    const discountText = isSpecialDiscount ? sanitizeString(discount_value, 100) : null;
     const parsedMaxReveals = max_reveals ? parseInt(max_reveals, 10) : null;
 
     // Build logo_url clause conditionally
-    const logoClause = logoUrlUpdate !== undefined ? ', logo_url = $21' : '';
+    const logoClause = logoUrlUpdate !== undefined ? ', logo_url = $22' : '';
     const redemptionMethodValue = redemption_method === 'auto' ? null : (redemption_method ? sanitizeString(redemption_method, 500) : null);
     const params = [
       sanitizeString(title, 200),
@@ -1376,6 +1379,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
       offerId,
       businessId,
       redemptionMethodValue,
+      discountText,
     ];
     if (logoUrlUpdate !== undefined) params.push(logoUrlUpdate);
 
@@ -1385,6 +1389,7 @@ router.put("/api/web/portal/:businessId/offers/:offerId", requireBusinessOwner, 
         description = $2,
         discount_type = COALESCE($3, discount_type),
         discount_value = COALESCE($4, discount_value),
+        discount_text = $21,
         conditions = $5,
         start_date = COALESCE($6, start_date),
         end_date = COALESCE($7, end_date),
