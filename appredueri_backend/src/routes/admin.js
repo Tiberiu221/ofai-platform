@@ -590,7 +590,7 @@ router.get("/businesses/:id/edit", async (req, res) => {
       subscriptionResult,
       subHistoryResult,
     ] = await Promise.all([
-      pool.query("SELECT id, name, city_id, category_id, address, lat, lng, phone, website, description, logo_url, cover_image_url, is_verified, verified_at FROM businesses WHERE id = $1", [id]),
+      pool.query("SELECT id, name, city_id, category_id, address, lat, lng, phone, website, description, logo_url, cover_image_url, is_verified, verified_at, denumire_legala, cui, founded_year, performance_score, completeness_score, score_components, score_updated_at FROM businesses WHERE id = $1", [id]),
       pool.query("SELECT id, name FROM cities ORDER BY name"),
       pool.query("SELECT id, name FROM categories ORDER BY name"),
       pool.query(
@@ -678,6 +678,9 @@ router.post("/businesses/:id/edit", async (req, res) => {
       phone,
       website,
       description,
+      denumire_legala,
+      cui,
+      founded_year,
       locations,
     } = req.body;
 
@@ -698,7 +701,10 @@ router.post("/businesses/:id/edit", async (req, res) => {
         website = $8,
         description = $9,
         is_verified = $10,
-        verified_at = CASE WHEN $10::boolean = true AND (is_verified IS NULL OR is_verified = false) THEN NOW() ELSE verified_at END
+        verified_at = CASE WHEN $10::boolean = true AND (is_verified IS NULL OR is_verified = false) THEN NOW() ELSE verified_at END,
+        denumire_legala = $12,
+        cui = $13,
+        founded_year = $14
       WHERE id = $11
       `,
       [
@@ -713,12 +719,21 @@ router.post("/businesses/:id/edit", async (req, res) => {
         description || null,
         isVerified,
         id,
+        (denumire_legala || '').trim() || null,
+        (cui || '').trim() || null,
+        founded_year ? parseInt(founded_year, 10) : null,
       ]
     );
 
     // 2) Update locații & booking
 
-    // Cazul 1: locations este ARRAY (exact cum apare în logul tău)
+    const toNullFloat = (v) => {
+      if (v === '' || v == null) return null;
+      const n = parseFloat(String(v).replace(',', '.'));
+      return Number.isFinite(n) ? n : null;
+    };
+
+    // Cazul 1: locations este ARRAY
     if (Array.isArray(locations)) {
       for (const locData of locations) {
         const locId = parseInt(locData.id, 10);
@@ -726,7 +741,11 @@ router.post("/businesses/:id/edit", async (req, res) => {
 
         const locName = (locData.name || "").trim() || null;
         const locAddress = (locData.address || "").trim() || null;
+        const locCityId = locData.city_id ? parseInt(locData.city_id, 10) : null;
         const locPhone = (locData.phone || "").trim() || null;
+        const locMapsUrl = (locData.maps_url || "").trim() || null;
+        const locLat = toNullFloat(locData.lat);
+        const locLng = toNullFloat(locData.lng);
         const bookingType = (locData.booking_type || "NONE").trim();
         const bookingPhone = (locData.booking_phone || "").trim() || null;
         const bookingWhatsapp = (locData.booking_whatsapp || "").trim() || null;
@@ -740,18 +759,26 @@ router.post("/businesses/:id/edit", async (req, res) => {
           SET
             name = $1,
             address = $2,
-            phone = $3,
-            booking_type = $4,
-            booking_phone = $5,
-            booking_whatsapp = $6,
-            booking_url = $7,
-            booking_instructions = $8
-          WHERE id = $9 AND business_id = $10
+            city_id = $3,
+            phone = $4,
+            maps_url = $5,
+            lat = $6,
+            lng = $7,
+            booking_type = $8,
+            booking_phone = $9,
+            booking_whatsapp = $10,
+            booking_url = $11,
+            booking_instructions = $12
+          WHERE id = $13 AND business_id = $14
           `,
           [
             locName,
             locAddress,
+            locCityId,
             locPhone,
+            locMapsUrl,
+            locLat,
+            locLng,
             bookingType,
             bookingPhone,
             bookingWhatsapp,
@@ -763,16 +790,20 @@ router.post("/businesses/:id/edit", async (req, res) => {
         );
       }
     }
-    // Cazul 2: locations este obiect (fallback, dacă parserul se schimbă)
+    // Cazul 2: locations este obiect (fallback)
     else if (locations && typeof locations === "object") {
-      const entries = Object.entries(locations); // [ [locId, data], ... ]
+      const entries = Object.entries(locations);
       for (const [rawLocId, locData] of entries) {
         const locId = parseInt(rawLocId || locData.id, 10);
         if (Number.isNaN(locId)) continue;
 
         const locName = (locData.name || "").trim() || null;
         const locAddress = (locData.address || "").trim() || null;
+        const locCityId = locData.city_id ? parseInt(locData.city_id, 10) : null;
         const locPhone = (locData.phone || "").trim() || null;
+        const locMapsUrl = (locData.maps_url || "").trim() || null;
+        const locLat = toNullFloat(locData.lat);
+        const locLng = toNullFloat(locData.lng);
         const bookingType = (locData.booking_type || "NONE").trim();
         const bookingPhone = (locData.booking_phone || "").trim() || null;
         const bookingWhatsapp = (locData.booking_whatsapp || "").trim() || null;
@@ -786,18 +817,26 @@ router.post("/businesses/:id/edit", async (req, res) => {
           SET
             name = $1,
             address = $2,
-            phone = $3,
-            booking_type = $4,
-            booking_phone = $5,
-            booking_whatsapp = $6,
-            booking_url = $7,
-            booking_instructions = $8
-          WHERE id = $9 AND business_id = $10
+            city_id = $3,
+            phone = $4,
+            maps_url = $5,
+            lat = $6,
+            lng = $7,
+            booking_type = $8,
+            booking_phone = $9,
+            booking_whatsapp = $10,
+            booking_url = $11,
+            booking_instructions = $12
+          WHERE id = $13 AND business_id = $14
           `,
           [
             locName,
             locAddress,
+            locCityId,
             locPhone,
+            locMapsUrl,
+            locLat,
+            locLng,
             bookingType,
             bookingPhone,
             bookingWhatsapp,
@@ -964,9 +1003,7 @@ router.post(
         "SELECT COUNT(*) AS cnt FROM business_images WHERE business_id = $1",
         [id]
       );
-      if (Number(countRes.rows[0].cnt) >= 8) {
-        return res.redirect(`/admin/businesses/${id}/edit?err=max_images`);
-      }
+      // No gallery limit for admin — unlimited uploads
       if (!req.file)
         return res.redirect(`/admin/businesses/${id}/edit?err=no_file`);
 

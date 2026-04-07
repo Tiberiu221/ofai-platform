@@ -88,13 +88,34 @@
 </div>
 <% } %>
 
+<% if (business.performance_score != null || business.completeness_score != null) { %>
+<div class="info-box" style="border-left: 3px solid var(--accent, #FB923C);">
+  <h3>📊 Performance Score</h3>
+  <p style="margin: 0;">
+    <strong>Score:</strong> <%= business.performance_score != null ? Number(business.performance_score).toFixed(4) : '—' %>
+    &nbsp;|&nbsp;
+    <strong>Completeness:</strong> <%= business.completeness_score != null ? Number(business.completeness_score).toFixed(0) + '%' : '—' %>
+    <% if (business.score_updated_at) { %>
+      &nbsp;|&nbsp;
+      <span style="color: #9ca3af; font-size: 0.85rem;">Actualizat: <%= new Date(business.score_updated_at).toLocaleString('ro-RO') %></span>
+    <% } %>
+  </p>
+  <% if (business.score_components) { %>
+    <details style="margin-top: 6px;">
+      <summary style="cursor: pointer; font-size: 0.85rem; color: #9ca3af;">Detalii componente</summary>
+      <pre style="font-size: 0.75rem; margin-top: 4px; white-space: pre-wrap; color: #d1d5db;"><%= JSON.stringify(business.score_components, null, 2) %></pre>
+    </details>
+  <% } %>
+</div>
+<% } %>
+
 <!-- INFO BOX -->
 <div class="info-box">
   <h3>📸 Ghid pentru imagini</h3>
   <p>
     <strong>Logo</strong> - Folosit în carduri (liste, oferte). Recomandat: 200x200 px, pătrat.<br>
     <strong>Cover</strong> - Banner mare pe pagina business-ului. Recomandat: 1200x600 px, 2:1.<br>
-    <strong>Galerie</strong> - Poze suplimentare pentru slider. Max 8 imagini.
+    <strong>Galerie</strong> - Poze suplimentare pentru slider. Fără limită din admin.
   </p>
 </div>
 
@@ -217,6 +238,17 @@
   <label for="website">Website</label>
   <input type="text" id="website" name="website" value="<%= business.website || '' %>" />
 
+  <h2 class="section-title">📋 Date legale</h2>
+
+  <label for="denumire_legala">Denumire legală</label>
+  <input type="text" id="denumire_legala" name="denumire_legala" value="<%= business.denumire_legala || '' %>" placeholder="ex: SC Example SRL" maxlength="255" />
+
+  <label for="cui">CUI / CIF</label>
+  <input type="text" id="cui" name="cui" value="<%= business.cui || '' %>" placeholder="ex: RO12345678" maxlength="20" />
+
+  <label for="founded_year">Anul înființării</label>
+  <input type="number" id="founded_year" name="founded_year" value="<%= business.founded_year || '' %>" placeholder="ex: 2015" min="1900" max="2026" />
+
   <!-- SECȚIUNE VERIFICARE -->
   <h2 class="section-title">Verificare</h2>
   <div style="margin-bottom: 16px;">
@@ -255,8 +287,33 @@
         <label>Adresă locație</label>
         <input type="text" name="locations[<%= loc.id %>][address]" value="<%= loc.address || '' %>" />
 
+        <label>Oraș locație</label>
+        <select name="locations[<%= loc.id %>][city_id]">
+          <option value="">— Selectează —</option>
+          <% (cities || []).forEach(function(c) { %>
+            <option value="<%= c.id %>" <%= Number(c.id) === Number(loc.city_id) ? 'selected' : '' %>><%= c.name %></option>
+          <% }); %>
+        </select>
+
         <label>Telefon locație</label>
         <input type="text" name="locations[<%= loc.id %>][phone]" value="<%= loc.phone || '' %>" />
+
+        <label>Link Google Maps</label>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <input type="text" name="locations[<%= loc.id %>][maps_url]" id="maps-url-loc-<%= loc.id %>" value="<%= loc.maps_url || '' %>" placeholder="https://maps.app.goo.gl/..." style="flex: 1;" />
+          <button type="button" class="button button-small" onclick="adminDetectCoordsLoc('<%= loc.id %>')">Detectează</button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <div style="flex:1;">
+            <label>Lat</label>
+            <input type="text" name="locations[<%= loc.id %>][lat]" id="lat-loc-<%= loc.id %>" value="<%= loc.lat || '' %>" readonly style="background: #1a1a2e;" />
+          </div>
+          <div style="flex:1;">
+            <label>Lng</label>
+            <input type="text" name="locations[<%= loc.id %>][lng]" id="lng-loc-<%= loc.id %>" value="<%= loc.lng || '' %>" readonly style="background: #1a1a2e;" />
+          </div>
+        </div>
 
         <label>Tip programare</label>
         <select name="locations[<%= loc.id %>][booking_type]">
@@ -283,6 +340,12 @@
       </div>
     <% }); %>
   <% } %>
+
+  <p style="margin-top: 12px;">
+    <a href="/admin/businesses/<%= business.id %>/locations" style="color: var(--accent, #FB923C);">
+      📍 Gestionează locații avansate (adaugă/șterge locații, program de lucru) →
+    </a>
+  </p>
 
   <button type="submit">💾 Salvează modificările</button>
 </form>
@@ -354,7 +417,7 @@
 <!-- ============================================ -->
 <!-- SECȚIUNE: GALERIE IMAGINI -->
 <!-- ============================================ -->
-<h2 class="section-title">📷 Galerie imagini (max 8)</h2>
+<h2 class="section-title">📷 Galerie imagini</h2>
 
 <% if (images && images.length > 0) { %>
   <div class="images-grid">
@@ -382,5 +445,30 @@
     <button type="submit" class="button-upload">📤 Încarcă în galerie</button>
   </form>
 </div>
+
+<script nonce="<%= cspNonce %>">
+function adminDetectCoordsLoc(locId) {
+  var mapsInput = document.getElementById('maps-url-loc-' + locId);
+  var latInput = document.getElementById('lat-loc-' + locId);
+  var lngInput = document.getElementById('lng-loc-' + locId);
+  var url = mapsInput.value.trim();
+  if (!url) { alert('Introdu un link Google Maps'); return; }
+  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  fetch('/api/web/parse-maps-link', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfMeta ? csrfMeta.getAttribute('content') : '' },
+    body: JSON.stringify({ url: url })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.error) { alert('Eroare: ' + data.error); return; }
+    latInput.value = data.lat;
+    lngInput.value = data.lng;
+    if (data.mapsUrl) mapsInput.value = data.mapsUrl;
+    alert('Coordonate detectate: ' + data.lat + ', ' + data.lng);
+  })
+  .catch(function(err) { alert('Eroare la detectare: ' + err.message); });
+}
+</script>
 
 <%- include('partials/layout-bottom') %>
