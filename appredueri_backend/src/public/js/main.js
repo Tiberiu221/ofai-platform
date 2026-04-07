@@ -800,9 +800,11 @@ async function fetchSuggestions(q, dropdown, setController) {
     if (data.offers.length > 0) {
       html += '<div class="search-suggest-section"><div class="search-suggest-label">Oferte</div>';
       data.offers.forEach((o) => {
-        const discount = o.discount_type === 'percent' || o.discount_type === 'percentage'
-          ? `-${o.discount_value}%`
-          : `${o.discount_value} lei`;
+        const discount = o.discount_type === 'special' && o.discount_text
+          ? o.discount_text
+          : (o.discount_type === 'percent' || o.discount_type === 'percentage'
+            ? `-${o.discount_value}%`
+            : `${o.discount_value} lei`);
         const oLogo = o.business_logo
           ? `<img src="${o.business_logo}" class="search-suggest-item-logo" alt="">`
           : `<div class="search-suggest-item-logo" style="display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--accent);">${escapeHtml((o.business_name || '?').charAt(0))}</div>`;

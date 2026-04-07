@@ -2392,7 +2392,7 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
     const rawQuery = q;
     const [offersRes, businessesRes] = await Promise.all([
       pool.query(`
-        SELECT o.id, o.title, o.discount_type, o.discount_value,
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text,
                b.name as business_name, b.logo_url as business_logo,
                b.subscription_badge_type, b.is_verified as business_verified
         FROM offers o
