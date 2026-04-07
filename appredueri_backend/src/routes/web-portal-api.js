@@ -2395,7 +2395,8 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         WHERE o.is_active = true AND (o.end_date IS NULL OR o.end_date >= CURRENT_DATE)
           AND o.moderation_status IN ('approved', 'auto_approved')
           AND (o.title ILIKE $1 OR o.description ILIKE $1 OR b.name ILIKE $1
-               OR similarity(o.title, $2) > 0.15 OR similarity(b.name, $2) > 0.15)
+               OR (length($2) >= 5 AND similarity(o.title, $2) > 0.20)
+               OR (length($2) >= 5 AND similarity(b.name, $2) > 0.20))
         ORDER BY CASE WHEN (o.title ILIKE $1 OR b.name ILIKE $1) THEN 0 ELSE 1 END,
                  GREATEST(similarity(o.title, $2), similarity(b.name, $2)) DESC,
                  o.discount_value DESC
@@ -2406,11 +2407,11 @@ router.get("/api/web/search/suggest", searchLimiter, async (req, res) => {
         FROM businesses b
         LEFT JOIN categories cat ON b.category_id = cat.id
         WHERE (b.name ILIKE $1 OR cat.name ILIKE $1
-               OR similarity(b.name, $2) > 0.15
+               OR (length($2) >= 5 AND similarity(b.name, $2) > 0.20)
                OR EXISTS (
                  SELECT 1 FROM business_catalog_items ci
                  WHERE ci.business_id = b.id AND ci.is_active = TRUE
-                   AND (ci.name ILIKE $1 OR similarity(ci.name, $2) > 0.25)
+                   AND (ci.name ILIKE $1 OR (length($2) >= 5 AND similarity(ci.name, $2) > 0.25))
                ))
         ORDER BY CASE WHEN b.name ILIKE $1 THEN 0 ELSE 1 END,
                  similarity(b.name, $2) DESC,

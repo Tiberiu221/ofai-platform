@@ -25,7 +25,7 @@ function buildFuzzySearch(columns, paramIdx) {
 
   const simParts = columns
     .filter(c => c.similarity === true)
-    .map(c => `similarity(${c.col}, $${simIdx}) > 0.20`);
+    .map(c => `(length($${simIdx}) >= 5 AND similarity(${c.col}, $${simIdx}) > 0.20)`);
 
   const simScores = columns
     .filter(c => c.similarity === true)
