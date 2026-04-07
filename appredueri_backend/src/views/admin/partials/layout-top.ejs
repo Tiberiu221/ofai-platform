@@ -109,6 +109,9 @@
             <line x1="23" y1="11" x2="17" y2="11"/>
           </svg>
           Cereri Business
+          <% if (typeof adminBadges !== 'undefined' && adminBadges.businessRequests > 0) { %>
+            <span class="a-nav-badge"><%= adminBadges.businessRequests %></span>
+          <% } %>
         </a>
         <a href="/admin/reports" class="a-nav-item" data-page="reports">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -117,6 +120,9 @@
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
           Rapoarte
+          <% if (typeof adminBadges !== 'undefined' && adminBadges.reports > 0) { %>
+            <span class="a-nav-badge"><%= adminBadges.reports %></span>
+          <% } %>
         </a>
         <a href="/admin/offer-moderation" class="a-nav-item" data-page="offer-moderation">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -125,6 +131,9 @@
             <path d="M9 14l2 2 4-4"/>
           </svg>
           Moderare Oferte
+          <% if (typeof adminBadges !== 'undefined' && adminBadges.offerModeration > 0) { %>
+            <span class="a-nav-badge"><%= adminBadges.offerModeration %></span>
+          <% } %>
         </a>
         <a href="/admin/emails" class="a-nav-item" data-page="emails">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

@@ -33,6 +33,28 @@ function escHtml(s) {
 }
 
 // =====================================
+//   SIDEBAR NOTIFICATION BADGES
+// =====================================
+// Pre-fetch pending counts for sidebar badges on every admin page load
+router.use(async (req, res, next) => {
+  try {
+    const [offers, requests, reports] = await Promise.all([
+      pool.query("SELECT COUNT(*) FROM offers WHERE moderation_status = 'pending'"),
+      pool.query("SELECT COUNT(*) FROM business_requests WHERE status = 'pending'"),
+      pool.query("SELECT COUNT(*) FROM reports WHERE status = 'pending'"),
+    ]);
+    res.locals.adminBadges = {
+      offerModeration: parseInt(offers.rows[0].count),
+      businessRequests: parseInt(requests.rows[0].count),
+      reports: parseInt(reports.rows[0].count),
+    };
+  } catch (e) {
+    res.locals.adminBadges = { offerModeration: 0, businessRequests: 0, reports: 0 };
+  }
+  next();
+});
+
+// =====================================
 //   AUDIT LOG HELPER
 // =====================================
 async function adminLog(action, entityType, entityId, req, details = {}) {
