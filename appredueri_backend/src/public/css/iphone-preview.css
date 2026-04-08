@@ -26,7 +26,7 @@
 #ofp-view-app .device {
   transform: scale(0.72);
   transform-origin: top center;
-  margin: 0 0 -240px 0; /* align left + compensate for scale reducing visual height */
+  margin: 0 auto -240px; /* center + compensate for scale reducing visual height */
 }
 
 /* ── Flutter Hero Image ── */
