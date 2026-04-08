@@ -1047,7 +1047,7 @@
                       <div class="fp-hero" id="fp-offer-hero">
                         <div class="fp-badge" id="fp-offer-badge" style="display:none;"></div>
                       </div>
-                      <!-- Content -->
+                      <!-- Content — order matches Flutter: Title → Dates → Stepper → Booking → Desc → Cond → Biz → CTA -->
                       <div class="fp-content">
                         <h2 class="fp-title" id="fp-offer-title">Titlul ofertei apare aici</h2>
 
@@ -1061,24 +1061,6 @@
                           <div class="fp-progress-bar">
                             <div class="fp-progress-fill" id="fp-offer-progress" style="width:0%;"></div>
                           </div>
-                        </div>
-
-                        <!-- Description -->
-                        <div class="fp-section-card" id="fp-offer-desc-card" style="display:none;">
-                          <div class="fp-section-header">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
-                            <span>Descriere</span>
-                          </div>
-                          <p class="fp-text-secondary" id="fp-offer-desc"></p>
-                        </div>
-
-                        <!-- Conditions -->
-                        <div class="fp-section-card" id="fp-offer-cond-card" style="display:none;">
-                          <div class="fp-section-header">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                            <span>Condiții</span>
-                          </div>
-                          <p class="fp-text-secondary" id="fp-offer-cond"></p>
                         </div>
 
                         <!-- Stepper — matches Flutter offer_detail_screen.dart -->
@@ -1118,6 +1100,24 @@
                         <!-- Booking method chips (dynamic from business data) -->
                         <div class="fp-booking-chips" id="fp-offer-booking" style="display:none;">
                           <div style="display:flex;flex-wrap:wrap;gap:8px;" id="fp-offer-booking-list"></div>
+                        </div>
+
+                        <!-- Description (after stepper+booking, matching Flutter order) -->
+                        <div class="fp-section-card" id="fp-offer-desc-card" style="display:none;">
+                          <div class="fp-section-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+                            <span>Descriere</span>
+                          </div>
+                          <p class="fp-text-secondary" id="fp-offer-desc"></p>
+                        </div>
+
+                        <!-- Conditions -->
+                        <div class="fp-section-card" id="fp-offer-cond-card" style="display:none;">
+                          <div class="fp-section-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span>Condiții</span>
+                          </div>
+                          <p class="fp-text-secondary" id="fp-offer-cond"></p>
                         </div>
 
                         <!-- Business card -->
@@ -1885,8 +1885,9 @@
     function formatDateRo(ds) {
       if (!ds) return '';
       var d = new Date(ds);
-      var m = ['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
-      return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+      var m = ['ian.','feb.','mar.','apr.','mai','iun.','iul.','aug.','sep.','oct.','nov.','dec.'];
+      var day = d.getDate() < 10 ? '0' + d.getDate() : d.getDate();
+      return day + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
     }
     function updateDates() {
       if (!fpDates) return;
@@ -1894,10 +1895,11 @@
       var e = endDateInput ? endDateInput.value : '';
       if (!s && !e) { fpDates.style.display = 'none'; return; }
       fpDates.style.display = '';
-      var parts = [];
-      if (s) parts.push(formatDateRo(s));
-      if (e) parts.push(formatDateRo(e));
-      if (fpDateText) fpDateText.textContent = parts.join(' — ');
+      var text = 'Valabila: ';
+      if (s) text += formatDateRo(s);
+      if (s && e) text += ' - ';
+      if (e) text += formatDateRo(e);
+      if (fpDateText) fpDateText.textContent = text;
       var now = new Date(), sd = s ? new Date(s) : null, ed = e ? new Date(e) : null;
       if (sd && ed) {
         var total = ed - sd, elapsed = now - sd;
