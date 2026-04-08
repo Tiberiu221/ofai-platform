@@ -23,13 +23,10 @@
 .ofp-app-screen::-webkit-scrollbar { display: none; }
 
 /* Scale devices.css frame to fit preview column */
-#ofp-view-app {
-  display: flex;
-  justify-content: center;
-}
 #ofp-view-app .device {
   transform: scale(0.72);
-  transform-origin: top center;
+  transform-origin: top left;
+  margin-left: 17px;
   margin-bottom: -240px;
 }
 
