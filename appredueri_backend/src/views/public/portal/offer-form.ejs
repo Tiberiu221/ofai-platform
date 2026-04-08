@@ -2002,13 +2002,32 @@
     var appView = document.getElementById('ofp-view-app');
     if (appView) {
       var appDevice = appView.querySelector('.device');
-      if (appDevice) {
+      var appScreen = appView.querySelector('.ofp-app-screen');
+      if (appDevice && appScreen) {
+        var targetScroll = appScreen.scrollTop;
+        var isAnimating = false;
+
+        function smoothStep() {
+          var current = appScreen.scrollTop;
+          var diff = targetScroll - current;
+          if (Math.abs(diff) < 0.5) {
+            appScreen.scrollTop = targetScroll;
+            isAnimating = false;
+            return;
+          }
+          appScreen.scrollTop = current + diff * 0.15;
+          requestAnimationFrame(smoothStep);
+        }
+
         appDevice.addEventListener('wheel', function(e) {
-          var screen = appView.querySelector('.ofp-app-screen');
-          if (!screen) return;
           e.preventDefault();
           e.stopPropagation();
-          screen.scrollTop += e.deltaY;
+          var maxScroll = appScreen.scrollHeight - appScreen.clientHeight;
+          targetScroll = Math.max(0, Math.min(maxScroll, targetScroll + e.deltaY));
+          if (!isAnimating) {
+            isAnimating = true;
+            requestAnimationFrame(smoothStep);
+          }
         }, { passive: false });
       }
     }

@@ -16,6 +16,7 @@
   width: 100%;
   height: 100%;
   overflow-y: auto;
+  scroll-behavior: smooth;
   font-family: 'Inter', sans-serif;
   scrollbar-width: none;
   -ms-overflow-style: none;
