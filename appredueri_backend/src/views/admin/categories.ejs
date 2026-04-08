@@ -41,10 +41,13 @@
         <tr>
           <td><%= c.id %></td>
           <td>
-            <form method="post" action="/admin/categories/<%= c.id %>" style="display: flex; gap: 8px; align-items: center; max-width: none;">
+            <form method="post" action="/admin/categories/<%= c.id %>" style="max-width: none;">
               <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-              <input type="text" name="name" value="<%= c.name %>" required style="flex: 1;" />
-              <button type="submit" class="a-btn a-btn-sm">Salvează</button>
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                <input type="text" name="name" value="<%= c.name %>" required style="flex: 1;" />
+                <button type="submit" class="a-btn a-btn-sm">Salvează</button>
+              </div>
+              <textarea name="search_terms" rows="1" placeholder="Sinonime search (ex: dentist dinti implant)" style="width: 100%; font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid #374151; background: var(--a-bg, #111); color: #9ca3af; resize: vertical; box-sizing: border-box;"><%= c.search_terms || '' %></textarea>
             </form>
           </td>
           <td><%= c.businesses_count %></td>

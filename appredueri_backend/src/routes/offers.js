@@ -111,7 +111,9 @@ router.get("/", optionalAuth, async (req, res) => {
         { col: 'o.description', ilike: true, similarity: false },
         { col: 'b.name', ilike: true, similarity: true },
       ], idx);
-      filters.push(fuzzy.condition);
+      // Extend fuzzy with category synonym search (ILIKE only, reuses ILIKE param)
+      const ilikeParamIdx = idx; // first fuzzy param is always the ILIKE %query%
+      filters.push(`(${fuzzy.condition} OR cat.search_terms ILIKE $${ilikeParamIdx})`);
       values.push(...fuzzy.params(q.trim()));
       idx += fuzzy.paramCount;
       searchOrderClause = fuzzy.orderClause;

@@ -499,7 +499,8 @@ router.get("/oferte", async (req, res) => {
         { col: 'o.description', ilike: true, similarity: false },
         { col: 'b.name', ilike: true, similarity: true },
       ], paramIdx);
-      conditions.push(fuzzy.condition);
+      const ilikeIdx = paramIdx; // reuse ILIKE param for category synonyms
+      conditions.push(`(${fuzzy.condition} OR cat.search_terms ILIKE $${ilikeIdx})`);
       params.push(...fuzzy.params(query));
       paramIdx += fuzzy.paramCount;
       searchOrderClause = fuzzy.orderClause;
@@ -756,7 +757,7 @@ router.get("/business-uri", async (req, res) => {
           AND (ci.name ILIKE $${ilikeParamIdx} ${catalogSimPart})
       )`;
 
-      conditions.push(`(${fuzzy.condition} OR ${catalogExists})`);
+      conditions.push(`(${fuzzy.condition} OR ${catalogExists} OR cat.name ILIKE $${ilikeParamIdx} OR cat.search_terms ILIKE $${ilikeParamIdx})`);
       params.push(...fuzzy.params(query));
       paramIdx += fuzzy.paramCount;
       searchOrderClauseBiz = fuzzy.orderClause;

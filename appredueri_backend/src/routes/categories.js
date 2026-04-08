@@ -7,7 +7,7 @@ router.get("/", async (req, res) => {
   try {
     const categories = await cache.cached("static:categories", 2 * 60 * 60 * 1000, async () => {
       const result = await pool.query(
-        `SELECT c.id, c.name, COUNT(b.id)::int AS count
+        `SELECT c.id, c.name, c.search_terms, COUNT(b.id)::int AS count
          FROM categories c
          LEFT JOIN businesses b ON b.category_id = c.id
          GROUP BY c.id

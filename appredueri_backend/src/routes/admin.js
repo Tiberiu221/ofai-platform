@@ -2119,7 +2119,7 @@ router.post("/cities/:id/delete", async (req, res) => {
 router.get("/categories", async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT c.id, c.name, COUNT(b.id) AS businesses_count
+      SELECT c.id, c.name, c.search_terms, COUNT(b.id) AS businesses_count
       FROM categories c
       LEFT JOIN businesses b ON b.category_id = c.id
       GROUP BY c.id
@@ -2160,7 +2160,8 @@ router.post("/categories/:id", async (req, res) => {
     if (!name) {
       return res.redirect("/admin/categories?err=Numele este obligatoriu");
     }
-    await pool.query("UPDATE categories SET name = $1 WHERE id = $2", [name, id]);
+    const searchTerms = (req.body.search_terms || "").trim() || null;
+    await pool.query("UPDATE categories SET name = $1, search_terms = $2 WHERE id = $3", [name, searchTerms, id]);
     cache.invalidateGroup('static'); cache.invalidateGroup('homepage');
     res.redirect(`/admin/categories?message=${encodeURIComponent("Categorie actualizată")}`);
   } catch (err) {

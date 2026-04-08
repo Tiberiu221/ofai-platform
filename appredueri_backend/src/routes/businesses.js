@@ -95,7 +95,7 @@ router.get("/", optionalAuth, async (req, res) => {
           AND (ci.name ILIKE $${ilikeParamIdx} ${catalogSimPart})
       )`;
 
-      filters.push(`(${fuzzy.condition} OR ${catalogExists})`);
+      filters.push(`(${fuzzy.condition} OR ${catalogExists} OR cat.search_terms ILIKE $${ilikeParamIdx})`);
       values.push(...fuzzy.params(q.trim()));
       idx += fuzzy.paramCount;
       searchOrderClause = fuzzy.orderClause;
