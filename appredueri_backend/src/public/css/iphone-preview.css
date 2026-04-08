@@ -24,9 +24,9 @@
 
 /* Scale devices.css frame to fit preview column */
 #ofp-view-app .device {
-  transform: scale(0.82);
+  transform: scale(0.72);
   transform-origin: top center;
-  margin-bottom: -120px; /* compensate for scale reducing visual height */
+  margin: 0 0 -240px 0; /* align left + compensate for scale reducing visual height */
 }
 
 /* ── Flutter Hero Image ── */
