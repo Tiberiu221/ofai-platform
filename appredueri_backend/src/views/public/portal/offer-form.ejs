@@ -904,6 +904,7 @@
         data-biz-city="<%= business.city_name || '' %>"
         data-biz-category="<%= business.category_name || '' %>"
         data-biz-cover="<%= business.cover_image_url || '' %>"
+        data-biz-phone="<%= business.phone || '' %>"
         data-offer-image="<%= offer && offer.logo_url ? offer.logo_url : '' %>">
         <div class="ofp-panel">
           <div class="ofp-panel-header">
@@ -1058,7 +1059,7 @@
                             <span class="fp-status-badge active" id="fp-offer-status">Activă</span>
                           </div>
                           <div class="fp-progress-bar">
-                            <div class="fp-progress-fill" id="fp-offer-progress" style="width:30%;"></div>
+                            <div class="fp-progress-fill" id="fp-offer-progress" style="width:0%;"></div>
                           </div>
                         </div>
 
@@ -1080,38 +1081,43 @@
                           <p class="fp-text-secondary" id="fp-offer-cond"></p>
                         </div>
 
-                        <!-- Stepper -->
+                        <!-- Stepper — matches Flutter offer_detail_screen.dart -->
                         <div class="fp-section-card">
                           <div class="fp-section-header">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                            <span>Cum profiți de ofertă</span>
+                            <span>Cum sa folosesti oferta</span>
                           </div>
                           <div class="fp-stepper">
                             <div class="fp-stepper-step">
                               <div class="fp-stepper-rail"><div class="fp-stepper-circle">1</div><div class="fp-stepper-line"></div></div>
                               <div class="fp-stepper-body">
-                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg></div>
-                                <p class="fp-stepper-title">Salvează oferta</p>
-                                <p class="fp-stepper-sub">Adaugă la favorite pentru acces rapid</p>
+                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+                                <p class="fp-stepper-title">Alege oferta</p>
+                                <p class="fp-stepper-sub">Verifică detaliile și condițiile</p>
                               </div>
                             </div>
                             <div class="fp-stepper-step">
                               <div class="fp-stepper-rail"><div class="fp-stepper-circle">2</div><div class="fp-stepper-line"></div></div>
                               <div class="fp-stepper-body">
                                 <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg></div>
-                                <p class="fp-stepper-title">Contactează business-ul</p>
-                                <p class="fp-stepper-sub">Sună sau trimite un mesaj</p>
+                                <p class="fp-stepper-title">Contactează</p>
+                                <p class="fp-stepper-sub">Sună sau rezervă online</p>
                               </div>
                             </div>
                             <div class="fp-stepper-step">
                               <div class="fp-stepper-rail"><div class="fp-stepper-circle">3</div></div>
                               <div class="fp-stepper-body">
-                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-                                <p class="fp-stepper-title">Profită de reducere</p>
-                                <p class="fp-stepper-sub">Prezintă oferta la locație</p>
+                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+                                <p class="fp-stepper-title">Profită!</p>
+                                <p class="fp-stepper-sub">Prezintă oferta și bucură-te de reducere</p>
                               </div>
                             </div>
                           </div>
+                        </div>
+
+                        <!-- Booking method chips (dynamic from business data) -->
+                        <div class="fp-booking-chips" id="fp-offer-booking" style="display:none;">
+                          <div style="display:flex;flex-wrap:wrap;gap:8px;" id="fp-offer-booking-list"></div>
                         </div>
 
                         <!-- Business card -->
@@ -1741,6 +1747,19 @@
       fpHero.style.backgroundImage = src ? 'url(' + src + ')' : 'none';
     }
     updateAppHero(offerImage);
+
+    // App booking chips (from business phone)
+    var bizPhone = aside.dataset.bizPhone || '';
+    var fpBooking = document.getElementById('fp-offer-booking');
+    var fpBookingList = document.getElementById('fp-offer-booking-list');
+    if (fpBooking && fpBookingList && bizPhone) {
+      fpBooking.style.display = '';
+      fpBookingList.innerHTML =
+        '<span class="fp-booking-chip phone">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>' +
+          'Sună' +
+        '</span>';
+    }
 
     // Helper: set the image content for a preview card's image area
     // Fallback chain: imgUrl → bizCover → bizLogo → letter
