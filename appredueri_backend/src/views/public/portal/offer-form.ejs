@@ -562,9 +562,10 @@
       top: 88px;
       max-height: calc(100vh - 110px);
       overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
+    .ofp-preview-col::-webkit-scrollbar { display: none; }
   }
 
   /* ─── PREVIEW PANEL ────────────────────────────────────── */
