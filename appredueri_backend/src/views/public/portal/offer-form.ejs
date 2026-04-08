@@ -1964,6 +1964,20 @@
 
     // ── Initial render (edit mode pre-population) ──
     updatePreview();
+
+    // ── Scroll inside App preview on mouse wheel ──
+    var appView = document.getElementById('ofp-view-app');
+    if (appView) {
+      appView.addEventListener('wheel', function(e) {
+        var screen = appView.querySelector('.ofp-app-screen');
+        if (!screen) return;
+        // Only intercept if hovering over the device area
+        var rect = appView.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX > rect.right) return;
+        e.preventDefault();
+        screen.scrollTop += e.deltaY;
+      }, { passive: false });
+    }
   })();
 
 })();
