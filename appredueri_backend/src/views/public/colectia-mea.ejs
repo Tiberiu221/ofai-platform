@@ -40,8 +40,8 @@
       <span class="sort-bar-label"><%= t('collection.sortLabel') %></span>
       <button type="button" class="filter-pill<%= sort === 'recent' ? ' active' : '' %>" data-sort="recent" onclick="changeSort('recent')"><%= t('collection.recentlyAdded') %></button>
       <button type="button" class="filter-pill<%= sort === 'rating' ? ' active' : '' %>" data-sort="rating" onclick="changeSort('rating')"><%= t('collection.rating') %></button>
-      <button type="button" class="filter-pill" data-tab-sort="offers" data-sort="discount" onclick="changeSort('discount')"><%= sort === 'discount' ? '&#8595;% ' : '' %><%= t('collection.discount') %></button>
-      <button type="button" class="filter-pill" data-tab-sort="offers" data-sort="ending_soon" onclick="changeSort('ending_soon')"><%= sort === 'ending_soon' ? '&#9200; ' : '' %><%= t('collection.endingSoon') %></button>
+      <button type="button" class="filter-pill" data-tab-sort="offers" data-sort="discount" onclick="changeSort('discount')"><%= t('collection.discount') %></button>
+      <button type="button" class="filter-pill" data-tab-sort="offers" data-sort="ending_soon" onclick="changeSort('ending_soon')"><%= t('collection.endingSoon') %></button>
       <button type="button" class="filter-pill" data-tab-sort="businesses" data-sort="offers" onclick="changeSort('offers')"><%= t('collection.activeOffers') %></button>
       <button type="button" class="filter-pill" id="sort-distance-btn" onclick="sortCollectionByDistance()" style="opacity: 0.5;" title="<%= t('collection.enableLocation') %>">&#128205; <%= t('collection.distance') %></button>
     </div>
