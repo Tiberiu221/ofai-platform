@@ -182,7 +182,16 @@
   transition: width 0.3s ease, background 0.3s ease;
 }
 
-/* ── Flutter Stepper ── */
+/* ── Flutter Stepper (no card wrapper — direct on background like Flutter) ── */
+.fp-stepper-section {
+  padding: 0;
+}
+.fp-stepper-heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  color: #f4f4f5;
+  margin: 0 0 14px;
+}
 .fp-stepper { display: flex; flex-direction: column; }
 .fp-stepper-step {
   display: flex;
@@ -236,6 +245,16 @@
   margin-bottom: 6px;
 }
 .fp-stepper-icon svg { color: #fb923c; }
+
+.fp-stepper-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.fp-stepper-row .fp-stepper-icon {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
 
 .fp-stepper-title {
   font-family: 'Inter', sans-serif;
