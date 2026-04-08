@@ -923,6 +923,7 @@
             <button class="ofp-tab" data-tab="featured" type="button">Oferta Zilei</button>
             <button class="ofp-tab" data-tab="compact" type="button">Compact</button>
             <button class="ofp-tab" data-tab="promoted" type="button">Promovat</button>
+            <button class="ofp-tab" data-tab="app" type="button">App</button>
           </div>
           <div class="ofp-stage">
 
@@ -1039,6 +1040,116 @@
                 </div>
               </div>
               <p class="ofp-view-label">Cum apare in sectiunea Oferte Promovate</p>
+            </div>
+
+            <!-- ── App preview (Flutter offer detail inside devices.css frame) ── -->
+            <div class="ofp-view" id="ofp-view-app" hidden>
+              <div class="device device-iphone-14-pro">
+                <div class="device-frame">
+                  <div class="device-screen">
+                    <div class="ofp-app-screen">
+                      <!-- Hero -->
+                      <div class="fp-hero" id="fp-offer-hero">
+                        <div class="fp-badge" id="fp-offer-badge" style="display:none;"></div>
+                      </div>
+                      <!-- Content -->
+                      <div class="fp-content">
+                        <h2 class="fp-title" id="fp-offer-title">Titlul ofertei apare aici</h2>
+
+                        <!-- Dates -->
+                        <div class="fp-date-card" id="fp-offer-dates" style="display:none;">
+                          <div class="fp-date-row">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                            <span class="fp-date-text" id="fp-offer-date-text"></span>
+                            <span class="fp-status-badge active" id="fp-offer-status">Activă</span>
+                          </div>
+                          <div class="fp-progress-bar">
+                            <div class="fp-progress-fill" id="fp-offer-progress" style="width:30%;"></div>
+                          </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="fp-section-card" id="fp-offer-desc-card" style="display:none;">
+                          <div class="fp-section-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+                            <span>Descriere</span>
+                          </div>
+                          <p class="fp-text-secondary" id="fp-offer-desc"></p>
+                        </div>
+
+                        <!-- Conditions -->
+                        <div class="fp-section-card" id="fp-offer-cond-card" style="display:none;">
+                          <div class="fp-section-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span>Condiții</span>
+                          </div>
+                          <p class="fp-text-secondary" id="fp-offer-cond"></p>
+                        </div>
+
+                        <!-- Stepper -->
+                        <div class="fp-section-card">
+                          <div class="fp-section-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <span>Cum profiți de ofertă</span>
+                          </div>
+                          <div class="fp-stepper">
+                            <div class="fp-stepper-step">
+                              <div class="fp-stepper-rail"><div class="fp-stepper-circle">1</div><div class="fp-stepper-line"></div></div>
+                              <div class="fp-stepper-body">
+                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg></div>
+                                <p class="fp-stepper-title">Salvează oferta</p>
+                                <p class="fp-stepper-sub">Adaugă la favorite pentru acces rapid</p>
+                              </div>
+                            </div>
+                            <div class="fp-stepper-step">
+                              <div class="fp-stepper-rail"><div class="fp-stepper-circle">2</div><div class="fp-stepper-line"></div></div>
+                              <div class="fp-stepper-body">
+                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg></div>
+                                <p class="fp-stepper-title">Contactează business-ul</p>
+                                <p class="fp-stepper-sub">Sună sau trimite un mesaj</p>
+                              </div>
+                            </div>
+                            <div class="fp-stepper-step">
+                              <div class="fp-stepper-rail"><div class="fp-stepper-circle">3</div></div>
+                              <div class="fp-stepper-body">
+                                <div class="fp-stepper-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                                <p class="fp-stepper-title">Profită de reducere</p>
+                                <p class="fp-stepper-sub">Prezintă oferta la locație</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Business card -->
+                        <div class="fp-biz-card">
+                          <div id="fp-offer-biz-logo-wrap"></div>
+                          <p class="fp-biz-name" id="fp-offer-biz-name"></p>
+                          <div class="fp-biz-meta">
+                            <span class="fp-chip" id="fp-offer-biz-cat"></span>
+                            <span class="fp-chip">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                              <span id="fp-offer-biz-city"></span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- CTA -->
+                        <div class="fp-cta">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                          Profită acum
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="device-stripe"></div>
+                <div class="device-header"></div>
+                <div class="device-sensors"></div>
+                <div class="device-btns"></div>
+                <div class="device-power"></div>
+                <div class="device-home"></div>
+              </div>
+              <p class="ofp-view-label">Cum apare în aplicația mobilă</p>
             </div>
 
           </div><!-- /.ofp-stage -->
@@ -1607,15 +1718,43 @@
     var offerImage  = aside.dataset.offerImage   || '';
     var initial     = bizName.charAt(0).toUpperCase() || '?';
 
-    // Populate all static fields across the 4 cards
+    // Populate all static fields across the 4 cards + App preview
     aside.querySelectorAll('.ofp-biz-name').forEach(function(el)  { el.textContent = bizName; });
     aside.querySelectorAll('.ofp-city').forEach(function(el)      { el.textContent = bizCity; });
     aside.querySelectorAll('.ofp-cat').forEach(function(el)       { el.textContent = bizCategory; });
 
+    // App preview — static business data
+    var fpBizName = document.getElementById('fp-offer-biz-name');
+    var fpBizCat  = document.getElementById('fp-offer-biz-cat');
+    var fpBizCity = document.getElementById('fp-offer-biz-city');
+    var fpBizLogoWrap = document.getElementById('fp-offer-biz-logo-wrap');
+    if (fpBizName) fpBizName.textContent = bizName;
+    if (fpBizCat)  fpBizCat.textContent = bizCategory;
+    if (fpBizCity) fpBizCity.textContent = bizCity;
+    if (fpBizLogoWrap) {
+      if (bizLogo) {
+        fpBizLogoWrap.innerHTML = '<img class="fp-biz-logo" src="' + bizLogo + '" alt="' + bizName + '">';
+      } else {
+        fpBizLogoWrap.innerHTML = '<div class="fp-biz-initial">' + initial + '</div>';
+      }
+    }
+
+    // App hero image
+    var fpHero = document.getElementById('fp-offer-hero');
+    function updateAppHero(imgUrl) {
+      if (!fpHero) return;
+      var src = imgUrl || bizCover;
+      fpHero.style.backgroundImage = src ? 'url(' + src + ')' : 'none';
+    }
+    updateAppHero(offerImage);
+
     // Helper: set the image content for a preview card's image area
     // Fallback chain: imgUrl → bizCover → bizLogo → letter
     // Exposed to outer scope so offer image upload can call it
-    window._ofpSetPreviewImage = setPreviewImage;
+    window._ofpSetPreviewImage = function(container, imgUrl) {
+      setPreviewImage(container, imgUrl);
+      updateAppHero(imgUrl);
+    };
     function setPreviewImage(container, imgUrl) {
       container.innerHTML = '';
       var coverSrc = imgUrl || bizCover;
@@ -1663,31 +1802,107 @@
       }
     }
 
+    // App preview elements
+    var fpTitle = document.getElementById('fp-offer-title');
+    var fpBadge = document.getElementById('fp-offer-badge');
+
     function updatePreview() {
-      // Title
+      // Title — web cards + app
       var title = titleInput.value.trim() || 'Titlul ofertei apare aici';
       allTitles.forEach(function(el) { el.textContent = title; });
+      if (fpTitle) fpTitle.textContent = title;
 
-      // Discount badge
+      // Discount badge — web cards + app
       var type = discountType.value;
       var val  = discountValue.value.trim();
       var badgeText = formatBadge(type, val);
 
       allBadges.forEach(function(el) {
-        if (badgeText) {
-          el.textContent = badgeText;
-          el.style.display = '';
-        } else {
-          el.textContent = '';
-          el.style.display = 'none';
-        }
+        if (badgeText) { el.textContent = badgeText; el.style.display = ''; }
+        else { el.textContent = ''; el.style.display = 'none'; }
       });
+      if (fpBadge) {
+        if (badgeText) { fpBadge.textContent = badgeText; fpBadge.style.display = ''; }
+        else { fpBadge.textContent = ''; fpBadge.style.display = 'none'; }
+      }
     }
 
     // ── Bind events ──
     titleInput.addEventListener('input', updatePreview);
     discountValue.addEventListener('input', updatePreview);
     discountType.addEventListener('change', updatePreview);
+
+    // ── App preview: description + conditions + dates ──
+    var descInput = document.getElementById('of-description');
+    var condInput = document.getElementById('of-conditions');
+    var fpDesc = document.getElementById('fp-offer-desc');
+    var fpDescCard = document.getElementById('fp-offer-desc-card');
+    var fpCond = document.getElementById('fp-offer-cond');
+    var fpCondCard = document.getElementById('fp-offer-cond-card');
+
+    if (descInput) {
+      descInput.addEventListener('input', function() {
+        var v = this.value.trim();
+        if (fpDesc) fpDesc.textContent = v;
+        if (fpDescCard) fpDescCard.style.display = v ? '' : 'none';
+      });
+      var dv = descInput.value.trim();
+      if (fpDesc) fpDesc.textContent = dv;
+      if (fpDescCard) fpDescCard.style.display = dv ? '' : 'none';
+    }
+    if (condInput) {
+      condInput.addEventListener('input', function() {
+        var v = this.value.trim();
+        if (fpCond) fpCond.textContent = v;
+        if (fpCondCard) fpCondCard.style.display = v ? '' : 'none';
+      });
+      var cv = condInput.value.trim();
+      if (fpCond) fpCond.textContent = cv;
+      if (fpCondCard) fpCondCard.style.display = cv ? '' : 'none';
+    }
+
+    // Dates
+    var startDateInput = document.getElementById('of-start-date');
+    var endDateInput   = document.getElementById('of-end-date');
+    var fpDates    = document.getElementById('fp-offer-dates');
+    var fpDateText = document.getElementById('fp-offer-date-text');
+    var fpProgress = document.getElementById('fp-offer-progress');
+    var fpStatus   = document.getElementById('fp-offer-status');
+
+    function formatDateRo(ds) {
+      if (!ds) return '';
+      var d = new Date(ds);
+      var m = ['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
+      return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    function updateDates() {
+      if (!fpDates) return;
+      var s = startDateInput ? startDateInput.value : '';
+      var e = endDateInput ? endDateInput.value : '';
+      if (!s && !e) { fpDates.style.display = 'none'; return; }
+      fpDates.style.display = '';
+      var parts = [];
+      if (s) parts.push(formatDateRo(s));
+      if (e) parts.push(formatDateRo(e));
+      if (fpDateText) fpDateText.textContent = parts.join(' — ');
+      var now = new Date(), sd = s ? new Date(s) : null, ed = e ? new Date(e) : null;
+      if (sd && ed) {
+        var total = ed - sd, elapsed = now - sd;
+        var pct = total > 0 ? Math.max(0, Math.min(100, (elapsed / total) * 100)) : 0;
+        if (fpProgress) {
+          fpProgress.style.width = pct + '%';
+          fpProgress.style.background = pct < 50 ? '#22c55e' : pct < 80 ? '#fbbf24' : '#ef4444';
+        }
+        if (fpStatus) {
+          var active = now >= sd && now <= ed;
+          fpStatus.textContent = active ? 'Activă' : (now > ed ? 'Expirată' : 'Viitoare');
+          fpStatus.className = 'fp-status-badge ' + (active ? 'active' : 'expired');
+        }
+      }
+    }
+    if (startDateInput) startDateInput.addEventListener('change', updateDates);
+    if (endDateInput) endDateInput.addEventListener('change', updateDates);
+    updateDates();
 
     // ── Tab switcher ──
     var tabs  = aside.querySelectorAll('.ofp-tab');

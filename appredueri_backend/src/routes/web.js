@@ -2301,6 +2301,7 @@ router.get("/portal/:businessId", requireBusinessOwner, attachTier(), async (req
       webUser: req.webUser,
       loadChartJs: true,
       loadPortalCss: true,
+      loadAppPreviewCss: true,
       tier: req.tier || { tier: 'free', plan: {} },
       nominations,
       canNominate,
@@ -2344,6 +2345,7 @@ router.get("/portal/:businessId/oferta-noua", requireBusinessOwner, attachTier()
       tier: req.tier || { tier: 'free', plan: {} },
       activePage: "portal",
       webUser: req.webUser,
+      loadAppPreviewCss: true,
     });
   } catch (err) {
     console.error("[Web] Portal new offer error:", err);
@@ -2398,6 +2400,7 @@ router.get("/portal/:businessId/oferta/:offerId", requireBusinessOwner, attachTi
       tier: req.tier || { tier: 'free', plan: {} },
       activePage: "portal",
       webUser: req.webUser,
+      loadAppPreviewCss: true,
     });
   } catch (err) {
     console.error("[Web] Portal edit offer error:", err);

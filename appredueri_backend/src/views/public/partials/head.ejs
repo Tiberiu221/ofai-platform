@@ -81,6 +81,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css">
   <script src="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js" defer></script>
   <% } %>
+  <% if (typeof loadAppPreviewCss !== 'undefined' && loadAppPreviewCss) { %>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/devices.css@0.2.0/devices.min.css">
+  <link rel="stylesheet" href="/css/iphone-preview.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
+  <% } %>
   <% if (typeof loadBlogCss !== 'undefined' && loadBlogCss) { %>
   <link rel="stylesheet" href="/css/blog.css?v=<%= typeof cacheBust !== 'undefined' ? cacheBust : '1' %>">
   <% } %>

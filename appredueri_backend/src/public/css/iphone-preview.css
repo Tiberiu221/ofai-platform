@@ -1,0 +1,391 @@
+/* ══════════════════════════════════════════════════════
+   Flutter App Preview — Design System Classes
+   Used inside devices.css phone frame on portal preview
+   ══════════════════════════════════════════════════════ */
+
+/* ── App screen wrapper (inside .device-screen) ── */
+.ofp-app-screen {
+  background: #06060a;
+  min-height: 100%;
+  overflow-y: auto;
+  font-family: 'Inter', sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.ofp-app-screen::-webkit-scrollbar { display: none; }
+
+/* Scale devices.css frame to fit preview column */
+#ofp-view-app .device {
+  transform: scale(0.82);
+  transform-origin: top center;
+}
+
+/* ── Flutter Hero Image ── */
+.fp-hero {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-color: #111;
+  position: relative;
+  overflow: hidden;
+}
+.fp-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(8,8,8,0.73));
+  pointer-events: none;
+}
+
+/* Hero with cover logo overlay (business detail) */
+.fp-cover-logo {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid #06060a;
+  object-fit: cover;
+  z-index: 2;
+  background: #111;
+}
+
+/* ── Flutter Discount Badge ── */
+.fp-badge {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  background: #fb923c;
+  color: #06060a;
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(251,146,60,0.4);
+  white-space: nowrap;
+}
+
+/* ── Flutter Content Area ── */
+.fp-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Flutter Title ── */
+.fp-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: #f4f4f5;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* ── Flutter Section Card ── */
+.fp-section-card {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.fp-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.fp-section-header svg {
+  color: #fb923c;
+  flex-shrink: 0;
+}
+.fp-section-header span {
+  font-family: 'DM Serif Display', serif;
+  font-size: 15px;
+  color: #f4f4f5;
+}
+
+/* ── Flutter Text Styles ── */
+.fp-text-secondary {
+  color: #a1a1aa;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  word-break: break-word;
+}
+
+.fp-text-tertiary {
+  color: #71717a;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* ── Flutter Date Card ── */
+.fp-date-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.fp-date-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fp-date-row svg { color: #71717a; flex-shrink: 0; }
+.fp-date-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #a1a1aa;
+}
+.fp-status-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+}
+.fp-status-badge.active { background: rgba(34,197,94,0.15); color: #22c55e; }
+.fp-status-badge.expired { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+/* Progress bar */
+.fp-progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: #1a1a1a;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.fp-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: #22c55e;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+/* ── Flutter Stepper ── */
+.fp-stepper { display: flex; flex-direction: column; }
+.fp-stepper-step {
+  display: flex;
+  gap: 12px;
+  min-height: 0;
+}
+.fp-stepper-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+.fp-stepper-circle {
+  width: 28px;
+  height: 28px;
+  background: #fb923c;
+  color: #06060a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.fp-stepper-line {
+  width: 2px;
+  flex: 1;
+  min-height: 12px;
+  background: rgba(251,146,60,0.3);
+  border-radius: 1px;
+  margin: 4px 0;
+}
+.fp-stepper-body {
+  flex: 1;
+  padding-bottom: 14px;
+}
+.fp-stepper-step:last-child .fp-stepper-body { padding-bottom: 0; }
+.fp-stepper-step:last-child .fp-stepper-line { display: none; }
+
+.fp-stepper-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(251,146,60,0.12);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.fp-stepper-icon svg { color: #fb923c; }
+
+.fp-stepper-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0 0 2px;
+}
+.fp-stepper-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #71717a;
+  margin: 0;
+}
+
+/* ── Flutter Business Card ── */
+.fp-biz-card {
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+}
+.fp-biz-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  object-fit: cover;
+  margin: 0 auto 10px;
+  display: block;
+  background: #1a1a1a;
+}
+.fp-biz-initial {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: rgba(251,146,60,0.15);
+  color: #fb923c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  margin: 0 auto 10px;
+}
+.fp-biz-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 15px;
+  color: #f4f4f5;
+  margin: 0 0 8px;
+}
+.fp-biz-meta {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Flutter Chips ── */
+.fp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+.fp-chip svg { flex-shrink: 0; }
+
+/* ── Flutter CTA Button ── */
+.fp-cta {
+  height: 44px;
+  background: linear-gradient(180deg, #fb923c 0%, rgba(251,146,60,0.9) 100%);
+  border-radius: 12px;
+  color: #06060a;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(251,146,60,0.3);
+  border: none;
+  cursor: default;
+  margin-top: 2px;
+}
+
+/* ── Flutter Tab Bar (Business Detail) ── */
+.fp-tab-bar {
+  display: flex;
+  overflow-x: auto;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.fp-tab-bar::-webkit-scrollbar { display: none; }
+
+.fp-tab-item {
+  padding: 8px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #71717a;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fp-tab-item.active {
+  color: #fb923c;
+  border-bottom-color: #fb923c;
+}
+
+/* ── Flutter Contact Row ── */
+.fp-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+.fp-contact-row svg { color: #71717a; flex-shrink: 0; }
+.fp-contact-row span {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+/* ── Flutter Legal Row ── */
+.fp-legal-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.fp-legal-item:last-child { border-bottom: none; }
+.fp-legal-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #71717a;
+}
+.fp-legal-value {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #f4f4f5;
+  font-weight: 500;
+}
+
+/* ── Placeholder / Empty States ── */
+.fp-empty-section {
+  padding: 20px;
+  text-align: center;
+  color: #52525b;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+}
