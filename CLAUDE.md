@@ -41,7 +41,7 @@ appredueri_backend/
       badgeService.js, gamification.js, pushNotifications.js
       accountDeletion.js, sentry.js, n8n.js, subscriptionService.js
       llm/          # AI services (anthropicClient, businessValidation, offerValidation, summarization, reviewSuggestions, prompts)
-    migrations/     # SQL migration files (006-079)
+    migrations/     # SQL migration files (006-083)
     views/          # EJS templates
       public/portal/manage.ejs          # Main business management portal (LARGE file ~2250 lines)
       public/portal/partials/           # 8 portal tab partials (_tab-info, _tab-oferte, _tab-catalog, _tab-recenzii, _tab-statistici, _tab-subscription, _tab-support, _tab-tools)
@@ -147,6 +147,9 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **i18n Flutter:** Use `AppLocalizations.of(context)!.key` to access translations. Import `package:flutter_gen/gen_l10n/app_localizations.dart`. Run `flutter gen-l10n` after modifying ARB files.
 - **Service Worker:** `sw.js` served dynamically via Express route in index.js (NOT static file). `CACHE_NAME` auto-generated as `ofai-<cacheBust>` on each deploy — no manual version bumping needed. Registration in footer.ejs uses `?v=<%= cacheBust %>` to force SW re-evaluation. Never cache API/auth/billing paths.
 - **Search helper:** `buildFuzzySearch(columns, paramIdx)` in `src/helpers/search.js` — apply `similarity: true` only on short columns (title, name), NOT on description (too noisy for trigrams)
+- **Category search_terms:** Added to ALL 6 search queries as `OR cat.search_terms ILIKE $N` (reuses ILIKE param from fuzzy). Do NOT add to `buildFuzzySearch()` columns — would cause similarity on long text = false positives. Always ILIKE only.
+- **discount_text:** When `discount_type = 'special'`, display `discount_text` instead of `discount_value`. ALL templates and queries must include `o.discount_text`. Portal saves text from `discount_value` form field into `discount_text` column, sets `discount_value = 0`.
+- **Offer detail sections order:** Similar (conditional) → Recommended (always) → History (always last). `blockCompetitors` checked BEFORE all sections, similar hidden entirely if active, recommended excludes category if blocking.
 - **Category IDs differ between `categories.js` and production DB!** The hardcoded list in `src/data/categories.js` uses sequential IDs that DO NOT match production. ALWAYS query `SELECT id, name FROM categories` on production DB before using hardcoded IDs. Lesson learned: ID=9 was Optica in prod, not Farmacie (which was ID=10). Run migrations via Node.js script (`const pool = new Pool({connectionString: DATABASE_URL}); pool.query(sql)`) — psql not installed locally.
 - **businesses.is_active:** Column does NOT exist on `businesses` table. Do NOT use in WHERE clauses. Use subscription status or offer counts to determine activity.
 - **businesses.created_at / businesses.updated_at:** Columns do NOT exist. Sitemap uses `CURRENT_DATE` as fallback. Do NOT reference in queries.
@@ -172,9 +175,12 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Push service APNs:** `getToken()` wrapped in separate try/catch — fails gracefully on iOS without APNs certificate (free provisioning). Rest of push service (foreground handler, tap handler) still initializes.
 - **Google Maps iframe:** `pointer-events: none` on iframe, wrapped in `<a>` to business `maps_url`. CSP `frameSrc` includes `maps.google.com` + `www.google.com`. Offer-detail uses `offer.locations[0].maps_url` (added `maps_url` to location mapping in web.js). `filter: brightness(0.85)` for slight dark tint.
 - **Logo cache-busting:** All 5 logo `<img>` tags (navbar, login, register, forgot-password, verify-code) use `?v=<%= cacheBust %>` to prevent browser caching stale logo after deploys. `cacheBust = Date.now()` from server start in `app.locals`.
-- **Deal of Day rotation:** Uses `hashtext(offer_id || CURRENT_DATE)` for deterministic daily rotation — same offer all day, different tomorrow. Scoring: recency 30% + engagement 7d 25% + discount 15% + tier 20% + date-hash 10%. Both mobile API (`offers.js`) + web (`web.js _getDealOfDay`) use identical algorithm. Manual admin override via `is_deal_of_day` flag still works. Business portal nominations (Premium only) take priority.
-- **Popular Offers sort:** Has `RANDOM() * 0.1` in scoring — results vary per request by design. Not deterministic, not cached.
-- **Category Feed cron:** Daily at 02:00 UTC (was every 2 days). Per-category offers have `RANDOM() * 0.3` for variety.
+- **Performance scoring system:** Pre-computed `performance_score` on offers + businesses (migration 080). Cron daily 02:30 UTC (`computePerformanceScores()` in cronJobs.js). Offer score: Bayesian rating 25% + engagement 20% + conversion 15% + recency 15% + views 10% + tier 10% + completeness 5%. Business score: Bayesian 25% + completeness 20% + offers 15% + engagement 15% + tier 10% + reviews 10% + followers 5%. `score_components` JSONB stores breakdown. Admin recompute: `POST /admin/performance-scores/recompute`. Startup seeds if all zeros.
+- **Popular sort uses performance_score:** `ORDER BY o.performance_score DESC` (no more inline formulas). Deterministic per cron cycle, not per request.
+- **Deal of Day rotation:** Uses `performance_score * 0.6 + discount * 0.15 + urgency * 0.15 + hashtext(id || date) * 0.1`. Manual admin override via `is_deal_of_day` flag still works. Business portal nominations (Premium only) take priority.
+- **Featured offers:** `performance_score * 0.7 + RANDOM() * 0.3` for variety within quality.
+- **Category Feed cron:** Daily at 02:00 UTC. Per-category offers ordered by `performance_score DESC`.
+- **Portal "Scor Performanță"** in Statistici tab is a SEPARATE client-side widget — NOT connected to the backend `performance_score` column. Two independent systems.
 - **Business detail scroll spy:** **Flutter ONLY** — single scrollable page with pinned tab bar + auto-highlight. NOT on web (was accidentally added in commit 028dad0, removed). Web business-detail.ejs shows sections vertically without tab navigation.
 - **Business detail credibility:** `denumire_legala`, `cui`, `founded_year` columns on businesses table (migration 077). Portal form "Date legale" in `_tab-info.ejs`. Shown in Detalii section on business detail page.
 - **Home screen section order (Flutter):** Deal of Day → Flash Deals → Categories → Popular/Feed → Recently Viewed → Promoted → Collections → Cities → Category Feed → Marquee → Businesses. Deal of Day has shimmer skeleton placeholder while loading to prevent layout shift.
@@ -190,7 +196,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Architecture & Codebase
 - Express pinned to ~5.1.0
-- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 79 migrations, 26 screens, 13 models, 28 widgets
+- 24 route files (admin-analytics.js extracted), ~275 endpoints, 20 providers, 83 migrations, 26 screens, 13 models, 28 widgets
 - Audits #8+#9+#10+#11+#12 fixes: ALL applied (v0.9.0+ — 155+ fixes total)
 - Business portal (manage.ejs ~2250 lines) — 8 tabs split into partials (including Tools tab)
 - web.js split into 4 sub-routers + web-shared.js utility
@@ -273,13 +279,17 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Portal Hint Texts:** Explanatory hints on booking section ("va apărea un card pe pagina business-ului"), opening hours ("va fi afișat cu status Deschis/Închis"), and image uploads (format + resolution recommendations)
 - **Pricing Page Cleanup:** Removed AI-sensitive features (Rezumat AI, Răspunsuri sugerate AI, Analize competitive) from public /preturi — visible only in portal subscription tab. Removed strikethrough/X items from Free card. Rezervări shows check for all tiers.
 - **Analytics Tier Gating:** Period buttons (7/30/90 zile) now respect tier's `analytics_days` limit. Default period matches tier max (was hardcoded 30 for all). Backend already enforced via Math.min cap.
-- **Fuzzy Search:** pg_trgm extension + `buildFuzzySearch()` helper combining ILIKE + similarity() across 5 search routes (web offers, web businesses, mobile offers, mobile businesses, search suggest). Typo tolerance with 0.15 threshold.
-- **Backend Testing:** Jest + Supertest infrastructure with 19 tests (jwt helpers, tier normalization, search helper). `npm test` / `npm run test:coverage`. App exports via `require.main === module` guard.
+- **Fuzzy Search:** pg_trgm extension + `buildFuzzySearch()` helper combining ILIKE + similarity() across 5 search routes (web offers, web businesses, mobile offers, mobile businesses, search suggest). Typo tolerance with 0.15 threshold. Category synonyms (`cat.search_terms ILIKE`) added to all 6 search queries for internal SEO — "dentist" finds Stomatologie, "cabana" finds Retreat, etc.
+- **Backend Testing:** Jest + Supertest — 294 tests across 6 suites. Helpers: jwt, tiers, search, validate, mapsParser (69 tests). Flows: 225 comprehensive API flow tests (auth, offers, businesses, favorites, saved searches, reports, push tokens, SEO, PWA, security, multi-user isolation, pagination, CORS, etc.). `npm test` / `npm run test:coverage`. App exports via `require.main === module` guard.
 - **Flutter Testing:** flutter_test + mocktail, 10 test files (7 model + 3 widget), 106 tests passing. Tests cover: offer, business, collection, user, report models + formatters + offer_card + business_card + tap_scale widgets.
 - **Referral Dashboard:** `GET /users/me/referral-stats` API returns total referrals, points, recent list. Flutter bottom sheet enhanced with stat chips + referral history.
 - **PWA Support:** Web app manifest (`/manifest.json`), service worker (`/sw.js`) with cache strategies (static=cache-first, HTML=network-first, API=network-only), offline fallback page, apple-touch-icon, theme-color meta.
 - **i18n Complete:** Backend: i18next + fs-backend + http-middleware with RO/EN locale files (~717 keys, 26 namespaces), ALL 25 consumer EJS templates migrated, language switcher, cookie persistence. Flutter: flutter_localizations + ARB files (~430 keys RO + EN), ALL 26 screens + widgets fully localized (including help FAQ, report dialog, business request form). Default locale: RO. Provider/utility error strings remain hardcoded (no BuildContext available).
-- **Admin Cron Testing:** `POST /admin/test-cron/review-prompt` endpoint to manually trigger post-redemption review cron.
+- **Admin Cron Testing:** `POST /admin/test-cron/review-prompt` endpoint to manually trigger post-redemption review cron. `POST /admin/performance-scores/recompute` to manually recompute all performance scores.
+- **Category Search Synonyms:** `search_terms` TEXT column on categories with 10-15 keywords each. All 6 search queries include `cat.search_terms ILIKE` for internal SEO. Admin edits via `/admin/categories` textarea. Examples: "dentist"→Stomatologie, "cabana"→Retreat, "caine"→Veterinar.
+- **Offer Detail Sections:** 3 sections below main content: "Oferte Similare" (same category, hidden if competitor_blocking), "Oferte Recomandate" (top performance_score, always shown), "Din Istoricul Tău" (from viewed businesses, login prompt if not auth). Each excludes already-shown offers.
+- **Special Discount Text:** `discount_text` VARCHAR(100) on offers for "special" type (e.g. "GRATIS LA 2 ZILE"). All consumer templates, search suggest, admin moderation preview, and all route queries support it.
+- **Admin Sidebar Badges:** Red notification counts on Cereri Business, Rapoarte, Moderare Oferte — 3 parallel COUNT queries per admin page load.
 - **Offer Detail Booking Button:** Actionable CTA (phone/whatsapp/url) in "Cum profiți de ofertă?" section — previously only showed text
 - **Booking Type Normalization:** Migration 071 fixes `link`→`url` (20 businesses) + `NONE`→`none` (2 locations). Route handlers normalize at read time as defense in depth.
 - **Pagination UX:** Sliding window (shows pages around current), prev/next arrows, scroll-to-top on both /oferte and /business-uri
@@ -299,7 +309,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Admin CSV Export:** `GET /admin/export/:type` — businesses, users, offers, subscriptions, email-logs, audit-logs. BOM for Excel UTF-8, proper CSV escaping. Export buttons on all 6 list pages.
 - **Admin Bulk Operations:** `initBulkSelect()` reusable JS + 4 bulk POST endpoints. Offer moderation: bulk approve/reject. Business requests: bulk approve/reject. Checkboxes + floating action bar + confirm dialog. Individual audit log per item.
 - **Admin Referral Dashboard:** `/admin/referrals` — KPI cards (total, 30d, points), top 15 leaderboard with medals, monthly trend chart.
-- **Admin Cron Jobs Monitor:** `/admin/cron-jobs` — 18 scheduled jobs list with cron expressions + frequency, runtime stats (expired tokens, old logs, emails 24h), manual trigger for review prompt.
+- **Admin Cron Jobs Monitor:** `/admin/cron-jobs` — 19 scheduled jobs list with cron expressions + frequency, runtime stats (expired tokens, old logs, emails 24h), manual trigger for review prompt.
 - **Admin Push Notifications:** `/admin/push-notifications` — token health (total/active/stale/inactive), platform breakdown (Android/iOS/Web), notification stats 30d (sent/delivered/failed/rate), per-type breakdown, daily trend chart.
 - **Web Auth Rate Limiting:** POST /login, /register, /forgot-password, /verify-code, /reset-password all rate-limited
 - **Password Reset Web Flow:** GET /verify-code route + verify-code.ejs template for complete web password reset
@@ -324,7 +334,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - Rate limiting: 150ms delay between batch sends in cron jobs
 - ENV toggles: `ENABLE_WEEKLY_DIGEST`, `ENABLE_TRIAL_WARNING`, `ENABLE_REENGAGEMENT` (set `=false` to disable)
 
-### Cron Jobs (18 total)
+### Cron Jobs (19 total)
 - Token cleanup (daily 03:00), push log cleanup (daily 03:15)
 - Category rankings (every 2 days), weekly digest push+email (Sunday 19:00 RO)
 - Flash deal expiration (every 5min), review summary batch (daily 08:00 UTC), business deletion (soft delete)
@@ -334,6 +344,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Trial expiration warning email** (daily 09:00 UTC — 3 days before trial ends)
 - **Re-engagement email** (Tuesday 10:00 UTC — users inactive 14-90 days, max 1/30 days)
 - **Cloudinary orphaned image cleanup** (Sunday 05:00 UTC — dry-run by default, `CLOUDINARY_CLEANUP_DELETE=true` to delete)
+- **Performance scores computation** (daily 02:30 UTC — Bayesian rating + engagement + conversion + recency + views + tier + completeness for offers & businesses)
 
 ### Monitoring & Error Handling
 - Sentry error tracking (production)
@@ -349,7 +360,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Recently Implemented (Masterplan, 30 Mar 2026)
 - **Search:** pg_trgm extension + fuzzy search helper (`src/helpers/search.js`) across 5 routes — ILIKE + `similarity()` with 0.15 threshold, typo-tolerant
-- **Testing:** Jest + Supertest infrastructure — 19 tests across 3 suites (jwt, tiers, search helpers), `npm test` / `npm run test:coverage`
+- **Testing:** Jest + Supertest — 294 tests across 6 suites (5 helpers + 1 flows), `npm test` / `npm run test:coverage`
 - **Referral dashboard:** `GET /users/me/referral-stats` API + enhanced Flutter bottom sheet with stats + recent referrals
 - **Post-redemption review cron:** Extracted to testable `runReviewPromptCron()`, admin test endpoint `POST /admin/test-cron/review-prompt`
 - **PWA:** Web app manifest, service worker (cache-first static, network-first HTML, network-only API), offline.html fallback, CSP workerSrc
@@ -359,7 +370,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 
 ### Resolved Gaps (as of 30 Mar 2026)
 - **Fuzzy search:** ✅ pg_trgm + `buildFuzzySearch()` across 5 routes, trigram indexes, 0.15 threshold
-- **Backend testing:** ✅ Jest + Supertest — 69 unit tests (5 suites: jwt, tiers, search, validate, mapsParser). Playwright E2E — 43 tests (smoke, auth, navigation, search, mobile, SEO, API). Playwright Pentest — 42 OWASP security tests (XSS, SQLi, CSRF, auth-bypass, cookies, headers, open-redirect, error-disclosure, rate-limit, IDOR, path-traversal). Visual Regression — 7 screenshot comparisons. Regression Guards — 9 known bug guards. `npm test` for unit, `npm run test:e2e` for ALL (101 tests), `npm run test:pentest` for security only.
+- **Backend testing:** ✅ Jest + Supertest — 294 tests (6 suites: 5 helpers + 1 flows). Helpers: jwt, tiers, search, validate, mapsParser (69 tests). Flows: 225 comprehensive API flow tests covering 40 sections (auth, offers, businesses, favorites, saved searches, reports, web pages, SEO, PWA, CSRF, security, multi-user isolation, pagination, CORS, etc.). Playwright E2E — 43 tests. Playwright Pentest — 42 OWASP security tests. `npm test` for unit+flows, `npm run test:e2e` for ALL (101 tests), `npm run test:pentest` for security only.
 - **Referral dashboard:** ✅ API `GET /users/me/referral-stats` + Flutter bottom sheet with stats
 - **PWA:** ✅ manifest.json + service worker (cache strategies) + offline.html fallback
 - **Blog CMS:** ✅ Admin CRUD + public /blog + /blog/:slug + SEO + 8 seed posts
@@ -375,7 +386,7 @@ When a bug, unexpected behavior, or "something doesn't make sense" is reported:
 - **Search distance filtering:** pg_trgm done but no PostGIS/distance-based filtering yet
 - **PWA icons:** Files exist but are 64x64 — need proper 192x192 and 512x512 icons
 - **GA4 conversion funnel:** Basic events tracked (promo_reveal, business_action), full funnel missing
-- **Backend test coverage:** 69 helper tests (5 suites) — no route/integration tests yet
+- **Backend test coverage:** 294 tests (helpers + flows) — covers all API endpoints but no middleware/service unit tests
 - **Flutter test coverage:** 106 tests passing (models + widgets), but no provider tests or integration tests yet
 - **Accessibility:** Basic Semantics added, but many icon buttons still lack labels; touch targets not fully audited
 - **Offline caching:** No API response cache (architectural change, needs Hive/Isar + Dio cache interceptor)
