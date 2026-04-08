@@ -163,7 +163,7 @@ router.get("/", optionalAuth, async (req, res) => {
 
     const query = `
       SELECT
-        o.id, o.title, o.description, o.discount_type, o.discount_value,
+        o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text,
         o.start_date, o.end_date, o.flash_expires_at,
         o.logo_url as offer_logo,
         EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
@@ -306,7 +306,7 @@ router.get("/flash", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
-        o.id, o.title, o.description, o.discount_type, o.discount_value,
+        o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text,
         o.start_date, o.end_date, o.flash_expires_at,
         o.logo_url as offer_logo,
         EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
@@ -420,7 +420,7 @@ router.get("/feed", auth, async (req, res) => {
     // Query similar cu cel principal, dar filtrat
     const query = `
       SELECT
-        o.id, o.title, o.description, o.discount_type, o.discount_value,
+        o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text,
         o.start_date, o.end_date,
         o.logo_url as offer_logo,
         EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
@@ -517,7 +517,7 @@ router.get("/category-feed", searchLimiter, async (req, res) => {
     for (const cat of rankResult.rows) {
       const offersResult = await pool.query(`
         SELECT
-          o.id, o.title, o.description, o.discount_type, o.discount_value,
+          o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text,
           o.start_date, o.end_date,
           o.logo_url as offer_logo,
           EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,
@@ -651,7 +651,7 @@ router.get("/deal-of-day", async (req, res) => {
   try {
     // Primary: manual flag
     let result = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
              o.logo_url as offer_logo,
              b.id as business_id, b.name as business_name, b.logo_url as business_logo,
              b.cover_image_url as business_cover, b.is_verified as business_verified,
@@ -673,7 +673,7 @@ router.get("/deal-of-day", async (req, res) => {
     // same offer all day, different offer tomorrow, no tracking table needed
     if (result.rows.length === 0) {
       result = await pool.query(`
-        SELECT o.id, o.title, o.discount_type, o.discount_value, o.end_date,
+        SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text, o.end_date,
                o.logo_url as offer_logo,
                b.id as business_id, b.name as business_name, b.logo_url as business_logo,
                b.cover_image_url as business_cover, b.is_verified as business_verified,
@@ -753,7 +753,7 @@ router.get("/:id", async (req, res) => {
       `
       SELECT
         o.id, o.business_id, o.title, o.description,
-        o.discount_type, o.discount_value, o.conditions,
+        o.discount_type, o.discount_value, o.discount_text, o.conditions,
         o.start_date, o.end_date, o.flash_expires_at, o.is_active,
         o.logo_url as offer_logo,
         EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) as has_promo_code,

@@ -43,7 +43,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const { rows: offers } = await pool.query(`
-      SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
+      SELECT o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text,
              o.start_date, o.end_date, o.flash_expires_at,
              o.logo_url AS offer_logo,
              EXISTS(SELECT 1 FROM promo_codes WHERE offer_id = o.id AND is_active = TRUE) AS has_promo_code,

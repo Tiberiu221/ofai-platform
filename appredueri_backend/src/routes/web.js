@@ -1474,7 +1474,7 @@ router.get("/business/:id", async (req, res) => {
 
     // Active offers
     const offersRes = await pool.query(`
-      SELECT o.id, o.title, o.discount_type, o.discount_value,
+      SELECT o.id, o.title, o.discount_type, o.discount_value, o.discount_text,
              o.start_date, o.end_date,
              COALESCE(o.logo_url, b2.cover_image_url) as image_url,
              b2.name as business_name, b2.logo_url as business_logo,

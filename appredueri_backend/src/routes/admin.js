@@ -1222,7 +1222,7 @@ router.get("/offers", async (req, res) => {
 
     // Fetch page
     const offersQuery = `
-      SELECT o.id, o.title, o.is_active, o.discount_type, o.discount_value,
+      SELECT o.id, o.title, o.is_active, o.discount_type, o.discount_value, o.discount_text,
              o.moderation_status, o.ai_score, o.ai_flags,
              b.name AS business_name, c.name AS city_name, cat.name AS category_name
       ${joinClause}
@@ -2427,7 +2427,7 @@ router.get("/offer-moderation", async (req, res) => {
     const pendingCount = parseInt(countRes.rows[0].count);
 
     const result = await pool.query(`
-      SELECT o.id, o.title, o.description, o.discount_type, o.discount_value,
+      SELECT o.id, o.title, o.description, o.discount_type, o.discount_value, o.discount_text,
              o.conditions, o.start_date, o.end_date, o.logo_url, o.image_url, o.discount_text,
              o.moderation_status, o.ai_score, o.ai_flags, o.ai_reasoning,
              b.id AS business_id, b.name AS business_name,
@@ -2808,7 +2808,7 @@ router.get("/export/:type", async (req, res) => {
       }
       case 'offers': {
         const r = await pool.query(`
-          SELECT o.id, o.title, b.name AS business, o.discount_type, o.discount_value,
+          SELECT o.id, o.title, b.name AS business, o.discount_type, o.discount_value, o.discount_text,
                  o.start_date::date, o.end_date::date, o.is_active, o.moderation_status,
                  o.views_count, o.clicks_count, o.saves_count
           FROM offers o
