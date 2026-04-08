@@ -40,7 +40,8 @@ test.describe('Public Pages — Smoke Tests', () => {
     await page.goto('/preturi');
     await expect(page).toHaveTitle(/OFAI/);
     await expect(page.locator('nav.navbar')).toBeVisible();
-    await expect(page.getByText('Gratuit')).toBeVisible();
+    // i18n: "Gratuit" (RO) or "Free" (EN) depending on browser locale
+    await expect(page.getByText('Free').or(page.getByText('Gratuit')).first()).toBeVisible();
   });
 
   test('/blog loads', async ({ page }) => {
