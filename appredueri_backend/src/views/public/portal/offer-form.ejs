@@ -1129,30 +1129,6 @@
                           <p class="fp-text-secondary" id="fp-offer-cond"></p>
                         </div>
 
-                        <!-- Locations (server-rendered from business locations) -->
-                        <% if (offerLocs.length > 0) { %>
-                        <div class="fp-section-card">
-                          <div class="fp-section-header">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                            <span>Locatii (<%= offerLocs.length %>)</span>
-                          </div>
-                          <% offerLocs.forEach(function(loc) { %>
-                          <div style="padding: 6px 0;">
-                            <div class="fp-contact-row">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                              <span><%= loc.name ? loc.name + ' — ' : '' %><%= loc.address %><%= loc.city_name ? ', ' + loc.city_name : '' %></span>
-                            </div>
-                            <% if (loc.phone) { %>
-                            <div class="fp-contact-row" style="padding-left:22px;">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
-                              <span><%= loc.phone %></span>
-                            </div>
-                            <% } %>
-                          </div>
-                          <% }); %>
-                        </div>
-                        <% } %>
-
                         <!-- Business card -->
                         <div class="fp-biz-card">
                           <div id="fp-offer-biz-logo-wrap"></div>
@@ -1165,6 +1141,39 @@
                             </span>
                           </div>
                         </div>
+
+                        <!-- Locations (after business card, before CTA — matches Flutter) -->
+                        <% if (offerLocs.length > 0) { %>
+                        <div class="fp-section-card">
+                          <div class="fp-section-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>Locatii (<%= offerLocs.length %>)</span>
+                          </div>
+                          <% offerLocs.forEach(function(loc, i) { %>
+                          <div style="padding: 8px 0;<%= i < offerLocs.length - 1 ? ' border-bottom: 1px solid rgba(255,255,255,0.04);' : '' %>">
+                            <% if (loc.name) { %>
+                            <p style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#f4f4f5;margin:0 0 2px;"><%= loc.name %></p>
+                            <% } %>
+                            <div class="fp-contact-row">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                              <span><%= loc.address %><%= loc.city_name ? ', ' + loc.city_name : '' %></span>
+                            </div>
+                            <% if (loc.phone) { %>
+                            <div class="fp-contact-row">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+                              <span><%= loc.phone %></span>
+                            </div>
+                            <% } %>
+                            <div style="margin-top:8px;">
+                              <span class="fp-booking-chip phone" style="font-size:11px;padding:6px 12px;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                                Navighează
+                              </span>
+                            </div>
+                          </div>
+                          <% }); %>
+                        </div>
+                        <% } %>
 
                         <!-- CTA -->
                         <div class="fp-cta">
