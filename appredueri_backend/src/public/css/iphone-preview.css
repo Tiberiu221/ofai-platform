@@ -23,10 +23,14 @@
 .ofp-app-screen::-webkit-scrollbar { display: none; }
 
 /* Scale devices.css frame to fit preview column */
+#ofp-view-app {
+  display: flex;
+  justify-content: center;
+}
 #ofp-view-app .device {
   transform: scale(0.72);
   transform-origin: top center;
-  margin: 0 auto -240px; /* center + compensate for scale reducing visual height */
+  margin-bottom: -240px;
 }
 
 /* ── Flutter Hero Image ── */
