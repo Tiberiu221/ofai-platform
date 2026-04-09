@@ -724,7 +724,7 @@
             </div>
             <div class="of-field">
               <label class="of-label" for="of-discount-value">Valoare reducere</label>
-              <input type="<%= offer && offer.discount_type === 'special' ? 'text' : 'number' %>" id="of-discount-value" name="discount_value" class="of-input" placeholder="<%= offer && offer.discount_type === 'special' ? 'Ex: 1+1 gratis' : 'Ex: 20' %>" value="<%= offer ? offer.discount_value : '' %>" step="any" min="0">
+              <input type="<%= offer && offer.discount_type === 'special' ? 'text' : 'number' %>" id="of-discount-value" name="discount_value" class="of-input" placeholder="<%= offer && offer.discount_type === 'special' ? 'Ex: 1+1 gratis' : 'Ex: 20' %>" value="<%= offer ? (offer.discount_type === 'special' && offer.discount_text ? offer.discount_text : offer.discount_value) : '' %>" step="any" min="0">
             </div>
           </div>
 

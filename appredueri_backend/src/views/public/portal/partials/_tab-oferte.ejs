@@ -26,7 +26,9 @@
               <div class="offer-title"><%= offer.title %></div>
               <div class="offer-meta">
                 <span class="offer-discount">
-                  <% if (offer.discount_type === 'percentage') { %>
+                  <% if (offer.discount_type === 'special' && offer.discount_text) { %>
+                    <%= offer.discount_text %>
+                  <% } else if (offer.discount_type === 'percentage') { %>
                     -<%= offer.discount_value %>%
                   <% } else { %>
                     -<%= offer.discount_value %> lei
