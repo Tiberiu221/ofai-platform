@@ -149,8 +149,9 @@
                 <div class="collection-card-body" style="padding-top: 14px;">
                   <div class="collection-card-info" style="padding-left: 0;">
                     <h3><%= o.title %></h3>
+                    <div class="collection-card-biz"><%= o.business_name || '' %></div>
                     <p class="collection-card-meta">
-                      <%= o.business_name || '' %><%= o.city_name ? ' · ' + o.city_name : '' %>
+                      <%= o.city_name || '' %>
                       <span class="offer-distance collection-distance" data-lat="<%= o.lat || '' %>" data-lng="<%= o.lng || '' %>" style="display:none;">
                         &middot; <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                         <span class="offer-distance-text"></span>
@@ -309,10 +310,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: -32px;
     border: 2px solid var(--bg-primary);
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    z-index: 2;
   }
   .collection-card-avatar img {
     width: 100%;
@@ -337,6 +336,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 2px;
+  }
+  .collection-card-biz {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .collection-card-rating {
     display: flex;
