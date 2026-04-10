@@ -1213,9 +1213,8 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  padding: 4px 0 12px;
+  padding: 4px 4px 12px 0;
   scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
 }
 .bd-locations-grid::-webkit-scrollbar { display: none; }
 .booking-card {
