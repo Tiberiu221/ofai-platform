@@ -1101,52 +1101,77 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <%= t('offerDetail.locations', { count: offer.locations.length }) %>
         </div>
-        <div class="offer-locations-grid">
-          <% offer.locations.forEach(function(loc) { %>
-            <div class="booking-card">
+        <div class="bd-locations-grid">
+          <% offer.locations.forEach(function(loc, i) { %>
+            <div class="booking-card reveal reveal-delay-<%= Math.min(i + 1, 5) %>">
               <% if (loc.name) { %>
-                <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 4px; color: var(--text-primary);"><%= loc.name %></div>
+                <div class="bc-row" style="font-weight: 600; font-size: 0.9375rem;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span><%= loc.name %></span>
+                </div>
               <% } %>
-              <div class="booking-card-address">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div class="bc-row">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span><%= loc.address %><% if (loc.cityName) { %>, <%= loc.cityName %><% } %></span>
               </div>
-
               <% if (loc.phone) { %>
-                <a href="tel:<%= loc.phone %>" class="booking-card-phone" onclick="trackClick(<%= offer.business.id %>,'phone',<%= offer.id %>)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                  <%= loc.phone %>
-                </a>
+                <div class="bc-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <a href="tel:<%= loc.phone %>" onclick="trackClick(<%= offer.business.id %>,'phone',<%= offer.id %>)"><%= loc.phone %></a>
+                </div>
+              <% } %>
+              <% if (loc.cityName) { %>
+                <div class="bc-row">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                  <span><%= loc.cityName %></span>
+                </div>
               <% } %>
 
-              <div class="booking-card-actions">
+              <div class="bc-actions-row">
                 <% var offerLocNavUrl = loc.maps_url || (loc.lat && loc.lng ? 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng : null); %>
                 <% if (offerLocNavUrl) { %>
-                  <a href="<%= offerLocNavUrl %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-primary" onclick="trackClick(<%= offer.business.id %>,'navigate',<%= offer.id %>)">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                  <a href="<%= offerLocNavUrl %>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary bc-action-btn" onclick="trackClick(<%= offer.business.id %>,'navigate',<%= offer.id %>)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
                     <%= t('offerDetail.navigate') %>
                   </a>
                 <% } %>
                 <% if (loc.booking_type === 'phone' && loc.booking_phone) { %>
-                  <a href="tel:<%= loc.booking_phone %>" class="btn-booking btn-booking-secondary" onclick="trackClick(<%= offer.business.id %>,'phone',<%= offer.id %>)">
+                  <a href="tel:<%= loc.booking_phone %>" class="btn btn-primary bc-action-btn" onclick="trackClick(<%= offer.business.id %>,'phone',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     <%= t('offerDetail.bookBtn') %> <%= loc.booking_phone %>
                   </a>
                 <% } else if (loc.booking_type === 'whatsapp' && loc.booking_whatsapp) { %>
-                  <a href="https://wa.me/<%= loc.booking_whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-whatsapp" onclick="trackClick(<%= offer.business.id %>,'whatsapp',<%= offer.id %>)">
+                  <a href="https://wa.me/<%= loc.booking_whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener noreferrer" class="btn bc-action-btn bc-whatsapp-btn" onclick="trackClick(<%= offer.business.id %>,'whatsapp',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
                     <%= t('offerDetail.bookWhatsapp') %>
                   </a>
                 <% } else if (loc.booking_type === 'url' && loc.booking_url) { %>
                   <% var safeLocBooking = (loc.booking_url || '').match(/^https?:\/\//) ? loc.booking_url : '#'; %>
-                  <a href="<%= safeLocBooking %>" target="_blank" rel="noopener noreferrer" class="btn-booking btn-booking-secondary" onclick="trackClick(<%= offer.business.id %>,'booking_url',<%= offer.id %>)">
+                  <a href="<%= safeLocBooking %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary bc-action-btn" onclick="trackClick(<%= offer.business.id %>,'booking_url',<%= offer.id %>)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
                     <%= t('offerDetail.bookOnline') %>
                   </a>
                 <% } %>
               </div>
               <% if (loc.booking_instructions) { %>
-                <div class="booking-card-instructions"><%= loc.booking_instructions %></div>
+                <p class="bc-instructions"><%= loc.booking_instructions %></p>
+              <% } %>
+              <% if (loc.lat && loc.lng) {
+                   var _olMapUrl = (loc.maps_url && /^https?:\/\//.test(loc.maps_url))
+                     ? loc.maps_url
+                     : 'https://www.google.com/maps/dir/?api=1&destination=' + loc.lat + ',' + loc.lng;
+              %>
+                <a href="<%= _olMapUrl %>" target="_blank" rel="noopener noreferrer" style="display:block; margin-top: 10px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); position: relative;">
+                  <iframe
+                    src="https://maps.google.com/maps?q=<%= loc.lat %>,<%= loc.lng %>&z=15&output=embed&hl=ro"
+                    width="100%" height="120" style="border:0; display:block; filter: brightness(0.85) contrast(1.1); pointer-events: none;"
+                    loading="lazy" referrerpolicy="no-referrer" title="<%= loc.name || loc.address %>">
+                  </iframe>
+                  <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;font-size:0.6875rem;font-weight:600;padding:4px 12px;border-radius:6px;white-space:nowrap;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                    <%= t('offerDetail.navigate') %>
+                  </div>
+                </a>
               <% } %>
             </div>
           <% }); %>
