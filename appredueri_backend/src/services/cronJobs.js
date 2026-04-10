@@ -851,7 +851,54 @@ function initCronJobs() {
     }
   });
 
-  // 19. Compute performance scores — Daily 02:30 UTC (after category rankings at 02:00)
+  // 19. Review summarization batch — Daily 08:00 UTC (10:00 Romania)
+  // Regenerates AI summaries for businesses with 3+ new reviews since last summary
+  cron.schedule('0 8 * * *', async () => {
+    try {
+      const { generateSummary } = require('./llm/summarizationService');
+      const { LLM_CONFIG } = require('../config/llm');
+      if (!LLM_CONFIG.apiKey) {
+        console.log('[Cron] Review summarization skipped — no ANTHROPIC_API_KEY');
+        return;
+      }
+
+      // Find businesses with enough reviews that need (re)generation
+      const { rows: candidates } = await pool.query(`
+        SELECT b.id, b.name,
+               COUNT(r.id) as review_count,
+               rs.review_count as summary_review_count
+        FROM businesses b
+        JOIN reviews r ON r.business_id = b.id
+        LEFT JOIN review_summaries rs ON rs.business_id = b.id
+        GROUP BY b.id, b.name, rs.id, rs.review_count
+        HAVING COUNT(r.id) >= $1
+          AND (rs.id IS NULL OR COUNT(r.id) - COALESCE(rs.review_count, 0) >= $2)
+        ORDER BY COUNT(r.id) DESC
+        LIMIT 50
+      `, [LLM_CONFIG.summarization.minReviewCount, LLM_CONFIG.summarization.regenerateAfterNewReviews]);
+
+      let generated = 0;
+      let failed = 0;
+      for (const biz of candidates) {
+        try {
+          await generateSummary(biz.id, { force: true });
+          generated++;
+          // Rate limit: 500ms between API calls
+          await new Promise(r => setTimeout(r, 500));
+        } catch (e) {
+          failed++;
+          console.error(`[Cron] Summary failed for business ${biz.id} (${biz.name}):`, e.message);
+        }
+      }
+      if (generated > 0 || failed > 0) {
+        console.log(`[Cron] Review summarization batch: ${generated} generated, ${failed} failed (${candidates.length} candidates)`);
+      }
+    } catch (err) {
+      console.error('[Cron] Review summarization cron error:', err.message);
+    }
+  });
+
+  // 20. Compute performance scores — Daily 02:30 UTC (after category rankings at 02:00)
   cron.schedule('30 2 * * *', async () => {
     try {
       const result = await computePerformanceScores();

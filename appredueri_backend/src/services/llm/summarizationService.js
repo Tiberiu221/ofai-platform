@@ -257,8 +257,8 @@ async function generateSummary(businessId, options = {}) {
   const validation = validateSummary(summaryText);
   
   if (!validation.isValid) {
-    console.warn(`[Summarization] Generated summary failed validation:`, validation.issues);
-    // You might want to retry here, but for now we'll use it anyway
+    console.error(`[Summarization] Generated summary failed validation for business ${businessId}:`, validation.issues);
+    // Still save it (partial summary is better than none) but log as ERROR for monitoring
   }
   
   console.log(`[Summarization] Summary generated: "${summaryText.substring(0, 100)}..."`);

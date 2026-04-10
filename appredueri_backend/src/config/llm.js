@@ -11,11 +11,12 @@ const LLM_CONFIG = {
   // Anthropic API Configuration
   apiKey: process.env.ANTHROPIC_API_KEY,
   
-  // Model Selection
-  // Available models:
-  // - claude-3-haiku-20240307 (fastest, cheapest - $0.25/$1.25 per 1M tokens)
-  // - claude-3-sonnet-20240229 (balanced - $3/$15 per 1M tokens)
-  // - claude-3-opus-20240229 (most capable - $15/$75 per 1M tokens)
+  // Model Selection (reviewed April 2026)
+  // - claude-3-haiku-20240307 (fastest, cheapest — $0.25/$1.25 per 1M tokens) ← CURRENT
+  // - claude-3-5-haiku-20241022 (better reasoning — $0.80/$4.00, 3x more expensive)
+  // - claude-3-5-sonnet-20241022 (balanced — $3/$15 per 1M tokens)
+  // Haiku 3.0 is sufficient for our use cases (validation, summarization, suggestions).
+  // Upgrade to 3.5 only if quality issues appear.
   model: process.env.LLM_MODEL || 'claude-3-haiku-20240307',
   
   // Generation Parameters
@@ -49,10 +50,10 @@ const LLM_CONFIG = {
     regenerateAfterNewReviews: 3
   },
   
-  // Cost Tracking
+  // Cost Tracking (Haiku 3.0 pricing)
   costs: {
-    inputCostPerMillionTokens: 0.25,   // $0.25 per 1M input tokens (Haiku)
-    outputCostPerMillionTokens: 1.25   // $1.25 per 1M output tokens (Haiku)
+    inputCostPerMillionTokens: 0.25,   // $0.25 per 1M input tokens (Haiku 3.0)
+    outputCostPerMillionTokens: 1.25   // $1.25 per 1M output tokens (Haiku 3.0)
   }
 };
 
