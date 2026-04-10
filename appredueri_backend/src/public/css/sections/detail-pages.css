@@ -1261,6 +1261,33 @@
   border: 1px dashed var(--border);
 }
 
+/* ─── COMPACT LOCATION CARDS (scoped to locations grid) ── */
+.bd-locations-grid .booking-card {
+  padding: 14px 16px;
+}
+.bd-locations-grid .bc-row {
+  font-size: 0.8125rem;
+  margin-bottom: 2px;
+}
+.bd-locations-grid .bc-row svg {
+  width: 14px;
+  height: 14px;
+}
+.bd-locations-grid .bc-actions-row {
+  margin-top: 8px;
+  padding-top: 8px;
+  gap: 6px;
+}
+.bd-locations-grid .bc-action-btn {
+  font-size: 0.75rem;
+  padding: 6px 10px;
+}
+.bd-locations-grid .bc-instructions {
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+}
+
 /* ─── AI SUMMARY ──────────────────────────────────────── */
 .ai-summary-card {
   background: rgba(251, 146, 60, 0.04);
