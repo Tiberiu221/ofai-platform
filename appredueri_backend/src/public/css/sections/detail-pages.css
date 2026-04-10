@@ -1208,10 +1208,16 @@
 
 /* ─── LOCATIONS ───────────────────────────────────────── */
 .bd-locations-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0 12px;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
 }
+.bd-locations-grid::-webkit-scrollbar { display: none; }
 .booking-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -1263,6 +1269,10 @@
 
 /* ─── COMPACT LOCATION CARDS (scoped to locations grid) ── */
 .bd-locations-grid .booking-card {
+  min-width: 280px;
+  max-width: 320px;
+  flex-shrink: 0;
+  scroll-snap-align: start;
   padding: 14px 16px;
 }
 .bd-locations-grid .bc-row {
@@ -1286,6 +1296,10 @@
   margin-top: 8px;
   padding: 6px 10px;
   font-size: 0.75rem;
+}
+.bd-locations-grid .booking-card:only-child {
+  min-width: 100%;
+  max-width: 100%;
 }
 
 /* ─── AI SUMMARY ──────────────────────────────────────── */
