@@ -44,7 +44,6 @@ STRIPE_SECRET_KEY        # Payments (skeleton — not production yet)
 STRIPE_WEBHOOK_SECRET    # Stripe webhooks
 TIER_GATING_ENABLED      # Subscription gating (default: false)
 SENTRY_DSN               # Error tracking
-OPENROUTER_KEY           # LLM enrichment (scraping only)
 CSRF_SECRET              # Falls back to JWT_SECRET if not set
 ```
 

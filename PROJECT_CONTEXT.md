@@ -26,7 +26,6 @@
 | Analytics | Google Analytics 4 (`GA_MEASUREMENT_ID` env var) |
 | Error Tracking | Sentry |
 | Automation | n8n (on Railway) |
-| Scraping | Playwright + OpenRouter (DeepSeek LLM enrichment) |
 
 **URLs:**
 - **Production:** https://ofai.ro (Railway, DNS via Cloudflare CNAME)
@@ -127,7 +126,6 @@ OFAI/
 │   │   │   └── images/           # OG fallback SVG
 │   │   └── migrations/           # SQL migrations 006-064
 │   ├── scripts/
-│   │   ├── scraping/             # 5-phase pipeline (01-scrape → 05-assign-images)
 │   │   ├── seed-businesses.js    # Test data seeder
 │   │   └── run-migration-production.js
 │   └── package.json
@@ -568,7 +566,6 @@ FIREBASE_ADMINSDK_JSON=...        # ENTIRE JSON file content (not just key!)
 SENTRY_DSN=REDACTED
 ANTHROPIC_API_KEY=sk-ant-...      # Claude Haiku for summaries
 N8N_WEBHOOK_URL=https://n8n-...
-OPENROUTER_KEY=sk-or-...          # Scraping LLM enrichment
 STRIPE_SECRET_KEY=sk_...          # Stripe payment processing
 STRIPE_WEBHOOK_SECRET=whsec_...   # Stripe webhook signature verification
 TIER_GATING_ENABLED=true          # Enable/disable subscription tier gating
@@ -647,7 +644,6 @@ TIER_GATING_ENABLED=true          # Enable/disable subscription tier gating
 - Promo code reveal (multi-codes per offer)
 - Deal of the Day (manual flag + fallback query)
 - Sort "Expiră curând" on /oferte (48 offers per page)
-- Scraping pipeline Phase 1-2 done (225 JSON files, 15 cities, LLM enrichment)
 - CSRF mobile skip via `X-Client: mobile` header (24 Feb)
 - Flutter: exact offers count on home screen (`offersCountProvider` reads `pagination.total`)
 - Flutter: countdown pill ≤7 days gate (urgency > 0 only, matches web)
@@ -713,7 +709,6 @@ TIER_GATING_ENABLED=true          # Enable/disable subscription tier gating
 - **Refresh Token Security:** Race condition fixed with `SELECT ... FOR UPDATE` transaction
 
 ### ❌ TODO
-- **Scraping Phase 3-5:** Verify, cleanup, image assignment
 - **iOS build:** Requires macOS (not tested on Windows dev machine)
 - **Play Store publication:** Signing done, store listing not submitted
 - **Stripe go-live:** Switch from test keys to live Stripe keys
@@ -773,10 +768,7 @@ git push origin main               # Auto-deploys to Railway (~1-2 min)
 # Database (production)
 node -e "const {Pool}=require('pg'); const p=new Pool({connectionString:'postgresql://postgres:REDACTED@REDACTED_DB_HOST/railway',ssl:{rejectUnauthorized:false}}); p.query('SELECT ...').then(r=>console.log(r.rows)).finally(()=>p.end())"
 
-# Scraping
 cd appredueri_backend
-npm run scrape                     # Phase 1: Playwright → Google Maps → JSON
-npm run scrape:enrich              # Phase 2: LLM enrichment → DB insert
 ```
 
 ---

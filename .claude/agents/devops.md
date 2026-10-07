@@ -36,7 +36,6 @@ You are a DevOps engineer managing the OFAI platform infrastructure, deployments
 - `GOOGLE_CLIENT_ID` — Google OAuth client ID
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — image uploads
 - `RESEND_API_KEY` — transactional email
-- `OPENROUTER_KEY` — LLM enrichment (scraping only)
 - `STRIPE_SECRET_KEY` — Stripe payment processing
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signature verification
 - `TIER_GATING_ENABLED` — Feature flag to enable/disable subscription gating

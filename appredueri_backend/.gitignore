@@ -41,5 +41,3 @@ firebase-adminsdk*.json
 # Database backups
 backups/
 
-# Scraping data (large JSON files)
-scripts/scraping/data/

@@ -4,7 +4,6 @@
 OFAI is a Romanian local deals/offers platform connecting consumers with verified businesses. It has three components:
 - **Backend:** Node.js/Express API with PostgreSQL, EJS server-side rendering (`appredueri_backend/`)
 - **Flutter App:** Consumer-facing mobile app (`ofai_flutter/`)
-- **Scraping:** Google Maps data pipeline (`scripts/scraping/`)
 
 ## Tech Stack
 - **Backend:** Node.js, Express, PostgreSQL, EJS templates, Cloudinary (images), Firebase (push notifications), Stripe (billing), Anthropic Claude (AI)
@@ -99,7 +98,7 @@ psql $DATABASE_URL                              # Connect to DB
 
 ## Claude Code Tooling
 Custom agents, commands, and hooks adapted from [luongnv89/claude-howto](https://github.com/luongnv89/claude-howto):
-- **Subagents** (`.claude/agents/`): 11 agents — test-engineer (Jest+flutter_test), secure-reviewer (read-only security audit), debugger (OFAI-specific root cause analysis), + 8 built-in (backend-dev, code-reviewer, db-architect, devops, frontend-mobile, scraping-engineer, security-auditor, ui-designer)
+- **Subagents** (`.claude/agents/`): 10 agents — test-engineer (Jest+flutter_test), secure-reviewer (read-only security audit), debugger (OFAI-specific root cause analysis), + 8 built-in (backend-dev, code-reviewer, db-architect, devops, frontend-mobile, security-auditor, ui-designer)
 - **Slash commands** (`.claude/commands/`): 22 commands — `/push-all` (stage+commit+push with safety checks), `/optimize` (performance analysis: N+1, cache, memCacheWidth), `/test-expand` (find+write missing tests), + 19 domain-specific (audit, fix, investigate, review, deploy-verify, etc.)
 - **Hooks** (`.claude/hooks/` + `settings.json`): PostToolUse Edit|Write triggers: `security-scan.sh` (secrets, SQL injection, LLM fencing, CSP nonce), `format-check.sh` (console.log, print(), EJS tags). `context-tracker.py` (token estimation, ready but not wired to hooks)
 - **Audit plan:** `docs/plans/2026-04-05-performance-findings.md` — performance + security + test findings with 4 prioritized phases

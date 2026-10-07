@@ -79,7 +79,6 @@ appredueri_backend/
 │   ├── public/                 # Static assets (CSS, JS, images)
 │   │   └── js/main.js          # Client-side CSRF helper, fetch wrapper, trackClick
 │   └── migrations/             # Sequential SQL (006-040)
-├── scripts/scraping/           # Google Maps scraper + LLM enrichment
 └── package.json
 ```
 

@@ -11,7 +11,7 @@ Repo-ul este dezvoltat cu Claude Code ca unealtă principală de lucru: **730 de
 Cum lucrez cu agentul, concret (vezi `CLAUDE.md`, `.claude/` și `PROJECT_CONTEXT.md`):
 
 - **Context scris, nu promptat din memorie:** `CLAUDE.md` (reguli, decizii, ~70 de capcane documentate, workflow în 5 pași: explorează → interoghează DB → plan → aprobare → fix în faze) și `PROJECT_CONTEXT.md` (arhitectură, schemă, 12 audituri).
-- **Agenți cu roluri** (`.claude/agents/`, 11): backend-dev, frontend-mobile, db-architect, security-auditor, secure-reviewer (read-only), test-engineer, debugger, devops, ui-designer, scraping-engineer, code-reviewer.
+- **Agenți cu roluri** (`.claude/agents/`, 10): backend-dev, frontend-mobile, db-architect, security-auditor, secure-reviewer (read-only), test-engineer, debugger, devops, ui-designer, code-reviewer.
 - **Comenzi slash = runbook-uri** (`.claude/commands/`, 22): `/audit`, `/pentest`, `/deploy-verify`, `/push-all`, `/runbook`, `/changelog`, `/investigate`…
 - **Hook-uri după fiecare editare** (`.claude/settings.json` + `.claude/hooks/`): `flutter analyze`, `security-scan.sh` (secrete, SQL concatenat, input de utilizator nefiltrat spre LLM, script fără CSP nonce), `format-check.sh`.
 

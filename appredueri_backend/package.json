@@ -9,11 +9,6 @@
     "review-summaries:batch": "node scripts/review-summary-batch.js",
     "seed:businesses": "node scripts/seed-businesses.js",
     "seed:reviews": "node scripts/seed-reviews.js",
-    "scrape": "node scripts/scraping/01-scrape.js",
-    "scrape:enrich": "node scripts/scraping/02-enrich-and-insert.js",
-    "scrape:verify": "node scripts/scraping/03-verify.js",
-    "scrape:cleanup": "node scripts/scraping/04-cleanup.js",
-    "scrape:images": "node scripts/scraping/05-assign-images.js",
     "test": "jest --detectOpenHandles --forceExit",
     "test:coverage": "jest --coverage --detectOpenHandles --forceExit",
     "test:e2e": "npx playwright test",
@@ -57,8 +52,6 @@
     "jest": "^30.3.0",
     "nodemon": "^3.1.11",
     "playwright": "^1.58.2",
-    "playwright-extra": "^4.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "supertest": "^7.2.2"
   },
   "overrides": {
