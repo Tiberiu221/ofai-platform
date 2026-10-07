@@ -36,3 +36,7 @@ token.json
 playwright/.auth/
 playwright-report/
 test-results/
+
+# DB dumps (never commit)
+*.dump
+railway_backup.dump

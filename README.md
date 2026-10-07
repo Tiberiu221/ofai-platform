@@ -4,6 +4,25 @@ Platformă de oferte și reduceri locale. Conectează utilizatorii cu business-u
 
 🌐 **Web:** [ofai.ro](https://ofai.ro)
 
+## Construit cu Claude Code
+
+Repo-ul este dezvoltat cu Claude Code ca unealtă principală de lucru: **730 de commit-uri în 2,5 luni, 555 (76%) co-semnate de Claude**, pe o platformă live ([ofai.ro](https://ofai.ro)) cu ~93.000 de linii scrise de mână (Node/Express + EJS, Flutter), 295 de endpoint-uri REST, 78 de migrații PostgreSQL, 20 de joburi cron și ~530 de teste (Jest, Playwright cu 46 de teste OWASP, Flutter).
+
+Cum lucrez cu agentul, concret (vezi `CLAUDE.md`, `.claude/` și `PROJECT_CONTEXT.md`):
+
+- **Context scris, nu promptat din memorie:** `CLAUDE.md` (reguli, decizii, ~70 de capcane documentate, workflow în 5 pași: explorează → interoghează DB → plan → aprobare → fix în faze) și `PROJECT_CONTEXT.md` (arhitectură, schemă, 12 audituri).
+- **Agenți cu roluri** (`.claude/agents/`, 11): backend-dev, frontend-mobile, db-architect, security-auditor, secure-reviewer (read-only), test-engineer, debugger, devops, ui-designer, scraping-engineer, code-reviewer.
+- **Comenzi slash = runbook-uri** (`.claude/commands/`, 22): `/audit`, `/pentest`, `/deploy-verify`, `/push-all`, `/runbook`, `/changelog`, `/investigate`…
+- **Hook-uri după fiecare editare** (`.claude/settings.json` + `.claude/hooks/`): `flutter analyze`, `security-scan.sh` (secrete, SQL concatenat, input de utilizator nefiltrat spre LLM, script fără CSP nonce), `format-check.sh`.
+
+Unde a greșit agentul și cum am corectat:
+
+- **Securitate:** notificările toast foloseau `innerHTML` (XSS), iar un header `X-Client: mobile` putea sări CSRF-ul din orice browser. Prinse la auditul #8 cu agentul `security-auditor`; corectate (`textContent`, excepția de CSRF doar cu Bearer valid) și transformate în reguli + hook.
+- **Prompt injection:** textul utilizatorilor ajungea direct în prompturile LLM; am introdus fencing `[USER_INPUT]` în toate cele 27 de locuri și un hook care refuză codul fără el.
+- **Deploy:** `npm install` local a actualizat lockfile-ul, dar Railway rulează `npm ci` strict → build picat; regulă: `package.json` și `package-lock.json` se commit împreună.
+
+Principiul: agentul propune, pipeline-ul decide. Teste și lint în aceeași comandă ca în producție, diff citit, al doilea agent cu altă lentilă.
+
 ## Structura Proiectului
 
 ```
