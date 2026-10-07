@@ -1,0 +1,230 @@
+{
+  "name": "WF2 - New User → Welcome + Admin Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-user",
+        "options": {}
+      },
+      "id": "6dfd116c-9258-46a3-beca-4c514529acb8",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "41022a1e-f98e-4ef8-aa3e-00404d919806"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, email, first_name FROM users WHERE id = $1 LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $json.body.user_id }}"
+        }
+      },
+      "id": "3497d59f-9505-4504-8bd6-97fbfb4412b4",
+      "name": "Get User",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OFAI_POSTGRES",
+          "name": "OFAI Postgres (Railway)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a0b9fee9-c074-43e0-91f0-e0d5b51f993a",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "eed6ebd1-d9e8-4345-ade5-a357e46841b8",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        710,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst shell = (title, body, ctaText, ctaUrl) => `\n<div style=\"font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0f1115;color:#e5e7eb;border-radius:12px;overflow:hidden\">\n  <div style=\"background:#FB923C;color:#0f1115;padding:18px 24px;font-size:20px;font-weight:700\">OFAI</div>\n  <div style=\"padding:24px\">\n    <h2 style=\"margin:0 0 12px;font-size:20px;color:#fff\">${title}</h2>\n    ${body}\n    <p style=\"margin:24px 0 0\"><a href=\"${ctaUrl}\" style=\"background:#FB923C;color:#0f1115;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;display:inline-block\">${ctaText}</a></p>\n  </div>\n  <div style=\"padding:14px 24px;font-size:12px;color:#9ca3af;border-top:1px solid #1f2937\">Primești acest email pentru că ai un cont pe ofai.ro. <a href=\"https://ofai.ro/account\" style=\"color:#9ca3af\">Preferințe</a></div>\n</div>`;\nconst u = $input.first().json;\nconst source = $('Webhook').first().json.body?.source || 'email';\nconst name = u.first_name ? esc(u.first_name) : 'bun venit';\nconst body = `\n  <p>Salut, ${name}! Contul tău OFAI e gata${source.startsWith('google') ? ' (te-ai conectat cu Google)' : ''}.</p>\n  <ol style=\"padding-left:18px;line-height:1.7\">\n    <li><b>Explorează</b> ofertele active din orașul tău.</li>\n    <li><b>Salvează</b> ofertele la favorite ca să nu le pierzi.</li>\n    <li><b>Urmărește</b> business-urile preferate și primești notificare la oferte noi.</li>\n  </ol>`;\nreturn [{ json: {\n  to: u.email,\n  subject: 'Bun venit pe OFAI 🎉',\n  html: shell('Bun venit pe OFAI', body, 'Vezi ofertele de azi', 'https://ofai.ro/oferte'),\n  user_id: u.id, source,\n} }];"
+      },
+      "id": "92edd181-f84c-4149-a7ed-0d271a1fb060",
+      "name": "Build Welcome Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'OFAI <noreply@ofai.ro>', to: $json.to, subject: $json.subject, html: $json.html }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "52e1e077-0c33-4f3b-86e1-260487dbb4c1",
+      "name": "Send Welcome (Resend)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1170,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RESEND_API",
+          "name": "Resend API (Authorization: Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "ADMIN_CHAT_ID",
+        "text": "=👤 *Utilizator nou* #{{ $('Get User').item.json.id }} ({{ $('Webhook').item.json.body.source || 'email' }})\nEmail trimis: {{ $json.id ? 'da' : 'nu' }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "0b7fe26d-f87c-4149-9222-75ae4f83b047",
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1400,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "OFAI_TELEGRAM_BOT",
+          "name": "OFAI Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "3d5839c4-b680-4b11-b98e-2af8263e935f",
+      "name": "No Email – Skip",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        940,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User": {
+      "main": [
+        [
+          {
+            "node": "Has Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Email?": {
+      "main": [
+        [
+          {
+            "node": "Build Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Email – Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome (Resend)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome (Resend)": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Bucharest"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "ofai"
+    }
+  ],
+  "triggerCount": 0
+}

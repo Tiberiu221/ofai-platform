@@ -6,7 +6,7 @@ Platformă de oferte și reduceri locale. Conectează utilizatorii cu business-u
 
 ## Construit cu Claude Code
 
-Repo-ul este dezvoltat cu Claude Code ca unealtă principală de lucru: **730 de commit-uri în 2,5 luni, 555 (76%) co-semnate de Claude**, pe o platformă live ([ofai.ro](https://ofai.ro)) cu ~93.000 de linii scrise de mână (Node/Express + EJS, Flutter), 295 de endpoint-uri REST, 78 de migrații PostgreSQL, 20 de joburi cron și ~530 de teste (Jest, Playwright cu 46 de teste OWASP, Flutter).
+Repo-ul este dezvoltat cu Claude Code ca unealtă principală de lucru: **730 de commit-uri în 2,5 luni, 555 (76%) co-semnate de Claude**, pe o platformă live ([ofai.ro](https://ofai.ro)) cu ~93.000 de linii scrise de mână (Node/Express + EJS, Flutter), 295 de endpoint-uri REST, 78 de migrații PostgreSQL, 20 de joburi cron, 5 workflow-uri n8n și ~530 de teste (Jest, Playwright cu 46 de teste OWASP, Flutter).
 
 Cum lucrez cu agentul, concret (vezi `CLAUDE.md`, `.claude/` și `PROJECT_CONTEXT.md`):
 

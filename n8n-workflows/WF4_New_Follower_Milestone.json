@@ -1,0 +1,195 @@
+{
+  "name": "WF4 - New Follower → Milestone Email to Owner",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-subscriber",
+        "options": {}
+      },
+      "id": "e60f87c4-2343-47c6-8ff8-09b629fa985f",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "fd391371-ae9d-4171-8128-8a1a0e07421a"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT b.id AS business_id, b.name AS business_name,\n       u.email AS owner_email, u.first_name AS owner_first_name,\n       (SELECT COUNT(*) FROM followed_businesses fb WHERE fb.business_id = b.id) AS followers\nFROM businesses b\nJOIN user_businesses ub ON ub.business_id = b.id\nJOIN users u ON u.id = ub.user_id\nWHERE b.id = $1\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $json.body.business_id }}"
+        }
+      },
+      "id": "b058b2d9-29f2-46f3-86c1-d656723f2bbc",
+      "name": "Get Business + Followers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OFAI_POSTGRES",
+          "name": "OFAI Postgres (Railway)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "064b802b-0777-47d2-9bcc-d9e9f61edef2",
+              "leftValue": "={{ [1, 10, 25, 50, 100, 250, 500, 1000].includes(Number($json.followers)) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "90612db6-16fc-498b-abd2-01cbb690c817",
+      "name": "Milestone?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        710,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst esc = (s) => String(s ?? '').replace(/[&<>\"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[c]));\nconst shell = (title, body, ctaText, ctaUrl) => `\n<div style=\"font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#0f1115;color:#e5e7eb;border-radius:12px;overflow:hidden\">\n  <div style=\"background:#FB923C;color:#0f1115;padding:18px 24px;font-size:20px;font-weight:700\">OFAI</div>\n  <div style=\"padding:24px\">\n    <h2 style=\"margin:0 0 12px;font-size:20px;color:#fff\">${title}</h2>\n    ${body}\n    <p style=\"margin:24px 0 0\"><a href=\"${ctaUrl}\" style=\"background:#FB923C;color:#0f1115;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;display:inline-block\">${ctaText}</a></p>\n  </div>\n  <div style=\"padding:14px 24px;font-size:12px;color:#9ca3af;border-top:1px solid #1f2937\">Primești acest email pentru că ai un cont pe ofai.ro. <a href=\"https://ofai.ro/account\" style=\"color:#9ca3af\">Preferințe</a></div>\n</div>`;\nconst b = $input.first().json;\nconst n = Number(b.followers);\nconst first = n === 1;\nconst body = first\n  ? `<p>Salut, ${esc(b.owner_first_name || '')}! <b>${esc(b.business_name)}</b> are primul urmăritor pe OFAI. De acum, fiecare ofertă nouă ajunge direct la cei care te urmăresc.</p>\n     <p>Sfat: publică o <b>ofertă flash</b> săptămâna asta – ofertele cu termen scurt au cele mai multe salvări.</p>`\n  : `<p>Felicitări! <b>${esc(b.business_name)}</b> a ajuns la <b>${n} urmăritori</b> pe OFAI.</p>\n     <p>Îi poți răsplăti cu o ofertă dedicată – în portal ai statistici pe salvări și coduri dezvăluite.</p>`;\nreturn [{ json: { to: b.owner_email, subject: first ? 'Primul tău urmăritor pe OFAI 🎉' : `${n} urmăritori pe OFAI pentru ${b.business_name} 🚀`, html: shell(first ? 'Primul urmăritor' : `${n} urmăritori`, body, 'Publică o ofertă', 'https://ofai.ro/manage'), followers: n } }];"
+      },
+      "id": "d6ac7c30-d6e5-43c0-bf00-70bea79d6fce",
+      "name": "Build Milestone Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'OFAI <noreply@ofai.ro>', to: $json.to, subject: $json.subject, html: $json.html }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "dadde677-16c9-4ad6-94b3-f41b1df7e41b",
+      "name": "Send Milestone (Resend)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1170,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RESEND_API",
+          "name": "Resend API (Authorization: Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "bb0cb020-9ac1-4eaa-a18e-129445a57a1d",
+      "name": "Not a Milestone – Skip",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        940,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Business + Followers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Business + Followers": {
+      "main": [
+        [
+          {
+            "node": "Milestone?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Milestone?": {
+      "main": [
+        [
+          {
+            "node": "Build Milestone Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not a Milestone – Skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Milestone Email": {
+      "main": [
+        [
+          {
+            "node": "Send Milestone (Resend)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Bucharest"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "ofai"
+    }
+  ],
+  "triggerCount": 0
+}

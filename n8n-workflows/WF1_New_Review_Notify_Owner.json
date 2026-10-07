@@ -7,51 +7,94 @@
         "path": "new-review",
         "options": {}
       },
-      "id": "webhook-node",
+      "id": "c12f98b9-76fa-467f-81f0-ed5940a72aaa",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
-      "webhookId": "new-review"
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "3f5aaf40-7a1e-43ed-84c6-61e6d0ee8d8a"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.id AS review_id, r.rating, r.comment, r.first_name AS reviewer_first_name,\n       b.id AS business_id, b.name AS business_name,\n       u.email AS business_owner_email, u.first_name AS owner_first_name\nFROM reviews r\nJOIN businesses b ON b.id = r.business_id\nJOIN user_businesses ub ON ub.business_id = b.id\nJOIN users u ON u.id = ub.user_id\nWHERE r.id = $1\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $json.body.review_id }}"
+        }
+      },
+      "id": "8eb41373-0a7b-449b-8377-20557d7b759a",
+      "name": "Get Review Details",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "OFAI_POSTGRES",
+          "name": "OFAI Postgres (Railway)"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "const data = $input.first().json;\n\n// Validare - daca lipsesc date, oprim executia\nif (!data.business_owner_email) {\n  return [];\n}\n\nconst rating = data.rating || 0;\nconst stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);\nconst businessName = data.business_name || 'Business';\nconst ownerName = data.owner_first_name || '';\nconst reviewerName = data.reviewer_first_name || 'Un utilizator';\nconst comment = data.comment || '';\n\nconst html = `\n<div style=\"font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">\n  <div style=\"background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;\">\n    <h1 style=\"color: white; margin: 0; font-size: 24px;\">Recenzie nouă! ⭐</h1>\n  </div>\n  <div style=\"background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;\">\n    <p style=\"font-size: 16px; color: #374151;\">Salut <strong>${ownerName}</strong>,</p>\n    <p style=\"font-size: 16px; color: #374151;\"><strong>${reviewerName}</strong> a lăsat o recenzie pentru <strong>${businessName}</strong>:</p>\n    <div style=\"background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;\">\n      <p style=\"font-size: 32px; margin: 0 0 8px 0;\">${stars}</p>\n      <p style=\"font-size: 18px; color: #6b7280; margin: 0;\">${rating} din 5</p>\n    </div>\n    ${comment ? `<div style=\"background: #f0f9ff; padding: 16px; border-left: 4px solid #667eea; border-radius: 4px; margin: 16px 0;\"><p style=\"font-size: 15px; color: #374151; margin: 0; font-style: italic;\">\"${comment}\"</p></div>` : ''}\n    <p style=\"font-size: 14px; color: #9ca3af; margin-top: 24px; text-align: center;\">— Echipa OFAI</p>\n  </div>\n</div>\n`;\n\nreturn [{\n  json: {\n    to: data.business_owner_email,\n    subject: `${businessName} - Recenzie nouă ${stars} (${rating}/5)`,\n    html: html\n  }\n}];"
       },
-      "id": "code-node",
+      "id": "7773ecf2-3ee0-4788-ad6e-795d064482e7",
       "name": "Format Email",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [480, 300]
+      "position": [
+        710,
+        300
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://api.resend.com/emails",
-        "sendHeaders": true,
-        "specifyHeaders": "keypair",
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer RESEND_API_KEY_AICI"
-            }
-          ]
-        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"from\": \"OFAI <noreply@ofai.ro>\",\n  \"to\": \"{{ $json.to }}\",\n  \"subject\": \"{{ $json.subject }}\",\n  \"html\": {{ JSON.stringify($json.html) }}\n}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify({ from: 'OFAI <noreply@ofai.ro>', to: $json.to, subject: $json.subject, html: $json.html }) }}",
+        "options": {
+          "timeout": 10000
+        }
       },
-      "id": "http-node",
+      "id": "5c2573da-bafd-4a39-b3a4-aa4afaa7bca8",
       "name": "Send Email (Resend)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [710, 300]
+      "position": [
+        940,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "RESEND_API",
+          "name": "Resend API (Authorization: Bearer)"
+        }
+      }
     }
   ],
   "connections": {
     "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Review Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Review Details": {
       "main": [
         [
           {
@@ -76,9 +119,14 @@
   },
   "pinData": {},
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "timezone": "Europe/Bucharest"
   },
   "staticData": null,
-  "tags": [],
+  "tags": [
+    {
+      "name": "ofai"
+    }
+  ],
   "triggerCount": 0
 }
